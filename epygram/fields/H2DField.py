@@ -1,0 +1,564 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Copyright (c) Météo France (2014-)
+# This software is governed by the CeCILL-C license under French law.
+# http://www.cecill.info
+"""
+Contains the class that handle a Horizontal 2D field.
+"""
+
+import numpy
+
+import footprints
+
+from .D3Field import D3Field
+from .PointField import PointField
+from epygram import config, util, epygramError
+from epygram.geometries import H2DGeometry
+
+epylog = footprints.loggers.getLogger(__name__)
+
+
+
+class H2DField(D3Field):
+    """
+    Horizontal 2-Dimensions field class.
+    A field is defined by its identifier 'fid',
+    its data, its geometry (gridpoint and optionally spectral),
+    and its validity.
+
+    The natural being of a field is gridpoint, so that:
+    a field always has a gridpoint geometry, but it has a spectral geometry only
+    in case it is spectral. 
+    """
+
+    _collector = ('field',)
+    _footprint = dict(
+        attr=dict(
+            structure=dict(
+                values=set(['H2D'])),
+            geometry=dict(
+                type=H2DGeometry),
+        )
+    )
+
+##############
+# ABOUT DATA #
+##############
+    def getlevel(self, level=None, k=None):
+        """Returns self. Useless but for compatibility reasons."""
+
+        if k == None and level == None:
+            raise epygramError("You must give k or level.")
+        if k != None and level != None:
+            raise epygramError("You cannot give, at the same time, k and level")
+        if level != None:
+            if level not in self.geometry.vcoordinate.levels:
+                raise epygramError("The requested level does not exist.")
+        return self
+
+
+
+###################
+# PRE-APPLICATIVE #
+###################
+# (but useful and rather standard) !
+# [so that, subject to continuation through updated versions,
+#  including suggestions/developments by users...]
+
+    def plotfield(self,
+                  subzone=None,
+                  title=None,
+                  gisquality='i',
+                  specificproj=None,
+                  zoom=None,
+                  existingbasemap=None,
+                  minmax=None,
+                  graphicmode='colorshades',
+                  levelsnumber=21,
+                  colormap='jet',
+                  center_cmap_on_0=False,
+                  drawrivers=False,
+                  drawcoastlines=True,
+                  drawcountries=True,
+                  meridians='auto',
+                  parallels='auto',
+                  colorbar='right',
+                  minmax_in_title=True,
+                  departments=False,
+                  existingfigure=None,
+                  pointsize=20,
+                  contourcolor='blue',
+                  contourwidth=1,
+                  contourlabel=True,
+                  bluemarble=0.0,
+                  background=False,
+                  mask_threshold=None,
+                  contourlabelfmt='%0i',
+                  pointsmarker=','):
+        """
+        Makes a simple plot of the field, with a number of options.
+
+        Requires :mod:`matplotlib`
+
+        Options: \n
+        - *subzone*: among ('C', 'CI'), for LAM fields only, plots the data
+          resp. on the C or C+I zone. \n
+          Default is no subzone, i.e. the whole field.
+        - *gisquality*: among ('c', 'l', 'i', 'h', 'f') -- by increasing
+          quality. Defines the quality for GIS elements (coastlines,
+          countries boundaries...).
+          Cf. 'basemap' doc for more details.
+        - *specificproj*: enables to make basemap on the specified projection,
+          among: 'kav7', 'cyl', 'ortho', ('nsper', {...}) (cf. Basemap doc). \n 
+          In 'nsper' case, the {} may contain:\n
+          - 'sat_height' = satellite height in km;
+          - 'lon' = longitude of nadir in degrees;
+          - 'lat' = latitude of nadir in degrees. \n
+        - *zoom*: specifies the lon/lat borders of the map, implying hereby
+          a 'cyl' projection.
+          Must be a dict(lonmin=, lonmax=, latmin=, latmax=).\n
+          Overwrites *specificproj*.
+        - *existingbasemap*: as making Basemap is the most time-consuming step,
+          it is possible to bring an already existing basemap object.
+          In that case, all the above options are ignored,
+          overwritten by those of the *existingbasemap*.
+        - *title*: title for the plot. Default is field identifier.
+        - *minmax*: defines the min and max values for the plot colorbar. \n
+          Syntax: [min, max]. [0.0, max] also works. Default is min/max of the
+          field.
+        - *graphicmode*: among ('colorshades', 'contourlines', 'points').
+        - *levelsnumber*: number of levels for contours and colorbar.
+        - *colormap*: name of the ``matplotlib`` colormap to use (or an
+          ``epygram`` one, or a user-defined one, cf. config.usercolormaps).
+        - *center_cmap_on_0*: aligns the colormap center on the value 0.
+        - *drawrivers*: to add rivers on map.
+        - *drawcoastlines*: to add coast lines on map.
+        - *drawcountries*: to add countries on map.
+        - *colorbar*: if *False*, hide colorbar the plot; else, befines the
+          colorbar position, among ('bottom', 'right'). Defaults to 'right'.
+        - *meridians* and *parallels* enable to fine-tune the choice of lines to
+          plot, with either:\n
+          - 'auto': automatic scaling to the basemap extents
+          - 'default': range(0,360,10) and range(-90,90,10)
+          - a list of values
+          - a grid step, e.g. 5 to plot each 5 degree.
+          - None: no one is plot
+          - *meridians* == 'greenwich' // 'datechange' // 'greenwich+datechange'
+            *parallels* == 'equator' // 'polarcircles' // 'tropics' or any
+            combination (+) will plot only these.
+        - *minmax_in_title*: if True and minmax != None, adds min and max
+          values in title.
+        - *departments*: if True, adds the french departments on map (instead 
+          of countries).
+        - *existingfigure*: to plot the field over an existing figure (e.g.
+          contourlines over colorshades).
+          Be aware that no check is done between the *existingfigure*  basemap
+          and either the *existingbasemap* or the one that is created from the
+          field geometry: there might be inconsistency.
+        - *pointsize*: size of points for *graphicmode* == 'points'.
+        - *contourcolor*: color or colormap to be used for 'contourlines'
+          graphicmode. It can be either a legal html color name, or a colormap
+          name.
+        - *contourwidth*: width of contours for 'contourlines' graphicmode.
+        - *contourlabel*: displays labels on contours.
+        - *bluemarble*: if > 0.0 (and <=1.0), displays NASA's "blue marble"
+          as background. The numerical value sets its transparency.
+        - *background*: if True, set a background color to 
+          continents and oceans.
+        - *mask_threshold*: dict with min and/or max value(s) to mask outside.
+        - *contourlabelfmt*: format of the contour labels: e.g. 273.15 will
+          appear: '%0i' => 273, '%0f' => 273.150000, '%0.2f' => 273.15,
+                  '%04i' => 0273, '%0.5e' => 2.731500e+02
+        - *pointsmarker*: shape of the points if graphicmode='points'.
+          Cf. matplotlib.scatter() for possible markers.
+
+        This method uses (hence requires) 'matplotlib' and 'basemap' libraries.
+        """
+
+        # initializations
+        import matplotlib.pyplot as plt
+        from matplotlib.colors import cnames
+        plt.rc('font', family='serif')
+        plt.rc('figure', figsize=config.plotsizes)
+
+        # checkings
+        if self.spectral:
+            raise epygramError("please convert to gridpoint with sp2gp()" + \
+                               " method before plotting.")
+
+        # add custom colormap if necessary
+        if colormap not in plt.colormaps():
+            from epygram.util import add_cmap
+            if colormap in config.colormaps:
+                util.add_cmap(colormap)
+            else:
+                from mpl_toolkits.basemap import cm
+                if colormap in cm.datad.keys():
+                    plt.register_cmap(name=colormap, cmap=cm.__dict__[colormap])
+
+        # color of contours
+        if graphicmode == 'contourlines':
+            if contourcolor in cnames or contourcolor[0] == '#':
+                colormap = None
+            else:
+                if contourcolor not in plt.colormaps():
+                    add_cmap(contourcolor)
+                colormap = contourcolor
+                contourcolor = None
+
+        # init basemap
+        if existingbasemap is None:
+            bm = self.geometry.make_basemap(gisquality=gisquality,
+                                            subzone=subzone,
+                                            specificproj=specificproj,
+                                            zoom=zoom)
+            existingbasemap = bm  # needed for zoom case
+        else:
+            bm = existingbasemap
+        if zoom in (None, {}):  # actual build of figure
+            if existingfigure is None:
+                f = plt.figure()
+            else:
+                f = existingfigure
+            # set up the map
+            academic = self.geometry.name == 'academic'
+            if academic:
+                (lons, lats) = self.geometry.get_lonlat_grid(subzone=subzone)
+                x, y = lons, lats
+            else:
+                if background and existingfigure is None:
+                    bm.drawmapboundary(fill_color='lightskyblue')
+                    bm.fillcontinents(color='wheat', lake_color='skyblue',
+                                      zorder=0)
+                if bluemarble and existingfigure is None:
+                    bm.bluemarble(alpha=bluemarble)
+                if drawcoastlines:
+                    bm.drawcoastlines()
+                if departments:
+                    import json
+                    with open(config.installdir + '/data/departments.json', 'r') as dp:
+                        depts = json.load(dp)[1]
+                    for d in range(len(depts)):
+                        for part in range(len(depts[d])):
+                            dlon = depts[d][part][0]
+                            dlat = depts[d][part][1]
+                            (x, y) = bm(dlon, dlat)
+                            bm.plot(x, y, color='0.25')
+                else:
+                    if drawcountries:
+                        bm.drawcountries()
+                if drawrivers:
+                    bm.drawrivers(color='blue')
+                util.add_meridians_and_parallels_to(bm, parallels=parallels, meridians=meridians)
+                (lons, lats) = self.geometry.get_lonlat_grid(subzone=subzone)
+                x, y = bm(lons, lats)
+
+            # mask values
+            mask_outside = {'min':-config.mask_outside,
+                            'max':config.mask_outside}
+            if mask_threshold is not None:
+                mask_outside.update(mask_threshold)
+                if not self.geometry.rectangular_grid and graphicmode != 'points':
+                    epylog.warning("shift to *graphicmode*='points' for mask_threshold to be accounted for in unrectangular_grid.")
+                    graphicmode = 'points'
+            data = numpy.ma.masked_outside(self.getdata(subzone=subzone),
+                                           mask_outside['min'],
+                                           mask_outside['max'])
+
+            # handle min/max values
+            m = data.min()
+            M = data.max()
+            if minmax != None:
+                if minmax_in_title:
+                    minmax_in_title = '(min: ' + \
+                                      '{: .{precision}{type}}'.format(m, type='E', precision=3) + \
+                                      ' // max: ' + \
+                                      '{: .{precision}{type}}'.format(M, type='E', precision=3) + ')'
+                try:
+                    m = float(minmax[0])
+                except ValueError:
+                    m = data.min()
+                try:
+                    M = float(minmax[1])
+                except ValueError:
+                    M = data.max()
+            else:
+                minmax_in_title = ''
+            if abs(float(m) - float(M)) > config.epsilon:
+                levels = numpy.linspace(m, M, levelsnumber)
+                vmin = vmax = None
+                if center_cmap_on_0:
+                    vmax = max(abs(m), M)
+                    vmin = -vmax
+            else:
+                raise epygramError("cannot plot uniform field.")
+
+            # set levels
+            L = int((levelsnumber - 1) // 15) + 1
+            tick_levels = [levels[l] for l in range(len(levels) - (L / 3 + 1)) if
+                           l % L == 0] + [levels[-1]]
+            if colormap in ('radar', 'rr1h', 'rr6h', 'rr24h'):
+                (norm, levels) = util.color_scale(colormap, max_rr=M)
+                tick_levels = levels
+            else:
+                norm = None
+
+            # plot
+            if graphicmode == 'colorshades':
+                if not self.geometry.rectangular_grid:
+                    xf = numpy.ma.masked_where(data.mask, x).compressed()
+                    yf = numpy.ma.masked_where(data.mask, y).compressed()
+                    zf = data.compressed()
+                    tri = True
+                elif self.geometry.dimensions['Y'] == 1:
+                    xf = x.flatten()
+                    yf = y.flatten()
+                    zf = data.flatten()
+                    tri = True
+                else:
+                    xf = x
+                    yf = y
+                    zf = data
+                    tri = False
+                pf = bm.contourf(xf, yf, zf, levels,
+                                 cmap=colormap, vmin=vmin, vmax=vmax,
+                                 norm=norm,
+                                 tri=tri)
+                if colorbar:
+                    if academic:
+                        cb = f.colorbar(pf, ticks=tick_levels, ax=bm)
+                    else:
+                        cb = bm.colorbar(pf, location=colorbar, pad="5%",
+                                         ticks=tick_levels)
+                    if minmax_in_title != '':
+                        cb.set_label(minmax_in_title)
+            elif graphicmode == 'contourlines':
+                if not self.geometry.rectangular_grid:
+                    xf = x.compressed()
+                    yf = y.compressed()
+                    zf = data.compressed()
+                    tri = True
+                    #FIXME: problem of duplicate points with arpege grid
+                else:
+                    xf = x
+                    yf = y
+                    zf = data
+                    tri = False
+                pf = bm.contour(xf, yf, zf, levels=levels, colors=contourcolor,
+                                cmap=colormap, linewidths=contourwidth,
+                                tri=tri)
+                if contourlabel:
+                    f.axes[0].clabel(pf, colors=contourcolor, cmap=colormap,
+                                     fmt=contourlabelfmt)
+            elif graphicmode == 'points':
+                xf = x.flatten()
+                yf = y.flatten()
+                zf = numpy.ma.masked_outside(data.flatten(), m, M)
+                pf = bm.scatter(xf, yf, c=zf, s=pointsize, norm=norm,
+                                marker=pointsmarker, linewidths=0,
+                                cmap=colormap, vmin=vmin, vmax=vmax)
+                if colorbar:
+                    if academic:
+                        cb = f.colorbar(pf, ticks=tick_levels, ax=bm)
+                    else:
+                        cb = bm.colorbar(pf, location=colorbar, pad="5%",
+                                         ticks=tick_levels)
+                    if minmax_in_title != '':
+                        cb.set_label(minmax_in_title)
+
+            # set title
+            if title == None:
+                f.axes[0].set_title(str(self.fid) + "\n" + str(self.validity.get()))
+            else:
+                f.axes[0].set_title(title)
+        else:
+            # zoom: create zoom_field and plot it
+            zoom_field = self.extract_zoom(zoom)
+            # get args
+            import inspect
+            frame = inspect.currentframe()
+            args, _, _, values = inspect.getargvalues(frame)
+            kwargs = {k:values[k] for k in args if k != 'self'}
+            kwargs.pop('zoom')
+            kwargs.pop('subzone')
+            # forward plot
+            f = zoom_field.plotfield(**kwargs)
+
+        return f
+
+    def extract_zoom(self, zoom):
+        """
+        Extract an unstructured field with the gridpoints contained in *zoom*,
+        *zoom* being a dict(lonmin=, lonmax=, latmin=, latmax=).
+        """
+
+        (lons, lats) = self.geometry.get_lonlat_grid()
+        lons = lons.flatten()
+        lats = lats.flatten()
+        values = self.getdata().flatten()
+        zoomlons = footprints.FPList([])
+        zoomlats = footprints.FPList([])
+        zoomvals = []
+        for i in range(len(lons)):
+            if zoom['lonmin'] <= lons[i] <= zoom['lonmax'] and \
+               zoom['latmin'] <= lats[i] <= zoom['latmax']:
+                zoomlons.append(lons[i])
+                zoomlats.append(lats[i])
+                zoomvals.append(values[i])
+        assert len(zoomlons) > 0, "zoom not in domain."
+        zoom_geom = footprints.proxy.geometry(structure=self.geometry.structure,
+                                              name='unstructured',
+                                              grid={'longitudes':zoomlons,
+                                                    'latitudes':zoomlats},
+                                              dimensions={'X':len(zoomlons), 'Y':1},
+                                              vcoordinate=self.geometry.vcoordinate,
+                                              position_on_horizontal_grid=self.geometry.position_on_horizontal_grid,
+                                              geoid=self.geometry.geoid)
+        fid = {k:v for k, v in self.fid.items()}
+        for k, v in fid.items():
+            if isinstance(v, dict):
+                fid[k] = footprints.FPDict(v)
+        #zoom_field = self.extract_subdomain(zoom_geom)  #TODO: ? serait plus élégant mais pb d'efficacité (2x plus lent)
+        #zoom_field.fid = fid                            # car extract_subdomain fait une recherche des plus proches points
+        zoom_field = footprints.proxy.field(fid=fid,
+                                            structure=self.structure,
+                                            geometry=zoom_geom,
+                                            validity=self.validity,
+                                            spectral_geometry=None,
+                                            processtype=self.processtype)
+        zoom_field.setdata(numpy.array(zoomvals).reshape((len(zoomvals), 1)))
+
+        return zoom_field
+
+    def morph_with_points(self, points, alpha=1., morphing='nearest', **kwargs):
+        """
+        Perturb the field values with the values of a set of points.
+        
+        *points* meant to be a list/fieldset of PointField.
+        *alpha* is the blending value, ranging from 0. to 1.:
+          e.g. with 'nearest' morphing, the final value of the point is
+          alpha*point.value + (1-alpha)*original_field.value 
+        *morphing* is the way the point modify the field:
+          - 'nearest': only the nearest point is modified
+          - 'exp_decay': modifies the surrounding points with an isotrop
+            exponential decay weighting
+          - 'gaussian': modifies the surrounding points with an isotrop
+            gaussian weighting. Its standard deviation *sigma* must then
+            be passed as argument, in meters.
+        """
+
+        assert isinstance(points, list)
+        assert all([isinstance(p, PointField) for p in points])
+
+        for p in points:
+            if morphing == 'nearest':
+                lon = p.geometry.grid['longitudes'][0]
+                lat = p.geometry.grid['latitudes'][0]
+                i, j = self.geometry.ll2ij(lon, lat)
+                i = int(i)
+                j = int(j)
+                self.data[j, i] = alpha * p.data + (1. - alpha) * self.data[j, i]
+            elif morphing == 'gaussian':
+                sigma = kwargs['sigma']
+                lon = p.geometry.grid['longitudes'][0]
+                lat = p.geometry.grid['latitudes'][0]
+                zero_radius = 3.*sigma
+                selection_points_ij = self.geometry.nearest_points(lon, lat, interpolation=('custom:radius', zero_radius))
+                selection_points_ll = self.geometry.ij2ll([sp[0] for sp in selection_points_ij], [sp[1] for sp in selection_points_ij])
+                selection_points_ll = [(selection_points_ll[0][k], selection_points_ll[1][k]) for k in range(len(selection_points_ll[0]))]
+                for sp in selection_points_ll:
+                    distance = self.geometry.distance((lon, lat), sp)
+                    if distance <= zero_radius:
+                        (i, j) = selection_points_ij[selection_points_ll.index(sp)]
+                        local_alpha = alpha * numpy.exp(-distance ** 2 / (2 * sigma ** 2))
+                        self.data[j, i] = local_alpha * p.data + (1. - local_alpha) * self.data[j, i]
+            else:
+                raise NotImplementedError("not yet.")
+
+    def _check_operands(self, other):
+        """
+        Internal method to check compatibility of terms in operations on fields.
+        """
+
+        if isinstance(other, self.__class__):
+            if self.spectral != other.spectral:
+                raise epygramError("cannot operate a spectral field with a" + \
+                                   " non-spectral field.")
+            if self.geometry.rectangular_grid:
+                if self.geometry.dimensions['X'] != other.geometry.dimensions['X'] or\
+                   self.geometry.dimensions['Y'] != other.geometry.dimensions['Y']:
+                    raise epygramError("operations on fields cannot be done if" + \
+                                       " fields do not share their gridpoint" + \
+                                       " dimensions.")
+            else:
+                if self.geometry.dimensions != other.geometry.dimensions:
+                    raise epygramError("operations on fields cannot be done if" + \
+                                       " fields do not share their gridpoint" + \
+                                       " dimensions.")
+            if self.spectral_geometry != other.spectral_geometry:
+                raise epygramError("operations on fields cannot be done if" + \
+                                   " fields do not share their spectral" + \
+                                   " geometry.")
+        else:
+            super(D3Field, self)._check_operands(other)
+
+    def __add__(self, other):
+        """
+        Definition of addition, 'other' being:
+        - a scalar (integer/float)
+        - another Field of the same subclass.
+        Returns a new Field whose data is the resulting operation,
+        with 'fid' = {'op':'+'} and null validity.
+        """
+
+        newfield = self._add(other,
+                             structure=self.structure,
+                             geometry=self.geometry,
+                             spectral_geometry=self.spectral_geometry)
+        return newfield
+
+    def __mul__(self, other):
+        """
+        Definition of multiplication, 'other' being:
+        - a scalar (integer/float)
+        - another Field of the same subclass.
+        Returns a new Field whose data is the resulting operation,
+        with 'fid' = {'op':'*'} and null validity.
+        """
+
+        newfield = self._mul(other,
+                             structure=self.structure,
+                             geometry=self.geometry,
+                             spectral_geometry=self.spectral_geometry)
+        return newfield
+
+    def __sub__(self, other):
+        """
+        Definition of substraction, 'other' being:
+        - a scalar (integer/float)
+        - another Field of the same subclass.
+        Returns a new Field whose data is the resulting operation,
+        with 'fid' = {'op':'-'} and null validity.
+        """
+
+        newfield = self._sub(other,
+                             structure=self.structure,
+                             geometry=self.geometry,
+                             spectral_geometry=self.spectral_geometry)
+        return newfield
+
+    def __div__(self, other):
+        """
+        Definition of division, 'other' being:
+        - a scalar (integer/float)
+        - another Field of the same subclass.
+        Returns a new Field whose data is the resulting operation,
+        with 'fid' = {'op':'/'} and null validity.
+        """
+
+        newfield = self._div(other,
+                             structure=self.structure,
+                             geometry=self.geometry,
+                             spectral_geometry=self.spectral_geometry)
+        return newfield

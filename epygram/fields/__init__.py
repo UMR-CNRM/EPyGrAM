@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Copyright (c) Météo France (2014-)
+# This software is governed by the CeCILL-C license under French law.
+# http://www.cecill.info
+"""
+Contains all fields classes.
+"""
+
+from .PointField import PointField
+from .MiscField import MiscField
+from .D3Field import D3Field
+from .H2DField import H2DField
+from .V1DField import V1DField
+from .V2DField import V2DField
+from .H2DVectorField import H2DVectorField, make_vector_field
