@@ -631,16 +631,20 @@ class FA(FileResource):
         """
 
         fids = self.find_fields_in_resource(fieldseed + '*')
-        if fieldseed[0] == 'S':
+        if fieldseed.startswith('S'):
             Ufid = [f for f in fids if 'WIND.U.PHYS' in f]
             Vfid = [f for f in fids if 'WIND.V.PHYS' in f]
         elif fieldseed[0] in ('P', 'H', 'V'):
             Ufid = [f for f in fids if 'VENT_ZONAL' in f]
             Vfid = [f for f in fids if 'VENT_MERID' in f]
-        elif fieldseed[0:3] == 'CLS' and 'VENT' in fids[0]:
-            Ufid = [f for f in fids if 'VENT.ZONAL' in f]
-            Vfid = [f for f in fids if 'VENT.MERIDIEN' in f]
-        elif fieldseed[0:3] == 'CLS' and 'RAF' in fids[0]:
+        elif fieldseed.startswith('CLS') and 'VENT' in fids[0]:
+            if fieldseed.startswith('CLSVENTNEUTRE'):
+                Ufid = [f for f in fids if 'CLSVENTNEUTRE.U' in f]
+                Vfid = [f for f in fids if 'CLSVENTNEUTRE.V' in f]
+            else:
+                Ufid = [f for f in fids if 'VENT.ZONAL' in f]
+                Vfid = [f for f in fids if 'VENT.MERIDIEN' in f]
+        elif fieldseed.startswith('CLS') and 'RAF' in fids[0]:
             Ufid = [f for f in fids if 'CLSU' in f]
             Vfid = [f for f in fids if 'CLSV' in f]
         else:

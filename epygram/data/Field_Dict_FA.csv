@@ -189,6 +189,8 @@ name:CLSU.RAF.MOD.XFU,type:H2D,typeOfFirstFixedSurface:103,level:10,discipline:0
 name:CLSVENT.ZONAL,type:H2D,typeOfFirstFixedSurface:103,level:10,discipline:0,parameterCategory:2,parameterNumber:2
 name:CLSVENT.MERIDIEN,type:H2D,typeOfFirstFixedSurface:103,level:10,discipline:0,parameterCategory:2,parameterNumber:3
 name:CLSV.RAF.MOD.XFU,type:H2D,typeOfFirstFixedSurface:103,level:10,discipline:0,parameterCategory:2,parameterNumber:24,productDefinitionTemplateNumber:8,typeOfStatisticalProcessing:0
+name:CLSVENTNEUTRE.U,type:H2D,typeOfFirstFixedSurface:103,level:10,discipline:0,parameterCategory:2,parameterNumber:255
+name:CLSVENTNEUTRE.V,type:H2D,typeOfFirstFixedSurface:103,level:10,discipline:0,parameterCategory:2,parameterNumber:255
 
 # TOA
 name:SOMMFLU.RAY.SOLA,type:H2D,typeOfFirstFixedSurface:8,discipline:0,parameterCategory:4,parameterNumber:9,productDefinitionTemplateNumber:8,typeOfStatisticalProcessing:1
