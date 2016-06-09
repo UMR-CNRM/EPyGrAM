@@ -1129,7 +1129,6 @@ class GRIB(FileResource):
                 fidlist = [{k:f[k] for k in onlykey} for f in fidlist]
         return fidlist
 
-    @FileResource._openbeforedelayed
     def _listfields(self, additional_keys=[]):
         """Returns a list of GRIB-type fid of the fields inside the resource."""
 
@@ -1333,7 +1332,6 @@ class GRIB(FileResource):
 
         return filtered_matchingfields[0]
 
-    @FileResource._openbeforedelayed
     def readfields(self, handgrip,
                    getdata=True,
                    footprints_builder=config.use_footprints_as_builder,
@@ -1431,7 +1429,6 @@ class GRIB(FileResource):
                         other_GRIB_options=other_GRIB_options)
         m.write_to_file(self._file)
 
-    @FileResource._openbeforedelayed
     def extractprofile(self, handgrip, lon=None, lat=None,
                        geometry=None,
                        vertical_coordinate=None,
@@ -1492,7 +1489,6 @@ class GRIB(FileResource):
 
         return profile
 
-    @FileResource._openbeforedelayed
     def extractsection(self, handgrip, end1=None, end2=None,
                        geometry=None, points_number=None,
                        resolution=None, vertical_coordinate=None,
@@ -1556,7 +1552,6 @@ class GRIB(FileResource):
 
         return section
 
-    @FileResource._openbeforedelayed
     def extract_subdomain(self, handgrip, geometry, vertical_coordinate=None,
                           interpolation='linear', cheap_height=True,
                           external_distance=None, field3d=None):
@@ -1653,7 +1648,6 @@ class GRIB(FileResource):
 
         return subdomain
 
-    @FileResource._openbeforedelayed
     def what(self, out=sys.stdout,
              mode='one+list',
              sortfields=None,

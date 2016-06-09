@@ -721,17 +721,10 @@ class FA(FileResource):
         spectral? and compression. Interface to ifsaux' FANION.
         """
 
-        try:
-            (LDCOSP, KNGRIB, KNBITS, KSTRON, KPUILA) = wfa.wfanion(self._unit,
-                                                                   fieldname[0:4],
-                                                                   0,
-                                                                   fieldname[4:])[1:6]
-        except RuntimeError:
-            raise RuntimeError("error while calling FANION: " + fieldname + \
-                               " type is probably 'Misc' instead of 'H2D':" + \
-                               " please update Field_Dict_FA.csv" + \
-                               " accordingly (cf. config.py for location of" + \
-                               " field dict).")
+        (LDCOSP, KNGRIB, KNBITS, KSTRON, KPUILA) = wfa.wfanion(self._unit,
+                                                               fieldname[0:4],
+                                                               0,
+                                                               fieldname[4:])[1:6]
         encoding = {'spectral':LDCOSP, 'KNGRIB':KNGRIB, 'KNBITS':KNBITS,
                     'KSTRON':KSTRON, 'KPUILA':KPUILA}
 

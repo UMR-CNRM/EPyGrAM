@@ -49,7 +49,7 @@ def treatReturnCode(func):
         if nout == 1:
             result = (result,)
         if result[0] != 0:
-            raise RuntimeError("Error code " + str(result[0]) + " was raised.")
+            raise RuntimeError("arpifs4py: Error code " + str(result[0]) + " was raised.")
         result = result[1:]
         if len(result) == 1:
             result = result[0]
