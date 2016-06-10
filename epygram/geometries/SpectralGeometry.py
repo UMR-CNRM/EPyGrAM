@@ -52,7 +52,7 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
                                                 self.truncation['in_Y'],
                                                 config.KNUMMAXRESOL,
                                                 len(data),
-                                                False,
+                                                False,  # no computation of derivatives
                                                 spectral_coeff_order != 'model',
                                                 gpdims['X_resolution'],
                                                 gpdims['Y_resolution'],

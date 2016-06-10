@@ -1383,7 +1383,6 @@ class FA(FileResource):
                                                                   ps_transect,
                                                                   vertical_mean,
                                                                   gridposition='mass')
-                print subdomain.geometry.vcoordinate.levels
             elif subdomain.geometry.vcoordinate.typeoffirstfixedsurface == 119 and \
                  vertical_coordinate in (102, 103):
                 subdomain.geometry.vcoordinate = hybridP2altitude(subdomain.geometry.vcoordinate,

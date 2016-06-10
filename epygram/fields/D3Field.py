@@ -569,9 +569,8 @@ class D3CommonField(Field):
     def quadmean(self, subzone=None):
         """Returns the quadratic mean of data."""
         data = self.getdata(subzone=subzone)
-        return numpy.sqrt((numpy.ma.masked_outside(data,
-                                                   - config.mask_outside,
-                                                   config.mask_outside) ** 2).mean())
+        return numpy.sqrt(numpy.ma.masked_greater(data**2,
+                                                  config.mask_outside**2).mean())
 
     def nonzero(self, subzone=None):
         """
