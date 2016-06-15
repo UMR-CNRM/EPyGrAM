@@ -466,9 +466,10 @@ class FA(FileResource):
                                " with this openmode ('r','a').")
             # open, getting logical unit
             try:
-                self._unit = wfa.wfaitou(self.container.abspath,
-                                         'OLD',
-                                         self.headername)
+                with util.stderr_redirected():
+                    self._unit = wfa.wfaitou(self.container.abspath,
+                                             'OLD',
+                                             self.headername)
             except RuntimeError as e:
                 raise IOError(e)
             self.isopen = True

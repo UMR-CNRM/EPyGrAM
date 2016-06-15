@@ -58,7 +58,10 @@ class MultiValiditiesResource(Resource):
         """Closes all resources."""
 
         for r in self.resources:
-            if r.isopen: r.close()
+            try:
+                r.close()
+            except Exception:
+                pass
 
     def find_fields_in_resource(self, *args, **kwargs):
         """Call to find_fields_in_resource"""

@@ -7,11 +7,13 @@
 Some useful utilities... 
 """
 
+import os
 import math
 import copy
 import numpy
 import sys
 import datetime
+from contextlib import contextmanager
 
 from footprints import FootprintBase
 
@@ -791,3 +793,60 @@ def color_scale(cmap, max_rr=None):
     norm = colors.BoundaryNorm(boundaries=bounds, ncolors=len(bounds) - 1)
 
     return (norm, bounds)
+
+@contextmanager
+def stdout_redirected(to=os.devnull):
+    '''
+    import os
+
+    with stdout_redirected(to=filename):
+        print("from Python")
+        os.system("echo non-Python applications are also supported")
+    '''
+    #http://stackoverflow.com/questions/5081657/how-do-i-prevent-a-c-shared-library-to-print-on-stdout-in-python
+    fd = sys.stdout.fileno()
+
+    ##### assert that Python and C stdio write using the same file descriptor
+    ####assert libc.fileno(ctypes.c_void_p.in_dll(libc, "stdout")) == fd == 1
+
+    def _redirect_stdout(to):
+        sys.stdout.close() # + implicit flush()
+        os.dup2(to.fileno(), fd) # fd writes to 'to' file
+        sys.stdout = os.fdopen(fd, 'w') # Python writes to fd
+
+    with os.fdopen(os.dup(fd), 'w') as old_stdout:
+        with open(to, 'w') as file:
+            _redirect_stdout(to=file)
+        try:
+            yield # allow code to be run with the redirected stdout
+        finally:
+            _redirect_stdout(to=old_stdout) # restore stdout.
+                                            # buffering and flags such as
+                                            # CLOEXEC may be different
+
+@contextmanager
+def stderr_redirected(to=os.devnull):
+    '''
+    import os
+
+    with stderr_redirected(to=filename):
+        print("from Python")
+        os.system("echo non-Python applications are also supported")
+    '''
+    #Based on stdout_redirected
+    fd = sys.stderr.fileno()
+
+    def _redirect_stderr(to):
+        sys.stderr.close() # + implicit flush()
+        os.dup2(to.fileno(), fd) # fd writes to 'to' file
+        sys.stderr = os.fdopen(fd, 'w') # Python writes to fd
+
+    with os.fdopen(os.dup(fd), 'w') as old_stderr:
+        with open(to, 'w') as file:
+            _redirect_stderr(to=file)
+        try:
+            yield # allow code to be run with the redirected stderr
+        finally:
+            _redirect_stderr(to=old_stderr) # restore stderr.
+                                            # buffering and flags such as
+                                            # CLOEXEC may be different

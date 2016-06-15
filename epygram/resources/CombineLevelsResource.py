@@ -36,7 +36,7 @@ class CombineLevelsResource(Resource):
         super(Resource, self).__init__(*args, **kwargs)
 
         if self.resource.openmode != self.openmode:
-            raise epygramError("All low level resources must be opened using the same mode as this high-level resource.")
+            raise epygramError("The low level resource must be opened using the same mode as this high-level resource.")
 
         self.format = "CombineLevels"
 
@@ -47,8 +47,10 @@ class CombineLevelsResource(Resource):
 
     def close(self):
         """Closes the low level resource."""
-
-        if self.resource.isopen: self.resource.close()
+        try:
+            self.resource.close()
+        except Exception:
+            pass
 
     def find_fields_in_resource(self, seed=None, generic=False):
         """
@@ -265,22 +267,22 @@ class CombineLevelsResource(Resource):
                     if cst_time:
                         levels = levels[0]
                     if cst_horizontal:  #implies cst_time, so levels does not have time dimension
-                        levels = [levels[k].flatten()[0] for k in range(levels.shape[1])]
+                        levels = [levels[k].flatten()[0] for k in range(levels.shape[0])]
                     kwargs_vccord['levels'] = levels
                     kwargs_geom['vcoordinate'] = fpx.geometry(**kwargs_vccord)
-                    kwargs_geom['structure'] = {'H2D':'3D', 'point':'V1D', 'H1D':'V2D'}[kwargs_geom['structure']]
+                    kwargs_geom['structure'] = {'H2D':'3D', 'point':'V1D', 'H1D':'V2D', 'V1D':'V1D', 'V2D':'V2D'}[kwargs_geom['structure']]
                     kwargs_field['geometry'] = fpx.geometry(**kwargs_geom)
                     kwargs_field['structure'] = kwargs_geom['structure']
                     kwargs_field['spectral_geometry'] = None
                     new_field = fpx.field(**kwargs_field)
-                    new_field.setdata(data if len(fields[0].validity) > 1 else data[0])
+                    new_field.setdata(new_field.geometry.reshape_data(data, len(fields[0].validity)))
                     new_field.fid[self.format] = fid
                     fieldset.append(new_field)
         return fieldset
 
     def writefield(self, *args, **kwargs):
         """Write fields."""
-        raise NotImplementedError("writefield is not impelemented")
+        raise NotImplementedError("writefield is not implemented")
         #To implement writefield we need to check that each validity is affected to only one resource
 
     def extractprofile(self, *args, **kwargs):
