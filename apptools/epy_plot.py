@@ -189,14 +189,8 @@ def main(filename,
             if not output:
                 plt.show()
         else:
-            (Ufid, Vfid) = resource.split_UV(fieldseed)
-            assert len(Ufid) < 2 and len(Vfid) < 2, \
-                   ' '.join(["computewind: too many fields matching",
-                             str(fieldseed), " found in resource."])
-            assert len(Ufid) != 0 and len(Vfid) != 0, \
-                   "unable to find requested Wind in resource."
-            Ufid = Ufid[0]
-            Vfid = Vfid[0]
+            assert len(fieldseed) == 2
+            (Ufid, Vfid) = fieldseed
             U = resource.readfield(Ufid)
             field = U
             if not field.geometry.grid.has_key('LAMzone'):
@@ -391,9 +385,9 @@ if __name__ == '__main__':
                                      epilog='End of help for: %(prog)s (EPyGrAM v' + epygram.__version__ + ')')
 
     add_arg_to_parser(parser, files_management['principal_file'])
-    flds = parser.add_mutually_exclusive_group(required=True)
-    add_arg_to_parser(flds, fields_management['field'])
-    add_arg_to_parser(flds, fields_management['windfield'])
+    add_arg_to_parser(parser, fields_management['field'])
+    add_arg_to_parser(parser, fields_management['windfieldU'])
+    add_arg_to_parser(parser, fields_management['windfieldV'])
     diffmodes = parser.add_mutually_exclusive_group()
     add_arg_to_parser(diffmodes, files_management['file_to_refer_in_diff'])
     add_arg_to_parser(diffmodes, files_management['file_to_refer_in_diffonly'])
@@ -443,7 +437,7 @@ if __name__ == '__main__':
         epylog.setLevel('INFO')
 
     # 2.1 options
-    if args.Drefname != None:
+    if args.Drefname is not None:
         refname = args.Drefname
         diffonly = True
     else:
@@ -458,22 +452,22 @@ if __name__ == '__main__':
         minmax = args.minmax.split(',')
     else:
         minmax = None
-    if args.diffminmax != None:
+    if args.diffminmax is not None:
         diffminmax = args.diffminmax.split(',')
     else:
         diffminmax = None
-    if args.zoom != None:
+    if args.zoom is not None:
         zoom = epygram.util.parse_str2dict(args.zoom, float)
     else:
         zoom = None
-    if args.operation != None:
+    if args.operation is not None:
         _operation = args.operation.split(',')
         operation = {'operation':_operation.pop(0).strip()}
         if len(_operation) > 0:
             operation['operand'] = float(_operation.pop(0).strip())
     else:
         operation = None
-    if args.diffoperation != None:
+    if args.diffoperation is not None:
         _diffoperation = args.diffoperation.split(',')
         diffoperation = {'operation':_diffoperation.pop(0).strip()}
         if len(_diffoperation) > 0:
@@ -488,7 +482,7 @@ if __name__ == '__main__':
             composition.update(epygram.util.parse_str2dict(_composition.pop(0).strip()))
     else:
         composition = None
-    if args.projection != None and 'nsper' in args.projection:
+    if args.projection is not None and 'nsper' in args.projection:
         specificproj = ('nsper', {})
         for item in args.projection.split(',')[1:]:
             k, v = item.replace('=', ':').split(':')
@@ -514,13 +508,17 @@ if __name__ == '__main__':
 
     # 2.2 field to be processed
     computewind = False
-    if args.field != None:
+    if args.field is not None:
         fieldseed = args.field
-    elif args.computewind != None:
-        fieldseed = args.computewind
+    elif args.Ucomponentofwind is not None or args.Vcomponentofwind is not None:
+        fieldseed = (args.Ucomponentofwind, args.Vcomponentofwind)
+        if None in fieldseed:
+            raise epygramError("wind mode: both U & V components of wind must be supplied")
         computewind = True
         if diffmode:
-            raise NotImplementedError("diffmode (-d/D) AND computewind (-w) options together.")
+            raise NotImplementedError("diffmode (-d/D) AND wind mode (--wU/wV) options together.")
+    else:
+        raise epygramError("Need to specify a field (-f) or two wind fields (--wU/--wV).")
 
     ### 3. Main
     ###########

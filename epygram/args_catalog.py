@@ -125,6 +125,20 @@ fields_management = {
                    'parameterCategory:2,parameterNumber:2+3,level:850'.\
                    Not implemented in difference mode.",
              default=None)],
+    'windfieldU':[
+        '--wU', '--Ucomponentofwind',
+        dict(help="to process wind as a vector. U component of wind.\
+                   (same syntax as -f).\
+                   Not implemented in difference mode.",
+             dest="Ucomponentofwind",
+             default=None)],
+    'windfieldV':[
+        '--wV', '--Vcomponentofwind',
+        dict(help="to process wind as a vector. V component of wind.\
+                   (same syntax as -f).\
+                   Not implemented in difference mode.",
+             dest="Vcomponentofwind",
+             default=None)],
     'FA_field':[
         '-f', '-F', '--field',
         dict(help="name of the field to be processed.\

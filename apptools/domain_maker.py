@@ -540,7 +540,9 @@ def build_lonlat_field(ll_boundaries, fid={'lon/lat':'template'}):
 def main(mode,
          no_display=False,
          maximize_CI_in_E=False,
-         gisquality='i'):
+         gisquality='i',
+         bluemarble=0.0,
+         background=True):
     """
     Args:
         mode: 'center_dims' to build domain given its center and dimensions;
@@ -549,6 +551,9 @@ def main(mode,
         maximize_CI_in_E: boolean deciding to force the E-zone to be at its
                           minimum.
         gisquality: quality of coastlines and countries boundaries.
+        bluemarble: if >0., displays NASA's "blue marble" as background with
+        given transparency.
+        background: if True, set a background color to continents and oceans.
     """
 
     print "################"
@@ -590,7 +595,8 @@ def main(mode,
                                           meridians=None,
                                           parallels=None,
                                           gisquality=gisquality,
-                                          bluemarble=args.bluemarble)
+                                          bluemarble=bluemarble,
+                                          background=background)
                 plot_lonlat_included = raw_input("Plot a lon/lat domain over model domain ? [n]: ")
                 if plot_lonlat_included in ('y', 'Y', 'yes'):
                     plot_lonlat_included = True
@@ -649,7 +655,8 @@ def main(mode,
                                           minmax=[-1.0, 3.0],
                                           colorbar=False,
                                           gisquality=gisquality,
-                                          bluemarble=args.bluemarble)
+                                          bluemarble=bluemarble,
+                                          background=background)
                 lldomain = build_lonlat_field(defaults, fid={'lon/lat':'included'})
                 lldomain.plotfield(existingfigure=fig,
                                    existingbasemap=bm,
@@ -780,6 +787,7 @@ if __name__ == '__main__':
     add_arg_to_parser(parser, runtime_options['verbose'])
     add_arg_to_parser(parser, graphical_options['gis_quality'])
     add_arg_to_parser(parser, graphical_options['bluemarble'], default=1.0)
+    add_arg_to_parser(parser, graphical_options['background'])
 
     args = parser.parse_args()
 
@@ -795,7 +803,9 @@ if __name__ == '__main__':
     main(args.mode,
          no_display=args.no_display,
          maximize_CI_in_E=args.maximize_CI_in_E,
-         gisquality=args.gisquality)
+         gisquality=args.gisquality,
+         bluemarble=args.bluemarble,
+         background=args.background)
 
 ###########
 ### END ###

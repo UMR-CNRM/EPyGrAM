@@ -57,8 +57,8 @@ class VGeometry(RecursiveObject, FootprintBase):
             position_on_grid=dict(
                 optional=True,
                 info="Position of points w/r to the vertical grid.",
-                values=set(['mass', 'flux']),
-                default='mass')
+                values=set(['mass', 'flux', '__unknown__']),
+                default='__unknown__')
         )
     )
 

@@ -398,7 +398,7 @@ class D3CommonField(Field):
             raise NotImplementedError("type of first surface level: " + str(self.geometry.vcoordinate.typeoffirstfixedsurface))
         if geometry.vcoordinate.typeoffirstfixedsurface not in [255, kwargs_vcoord['typeoffirstfixedsurface']]:
             raise epygramError("extract_subdomain cannot change vertical coordinate.")
-        if geometry.vcoordinate.position_on_grid not in ['__unknown__', kwargs_vcoord['position_on_grid']]:
+        if geometry.vcoordinate.position_on_grid not in [None, '__unknown__', kwargs_vcoord['position_on_grid']]:
             raise epygramError("extract_subdomain cannot change position on vertical grid.")
         if geometry.vcoordinate.grid != {} and geometry.vcoordinate.grid != kwargs_vcoord['grid']:
             #One could check if requested grid is a subsample of field grid

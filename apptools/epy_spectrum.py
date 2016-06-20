@@ -11,7 +11,7 @@ import copy
 from footprints import FPDict
 
 import epygram
-from epygram import epylog
+from epygram import epylog, epygramError
 import epygram.spectra as esp
 from epygram.args_catalog import add_arg_to_parser, \
                                  files_management, fields_management, \
@@ -46,7 +46,7 @@ def main(filename,
         refname: name of the reference file to be compared to.
         diffonly: if True, only plots the difference field.
         computewind: from fieldseed, gets U and V components of wind, and
-                     computes the module; plots barbs and module together.
+                     computes the module and the module's spectrum.
         verbose: if True, verbose mode on.
         noplot: if True, disable the plot of profiles.
         legend: legend of plot.
@@ -70,7 +70,7 @@ def main(filename,
     """
 
     resource = epygram.formats.resource(filename, openmode='r')
-    diffmode = refname != None
+    diffmode = refname is not None
     if diffmode:
         reference = epygram.formats.resource(refname, openmode='r')
 
@@ -122,7 +122,8 @@ def main(filename,
     elif not diffmode and computewind:
         spectra = []
         spectraplots = {}
-        (Ufid, Vfid) = resource.split_UV(fieldseed)
+        (Ufid, Vfid) = (sorted(resource.find_fields_in_resource(seed=fieldseed[0], fieldtype='H2D')),
+                        sorted(resource.find_fields_in_resource(seed=fieldseed[1], fieldtype='H2D')))
         if resource.format == 'GRIB':
             Ufid = [FPDict(f) for f in Ufid]
             Vfid = [FPDict(f) for f in Vfid]
@@ -150,12 +151,14 @@ def main(filename,
                              if Ufid[l][k] != Vfid[l][k]})
                 name = str(name)
             else:
-                name = [c for c in Ufid[l]]
                 _u = [c for c in Ufid[l]]
                 _v = [c for c in Vfid[l]]
-                for i in range(len(name)):
-                    if _u[i] != _v[i]:
-                        name[i] = '*'
+                name = ''
+                for i in range(len(_u)):
+                    if _u[i] == _v[i]:
+                        name += _u[i]
+                    else:
+                        name += '*'
             spectra.append(esp.Spectrum(variances[1:],
                                         name=name,
                                         resolution=field.geometry.grid['X_resolution'] / 1000.,
@@ -313,8 +316,9 @@ if __name__ == '__main__':
     add_arg_to_parser(parser, files_management['principal_file'])
     flds = parser.add_mutually_exclusive_group()
     add_arg_to_parser(flds, fields_management['field'])
-    add_arg_to_parser(flds, fields_management['FA_windfield'])
     add_arg_to_parser(flds, fields_management['list_of_fields'])
+    add_arg_to_parser(parser, fields_management['windfieldU'])
+    add_arg_to_parser(parser, fields_management['windfieldV'])
     multi = parser.add_mutually_exclusive_group()
     add_arg_to_parser(multi, files_management['file_to_refer_in_diff'])
     add_arg_to_parser(multi, files_management['file_to_refer_in_diffonly'])
@@ -341,7 +345,7 @@ if __name__ == '__main__':
         epylog.setLevel('INFO')
 
     # 2.1 options
-    if args.Drefname != None:
+    if args.Drefname is not None:
         refname = args.Drefname
         diffonly = True
     else:
@@ -391,12 +395,14 @@ if __name__ == '__main__':
 
     # 2.2 list of fields to be processed
     computewind = False
-    if args.field != None:
+    if args.field is not None:
         fieldseed = args.field
-    elif args.computewind != None:
-        fieldseed = args.computewind + '*'
+    elif args.Ucomponentofwind is not None or args.Vcomponentofwind is not None:
+        fieldseed = (args.Ucomponentofwind, args.Vcomponentofwind)
+        if None in fieldseed:
+            raise epygramError("wind mode: both U & V components of wind must be supplied")
         computewind = True
-    elif args.listoffields != None:
+    elif args.listoffields is not None:
         listfile = epygram.containers.File(filename=args.listoffields)
         with open(listfile.abspath, 'r') as l:
             fieldseed = l.readlines()

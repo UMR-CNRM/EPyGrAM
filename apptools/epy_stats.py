@@ -6,6 +6,7 @@
 
 import argparse
 import sys
+
 from footprints import FPDict
 
 import epygram
