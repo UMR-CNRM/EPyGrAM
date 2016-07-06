@@ -10,6 +10,10 @@ Of course, this module need to have a proper Vortex installation !
 """
 
 import uuid
+import tempfile
+import ftplib
+import netrc
+import os
 
 from vortex import toolbox
 import common
@@ -110,10 +114,16 @@ def get_resources(getmode='epygram', **description):
                 check_desc[k] = description[k][0]
             else:
                 check_desc[k] = description[k]
-            resolved = toolbox.rload(**check_desc)
+            resolved = toolbox.rload(**check_desc)  
     else:
+        if getmode == 'prestaging':
+            # force namespace archive for prestaging
+            description['namespace'] = '.'.join([description['namespace'].split('.')[0],
+                                                 'archive',
+                                                 'fr'])
         resolved = toolbox.rload(**description)
-    # and fetch
+        
+    # and complete reaching resource according to getmode
     if getmode == 'locate':
         resources = [r.locate() for r in resolved]
     elif getmode == 'exist':
@@ -136,6 +146,38 @@ def get_resources(getmode='epygram', **description):
         resources = resolved
     elif getmode == 'check':
         resources = resolved[0].complete
+    elif getmode == 'prestaging':
+        # connect to archive
+        archive_name = 'hendrix'
+        try:
+            (_login, _, _passwd) = netrc.netrc().authenticators(archive_name)
+        except TypeError:
+            if netrc.netrc().authenticators(archive_name) is None:
+                raise IOError("host "+archive_name+" is unknown in .netrc")
+        ftp = ftplib.FTP(archive_name)
+        ftp.login(_login, _passwd)
+        # build request
+        tmpdir = '/dev/shm'
+        stagedir = '/DemandeMig/ChargeEnEspaceRapide'
+        if 'mail' in description.keys():
+            request = ["#MAIL="+description['mail']+'\n',]
+        else:
+            request = []
+        request += [r.locate().split('hendrix.meteo.fr:')[1]+'\n' for r in resolved]
+        with open(tempfile.mkstemp(prefix='.'.join([_login, 'staging_request', '']),
+                                   dir=tmpdir,
+                                   suffix='.MIG')[1], 'w') as f:
+            f.writelines(request)
+            staging_request = os.path.basename(f.name)
+            staging_request_fullname = f.name
+        # transfer request to archive
+        with open(staging_request_fullname, 'rb') as f:
+            ftp.cwd(stagedir)
+            ftp.storbinary('STOR ' + staging_request, f)
+        os.remove(staging_request_fullname)
+        ftp.quit()
+        # send back request identifier
+        resources = ['/'.join([stagedir, staging_request])]
     else:
         raise ValueError('*getmode* unknown: ' + getmode)
 

@@ -38,7 +38,7 @@ class D3CommonField(Field):
     @property
     def spectral(self):
         """Returns True if the field is spectral."""
-        return self.spectral_geometry is not None
+        return self.spectral_geometry is not None and self.spectral_geometry != '__unknown__'
 
 
 ##############

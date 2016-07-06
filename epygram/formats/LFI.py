@@ -763,9 +763,13 @@ class LFI(FileResource):
                             f.setdata(value)
                             f.geometry = geometry
                             myFieldset.append(f)
-                if record in ['LAT0', 'LON0', 'LATOR', 'LATORI', 'LONOR', 'LONORI', 'RPK', 'BETA', 'XHAT', 'YHAT', 'ZHAT']:
+                if record in ['LAT0', 'LON0', 'LATOR', 'LATORI', 'LONOR', 'LONORI', 'RPK', 'BETA', 'ZHAT']:
                     #Float comparisons
                     check = numpy.all(util.nearlyEqualArray(value, specialValues[record]))
+                elif record in ['XHAT', 'YHAT']:
+                    #We check deltaX and deltaY because XHAT and YHAT can be computed in two different ways (prep_ideal or prep_pgd)
+                    check = util.nearlyEqualArray(value[1] - value[0],
+                                                  specialValues[record][1] - specialValues[record][0])
                 else:
                     check = numpy.all(value == specialValues[record])
                 if not check:
