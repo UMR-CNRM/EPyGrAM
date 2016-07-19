@@ -36,13 +36,13 @@ Other dependencies:
 - :mod:`mpl_toolkits.basemap`
 - :mod:`pyproj`
 - :mod:`scipy`
-- :mod:`PIL`
 
 and (if according formats are activated):
 
 - :mod:`dateutil` (only for :class:`epygram.formats.netCDF`)
 - :mod:`gribapi` (only for :mod:`epygram.formats.GRIB`)
 - :mod:`netCDF4` (only for :class:`epygram.formats.netCDF`)
+- :mod:`PIL` (only for :class:`epygram.formats.TIFFMF`)
 
 
 
