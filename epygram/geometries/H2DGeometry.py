@@ -136,6 +136,6 @@ class H2DGaussGeometry(H2DGeometry, D3GaussGeometry):
             structure=dict(
                 values=set(['H2D'])),  #inheritance priority problem
             name=dict(
-                values=set(['rotated_reduced_gauss', 'reduced_gauss'])),
+                values=set(['rotated_reduced_gauss', 'reduced_gauss', 'regular_gauss'])),
         )
     )

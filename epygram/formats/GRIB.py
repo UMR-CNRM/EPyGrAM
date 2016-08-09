@@ -825,12 +825,16 @@ class GRIBmessage(RecursiveObject, dict):
                     }
         elif 'gg' in self['gridType']:
             projection = None
+            #NOTE: this is a (good) approximation actually, the true latitudes are the roots of Legendre polynoms
             latitudes = numpy.linspace(self['latitudeOfFirstGridPointInDegrees'],
                                        self['latitudeOfLastGridPointInDegrees'],
                                        self['Nj'])
             grid = {'latitudes':FPList([Angle(l, 'degrees') for l in latitudes])}
             if self['gridType'] == 'reduced_gg':
                 geometryname = 'reduced_gauss'
+                grid['dilatation_coef'] = 1.
+            elif self['gridType'] == 'regular_gg':
+                geometryname = 'regular_gauss'
                 grid['dilatation_coef'] = 1.
             else:
                 if 'stretched' in self['gridType']:
@@ -842,8 +846,13 @@ class GRIBmessage(RecursiveObject, dict):
                     grid['pole_lat'] = Angle(self['latitudeOfStretchingPoleInDegrees'], 'degrees')
                     geometryname = 'rotated_reduced_gauss'
 
-            self._readattribute('pl', array=True)  # pre-load with array=True to bypass gribapi error
-            lon_number_by_lat = self['pl']
+            if 'reduced' in self['gridType']:
+                self._readattribute('pl', array=True)  # pre-load with array=True to bypass gribapi error
+                lon_number_by_lat = self['pl']
+            elif 'regular' in self['gridType']:
+                lon_number_by_lat = [self['Ni'] for _ in range(self['Nj'])]
+            else:
+                raise NotImplementedError('gauss grid of that type'+self['gridType'])
             dimensions = {'max_lon_number':int(max(lon_number_by_lat)),
                           'lat_number':len(latitudes),
                           'lon_number_by_lat':FPList([int(n) for n in

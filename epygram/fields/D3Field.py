@@ -1054,7 +1054,7 @@ class D3Field(D3CommonField):
         dimensions = 0
         if len(self.validity) > 1:
             dimensions += 1
-        if self.geometry.datashape['k'] or len(self.validity) > 1:
+        if self.geometry.datashape['k']:#FIXME: to remove: or len(self.validity) > 1:
             dimensions += 1
         if self.spectral:
             dimensions += 1

@@ -9,25 +9,33 @@ Contains classes for netCDF4 resource.
 
 __all__ = ['netCDF']
 
-import datetime
-from dateutil import parser as dtparser
 import copy
 import json
 import sys
+import numpy
+from collections import OrderedDict
 
 import footprints
 from footprints import proxy as fpx, FPDict
 
 from epygram import config, epygramError, util
-from epygram.base import FieldValidity
+from epygram.base import FieldValidity, FieldValidityList
 from epygram.resources import FileResource
 from epygram.fields import H2DField
-from epygram.util import stretch_array
+from epygram.util import stretch_array, Angle, nearlyEqual
+from epygram.geometries.V2DGeometry import V2DUnstructuredGeometry
 
 import netCDF4
 
 epylog = footprints.loggers.getLogger(__name__)
 
+
+_typeoffirstfixedsurface_dict = {'altitude':102,
+                                 'height':103,
+                                 'hybrid-pressure':119,
+                                 'hybrid-height':118,
+                                 'pressure':100}
+_typeoffirstfixedsurface_dict_inv = {v:k for k,v in _typeoffirstfixedsurface_dict.items()}
 
 
 class netCDF(FileResource):
@@ -45,7 +53,7 @@ class netCDF(FileResource):
                 default=config.netCDF_default_behaviour)
         )
     )
-
+    
     def __init__(self, *args, **kwargs):
         """Constructor. See its footprint for arguments."""
 
@@ -126,10 +134,31 @@ class netCDF(FileResource):
     def _listfields(self):
         """Returns the fid list of the fields inside the resource."""
         return self._variables.keys()
-
+    
+    @FileResource._openbeforedelayed
+    def ncinfo_field(self, fid):
+        """
+        Get info about the field (dimensions and meta-data of the netCDF variable).
+        
+        Args: \n
+        - *fid*: netCDF field identifier
+        """
+        
+        assert fid in self.listfields(), 'field: '+fid+' not in resource.'
+        dimensions = OrderedDict()
+        for d in self._variables[fid].dimensions:
+            dimensions[d] = len(self._dimensions[d])
+        metadata = {a:getattr(self._variables[fid], a) for a in self._variables[fid].ncattrs()}
+        
+        return {'dimensions':dimensions,
+                'metadata':metadata}
+        
+    
     @FileResource._openbeforedelayed
     def readfield(self, fid,
-                  getdata=True):
+                  getdata=True,
+                  only={},
+                  adhoc_behaviour={}):
         """
         Reads one field, given its netCDF name, and returns a Field instance.
         
@@ -137,81 +166,305 @@ class netCDF(FileResource):
         - *fid*: netCDF field identifier
         - *getdata*: if *False*, only metadata are read, the field do not
           contain data.
+        - *only*: to specify indexes [0 ... n-1] of specific dimensions,
+          e.g. {'time':5,} to select only the 6th term of time dimension.
         """
-
-        if self.openmode == 'w':
-            raise epygramError("cannot read fields in resource if with" + \
-                               " openmode == 'w'.")
-        assert fid in self.listfields(), ' '.join(["field",
-                                                   fid,
-                                                   "not found in resource."])
+        
+        # 0. initialization
+        assert self.openmode != 'w', \
+               "cannot read fields in resource if with openmode == 'w'."
+        assert fid in self.listfields(), \
+               ' '.join(["field", fid, "not found in resource."])
         field_kwargs = {'fid':{'netCDF':fid}}
+        variable = self._variables[fid]
+        behaviour = self.behaviour.copy()
+        behaviour.update(adhoc_behaviour)
+        return_Yaxis = False
 
-        # geometry
-        dimensions = {d:len(self._dimensions[d]) for d in self._variables[fid].dimensions}
-        geometryname = 'unstructured'
-        if set(self._variables[fid].dimensions) == set(self.behaviour['H2D_dimensions_names']):
-            read_as_miscfield = False
-            # this is a H2D field
-            structure = 'H2D'
-            lons = self._variables[self.behaviour['variable_name_for_longitudes']][:, :]
-            lats = self._variables[self.behaviour['variable_name_for_latitudes']][:, :]
-            lons_dim = self._variables[self.behaviour['variable_name_for_longitudes']].dimensions[:]
-            var_dim = [self._variables[fid].dimensions[i:i + len(lons_dim)]
-                       for i in range(0, len(self._variables[fid].dimensions) - len(lons_dim) + 1)]
-            assert lons_dim in var_dim, \
-                   "lons/lats and variable " + fid + " dimensions mismatch"
-            grid = {'longitudes':lons,
-                    'latitudes':lats}
-        else:
-            epylog.warning("unable to assume geometry of field. Read as MiscField.")
-            read_as_miscfield = True
+        # 1.1 identify usual dimensions
+        variable_dimensions = {d:len(self._dimensions[d]) for d in variable.dimensions}
+        for d in variable_dimensions.keys():
+            for sd in config.netCDF_standard_dimensions:
+                # if behaviour is not explicitly given,
+                # try to find out who is "d" among the standard dimensions
+                if not sd in behaviour.keys() and d in config.netCDF_usualnames_for_standard_dimensions[sd]:
+                    behaviour[sd] = d
+        dims_dict_n2e = {}
+        for d in variable_dimensions.keys():
+            for k in config.netCDF_standard_dimensions:
+                if d == behaviour.get(k):
+                    dims_dict_n2e[d] = k
+        dims_dict_e2n = {v:k for k,v in dims_dict_n2e.items()}
 
-        # validity
-        if self.behaviour.get('variable_name_for_validity') in self._variables[fid].dimensions:
-            # temporal dimension
-            _validity = self._variables[self.behaviour['variable_name_for_validity']]
-            raise NotImplementedError('temporal dimension of field: not yet !')
-        elif 'validity' in self._variables[fid].ncattrs():
-            # validity stored as an attribute of variable (as in writefield !)
-            try:
-                _validity = json.loads(self._variables[fid].validity)
-                _validity['basis'] = dtparser.parse(_validity['basis'])
-                _validity['date_time'] = dtparser.parse(_validity['date_time'])
-                if _validity.get('cumulativeduration') is not None:
-                    _validity['cumulativeduration'] = datetime.timedelta(seconds=float(_validity['cumulativeduration']))
-            except (KeyError, ValueError):
-                epylog.warning("unable to decode validity attribute.")
-                validity = FieldValidity()
-            else:
-                validity = FieldValidity(**_validity)
+        # 1.2 try to identify grids
+        for f in self.listfields():
+            for sd in config.netCDF_standard_dimensions:
+                sg = sd.replace('dimension', 'grid')
+                # if behaviour is not explicitly given,
+                # try to find out who is "f" among the standard grids
+                if not sg in behaviour.keys() and f in config.netCDF_usualnames_for_standard_dimensions[sd]:
+                    behaviour[sg] = f
+
+        # 2. time
+        def get_validity(T_varname):
+            if not T_varname in self._variables.keys():
+                raise epygramError('unable to find T_grid in variables.')
+            T = self._variables[T_varname][:]
+            time_unit = self._variables[T_varname].units
+            T = netCDF4.num2date(T, time_unit)
+            validity = FieldValidityList()
+            validity.pop()
+            basis = netCDF4.num2date(0, time_unit)
+            for v in T:
+                validity.append(FieldValidity(date_time=v, basis=basis))
+            return validity
+        if 'T_dimension' in dims_dict_e2n.keys():
+            # field has a time dimension
+            var_corresponding_to_T_grid = behaviour.get('T_grid', False)
+            validity = get_validity(var_corresponding_to_T_grid)
+            if dims_dict_e2n['T_dimension'] in only.keys():
+                validity = validity[only[dims_dict_e2n['T_dimension']]]
+        elif any([t in self._variables.keys() for t in config.netCDF_usualnames_for_standard_dimensions['T_dimension']]):
+            # look for a time variable
+            T_varname = [t for t in config.netCDF_usualnames_for_standard_dimensions['T_dimension'] if t in self._variables.keys()][0]
+            validity = get_validity(T_varname)
         else:
             validity = FieldValidity()
+        field_kwargs['validity'] = validity
+        
+        # 3. GEOMETRY
+        # ===========
+        kwargs_geom = {}
+        # 3.1 identify the structure
+        keys = copy.copy(variable_dimensions.keys())
+        for k in only.keys():
+            if k in keys:
+                keys.remove(k)
+            else:
+                raise ValueError("dimension: "+k+" from 'only' not in field variable.")
+        if 'T_dimension' in dims_dict_e2n.keys() and dims_dict_e2n['T_dimension'] not in only.keys():
+            keys.remove(dims_dict_e2n['T_dimension'])
+        squeezed_variables = [dims_dict_n2e.get(k)
+                              for k in keys
+                              if variable_dimensions[k] != 1]
+        H2D = set(squeezed_variables) == set(['X_dimension',
+                                              'Y_dimension'])
+        D3 = set(squeezed_variables) == set(['X_dimension',
+                                             'Y_dimension',
+                                             'Z_dimension'])
+        V2D = set(squeezed_variables) == set(['N_dimension',
+                                              'Z_dimension'])
+        V1D = set(squeezed_variables) == set(['Z_dimension'])
+        points = set(squeezed_variables) == set([])
+        if not any([H2D, D3, V1D, V2D, points]):
+            raise epygramError("unable to guess structure of the field: " \
+                               + str(variable_dimensions.keys())\
+                               + "refine behaviour dimensions or filter dimensions with 'only'.")
+        else:
+            if D3:
+                structure = 'D3'
+            elif H2D:
+                structure = 'H2D'
+            elif V2D:
+                structure = 'V2D'
+            elif V1D:
+                structure = 'V1D'
+            elif points:
+                structure = 'Point'
+            kwargs_geom['structure'] = structure
+            
+        # 3.2 vertical geometry (default)
+        default_kwargs_vcoord = {'structure':'V',
+                                 'typeoffirstfixedsurface':255,
+                                 'position_on_grid':'mass',
+                                 'grid':{'gridlevels': []},
+                                 'levels':[0]}
+        #TODO: complete with field dict when we have one
+        # + fid generic ?
+        kwargs_vcoord = default_kwargs_vcoord
+        
+        # 3.3 Specific parts
+        # 3.3.1 dimensions
+        dimensions = {}
+        kwargs_geom['name'] = 'unstructured'
+        if D3:
+            dimensions['X'] = variable_dimensions[dims_dict_e2n['X_dimension']]
+            dimensions['Y'] = variable_dimensions[dims_dict_e2n['Y_dimension']]
+            dimensions['Z'] = variable_dimensions[dims_dict_e2n['Z_dimension']]
+        if H2D:
+            dimensions['X'] = variable_dimensions[dims_dict_e2n['X_dimension']]
+            dimensions['Y'] = variable_dimensions[dims_dict_e2n['Y_dimension']]
+        if V2D:
+            dimensions['X'] = variable_dimensions[dims_dict_e2n['N_dimension']]
+            dimensions['Y'] = 1
+            dimensions['Z'] = variable_dimensions[dims_dict_e2n['Z_dimension']]
+        if V1D:
+            dimensions['X'] = 1
+            dimensions['Y'] = 1
+            dimensions['Z'] = variable_dimensions[dims_dict_e2n['Z_dimension']]
+        if points:
+            dimensions['X'] = 1
+            dimensions['Y'] = 1
+        # 3.3.2 vertical part
+        if D3 or V1D or V2D:
+            var_corresponding_to_Z_grid = behaviour.get('Z_grid', False)
+            assert var_corresponding_to_Z_grid in self._variables.keys(), \
+                   'unable to find Z_grid in variables.'
+            if var_corresponding_to_Z_grid in self._variables.keys():
+                gridlevels = self._variables[var_corresponding_to_Z_grid][:]
+            else:
+                gridlevels = range(1, variable_dimensions[dims_dict_e2n['Z_dimension']]+1)
 
-        # build field
-        if not read_as_miscfield:
-            field_kwargs['validity'] = validity
-            kwargs_geom = {'structure':structure,
-                           'name':geometryname,
-                           'grid':grid,
-                           'dimensions':dimensions,
-                           'vcoordinate':{'structure':'V',
-                                          'typeoffirstfixedsurface':255,
-                                          'levels':[0]},
-                           'position_on_horizontal_grid':'center'}
-            geometry = fpx.geometry(**kwargs_geom)
-            field_kwargs['geometry'] = geometry
-            field_kwargs['structure'] = structure
+            if hasattr(self._variables[behaviour['Z_grid']], 'standard_name'):
+                kwargs_vcoord['typeoffirstfixedsurface'] = _typeoffirstfixedsurface_dict.get(self._variables[behaviour['Z_grid']].standard_name, 255)
+            #TODO: complete the reading of variable units to convert
+            if hasattr(self._variables[behaviour['Z_grid']], 'units'):
+                if self._variables[behaviour['Z_grid']].units == 'km':
+                    gridlevels = gridlevels*1000. # get back to metres
+            kwargs_vcoord['grid']['gridlevels'] = [p for p in gridlevels] # footprints purpose
+            kwargs_vcoord['levels'] = kwargs_vcoord['grid']['gridlevels'] # could it be else ?
+            
+        # 3.3.3 horizontal part
+        # find grid in variables
+        if H2D or D3:
+            var_corresponding_to_X_grid = behaviour.get('X_grid', False)
+            if not var_corresponding_to_X_grid in self._variables.keys():
+                raise epygramError('unable to find X_grid in variables.')
+            var_corresponding_to_Y_grid = behaviour.get('Y_grid', False)
+            if not var_corresponding_to_Y_grid in self._variables.keys():
+                raise epygramError('unable to find Y_grid in variables.')
+            else:
+                if hasattr(self._variable[var_corresponding_to_Y_grid], 'standard_name') \
+                and self._variable[var_corresponding_to_Y_grid].standard_name == 'projection_y_coordinate':
+                    behaviour['grid_is_lonlat'] = False
+                elif 'lat' in var_corresponding_to_Y_grid.lower() \
+                and 'grid_is_lonlat' not in behaviour.keys():
+                    behaviour['grid_is_lonlat'] = True
+            if len(self._variables[var_corresponding_to_X_grid].dimensions) == 1 \
+            and len(self._variables[var_corresponding_to_Y_grid].dimensions) == 1:
+                X = self._variables[var_corresponding_to_X_grid][:]
+                Y = self._variables[var_corresponding_to_Y_grid][:]
+                Xgrid = numpy.ones((Y.size, X.size)) * X
+                Ygrid = (numpy.ones((Y.size, X.size)).transpose() * Y).transpose()
+            elif len(self._variables[var_corresponding_to_X_grid].dimensions) == 2 \
+            and len(self._variables[var_corresponding_to_Y_grid].dimensions) == 2:
+                Xgrid = self._variables[var_corresponding_to_X_grid][:, :]
+                Ygrid = self._variables[var_corresponding_to_Y_grid][:, :]
+            if Ygrid[0, 0] > Ygrid[-1, 0]:
+                return_Yaxis = True
+                Ygrid = Ygrid[::-1, :]
+            
+            # projection or grid
+            if hasattr(variable, 'grid_mapping') \
+            and (hasattr(variable.grid_mapping, 'resolution') \
+                 or not behaviour.get('grid_is_lonlat', False)): # if resolution is not in grid_mapping attributes, try to get it in grid if not grid_is_lonlat
+                # geometry described as "grid_mapping" meta-data
+                gm = variable.grid_mapping
+                grid_mapping = self._variables[gm]
+                if grid_mapping.grid_mapping_name == 'lambert_conformal_conic':
+                    kwargs_geom['name'] = 'lambert'
+                    if hasattr(grid_mapping, 'resolution'):
+                        Xresolution = Yresolution = grid_mapping.resolution
+                    else:
+                        Xresolution = abs(Xgrid[0, 0] - Xgrid[0, 1])
+                        Yresolution = abs(Ygrid[0, 0] - Ygrid[1, 0])
+                    grid = {'input_lon':Angle(grid_mapping.longitude_of_central_meridian, 'degrees'),
+                            'input_lat':Angle(grid_mapping.latitude_of_projection_origin, 'degrees'),
+                            'input_position':((float(dimensions['X']) - 1) / 2.,
+                                              (float(dimensions['Y']) - 1) / 2.),
+                            'X_resolution':Xresolution,
+                            'Y_resolution':Yresolution,
+                            'LAMzone':None}
+                    kwargs_geom['projection'] = {'reference_lon':Angle(grid_mapping.longitude_of_central_meridian, 'degrees'),
+                                                 'reference_lat':Angle(grid_mapping.standard_parallel, 'degrees'),
+                                                 'rotation':Angle(0., 'radians')}
+                else:
+                    raise NotImplementedError('grid_mapping.grid_mapping_name == '+grid_mapping.grid_mapping_name)
+            else:
+                # grid only in variables
+                if behaviour.get('grid_is_lonlat', False):
+                    grid = {'longitudes':Xgrid,
+                            'latitudes':Ygrid}
+                else:
+                    grid = {'X':Xgrid,
+                            'Y':Ygrid}
+        elif V1D or V2D or points:
+            var_corresponding_to_X_grid = behaviour.get('X_grid', False)
+            if not var_corresponding_to_X_grid in self._variables.keys():
+                raise epygramError('unable to find X_grid in variables.')
+            var_corresponding_to_Y_grid = behaviour.get('Y_grid', False)
+            if not var_corresponding_to_Y_grid in self._variables.keys():
+                raise epygramError('unable to find Y_grid in variables.')
+            grid={'longitudes':self._variables[var_corresponding_to_X_grid][:],
+                  'latitudes':self._variables[var_corresponding_to_Y_grid][:],
+                  'LAMzone':None}
+            
+        # 3.4 build geometry
+        vcoordinate = fpx.geometry(**kwargs_vcoord)
+        kwargs_geom['grid'] = grid
+        kwargs_geom['dimensions'] = dimensions
+        kwargs_geom['vcoordinate'] = vcoordinate
+        kwargs_geom['position_on_horizontal_grid'] = 'center'
+        geometry = fpx.geometry(**kwargs_geom)
+
+        # 4. build field
+        field_kwargs['geometry'] = geometry
+        field_kwargs['structure'] = kwargs_geom['structure']
         comment = {}
-        for a in self._variables[fid].ncattrs():
-            if read_as_miscfield or (not read_as_miscfield and a != 'validity'):
-                comment.update({a:self._variables[fid].getncattr(a)})
+        for a in variable.ncattrs():
+            if a != 'validity':
+                if isinstance(variable.getncattr(a),numpy.float32): # pb with json and float32
+                    comment.update({a:numpy.float64(variable.getncattr(a))})
+                else:
+                    comment.update({a:variable.getncattr(a)})
         comment = json.dumps(comment)
         if comment != '{}':
             field_kwargs['comment'] = comment
         field = fpx.field(**field_kwargs)
         if getdata:
-            field.setdata(self._variables[fid][...])
+            if only:
+                n = len(variable.dimensions)
+                varbuf = variable
+                for k,i in only.items():
+                    d = variable.dimensions.index(k)
+                    varbuf = util.restrain_to_index_i_of_dim_d(varbuf, i, d, n=n)
+            else:
+                varbuf = variable[...]
+            if H2D or D3:
+                # re-shuffle to have data indexed (t,y,x) or (t,z,y,x)
+                positions = []
+                if 'T_dimension' in dims_dict_e2n.keys():
+                    positions.append(variable.dimensions.index(dims_dict_e2n['T_dimension']))
+                if  'Z_dimension' in dims_dict_e2n.keys():
+                    positions.append(variable.dimensions.index(dims_dict_e2n['Z_dimension']))
+                positions.append(variable.dimensions.index(dims_dict_e2n['Y_dimension']))
+                positions.append(variable.dimensions.index(dims_dict_e2n['X_dimension']))
+                for d in variable.dimensions:
+                    # whatever the order of these, they must have been filtered and dimension 1 (only)
+                    if d not in dims_dict_e2n.values():
+                        positions.append(variable.dimensions.index(d))
+                varbuf = varbuf.transpose(*positions)
+                if D3:
+                    assert len(varbuf.squeeze().shape) == 3 and len(field.validity) == 1 \
+                           or len(varbuf.squeeze().shape) == 4 and len(field.validity) > 1, \
+                           'unknown remaining dimension ! (use *only* to filter).'
+                elif H2D:
+                    assert len(varbuf.squeeze().shape) == 2 and len(field.validity) == 1 \
+                           or len(varbuf.squeeze().shape) == 3 and len(field.validity) > 1, \
+                           'unknown remaining dimension ! (use *only* to filter).'
+                if return_Yaxis:
+                    if 'T_dimension' in dims_dict_e2n.keys():
+                        if D3:
+                            varbuf = varbuf[:, :, ::-1, ...]
+                        elif H2D:
+                            varbuf = varbuf[:, ::-1, ...]
+                    else:
+                        if D3:
+                            varbuf = varbuf[:, :-1,...]
+                        elif H2D:
+                            varbuf = varbuf[::-1,...]
+                        
+            field.setdata(varbuf.squeeze())
 
         return field
 
@@ -224,133 +477,201 @@ class netCDF(FileResource):
         - *metadata* can be filled by any meta-data, that will be stored
           as attribute of the netCDF variable.
         """
-
-        def check_or_add_dim(k, size=None):
-            if size is None:
-                size = field.geometry.dimensions[k]
-            if k not in self._dimensions:
-                self._nc.createDimension(k, size=size)
-            else:
-                assert len(self._dimensions[k]) == size, \
-                       "dimensions mismatch: " + k + ": " + \
-                       str(self._dimensions[k]) + " != " + str(size)
-
+        
         vartype = 'f8'
-        if isinstance(field, H2DField):
-            # dimensions
-            if field.geometry.rectangular_grid:
-                # rectangular grid case
-                dims = (k for k in field.geometry.dimensions.keys() if len(k) == 1)
-                dims = sorted(dims, reverse=(not self.behaviour['transpose_data_ordering']))
-                for k in dims:
-                    check_or_add_dim(k)
-            elif not self.behaviour['flatten_non_rectangular_grids']:
-                fill_value = -999999.9
-                if 'gauss' in field.geometry.name:
-                    dims = ('lat_number', 'max_lon_number')
-                    for k in dims:
-                        check_or_add_dim(k)
-                else:
-                    raise NotImplementedError("grid not rectangular nor a gauss one.")
+        fill_value = -999999.9
+        def check_or_add_dim(d, d_in_field=None, size=None):
+            if size is None:
+                if d_in_field is None:
+                    d_in_field = d
+                size = field.geometry.dimensions[d_in_field]
+            if d not in self._dimensions:
+                self._nc.createDimension(d, size=size)
             else:
-                # gauss case
-                if 'gauss' in field.geometry.name:
-                    check_or_add_dim('lat_number')
-                    check_or_add_dim('max_lon_number')
-                    gn = sum(field.geometry.dimensions['lon_number_by_lat'])
-                    check_or_add_dim('gridpoints_number', size=gn)
-                    self._nc.lon_number_by_lat = field.geometry.dimensions['lon_number_by_lat']
-                    dims = ('gridpoints_number',)
-                else:
-                    raise NotImplementedError("grid not rectangular nor a gauss one.")
+                assert len(self._dimensions[d]) == size, \
+                       "dimensions mismatch: " + d + ": " + \
+                       str(self._dimensions[d]) + " != " + str(size)
 
-            # geometry (lons/lats)
-            (lons, lats) = field.geometry.get_lonlat_grid()
-            if self.behaviour['transpose_data_ordering']:
-                lons = lons.transpose()
-                lats = lats.transpose()
-            if self.behaviour['variable_name_for_longitudes'] in self._variables:
-                if field.geometry.rectangular_grid or not self.behaviour['flatten_non_rectangular_grids']:
-                    lons_ok = lons.shape == self._variables[self.behaviour['variable_name_for_longitudes']].shape
-                else:
-                    # gauss case, flattened
-                    gn = sum(field.geometry.dimensions['lon_number_by_lat'])
-                    lons_ok = (gn,) == self._variables[self.behaviour['variable_name_for_longitudes']].shape
-                assert lons_ok, "dimensions mismatch: lons grid."
-            else:
-                lons_var = self._nc.createVariable(self.behaviour['variable_name_for_longitudes'],
-                                                   vartype, dims)
-                if field.geometry.rectangular_grid:
-                    lons_var[...] = lons
-                elif not self.behaviour['flatten_non_rectangular_grids']:
-                    lons_var.missing_value = fill_value
-                    lons_var[...] = lons.filled(fill_value)
-                else:
-                    lons_var[...] = stretch_array(lons)
-            if self.behaviour['variable_name_for_latitudes'] in self._variables:
-                if field.geometry.rectangular_grid or not self.behaviour['flatten_non_rectangular_grids']:
-                    lats_ok = lats.shape == self._variables[self.behaviour['variable_name_for_latitudes']].shape
-                else:
-                    # gauss case, flattened
-                    gn = sum(field.geometry.dimensions['lon_number_by_lat'])
-                    lats_ok = (gn,) == self._variables[self.behaviour['variable_name_for_latitudes']].shape
-                assert lats_ok, "dimensions mismatch: lats grid."
-            else:
-                lats_var = self._nc.createVariable(self.behaviour['variable_name_for_latitudes'],
-                                                   vartype, dims)
-                if field.geometry.rectangular_grid:
-                    lats_var[...] = lats
-                elif not self.behaviour['flatten_non_rectangular_grids']:
-                    lats_var.missing_value = fill_value
-                    lats_var[...] = lats.filled(fill_value)
-                else:
-                    lats_var[...] = stretch_array(lats)
-
-            # validity
-            if len(field.validity) == 1:
-                validity = {'basis':None, 'date_time':None}
-                if field.validity[0].getbasis() is not None:
-                    validity['basis'] = field.validity[0].getbasis().isoformat()
-                if field.validity[0].get() is not None:
-                    validity['date_time'] = field.validity[0].get().isoformat()
-                if field.validity[0].cumulativeduration() is not None:
-                    validity['cumulativeduration'] = str(field.validity[0].cumulativeduration().total_seconds())
-            elif len(field.validity) > 1:
-                raise NotImplementedError("not yet !")
-                #TODO: create a 'time' dimension
-                #if 'time' not in self._dimensions:
-                #    self._nc.createDimension('time', size=None)
-                #    for v in field.validity:
-                #        self._nc.dimensions['time'].append(v.get('IntStr'))
-                #else:
-                #    # check that time dimension is compatible ?
-                #    raise NotImplementedError("not yet !")
-
-            # create variable
-            var = self._nc.createVariable(util.linearize2str(field.fid.get('netCDF', field.fid)),
-                                          vartype, dims,
-                                          zlib=bool(compression), complevel=compression)
-            # set metadata
-            if len(field.validity) == 1:
-                var.validity = json.dumps(validity)
-            if field.comment is not None:
-                metadata.update(comment=field.comment)
-            for k, v in metadata.items():
-                setattr(var, k, v)
-            # set data
-            if self.behaviour['transpose_data_ordering']:
-                data = field.data.transpose()
-            else:
-                data = field.data
-            if field.geometry.rectangular_grid:
-                var[...] = data
-            elif not self.behaviour['flatten_non_rectangular_grids']:
-                var.missing_value = fill_value
-                var[...] = data.filled(fill_value)
-            else:
-                var[...] = stretch_array(data)
+        # 1. dimensions
+        T = Z = Y = X = G = N = None
+        # time
+        if len(field.validity) > 1:
+            T = self.behaviour.get('T_dimension',
+                                   config.netCDF_usualnames_for_standard_dimensions['T_dimension'][0])
+            check_or_add_dim(T, size=len(field.validity))
+        # vertical part
+        Z = self.behaviour.get('Z_dimension',
+                               _typeoffirstfixedsurface_dict_inv.get(field.geometry.vcoordinate.typeoffirstfixedsurface,
+                               config.netCDF_usualnames_for_standard_dimensions['Z_dimension'][0]))
+        if 'gridlevels' in field.geometry.vcoordinate.grid.keys():
+            Z_gridsize = max(len(field.geometry.vcoordinate.grid['gridlevels']), 1)
+            if field.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
+                Z_gridsize -= 1
         else:
-            raise NotImplementedError("not yet !")
+            Z_gridsize = 1
+        if Z_gridsize > 1:
+            check_or_add_dim(Z, size=Z_gridsize)
+        # horizontal
+        if field.geometry.rectangular_grid:
+            if field.geometry.dimensions['Y'] > 1 and field.geometry.dimensions['X'] > 1:
+                Y = self.behaviour.get('Y_dimension',
+                                       config.netCDF_usualnames_for_standard_dimensions['Y_dimension'][0])
+                check_or_add_dim(Y, d_in_field='Y')
+                X = self.behaviour.get('X_dimension',
+                                       config.netCDF_usualnames_for_standard_dimensions['X_dimension'][0])
+                check_or_add_dim(X, d_in_field='X')
+            elif field.geometry.dimensions['X'] > 1:
+                N = self.behaviour.get('N_dimension',
+                                       config.netCDF_usualnames_for_standard_dimensions['N_dimension'][0])
+                check_or_add_dim(N, d_in_field='X')
+        elif 'gauss' in field.geometry.name:
+            Y = self.behaviour.get('Y_dimension', 'latitude')
+            check_or_add_dim(Y, d_in_field='lat_number')
+            X = self.behaviour.get('X_dimension', 'longitude')
+            check_or_add_dim(X, d_in_field='max_lon_number')
+            if self.behaviour['flatten_non_rectangular_grids']:
+                _gpn = sum(field.geometry.dimensions['lon_number_by_lat'])
+                G = 'gridpoints_number'
+                check_or_add_dim(G, size=_gpn)
+        else:
+            raise NotImplementedError("grid not rectangular nor a gauss one.")        
+        
+        # 2. validity
+        if field.validity[0] != FieldValidity():
+            tgrid = self.behaviour.get('T_grid',
+                                   config.netCDF_usualnames_for_standard_dimensions['T_dimension'][0])
+            if len(field.validity) == 1:
+                self._nc.createVariable(tgrid, int)
+                dims = []
+            else:
+                self._nc.createVariable(tgrid, int, T)
+                dims = [tgrid]
+            datetime0 = field.validity[0].getbasis().isoformat(sep=' ')
+            datetimes = [int(dt.term().total_seconds()) for dt in field.validity]
+            self._variables[tgrid][:] = datetimes
+            self._variables[tgrid].units = ' '.join(['seconds', 'since', datetime0])
+        
+        # 3. geometry
+        # 3.1 vertical part
+        if len(field.geometry.vcoordinate.levels) > 1:
+            dims.append(Z)
+        if Z_gridsize > 1:
+            zgridname = self.behaviour.get('Z_grid',
+                                           _typeoffirstfixedsurface_dict_inv.get(field.geometry.vcoordinate.typeoffirstfixedsurface,
+                                           config.netCDF_usualnames_for_standard_dimensions['Z_dimension'][0]))
+            if field.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
+                #TODO: report in readfield()
+                ZP1 = Z+'+1'
+                check_or_add_dim(ZP1, size=Z_gridsize+1)
+                zgrid = self._nc.createVariable(zgridname, vartype)
+                if field.geometry.vcoordinate.typeoffirstfixedsurface == 119:
+                    zgrid.standard_name = "atmosphere_hybrid_sigma_pressure_coordinate"
+                    zgrid.positive = "down"
+                    zgrid.formula_terms = "ap: hybrid_coef_A b: hybrid_coef_B ps: surface_air_pressure"
+                    self._nc.createVariable('hybrid_coef_A', vartype, ZP1)
+                    self._variables['hybrid_coef_A'][:] = [iab[1]['Ai'] for iab in field.geometry.vcoordinate.grid['gridlevels']]
+                    self._nc.createVariable('hybrid_coef_B', vartype, ZP1)
+                    self._variables['hybrid_coef_B'][:] = [iab[1]['Bi'] for iab in field.geometry.vcoordinate.grid['gridlevels']]
+                elif field.geometry.vcoordinate.typeoffirstfixedsurface == 118:
+                    #TOBECHECKED:
+                    zgrid.standard_name = "atmosphere_hybrid_height_coordinate"
+                    zgrid.positive = "up"
+                    zgrid.formula_terms = "a: hybrid_coef_A b: hybrid_coef_B orog: orography"
+                    self._nc.createVariable('hybrid_coef_A', vartype, ZP1)
+                    self._variables['hybrid_coef_A'][:] = [iab[1]['Ai'] for iab in field.geometry.vcoordinate.grid['gridlevels']]
+                    self._nc.createVariable('hybrid_coef_B', vartype, ZP1)
+                    self._variables['hybrid_coef_B'][:] = [iab[1]['Bi'] for iab in field.geometry.vcoordinate.grid['gridlevels']]
+            else:
+                if len(numpy.shape(field.geometry.vcoordinate.grid['gridlevels'])) > 1:
+                    dims_Z = [d for d in [Z, Y, X, G, N] if d is not None]
+                else:
+                    dims_Z = Z
+                self._nc.createVariable(zgridname, vartype, dims_Z)
+                u = {102:'m', 103:'m', 100:'hPa'}.get(field.geometry.vcoordinate.typeoffirstfixedsurface, None)
+                if u is not None:
+                    self._variables[zgridname].units = u
+                self._variables[zgridname][:] = field.geometry.vcoordinate.grid['gridlevels']
+        # 3.2 grid (lonlat)
+        dims_lonlat = []
+        (lons, lats) = field.geometry.get_lonlat_grid()
+        if self.behaviour['flatten_non_rectangular_grids'] \
+        and not field.geometry.rectangular_grid:
+            dims_lonlat.append(G)
+            dims.append(G)
+            lons = stretch_array(lons)
+            lats = stretch_array(lats)
+        elif 'gauss' in field.geometry.name or field.geometry.dimensions.get('Y', 0) > 1: # both Y and X dimensions
+            dims_lonlat.extend([Y, X])
+            dims.extend([Y, X])
+        elif field.geometry.dimensions['X'] > 1: # only X == N
+            dims_lonlat.append(N)
+            dims.append(N)
+        # else: pass (single point or profile)
+        if isinstance(lons, numpy.ma.masked_array):
+            lons = lons.filled(fill_value)
+            lats = lats.filled(fill_value)
+        else:
+            fill_value = None
+        self._nc.createVariable('longitude', vartype, dims_lonlat, fill_value=fill_value)
+        self._nc.createVariable('latitude', vartype, dims_lonlat, fill_value=fill_value)
+        self._variables['longitude'][...] = lons
+        self._variables['latitude'][...] = lats
+        # 3.3 meta-data
+        if field.geometry.dimensions.get('Y', field.geometry.dimensions.get('lat_number', 0)) > 1:
+            if all([k in field.geometry.name for k in ('reduced', 'gauss')]):
+                # reduced Gauss case
+                #TODO: report in readfield()
+                meta = 'Gauss_grid'
+                self._nc.createVariable(meta, int)
+                self._variables['Gauss_grid'].lon_number_by_lat = 'var: lon_number_by_lat'
+                self._nc.createVariable('lon_number_by_lat', int, Y)
+                self._variables['lon_number_by_lat'] = field.geometry.dimensions['lon_number_by_lat']
+                if 'pole_lon' in field.geometry.grid.keys():
+                    self._variables['Gauss_grid'].pole_lon = field.geometry.grid['pole_lon'].get('degrees')
+                    self._variables['Gauss_grid'].pole_lat = field.geometry.grid['pole_lat'].get('degrees')
+                if 'dilatation_coef' in field.geometry.grid.keys():
+                    self._variables['Gauss_grid'].dilatation_coef = field.geometry.grid['dilatation_coef']
+            elif field.geometry.projected_geometry:
+                # projections
+                if field.geometry.name == 'lambert':
+                    meta = 'Lambert_Conformal'
+                    self._nc.createVariable(meta, int)
+                    if field.geometry.grid['X_resolution'] != field.geometry.grid['Y_resolution']:
+                        raise NotImplementedError('anisotropic resolution')
+                    else:
+                        self._variables['Lambert_Conformal'].resolution = field.geometry.grid['X_resolution']
+                    if nearlyEqual(field.geometry._center_lon.get('degrees'),
+                                   field.geometry.projection['reference_lon'].get('degrees')):
+                        raise NotImplementedError('center_lon != reference_lon (tilting)')
+                    else:
+                        self._variables['Lambert_Conformal'].longitude_of_central_meridian = field.geometry._center_lon.get('degrees')
+                    self._variables['Lambert_Conformal'].latitude_of_projection_origin = field.geometry._center_lat.get('degrees')
+                    if field.geometry.secant_projection:
+                        self._variables['Lambert_Conformal'].standard_parallel = [field.geometry.projection['secant_lat1'].get('degrees'),
+                                                                                  field.geometry.projection['secant_lat2'].get('degrees')]
+                    else:
+                        self._variables['Lambert_Conformal'].standard_parallel = field.geometry.projection['reference_lat'].get('degrees')
+                else:
+                    raise NotImplementedError('field.geometry.name == '+field.geometry.name)
+            else:
+                meta = False
+        else:
+            meta = False
+        
+        # 4. Variable
+        self._nc.createVariable(field.fid['netCDF'], vartype, dims,
+                                zlib=bool(compression), complevel=compression,
+                                fill_value=fill_value)
+        if meta:
+            self._variables[field.fid['netCDF']].grid_mapping = meta
+        if self.behaviour['flatten_non_rectangular_grids'] \
+        and not field.geometry.rectangular_grid:
+            data = stretch_array(field.getdata())
+        else:
+            data = field.getdata()
+        if isinstance(data, numpy.ma.masked_array):
+            data = data.filled(fill_value)
+        self._variables[field.fid['netCDF']][...] = data
 
     def behave(self, **kwargs):
         """

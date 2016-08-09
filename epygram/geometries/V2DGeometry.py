@@ -7,10 +7,12 @@
 Contains the classes for Horizontal 2D geometries of fields.
 """
 
+import sys
+
+from epygram import epygramError
+from epygram.util import separation_line, write_formatted
 from .D3Geometry import D3Geometry, D3RectangularGridGeometry, \
                         D3UnstructuredGeometry, D3ProjectedGeometry
- 
-from epygram import epygramError
 
 
 
@@ -36,6 +38,42 @@ class V2DGeometry(D3Geometry):
             raise epygramError("V2DGeometry must have only one point in y-direction.")
         super(V2DGeometry, self)._consistency_check()
 
+    def what(self, out=sys.stdout, **kwargs):
+        """
+        Writes in file a summary of the geometry.
+
+        Args: \n
+        - *out*: the output open file-like object (duck-typing: *out*.write()
+          only is needed).
+        """
+
+        out.write("###########################\n")
+        out.write("### HORIZONTAL GEOMETRY ###\n")
+        out.write("###########################\n")
+
+        self._what_grid_dimensions(out)
+        self._what_grid(out)
+        out.write(separation_line)
+        out.write("\n")
+
+        self.vcoordinate.what(out)
+    
+    def _what_grid(self, out):
+        """
+        Writes in file a summary of the grid of the field.
+
+        Args: \n
+        - *out*: the output open file-like object (duck-typing: *out*.write()
+          only is needed).
+
+        """
+
+        (lons, lats) = self.get_lonlat_grid()
+        write_formatted(out, "Kind of Geometry", 'Unstructured')
+        write_formatted(out, "Max Longitude in deg", lons.max())
+        write_formatted(out, "Min Longitude in deg", lons.min())
+        write_formatted(out, "Max Latitude in deg", lats.max())
+        write_formatted(out, "Min Latitude in deg", lats.min())
 
 
 class V2DRectangularGridGeometry(V2DGeometry, D3RectangularGridGeometry):
@@ -56,6 +94,7 @@ class V2DRectangularGridGeometry(V2DGeometry, D3RectangularGridGeometry):
         )
     )
 
+
 class V2DUnstructuredGeometry(V2DRectangularGridGeometry, D3UnstructuredGeometry):
     """Handles the geometry for an unstructured Horizontal 2-Dimensions Field."""
 
@@ -68,6 +107,7 @@ class V2DUnstructuredGeometry(V2DRectangularGridGeometry, D3UnstructuredGeometry
                 values=set(['unstructured']))
         )
     )
+
 
 class V2DProjectedGeometry(V2DRectangularGridGeometry, D3ProjectedGeometry):
     """Handles the geometry for a Projected Horizontal 2-Dimensions Field."""

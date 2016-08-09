@@ -522,7 +522,7 @@ def gfl2R(q, ql=0., qi=0., qr=0., qs=0., qg=0.):
 
     return R
 
-formatting_default_widths = (50, 16)
+formatting_default_widths = (50, 20)
 separation_line = '{:-^{width}}'.format('', width=sum(formatting_default_widths) + 1) + '\n'
 def write_formatted(dest, label, value,
                     align='<',
@@ -850,3 +850,56 @@ def stderr_redirected(to=os.devnull):
             _redirect_stderr(to=old_stderr) # restore stderr.
                                             # buffering and flags such as
                                             # CLOEXEC may be different
+
+def restrain_to_index_i_of_dim_d(a, i, d, n=None):
+    """
+    Of an array a[d1, d2, d3, ... dn], returns the array restricted to index i
+    of the dimension d.
+    
+    A more elegant solution would have been the following, except that it does
+    not work when accessing netCDF variable (for which it was necessary).
+    
+    indexes = [range(len(self._dimensions[d])) for d in variable.dimensions] # equivalent to [:, :, :, ...]
+    for k in only.keys():
+        indexes[variable.dimensions.index(k)] = [only[k]] # restrain to the "only" give
+    return array[numpy.ix_(*indexes)]
+    """
+    
+    if n is None:
+        n = a.shape
+    if n == 2:
+        if d == 0:
+            ra = a[[i], :]
+        else:
+            ra = a[:, [i]]
+    elif n == 3:
+        if d == 0:
+            ra = a[[i], :, :]
+        elif d == 1:
+            ra = a[:, [i], :]
+        else:
+            ra = a[:, :, [i]]
+    elif n == 4:
+        if d == 0:
+            ra = a[[i], :, :, :]
+        elif d == 1:
+            ra = a[:, [i], :, :]
+        elif d == 2:
+            ra = a[:, :, [i], :]
+        else:
+            ra = a[:, :, :, [i]]
+    elif n == 5:
+        if d == 0:
+            ra = a[[i], :, :, :, :]
+        elif d == 1:
+            ra = a[:, [i], :, :, :]
+        elif d == 2:
+            ra = a[:, :, [i], :, :]
+        elif d == 3:
+            ra = a[:, :, :, [i], :]
+        else:
+            ra = a[:, :, :, :, [i]]
+    else:
+        raise NotImplementedError("more than 5 dimensions in array.")
+    
+    return ra

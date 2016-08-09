@@ -269,7 +269,7 @@ class H2DField(D3Field):
             # handle min/max values
             m = data.min()
             M = data.max()
-            if minmax != None:
+            if minmax is not None:
                 if minmax_in_title:
                     minmax_in_title = '(min: ' + \
                                       '{: .{precision}{type}}'.format(m, type='E', precision=3) + \
@@ -331,7 +331,7 @@ class H2DField(D3Field):
                     else:
                         cb = bm.colorbar(pf, location=colorbar, pad="5%",
                                          ticks=tick_levels)
-                    if minmax_in_title != '':
+                    if minmax_in_title:
                         cb.set_label(minmax_in_title)
             elif graphicmode == 'contourlines':
                 if not self.geometry.rectangular_grid:

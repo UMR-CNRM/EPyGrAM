@@ -169,13 +169,26 @@ LFI_field_dictionaries_csv = {'default':installdir + '/data/Field_Dict_LFI.csv',
 #: geoid of LFI files in pyproj syntax
 LFI_geoid_for_pyproj = {'a':6371229., 'b':6371229.}
 
+# netCDF standard dimensions
+netCDF_standard_dimensions = ['N_dimension', # numerotation (obs, profile, ...)
+                              'T_dimension', # time
+                              'X_dimension', # X-axis (cartesian projection or longitude)
+                              'Y_dimension', # Y-axis (cartesian projection or latitude)
+                              'Z_dimension'] # Z-axis (vertical)
+netCDF_usualnames_for_standard_dimensions = {'N_dimension':('transect', 'obs', 'profile'),
+                                             'T_dimension':('time', 'validity'),
+                                             'X_dimension':('xx', 'x', 'X', 'LON', 'lon', 'Nbre_lon', 'longitude', 'max_lon_number'),
+                                             'Y_dimension':('yy', 'y', 'Y', 'LAT', 'lat', 'Nbre_lat', 'latitude', 'lat_number'),
+                                             'Z_dimension':('zz', 'z', 'Z', 'level')}
+
 #: netCDF default behaviour
-netCDF_default_behaviour = {'variable_name_for_longitudes':'lons',
-                            'variable_name_for_latitudes':'lats',
-                            'variable_name_for_validity':'time',
-                            'transpose_data_ordering':False,
-                            'H2D_dimensions_names':('X', 'Y'),
-                            'flatten_non_rectangular_grids':True,
+#: the behaviour can be updated with specific netCDF_usualnames_for_standard_dimensions,
+#: e.g. 'X_dimension':'nb_lon'
+#: and eventual according grid, e.g. 'X_grid':'longitudes'
+netCDF_default_behaviour = {# 'A_dimension':'name_of_the_dimension_in_netCDF_file',
+                            # 'A_grid':'name_of_the_grid_in_netCDF_file',
+                            # writing behaviours:
+                            'flatten_non_rectangular_grids':False,
                             }
 #: netCDF default compression
 netCDF_default_compression = 4

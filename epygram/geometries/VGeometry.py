@@ -85,26 +85,29 @@ class VGeometry(RecursiveObject, FootprintBase):
             else:
                 write_formatted(out, "Levels", self.levels)
         if self.grid is not None and self.grid != {}:
-            if self.typeoffirstfixedsurface == 119:
-                name = "Hybrid-pressure"
-            elif self.typeoffirstfixedsurface == 118:
-                name = "Hybrid-height"
+            if self.typeoffirstfixedsurface in (118, 119):
+                if self.typeoffirstfixedsurface == 119:
+                    name = "Hybrid-pressure"
+                elif self.typeoffirstfixedsurface == 118:
+                    name = "Hybrid-height"
+                out.write(name + " coord. A coefficients\n")
+                Ai = [level[1]['Ai'] for level in self.grid['gridlevels']]
+                for c in range(len(Ai)):
+                    write_formatted(out, str(c + 1), Ai[c],
+                                    align='>')
+                out.write(separation_line)
+                out.write(name + " coord. B coefficients\n")
+                Bi = [level[1]['Bi'] for level in self.grid['gridlevels']]
+                for c in range(len(Bi)):
+                    write_formatted(out, str(c + 1), Bi[c],
+                                    align='>')
             else:
-                raise NotImplementedError("We expect a grid only in case of an hybrid coordinate.")
-            out.write(name + " coord. A coefficients\n")
-            Ai = [level[1]['Ai'] for level in self.grid['gridlevels']]
-            for c in range(len(Ai)):
-                write_formatted(out, str(c + 1), Ai[c],
-                                align='>')
-            out.write(separation_line)
-            out.write(name + " coord. B coefficients\n")
-            Bi = [level[1]['Bi'] for level in self.grid['gridlevels']]
-            for c in range(len(Bi)):
-                write_formatted(out, str(c + 1), Bi[c],
-                                align='>')
+                if len(self.grid['gridlevels']) == 1:
+                    write_formatted(out, "Grid", self.grid['gridlevels'][0])
+                else:
+                    write_formatted(out, "Grid", self.grid['gridlevels'])
         out.write(separation_line)
         out.write("\n")
-
 
 
 
@@ -144,10 +147,12 @@ def hybridP2pressure(hybridP_geometry, Psurf, vertical_mean,
         levels = profiles.hybridP2fluxpressure(A, B, Psurf)
     else:
         raise epygramError("gridposition != 'mass' or 'flux'.")
+    levels = [l/100 for l in levels.squeeze()]
     kwargs_vcoord = {'structure':'V',
                      'typeoffirstfixedsurface': 100,
                      'position_on_grid': hybridP_geometry.position_on_grid,
-                     'levels': list(levels / 100)
+                     'grid': {'gridlevels':levels},
+                     'levels': levels
                     }
 
     return fpx.geometry(**kwargs_vcoord)
@@ -178,11 +183,12 @@ def hybridH2pressure(hybridH_geometry, P, position):
     else:
         raise NotImplementedError("grid positions can only be 'mass' or 'flux'.")
     levels = levels[numpy.array(hybridH_geometry.levels) - 1]
-
+    levels = [l/100 for l in levels.squeeze()]
     kwargs_vcoord = {'structure':'V',
                      'typeoffirstfixedsurface': 100,
                      'position_on_grid': hybridH_geometry.position_on_grid,
-                     'levels': list(levels / 100)
+                     'grid':{'gridlevels':levels},
+                     'levels': levels
                     }
 
     return fpx.geometry(**kwargs_vcoord)
@@ -229,10 +235,10 @@ def hybridP2altitude(hybridP_geometry, R, T, Psurf, vertical_mean,
     elif hybridP_geometry.grid['ABgrid_position'] == 'mass':
         raise NotImplementedError("hybrid-pressure grid at mass-levels.")
     levels = levels[numpy.array(hybridP_geometry.levels) - 1]
-
     kwargs_vcoord = {'structure':'V',
                      'typeoffirstfixedsurface': coordinate,
                      'position_on_grid': hybridP_geometry.position_on_grid,
+                     'grid':{'gridlevels':list(levels)},
                      'levels': list(levels)
                     }
 
@@ -280,6 +286,7 @@ def hybridH2altitude(hybridH_geometry, Zsurf,
     kwargs_vcoord = {'structure':'V',
                      'typeoffirstfixedsurface': 103 if conv2height else 102,
                      'position_on_grid': hybridH_geometry.position_on_grid,
+                     'grid':{'gridlevels':list(levels)},
                      'levels': list(levels)
                     }
 

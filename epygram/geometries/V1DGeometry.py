@@ -7,9 +7,9 @@
 Contains the classes for Horizontal 2D geometries of fields.
 """
 
-from .V2DGeometry import V2DUnstructuredGeometry
-
 from epygram import epygramError
+from epygram.util import write_formatted
+from .V2DGeometry import V2DUnstructuredGeometry
 
 
 
@@ -46,3 +46,19 @@ class V1DGeometry(V2DUnstructuredGeometry):
     def azimuth(self, end1, end2):
         """No meaning with a one-point geometry."""
         raise epygramError("this method has no meaning with a one-point geometry.")
+    
+    def _what_grid(self, out):
+        """
+        Writes in file a summary of the grid of the field.
+
+        Args: \n
+        - *out*: the output open file-like object (duck-typing: *out*.write()
+          only is needed).
+
+        """
+
+        (lons, lats) = (self.grid['longitudes'], self.grid['latitudes'])
+        write_formatted(out, "Kind of Geometry", 'Unstructured')
+        write_formatted(out, "Longitude in deg", lons[0])
+        write_formatted(out, "Latitude in deg", lats[0])
+        

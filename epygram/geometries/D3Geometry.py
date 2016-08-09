@@ -42,7 +42,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
                       the Globe.",
                 values=set(['lambert', 'mercator', 'polar_stereographic',
                             'regular_lonlat',
-                            'rotated_reduced_gauss', 'reduced_gauss',
+                            'rotated_reduced_gauss', 'reduced_gauss', 'regular_gauss',
                             'unstructured'])),
             grid=dict(
                 type=FPDict,
@@ -2964,7 +2964,7 @@ class D3GaussGeometry(D3Geometry):
     _footprint = dict(
         attr=dict(
             name=dict(
-                values=set(['rotated_reduced_gauss', 'reduced_gauss'])),
+                values=set(['rotated_reduced_gauss', 'reduced_gauss', 'regular_gauss'])),
         )
     )
 
@@ -3263,18 +3263,18 @@ class D3GaussGeometry(D3Geometry):
             urcrnrlat = zoom['latmax']
         if specificproj is None:
             # defaults
-            if self.name == 'rotated_reduced_gauss':
+            if 'rotated' in self.name:
                 lon0 = self.grid['pole_lon'].get('degrees')
-            elif self.name == 'reduced_gauss':
+            else:
                 lon0 = 0.0
             b = Basemap(resolution=gisquality, projection='moll',
                         lon_0=lon0)
         else:
             # specificproj
-            if self.name == 'rotated_reduced_gauss':
+            if 'rotated' in self.name:
                 lon0 = self.grid['pole_lon'].get('degrees')
                 lat0 = self.grid['pole_lat'].get('degrees')
-            elif self.name == 'reduced_gauss':
+            else:
                 lon0 = 0.0
                 lat0 = 0.0
             if specificproj == 'kav7':
@@ -3404,7 +3404,7 @@ class D3GaussGeometry(D3Geometry):
 
         if self.name == 'rotated_reduced_gauss':
             KTYP = 2
-        elif self.name == 'reduced_gauss':
+        else:
             KTYP = 1
         PFACDI = self.grid['dilatation_coef']
         ZDBLC = 2.0 * PFACDI
@@ -3818,7 +3818,8 @@ class D3GaussGeometry(D3Geometry):
         grid = self.grid
         dimensions = self.dimensions
         gridmap = {'reduced_gauss':'Reduced Gauss',
-                   'rotated_reduced_gauss':'Rotated Reduced Gauss'}
+                   'rotated_reduced_gauss':'Rotated Reduced Gauss',
+                   'regular_gauss':'Regular Gauss'}
         write_formatted(out, "Grid", gridmap[self.name])
         if self.name == 'rotated_reduced_gauss':
             write_formatted(out, "Pole Longitude",
