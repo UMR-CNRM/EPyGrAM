@@ -16,7 +16,7 @@ import numpy
 from collections import OrderedDict
 
 import footprints
-from footprints import proxy as fpx, FPDict
+from footprints import proxy as fpx, FPDict, FPList
 
 from epygram import config, epygramError, util
 from epygram.base import FieldValidity, FieldValidityList
@@ -35,7 +35,7 @@ _typeoffirstfixedsurface_dict = {'altitude':102,
                                  'hybrid-pressure':119,
                                  'hybrid-height':118,
                                  'pressure':100}
-_typeoffirstfixedsurface_dict_inv = {v:k for k,v in _typeoffirstfixedsurface_dict.items()}
+_typeoffirstfixedsurface_dict_inv = {v:k for k, v in _typeoffirstfixedsurface_dict.items()}
 
 
 class netCDF(FileResource):
@@ -53,7 +53,7 @@ class netCDF(FileResource):
                 default=config.netCDF_default_behaviour)
         )
     )
-    
+
     def __init__(self, *args, **kwargs):
         """Constructor. See its footprint for arguments."""
 
@@ -134,7 +134,7 @@ class netCDF(FileResource):
     def _listfields(self):
         """Returns the fid list of the fields inside the resource."""
         return self._variables.keys()
-    
+
     @FileResource._openbeforedelayed
     def ncinfo_field(self, fid):
         """
@@ -143,17 +143,17 @@ class netCDF(FileResource):
         Args: \n
         - *fid*: netCDF field identifier
         """
-        
-        assert fid in self.listfields(), 'field: '+fid+' not in resource.'
+
+        assert fid in self.listfields(), 'field: ' + fid + ' not in resource.'
         dimensions = OrderedDict()
         for d in self._variables[fid].dimensions:
             dimensions[d] = len(self._dimensions[d])
         metadata = {a:getattr(self._variables[fid], a) for a in self._variables[fid].ncattrs()}
-        
+
         return {'dimensions':dimensions,
                 'metadata':metadata}
-        
-    
+
+
     @FileResource._openbeforedelayed
     def readfield(self, fid,
                   getdata=True,
@@ -169,7 +169,7 @@ class netCDF(FileResource):
         - *only*: to specify indexes [0 ... n-1] of specific dimensions,
           e.g. {'time':5,} to select only the 6th term of time dimension.
         """
-        
+
         # 0. initialization
         assert self.openmode != 'w', \
                "cannot read fields in resource if with openmode == 'w'."
@@ -194,7 +194,7 @@ class netCDF(FileResource):
             for k in config.netCDF_standard_dimensions:
                 if d == behaviour.get(k):
                     dims_dict_n2e[d] = k
-        dims_dict_e2n = {v:k for k,v in dims_dict_n2e.items()}
+        dims_dict_e2n = {v:k for k, v in dims_dict_n2e.items()}
 
         # 1.2 try to identify grids
         for f in self.listfields():
@@ -202,7 +202,8 @@ class netCDF(FileResource):
                 sg = sd.replace('dimension', 'grid')
                 # if behaviour is not explicitly given,
                 # try to find out who is "f" among the standard grids
-                if not sg in behaviour.keys() and f in config.netCDF_usualnames_for_standard_dimensions[sd]:
+                if not sg in behaviour.keys() and f in config.netCDF_usualnames_for_standard_dimensions[sd] \
+                or f == behaviour.get(sd):
                     behaviour[sg] = f
 
         # 2. time
@@ -231,7 +232,7 @@ class netCDF(FileResource):
         else:
             validity = FieldValidity()
         field_kwargs['validity'] = validity
-        
+
         # 3. GEOMETRY
         # ===========
         kwargs_geom = {}
@@ -241,7 +242,7 @@ class netCDF(FileResource):
             if k in keys:
                 keys.remove(k)
             else:
-                raise ValueError("dimension: "+k+" from 'only' not in field variable.")
+                raise ValueError("dimension: " + k + " from 'only' not in field variable.")
         if 'T_dimension' in dims_dict_e2n.keys() and dims_dict_e2n['T_dimension'] not in only.keys():
             keys.remove(dims_dict_e2n['T_dimension'])
         squeezed_variables = [dims_dict_n2e.get(k)
@@ -262,7 +263,7 @@ class netCDF(FileResource):
                                + "refine behaviour dimensions or filter dimensions with 'only'.")
         else:
             if D3:
-                structure = 'D3'
+                structure = '3D'
             elif H2D:
                 structure = 'H2D'
             elif V2D:
@@ -272,37 +273,28 @@ class netCDF(FileResource):
             elif points:
                 structure = 'Point'
             kwargs_geom['structure'] = structure
-            
+
         # 3.2 vertical geometry (default)
         default_kwargs_vcoord = {'structure':'V',
                                  'typeoffirstfixedsurface':255,
                                  'position_on_grid':'mass',
                                  'grid':{'gridlevels': []},
                                  'levels':[0]}
-        #TODO: complete with field dict when we have one
+        # TODO: complete with field dict when we have one
         # + fid generic ?
         kwargs_vcoord = default_kwargs_vcoord
-        
+
         # 3.3 Specific parts
         # 3.3.1 dimensions
         dimensions = {}
         kwargs_geom['name'] = 'unstructured'
-        if D3:
-            dimensions['X'] = variable_dimensions[dims_dict_e2n['X_dimension']]
-            dimensions['Y'] = variable_dimensions[dims_dict_e2n['Y_dimension']]
-            dimensions['Z'] = variable_dimensions[dims_dict_e2n['Z_dimension']]
-        if H2D:
+        if D3 or H2D:
             dimensions['X'] = variable_dimensions[dims_dict_e2n['X_dimension']]
             dimensions['Y'] = variable_dimensions[dims_dict_e2n['Y_dimension']]
         if V2D:
             dimensions['X'] = variable_dimensions[dims_dict_e2n['N_dimension']]
             dimensions['Y'] = 1
-            dimensions['Z'] = variable_dimensions[dims_dict_e2n['Z_dimension']]
-        if V1D:
-            dimensions['X'] = 1
-            dimensions['Y'] = 1
-            dimensions['Z'] = variable_dimensions[dims_dict_e2n['Z_dimension']]
-        if points:
+        if V1D or points:
             dimensions['X'] = 1
             dimensions['Y'] = 1
         # 3.3.2 vertical part
@@ -310,20 +302,38 @@ class netCDF(FileResource):
             var_corresponding_to_Z_grid = behaviour.get('Z_grid', False)
             assert var_corresponding_to_Z_grid in self._variables.keys(), \
                    'unable to find Z_grid in variables.'
+            levels = None
             if var_corresponding_to_Z_grid in self._variables.keys():
-                gridlevels = self._variables[var_corresponding_to_Z_grid][:]
+                if self._variables[var_corresponding_to_Z_grid].standard_name in ('atmosphere_hybrid_sigma_pressure_coordinate',
+                                                                                  'atmosphere_hybrid_height_coordinate'):
+                    formula_terms = self._variables[var_corresponding_to_Z_grid].formula_terms.split(' ')
+                    if 'a:' in formula_terms and 'p0:' in formula_terms:
+                        a_name = formula_terms[formula_terms.index('a:') + 1]
+                        p0_name = formula_terms[formula_terms.index('p0:') + 1]
+                        a = self._variables[a_name][:] * self._variables[p0_name][:]
+                    elif 'ap:' in formula_terms:
+                        a_name = formula_terms[formula_terms.index('ap:') + 1]
+                        a = self._variables[a_name][:]
+                    b_name = formula_terms[formula_terms.index('b:') + 1]
+                    b = self._variables[b_name][:]
+                    gridlevels = [(i + 1, {'Ai':a[i], 'Bi':b[i]}) for i in range(len(a))]
+                    levels = [i + 1 for i in range(len(a))]
+                else:
+                    gridlevels = self._variables[var_corresponding_to_Z_grid][:]
             else:
-                gridlevels = range(1, variable_dimensions[dims_dict_e2n['Z_dimension']]+1)
-
+                gridlevels = range(1, variable_dimensions[dims_dict_e2n['Z_dimension']] + 1)
             if hasattr(self._variables[behaviour['Z_grid']], 'standard_name'):
                 kwargs_vcoord['typeoffirstfixedsurface'] = _typeoffirstfixedsurface_dict.get(self._variables[behaviour['Z_grid']].standard_name, 255)
-            #TODO: complete the reading of variable units to convert
+            # TODO: complete the reading of variable units to convert
             if hasattr(self._variables[behaviour['Z_grid']], 'units'):
                 if self._variables[behaviour['Z_grid']].units == 'km':
-                    gridlevels = gridlevels*1000. # get back to metres
-            kwargs_vcoord['grid']['gridlevels'] = [p for p in gridlevels] # footprints purpose
-            kwargs_vcoord['levels'] = kwargs_vcoord['grid']['gridlevels'] # could it be else ?
-            
+                    gridlevels = gridlevels * 1000.  # get back to metres
+            kwargs_vcoord['grid']['gridlevels'] = [p for p in gridlevels]  # footprints purpose
+            if levels is None:
+                kwargs_vcoord['levels'] = kwargs_vcoord['grid']['gridlevels']  # could it be else ?
+            else:
+                kwargs_vcoord['levels'] = levels
+
         # 3.3.3 horizontal part
         # find grid in variables
         if H2D or D3:
@@ -334,7 +344,7 @@ class netCDF(FileResource):
             if not var_corresponding_to_Y_grid in self._variables.keys():
                 raise epygramError('unable to find Y_grid in variables.')
             else:
-                if hasattr(self._variable[var_corresponding_to_Y_grid], 'standard_name') \
+                if hasattr(self._variables[var_corresponding_to_Y_grid], 'standard_name') \
                 and self._variable[var_corresponding_to_Y_grid].standard_name == 'projection_y_coordinate':
                     behaviour['grid_is_lonlat'] = False
                 elif 'lat' in var_corresponding_to_Y_grid.lower() \
@@ -353,33 +363,69 @@ class netCDF(FileResource):
             if Ygrid[0, 0] > Ygrid[-1, 0]:
                 return_Yaxis = True
                 Ygrid = Ygrid[::-1, :]
-            
+
             # projection or grid
-            if hasattr(variable, 'grid_mapping') \
-            and (hasattr(variable.grid_mapping, 'resolution') \
-                 or not behaviour.get('grid_is_lonlat', False)): # if resolution is not in grid_mapping attributes, try to get it in grid if not grid_is_lonlat
+            if hasattr(variable, 'grid_mapping'):
                 # geometry described as "grid_mapping" meta-data
                 gm = variable.grid_mapping
                 grid_mapping = self._variables[gm]
-                if grid_mapping.grid_mapping_name == 'lambert_conformal_conic':
-                    kwargs_geom['name'] = 'lambert'
-                    if hasattr(grid_mapping, 'resolution'):
-                        Xresolution = Yresolution = grid_mapping.resolution
+                if grid_mapping.grid_mapping_name in ('lambert_conformal_conic',):
+                    if (hasattr(self._variables[variable.grid_mapping], 'resolution') \
+                    or not behaviour.get('grid_is_lonlat', False)):
+                        # if resolution is either in grid_mapping attributes or in the grid itself
+                        if grid_mapping.grid_mapping_name == 'lambert_conformal_conic':
+                            kwargs_geom['name'] = 'lambert'
+                            if hasattr(grid_mapping, 'resolution'):
+                                Xresolution = Yresolution = grid_mapping.resolution
+                            else:
+                                Xresolution = abs(Xgrid[0, 0] - Xgrid[0, 1])
+                                Yresolution = abs(Ygrid[0, 0] - Ygrid[1, 0])
+                            grid = {'input_lon':Angle(grid_mapping.longitude_of_central_meridian, 'degrees'),
+                                    'input_lat':Angle(grid_mapping.latitude_of_projection_origin, 'degrees'),
+                                    'input_position':((float(dimensions['X']) - 1) / 2.,
+                                                      (float(dimensions['Y']) - 1) / 2.),
+                                    'X_resolution':Xresolution,
+                                    'Y_resolution':Yresolution,
+                                    'LAMzone':None}
+                            kwargs_geom['projection'] = {'reference_lon':Angle(grid_mapping.longitude_of_central_meridian, 'degrees'),
+                                                         'reference_lat':Angle(grid_mapping.standard_parallel, 'degrees'),
+                                                         'rotation':Angle(0., 'radians')}
+                            if hasattr(grid_mapping, 'standard_meridian'):
+                                kwargs_geom['projection']['reference_lon'] = Angle(grid_mapping.standard_meridian, 'degrees')
+                        else:
+                            raise NotImplementedError('grid_mapping.grid_mapping_name == ' + grid_mapping.grid_mapping_name)
                     else:
-                        Xresolution = abs(Xgrid[0, 0] - Xgrid[0, 1])
-                        Yresolution = abs(Ygrid[0, 0] - Ygrid[1, 0])
-                    grid = {'input_lon':Angle(grid_mapping.longitude_of_central_meridian, 'degrees'),
-                            'input_lat':Angle(grid_mapping.latitude_of_projection_origin, 'degrees'),
-                            'input_position':((float(dimensions['X']) - 1) / 2.,
-                                              (float(dimensions['Y']) - 1) / 2.),
-                            'X_resolution':Xresolution,
-                            'Y_resolution':Yresolution,
-                            'LAMzone':None}
-                    kwargs_geom['projection'] = {'reference_lon':Angle(grid_mapping.longitude_of_central_meridian, 'degrees'),
-                                                 'reference_lat':Angle(grid_mapping.standard_parallel, 'degrees'),
-                                                 'rotation':Angle(0., 'radians')}
+                        # no resolution available: grid mapping is useless
+                        gm = None
+                elif 'gauss' in grid_mapping.grid_mapping_name.lower():
+                    # NOTE: this is a (good) approximation actually, the true latitudes are the roots of Legendre polynoms
+                    if hasattr(grid_mapping, 'latitudes'):
+                        latitudes = self._variables[grid_mapping.latitudes.split(' ')[1]][:]
+                    else:
+                        raise NotImplementedError('(re-)computation of Gauss latitudes (not in file metadata.')
+                    grid = {'latitudes':FPList([Angle(l, 'degrees') for l in latitudes]),
+                            'dilatation_coef':1.}
+                    if hasattr(grid_mapping, 'lon_number_by_lat'):
+                        if not isinstance(grid_mapping.lon_number_by_lat, int):
+                            kwargs_geom['name'] = 'regular_gauss'
+                            lon_number_by_lat = self._variables[grid_mapping.lon_number_by_lat.split(' ')[1]][:]
+                        else:
+                            lon_number_by_lat = [dimensions['X'] for _ in range(dimensions['Y'])]
+                        if hasattr(grid_mapping, 'pole_lon'):
+                            kwargs_geom['name'] = 'rotated_reduced_gauss'
+                            grid['pole_lon'] = Angle(grid_mapping.pole_lon, 'degrees')
+                            grid['pole_lat'] = Angle(grid_mapping.pole_lat, 'degrees')
+                            if hasattr(grid_mapping, 'dilatation_coef'):
+                                grid['dilatation_coef'] = grid_mapping.dilatation_coef
+                        else:
+                            kwargs_geom['name'] = 'reduced_gauss'
+                    dimensions = {'max_lon_number':int(max(lon_number_by_lat)),
+                                  'lat_number':len(latitudes),
+                                  'lon_number_by_lat':FPList([int(n) for n in
+                                                      lon_number_by_lat])}
+                    return_Yaxis = False
                 else:
-                    raise NotImplementedError('grid_mapping.grid_mapping_name == '+grid_mapping.grid_mapping_name)
+                    raise NotImplementedError('grid_mapping.grid_mapping_name == ' + grid_mapping.grid_mapping_name)
             else:
                 # grid only in variables
                 if behaviour.get('grid_is_lonlat', False):
@@ -395,10 +441,10 @@ class netCDF(FileResource):
             var_corresponding_to_Y_grid = behaviour.get('Y_grid', False)
             if not var_corresponding_to_Y_grid in self._variables.keys():
                 raise epygramError('unable to find Y_grid in variables.')
-            grid={'longitudes':self._variables[var_corresponding_to_X_grid][:],
-                  'latitudes':self._variables[var_corresponding_to_Y_grid][:],
-                  'LAMzone':None}
-            
+            grid = {'longitudes':self._variables[var_corresponding_to_X_grid][:],
+                    'latitudes':self._variables[var_corresponding_to_Y_grid][:],
+                    'LAMzone':None}
+
         # 3.4 build geometry
         vcoordinate = fpx.geometry(**kwargs_vcoord)
         kwargs_geom['grid'] = grid
@@ -413,7 +459,7 @@ class netCDF(FileResource):
         comment = {}
         for a in variable.ncattrs():
             if a != 'validity':
-                if isinstance(variable.getncattr(a),numpy.float32): # pb with json and float32
+                if isinstance(variable.getncattr(a), numpy.float32):  # pb with json and float32
                     comment.update({a:numpy.float64(variable.getncattr(a))})
                 else:
                     comment.update({a:variable.getncattr(a)})
@@ -424,12 +470,12 @@ class netCDF(FileResource):
         if getdata:
             if only:
                 n = len(variable.dimensions)
-                varbuf = variable
-                for k,i in only.items():
+                buffdata = variable
+                for k, i in only.items():
                     d = variable.dimensions.index(k)
-                    varbuf = util.restrain_to_index_i_of_dim_d(varbuf, i, d, n=n)
+                    buffdata = util.restrain_to_index_i_of_dim_d(buffdata, i, d, n=n)
             else:
-                varbuf = variable[...]
+                buffdata = variable[...]
             if H2D or D3:
                 # re-shuffle to have data indexed (t,y,x) or (t,z,y,x)
                 positions = []
@@ -443,28 +489,28 @@ class netCDF(FileResource):
                     # whatever the order of these, they must have been filtered and dimension 1 (only)
                     if d not in dims_dict_e2n.values():
                         positions.append(variable.dimensions.index(d))
-                varbuf = varbuf.transpose(*positions)
+                buffdata = buffdata.transpose(*positions)
                 if D3:
-                    assert len(varbuf.squeeze().shape) == 3 and len(field.validity) == 1 \
-                           or len(varbuf.squeeze().shape) == 4 and len(field.validity) > 1, \
+                    assert len(buffdata.squeeze().shape) == 3 and len(field.validity) == 1 \
+                           or len(buffdata.squeeze().shape) == 4 and len(field.validity) > 1, \
                            'unknown remaining dimension ! (use *only* to filter).'
                 elif H2D:
-                    assert len(varbuf.squeeze().shape) == 2 and len(field.validity) == 1 \
-                           or len(varbuf.squeeze().shape) == 3 and len(field.validity) > 1, \
+                    assert len(buffdata.squeeze().shape) == 2 and len(field.validity) == 1 \
+                           or len(buffdata.squeeze().shape) == 3 and len(field.validity) > 1, \
                            'unknown remaining dimension ! (use *only* to filter).'
                 if return_Yaxis:
                     if 'T_dimension' in dims_dict_e2n.keys():
                         if D3:
-                            varbuf = varbuf[:, :, ::-1, ...]
+                            buffdata = buffdata[:, :, ::-1, ...]
                         elif H2D:
-                            varbuf = varbuf[:, ::-1, ...]
+                            buffdata = buffdata[:, ::-1, ...]
                     else:
                         if D3:
-                            varbuf = varbuf[:, :-1,...]
+                            buffdata = buffdata[:, ::-1, ...]
                         elif H2D:
-                            varbuf = varbuf[::-1,...]
-                        
-            field.setdata(varbuf.squeeze())
+                            buffdata = buffdata[::-1, ...]
+
+            field.setdata(buffdata.squeeze())
 
         return field
 
@@ -477,7 +523,7 @@ class netCDF(FileResource):
         - *metadata* can be filled by any meta-data, that will be stored
           as attribute of the netCDF variable.
         """
-        
+
         vartype = 'f8'
         fill_value = -999999.9
         def check_or_add_dim(d, d_in_field=None, size=None):
@@ -501,8 +547,7 @@ class netCDF(FileResource):
             check_or_add_dim(T, size=len(field.validity))
         # vertical part
         Z = self.behaviour.get('Z_dimension',
-                               _typeoffirstfixedsurface_dict_inv.get(field.geometry.vcoordinate.typeoffirstfixedsurface,
-                               config.netCDF_usualnames_for_standard_dimensions['Z_dimension'][0]))
+                               config.netCDF_usualnames_for_standard_dimensions['Z_dimension'][0])
         if 'gridlevels' in field.geometry.vcoordinate.grid.keys():
             Z_gridsize = max(len(field.geometry.vcoordinate.grid['gridlevels']), 1)
             if field.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
@@ -534,8 +579,8 @@ class netCDF(FileResource):
                 G = 'gridpoints_number'
                 check_or_add_dim(G, size=_gpn)
         else:
-            raise NotImplementedError("grid not rectangular nor a gauss one.")        
-        
+            raise NotImplementedError("grid not rectangular nor a gauss one.")
+
         # 2. validity
         if field.validity[0] != FieldValidity():
             tgrid = self.behaviour.get('T_grid',
@@ -550,20 +595,18 @@ class netCDF(FileResource):
             datetimes = [int(dt.term().total_seconds()) for dt in field.validity]
             self._variables[tgrid][:] = datetimes
             self._variables[tgrid].units = ' '.join(['seconds', 'since', datetime0])
-        
+
         # 3. geometry
         # 3.1 vertical part
         if len(field.geometry.vcoordinate.levels) > 1:
             dims.append(Z)
         if Z_gridsize > 1:
             zgridname = self.behaviour.get('Z_grid',
-                                           _typeoffirstfixedsurface_dict_inv.get(field.geometry.vcoordinate.typeoffirstfixedsurface,
-                                           config.netCDF_usualnames_for_standard_dimensions['Z_dimension'][0]))
+                                           config.netCDF_usualnames_for_standard_dimensions['Z_dimension'][0])
             if field.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
-                #TODO: report in readfield()
-                ZP1 = Z+'+1'
-                check_or_add_dim(ZP1, size=Z_gridsize+1)
-                zgrid = self._nc.createVariable(zgridname, vartype)
+                ZP1 = Z + '+1'
+                check_or_add_dim(ZP1, size=Z_gridsize + 1)
+                zgrid = self._nc.createVariable(zgridname, int)
                 if field.geometry.vcoordinate.typeoffirstfixedsurface == 119:
                     zgrid.standard_name = "atmosphere_hybrid_sigma_pressure_coordinate"
                     zgrid.positive = "down"
@@ -573,7 +616,7 @@ class netCDF(FileResource):
                     self._nc.createVariable('hybrid_coef_B', vartype, ZP1)
                     self._variables['hybrid_coef_B'][:] = [iab[1]['Bi'] for iab in field.geometry.vcoordinate.grid['gridlevels']]
                 elif field.geometry.vcoordinate.typeoffirstfixedsurface == 118:
-                    #TOBECHECKED:
+                    # TOBECHECKED:
                     zgrid.standard_name = "atmosphere_hybrid_height_coordinate"
                     zgrid.positive = "up"
                     zgrid.formula_terms = "a: hybrid_coef_A b: hybrid_coef_B orog: orography"
@@ -586,11 +629,13 @@ class netCDF(FileResource):
                     dims_Z = [d for d in [Z, Y, X, G, N] if d is not None]
                 else:
                     dims_Z = Z
-                self._nc.createVariable(zgridname, vartype, dims_Z)
+                zgrid = self._nc.createVariable(zgridname, vartype, dims_Z)
                 u = {102:'m', 103:'m', 100:'hPa'}.get(field.geometry.vcoordinate.typeoffirstfixedsurface, None)
                 if u is not None:
-                    self._variables[zgridname].units = u
-                self._variables[zgridname][:] = field.geometry.vcoordinate.grid['gridlevels']
+                    zgrid.units = u
+                zgrid[:] = field.geometry.vcoordinate.grid['gridlevels']
+            if _typeoffirstfixedsurface_dict_inv.get(field.geometry.vcoordinate.typeoffirstfixedsurface, False):
+                zgrid.short_name = _typeoffirstfixedsurface_dict_inv[field.geometry.vcoordinate.typeoffirstfixedsurface]
         # 3.2 grid (lonlat)
         dims_lonlat = []
         (lons, lats) = field.geometry.get_lonlat_grid()
@@ -600,10 +645,10 @@ class netCDF(FileResource):
             dims.append(G)
             lons = stretch_array(lons)
             lats = stretch_array(lats)
-        elif 'gauss' in field.geometry.name or field.geometry.dimensions.get('Y', 0) > 1: # both Y and X dimensions
+        elif 'gauss' in field.geometry.name or field.geometry.dimensions.get('Y', 0) > 1:  # both Y and X dimensions
             dims_lonlat.extend([Y, X])
             dims.extend([Y, X])
-        elif field.geometry.dimensions['X'] > 1: # only X == N
+        elif field.geometry.dimensions['X'] > 1:  # only X == N
             dims_lonlat.append(N)
             dims.append(N)
         # else: pass (single point or profile)
@@ -620,50 +665,62 @@ class netCDF(FileResource):
         if field.geometry.dimensions.get('Y', field.geometry.dimensions.get('lat_number', 0)) > 1:
             if all([k in field.geometry.name for k in ('reduced', 'gauss')]):
                 # reduced Gauss case
-                #TODO: report in readfield()
                 meta = 'Gauss_grid'
                 self._nc.createVariable(meta, int)
-                self._variables['Gauss_grid'].lon_number_by_lat = 'var: lon_number_by_lat'
+                self._variables[meta].grid_mapping_name = "gauss_grid"
+                self._variables[meta].lon_number_by_lat = 'var: lon_number_by_lat'
                 self._nc.createVariable('lon_number_by_lat', int, Y)
-                self._variables['lon_number_by_lat'] = field.geometry.dimensions['lon_number_by_lat']
+                self._variables['lon_number_by_lat'][:] = field.geometry.dimensions['lon_number_by_lat']
+                self._variables[meta].latitudes = 'var: gauss_latitudes'
+                self._nc.createVariable('gauss_latitudes', float, Y)
+                self._variables['gauss_latitudes'][:] = [l.get('degrees') for l in field.geometry.grid['latitudes']]
                 if 'pole_lon' in field.geometry.grid.keys():
-                    self._variables['Gauss_grid'].pole_lon = field.geometry.grid['pole_lon'].get('degrees')
-                    self._variables['Gauss_grid'].pole_lat = field.geometry.grid['pole_lat'].get('degrees')
+                    self._variables[meta].pole_lon = field.geometry.grid['pole_lon'].get('degrees')
+                    self._variables[meta].pole_lat = field.geometry.grid['pole_lat'].get('degrees')
                 if 'dilatation_coef' in field.geometry.grid.keys():
-                    self._variables['Gauss_grid'].dilatation_coef = field.geometry.grid['dilatation_coef']
+                    self._variables[meta].dilatation_coef = field.geometry.grid['dilatation_coef']
             elif field.geometry.projected_geometry:
                 # projections
                 if field.geometry.name == 'lambert':
                     meta = 'Lambert_Conformal'
                     self._nc.createVariable(meta, int)
+                    self._variables[meta].grid_mapping_name = 'lambert_conformal_conic'
                     if field.geometry.grid['X_resolution'] != field.geometry.grid['Y_resolution']:
                         raise NotImplementedError('anisotropic resolution')
                     else:
-                        self._variables['Lambert_Conformal'].resolution = field.geometry.grid['X_resolution']
-                    if nearlyEqual(field.geometry._center_lon.get('degrees'),
-                                   field.geometry.projection['reference_lon'].get('degrees')):
-                        raise NotImplementedError('center_lon != reference_lon (tilting)')
+                        self._variables[meta].resolution = field.geometry.grid['X_resolution']
+                    if field.geometry.grid.get('LAMzone'):
+                        _lon_cen, _lat_cen = field.geometry.ij2ll(float(field.geometry.dimensions['X'] - 1.) / 2.,
+                                                                  float(field.geometry.dimensions['Y'] - 1.) / 2.)
                     else:
-                        self._variables['Lambert_Conformal'].longitude_of_central_meridian = field.geometry._center_lon.get('degrees')
-                    self._variables['Lambert_Conformal'].latitude_of_projection_origin = field.geometry._center_lat.get('degrees')
+                        _lon_cen = field.geometry._center_lon.get('degrees')
+                        _lat_cen = field.geometry._center_lat.get('degrees')
+                    self._variables[meta].longitude_of_central_meridian = _lon_cen
+                    self._variables[meta].latitude_of_projection_origin = _lat_cen
+                    if not nearlyEqual(field.geometry._center_lon.get('degrees'),
+                                       field.geometry.projection['reference_lon'].get('degrees')):
+                        epylog.warning('center_lon != reference_lon (tilting) is not "on the cards" in CF convention 1.6')
+                        self._variables[meta].standard_meridian = field.geometry.projection['reference_lon'].get('degrees')
                     if field.geometry.secant_projection:
-                        self._variables['Lambert_Conformal'].standard_parallel = [field.geometry.projection['secant_lat1'].get('degrees'),
+                        self._variables[meta].standard_parallel = [field.geometry.projection['secant_lat1'].get('degrees'),
                                                                                   field.geometry.projection['secant_lat2'].get('degrees')]
                     else:
-                        self._variables['Lambert_Conformal'].standard_parallel = field.geometry.projection['reference_lat'].get('degrees')
+                        self._variables[meta].standard_parallel = field.geometry.projection['reference_lat'].get('degrees')
                 else:
-                    raise NotImplementedError('field.geometry.name == '+field.geometry.name)
+                    raise NotImplementedError('field.geometry.name == ' + field.geometry.name)
             else:
                 meta = False
         else:
             meta = False
-        
+
         # 4. Variable
         self._nc.createVariable(field.fid['netCDF'], vartype, dims,
                                 zlib=bool(compression), complevel=compression,
                                 fill_value=fill_value)
         if meta:
             self._variables[field.fid['netCDF']].grid_mapping = meta
+        if field.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
+            self._variables[field.fid['netCDF']].vertical_grid = zgridname
         if self.behaviour['flatten_non_rectangular_grids'] \
         and not field.geometry.rectangular_grid:
             data = stretch_array(field.getdata())
@@ -743,7 +800,7 @@ class netCDF(FileResource):
             for dim in nc_dims:
                 outwrite("\tName:", dim)
                 outwrite("\t\tsize:", len(nc.dimensions[dim]))
-                #print_ncattr(dim)
+                # print_ncattr(dim)
             # Variable information.
             nc_vars = [var for var in nc.variables]  # list of nc variables
             outwrite("NetCDF variable information:")

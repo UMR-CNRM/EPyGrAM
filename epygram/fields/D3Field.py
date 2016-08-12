@@ -99,7 +99,7 @@ class D3CommonField(Field):
         if myvalidity is not None:
             maxsize = max(maxsize, len(myvalidity))
 
-        #We look for indexes for vertical and time coordinates (no interpolation)
+        # We look for indexes for vertical and time coordinates (no interpolation)
         if myvalidity is None:
             my_t = numpy.zeros(maxsize, dtype=int)
         else:
@@ -387,7 +387,7 @@ class D3CommonField(Field):
         elif self.geometry.vcoordinate.typeoffirstfixedsurface == 118:
             kwargs_vcoord['grid'] = copy.copy(self.geometry.vcoordinate.grid)
             kwargs_vcoord['levels'] = copy.copy(self.geometry.vcoordinate.levels)
-            #Suppression of levels above or under physical domain
+            # Suppression of levels above or under physical domain
             if exclude_extralevels:
                 for level in kwargs_vcoord['levels']:
                     if level < 1 or level > len(self.geometry.vcoordinate.grid['gridlevels']) - 1:
@@ -401,7 +401,7 @@ class D3CommonField(Field):
         if geometry.vcoordinate.position_on_grid not in [None, '__unknown__', kwargs_vcoord['position_on_grid']]:
             raise epygramError("extract_subdomain cannot change position on vertical grid.")
         if geometry.vcoordinate.grid != {} and geometry.vcoordinate.grid != kwargs_vcoord['grid']:
-            #One could check if requested grid is a subsample of field grid
+            # One could check if requested grid is a subsample of field grid
             raise epygramError("extract_subdomain cannot change vertical grid")
         if geometry.vcoordinate.levels != []:
             for level in geometry.vcoordinate.levels:
@@ -412,7 +412,7 @@ class D3CommonField(Field):
         # build geometry
         kwargs_geom = {'structure': geometry.structure,
                        'name': geometry.name,
-                       'grid': dict(geometry.grid),  #do not remove dict(), it is usefull for unstructured grid
+                       'grid': dict(geometry.grid),  # do not remove dict(), it is usefull for unstructured grid
                        'dimensions': copy.copy(geometry.dimensions),
                        'vcoordinate': vcoordinate,
                        'position_on_horizontal_grid': 'center'
@@ -569,8 +569,8 @@ class D3CommonField(Field):
     def quadmean(self, subzone=None):
         """Returns the quadratic mean of data."""
         data = self.getdata(subzone=subzone)
-        return numpy.sqrt(numpy.ma.masked_greater(data**2,
-                                                  config.mask_outside**2).mean())
+        return numpy.sqrt(numpy.ma.masked_greater(data ** 2,
+                                                  config.mask_outside ** 2).mean())
 
     def nonzero(self, subzone=None):
         """
@@ -600,7 +600,7 @@ class D3CommonField(Field):
             my_k = k
 
         if len(self.validity) > 1:
-            #One must add a validity argument to enable feature
+            # One must add a validity argument to enable feature
             raise NotImplementedError("dctspectrum not yet implemented for multi validities fields.")
 
         field2d = self.getlevel(k=my_k)
@@ -627,7 +627,7 @@ class D3CommonField(Field):
         data4d = self.getdata(d4=True)
         data4d[:, :, :, :] = numpy.concatenate((data4d[:, :, :, n:], data4d[:, :, :, 0:n]),
                                                axis=3)
-        #for t in range(len(self.validity)):
+        # for t in range(len(self.validity)):
         #    for k in range(len(self.data)):
         #        data4d[t, k, :, :] = numpy.concatenate((data4d[t, k, :, n:], data4d[t, k, :, 0:n]),
         #                                         axis=1)
@@ -811,7 +811,7 @@ class D3Field(D3CommonField):
             if len(self.validity) == 1:
                 expected = 2 if self.geometry.datashape['k'] else 1
             else:
-                expected = 3  #vertical dimension mandatory for multivalidities fields
+                expected = 3  # vertical dimension mandatory for multivalidities fields
             if len(self.data.shape) != expected:
                 raise epygramError("spectral data must be 2D for a 3D field and 1D for a 2D field")
             if self.geometry.rectangular_grid:
@@ -828,17 +828,17 @@ class D3Field(D3CommonField):
                     gpdims[dim] = self.geometry.dimensions[dim]
             if len(self.validity) == 1:
                 if self.geometry.datashape['k']:
-                    #one validity, several levels
+                    # one validity, several levels
                     dataList = []
                     for k in range(len(self.data)):
                         data2d = self.geometry.reshape_data(self.spectral_geometry.sp2gp(self.data[k], gpdims), 1)
                         dataList.append(data2d)
                     result = numpy.array(dataList)
                 else:
-                    #one validity, one level
+                    # one validity, one level
                     result = self.geometry.reshape_data(self.spectral_geometry.sp2gp(self.data, gpdims), 1)
             else:
-                #several validities (implies to have an array dimension for the vertical dimension)
+                # several validities (implies to have an array dimension for the vertical dimension)
                 result = []
                 for t in range(len(self.data)):
                     dataList = []
@@ -865,7 +865,7 @@ class D3Field(D3CommonField):
             if len(self.validity) == 1:
                 expected = 3 if self.geometry.datashape['k'] else 2
             else:
-                expected = 4  #vertical dimension mandatory for multivalidities fields
+                expected = 4  # vertical dimension mandatory for multivalidities fields
             if len(self.data.shape) != expected:
                 raise epygramError("spectral data must be 3D for a 3D field and 2D for a 2D field")
             if not isinstance(spectral_geometry, SpectralGeometry):
@@ -892,7 +892,7 @@ class D3Field(D3CommonField):
 
             if len(self.validity) == 1:
                 if self.geometry.datashape['k']:
-                    #one validity, several levels
+                    # one validity, several levels
                     dataList = []
                     for k in range(len(self.data)):
                         if self.geometry.rectangular_grid:
@@ -902,14 +902,14 @@ class D3Field(D3CommonField):
                         dataList.append(spectral_geometry.gp2sp(data1d, gpdims))
                     result = numpy.array(dataList)
                 else:
-                    #one validity, one level
+                    # one validity, one level
                     if self.geometry.rectangular_grid:
                         data1d = self.data.flatten()
                     else:
                         data1d = self.data.compressed()
                     result = spectral_geometry.gp2sp(data1d, gpdims)
             else:
-                #several validities (implies to have an array dimension for the vertical dimension)
+                # several validities (implies to have an array dimension for the vertical dimension)
                 result = []
                 for t in range(len(self.data)):
                     dataList = []
@@ -939,7 +939,7 @@ class D3Field(D3CommonField):
             if len(self.validity) == 1:
                 expected = 2 if self.geometry.datashape['k'] else 1
             else:
-                expected = 3  #vertical dimension mandatory for multivalidities fields
+                expected = 3  # vertical dimension mandatory for multivalidities fields
             if len(self.data.shape) != expected:
                 raise epygramError("spectral data must be 2D for a 3D field and 1D for a 2D field")
             if self.geometry.rectangular_grid:
@@ -956,7 +956,7 @@ class D3Field(D3CommonField):
                     gpdims[dim] = self.geometry.dimensions[dim]
             if len(self.validity) == 1:
                 if self.geometry.datashape['k']:
-                    #one validity, several levels
+                    # one validity, several levels
                     dataListX = []
                     dataListY = []
                     for k in range(len(self.data)):
@@ -966,13 +966,13 @@ class D3Field(D3CommonField):
                     resultX = copy.deepcopy(self)
                     resultX._attributes['spectral_geometry'] = None
                     resultX.fid = {'derivative':'x'}
-                    resultX.setdata(numpy.array(dataListX))  #TOBECHECKED:
+                    resultX.setdata(numpy.array(dataListX))  # TOBECHECKED:
                     resultY = copy.deepcopy(self)
                     resultY._attributes['spectral_geometry'] = None
                     resultY.fid = {'derivative':'y'}
-                    resultY.setdata(numpy.array(dataListY))  #TOBECHECKED:
+                    resultY.setdata(numpy.array(dataListY))  # TOBECHECKED:
                 else:
-                    #one validity, one level
+                    # one validity, one level
                     (dx, dy) = self.spectral_geometry.compute_xy_spderivatives(self.data, gpdims)
                     resultX = copy.deepcopy(self)
                     resultX._attributes['spectral_geometry'] = None
@@ -983,7 +983,7 @@ class D3Field(D3CommonField):
                     resultY.fid = {'derivative':'y'}
                     resultY.setdata(numpy.array(self.geometry.reshape_data(dy, 1)))
             else:
-                #several validities (implies to have an array dimension for the vertical dimension)
+                # several validities (implies to have an array dimension for the vertical dimension)
                 D4arrayX = []
                 D4arrayY = []
                 for t in range(len(self.data)):
@@ -998,11 +998,11 @@ class D3Field(D3CommonField):
                 resultX = copy.deepcopy(self)
                 resultX._attributes['spectral_geometry'] = None
                 resultX.fid = {'derivative':'x'}
-                resultX.setdata(numpy.array(D4arrayX))  #TOBECHECKED:
+                resultX.setdata(numpy.array(D4arrayX))  # TOBECHECKED:
                 resultY = copy.deepcopy(self)
                 resultY._attributes['spectral_geometry'] = None
                 resultY.fid = {'derivative':'y'}
-                resultY.setdata(numpy.array(D4arrayY))  #TOBECHECKED:
+                resultY.setdata(numpy.array(D4arrayY))  # TOBECHECKED:
         else:
             raise epygramError('field must be spectral to compute its spectral derivatives.')
 
@@ -1054,7 +1054,7 @@ class D3Field(D3CommonField):
         dimensions = 0
         if len(self.validity) > 1:
             dimensions += 1
-        if self.geometry.datashape['k']:#FIXME: to remove: or len(self.validity) > 1:
+        if self.geometry.datashape['k']:  # FIXME: to remove: or len(self.validity) > 1:
             dimensions += 1
         if self.spectral:
             dimensions += 1
@@ -1188,7 +1188,7 @@ class D3Field(D3CommonField):
             kwargs_geom['projtool'] = self.geometry.projtool
             kwargs_geom['geoid'] = self.geometry.geoid
         newgeometry = fpx.geometry(**kwargs_geom)
-        generic_fid = self.fid['generic']
+        generic_fid = self.fid.get('generic', {})
         generic_fid['level'] = level
         kwargs_field = {'structure':newstructure,
                         'validity':self.validity.copy(),
@@ -1302,7 +1302,7 @@ class D3VirtualField(D3CommonField):
                                  position_on_grid=self._geometry.vcoordinate.position_on_grid)
             if self._geometry.vcoordinate.grid is not None:
                 kwargs_vcoord['grid'] = self._geometry.vcoordinate.grid
-            kwargs_vcoord['levels'], self._fidList = (list(t) for t in zip(*sorted(zip(levelList, self._fidList))))  #TOBECHECKED
+            kwargs_vcoord['levels'], self._fidList = (list(t) for t in zip(*sorted(zip(levelList, self._fidList))))  # TOBECHECKED
             self._geometry.vcoordinate = fpx.geometry(**kwargs_vcoord)
             self._spgpOpList = []
 

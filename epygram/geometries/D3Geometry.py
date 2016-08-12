@@ -124,11 +124,11 @@ class D3Geometry(RecursiveObject, FootprintBase):
 
         levels = numpy.array(self.vcoordinate.levels)
 
-        #We add the horizontal axis
+        # We add the horizontal axis
         h_shape2D = self.get_datashape(0, horizontal_only=True, d4=True, subzone=subzone)[-2:]
         if len(levels.shape) == 1:
-            #level values constant over the horizontal domain and time
-            #We add the horizontal dimension
+            # level values constant over the horizontal domain and time
+            # We add the horizontal dimension
             original_has_time = False
             if self.datashape['j'] or d4:
                 shape = tuple(list(levels.shape) + [h_shape2D[0]])
@@ -137,7 +137,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
                 shape = tuple(list(levels.shape) + [h_shape2D[1]])
                 levels = levels.repeat(h_shape2D[1]).reshape(shape)
         else:
-            #level values with horizontal variations
+            # level values with horizontal variations
             h_shape = self.get_datashape(0, horizontal_only=True)
             if len(levels.shape) == 1 + len(h_shape):
                 original_has_time = False
@@ -150,14 +150,14 @@ class D3Geometry(RecursiveObject, FootprintBase):
             if subzone != None:
                 levels = self.extract_subzone(levels, nb_validities, subzone)
             if d4 and ((not self.datashape['i']) or (not self.datashape['j'])):
-                shape = levels.shape[-len(h_shape):]  #shape without the horizontal dimensions
-                shape = tuple(list(shape) + list(h_shape2D))  #shape with the new horizontal dimensions
+                shape = levels.shape[-len(h_shape):]  # shape without the horizontal dimensions
+                shape = tuple(list(shape) + list(h_shape2D))  # shape with the new horizontal dimensions
                 levels = levels.reshape(shape)
-        #We suppress the vertical dimension if we do not need it
+        # We suppress the vertical dimension if we do not need it
         if len(self.vcoordinate.levels) == 1 and not d4 and nb_validities <= 1:
             levels = levels[0]
 
-        #We add the time axis
+        # We add the time axis
         if original_has_time:
             if levels.shape[1] != nb_validities:
                 raise epygramError("Shape of self.vcoordinate.levels does not agree with nb_validities")
@@ -166,7 +166,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
             shape = tuple(list(levels.shape) + [nb_validities])
             levels = levels.repeat(nb_validities).reshape(shape)
             shape_range = range(len(shape))
-            levels = levels.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  #last axis in first
+            levels = levels.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
 
         return levels
 
@@ -586,27 +586,27 @@ class D3RectangularGridGeometry(D3Geometry):
         if d4:
             if nb_validities < 1:
                 raise ValueError("nb_validities must be >=1 when d4==True")
-            #We add vertical dimension
+            # We add vertical dimension
             shape = tuple(list(lons.shape) + [len(self.vcoordinate.levels)])
             lons = lons.repeat(len(self.vcoordinate.levels)).reshape(shape)
             lats = lats.repeat(len(self.vcoordinate.levels)).reshape(shape)
             shape_range = range(len(shape))
-            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  #last axis in first
-            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  #last axis in first
-            #We add validities
+            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
+            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
+            # We add validities
             shape = tuple(list(lons.shape) + [nb_validities])
             lons = lons.repeat(nb_validities).reshape(shape)
             lats = lats.repeat(nb_validities).reshape(shape)
             shape_range = range(len(shape))
-            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  #last axis in first
-            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  #last axis in first
+            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
+            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
         elif nb_validities > 0:
             shape = tuple(list(lons.shape) + [nb_validities])
             lons = lons.repeat(nb_validities).reshape(shape)
             lats = lats.repeat(nb_validities).reshape(shape)
             shape_range = range(len(shape))
-            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  #last axis in first
-            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  #last axis in first
+            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
+            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
 
         return (lons, lats)
 
@@ -1088,27 +1088,27 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
         if d4:
             if nb_validities < 1:
                 raise ValueError("nb_validities must be >=1 when d4==True")
-            #We add vertical dimension
+            # We add vertical dimension
             shape = tuple(list(lons.shape) + [len(self.vcoordinate.levels)])
             lons = lons.repeat(len(self.vcoordinate.levels)).reshape(shape)
             lats = lats.repeat(len(self.vcoordinate.levels)).reshape(shape)
             shape_range = range(len(shape))
-            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  #last axis in first
-            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  #last axis in first
-            #We add validities
+            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
+            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
+            # We add validities
             shape = tuple(list(lons.shape) + [nb_validities])
             lons = lons.repeat(nb_validities).reshape(shape)
             lats = lats.repeat(nb_validities).reshape(shape)
             shape_range = range(len(shape))
-            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  #last axis in first
-            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  #last axis in first
+            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
+            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
         elif nb_validities > 0:
             shape = tuple(list(lons.shape) + [nb_validities])
             lons = lons.repeat(nb_validities).reshape(shape)
             lats = lats.repeat(nb_validities).reshape(shape)
             shape_range = range(len(shape))
-            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  #last axis in first
-            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  #last axis in first
+            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
+            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
 
         return (lons, lats)
 
@@ -2050,18 +2050,18 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                 self._center_lon = self.grid['input_lon']
                 self._center_lat = self.grid['input_lat']
             else:
-                #x1, y1: coordinates in non rotated proj of input point
+                # x1, y1: coordinates in non rotated proj of input point
                 x1, y1 = p(float(self.grid['input_lon'].get('degrees')),
                            float(self.grid['input_lat'].get('degrees')))
-                #offset between center and input points is known in rotated proj
-                #dx, dy is the offset in non rotated proj
+                # offset between center and input points is known in rotated proj
+                # dx, dy is the offset in non rotated proj
                 (dx, dy) = self._rotate_axis(
                             (center[0] - self.grid['input_position'][0]) * self.grid['X_resolution'],
                             (center[1] - self.grid['input_position'][1]) * self.grid['Y_resolution'],
                             'xy2ll')
 #                xc = x1 + (center[0] - self.grid['input_position'][0]) * self.grid['X_resolution']
 #                yc = y1 + (center[1] - self.grid['input_position'][1]) * self.grid['Y_resolution']
-                #xc, yc: coordinates of center point in non rotated proj
+                # xc, yc: coordinates of center point in non rotated proj
                 xc = x1 + dx
                 yc = y1 + dy
                 center_lon, center_lat = p(xc, yc, inverse=True)
@@ -2515,8 +2515,8 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                          [(i, jmin) for i in range(imin, imax + 1)] + \
                          [(i, jmax) for i in range(imin, imax + 1)]
                 ilist, jlist = zip(*border)
-                (x, y) = self.ij2xy(numpy.array(ilist), numpy.array(jlist))  #in model coordinates
-                (x, y) = self._rotate_axis(x, y, direction='xy2ll')  #non-rotated coordinates
+                (x, y) = self.ij2xy(numpy.array(ilist), numpy.array(jlist))  # in model coordinates
+                (x, y) = self._rotate_axis(x, y, direction='xy2ll')  # non-rotated coordinates
                 (llcrnrlon, llcrnrlat) = self.xy2ll(*self._rotate_axis(x.min(), y.min(), direction='ll2xy'))
                 (urcrnrlon, urcrnrlat) = self.xy2ll(*self._rotate_axis(x.max(), y.max(), direction='ll2xy'))
             # defaults
@@ -2775,7 +2775,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         elif self.name == 'polar_stereographic':
             k = self.projection['reference_lat'].get('cos_sin')[1]
         theta = k * (lons - self.projection['reference_lon'].get('degrees')) \
-                - self.projection.get('rotation', 0.).get('degrees')  #TOBECHECKED: rotation
+                - self.projection.get('rotation', 0.).get('degrees')  # TOBECHECKED: rotation
 
         return theta
 
@@ -3099,31 +3099,31 @@ class D3GaussGeometry(D3Geometry):
         if d4:
             if nb_validities < 1:
                 raise ValueError("nb_validities must be >=1 when d4==True")
-            #We add vertical dimension
+            # We add vertical dimension
             shape = tuple(list(lons.shape) + [len(self.vcoordinate.levels)])
             lons = lons.repeat(len(self.vcoordinate.levels)).reshape(shape)
             lats = lats.repeat(len(self.vcoordinate.levels)).reshape(shape)
             shape_range = range(len(shape))
-            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  #last axis in first
-            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  #last axis in first
-            #We add validities
+            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
+            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
+            # We add validities
             shape = tuple(list(lons.shape) + [nb_validities])
             lons = lons.repeat(nb_validities).reshape(shape)
             lats = lats.repeat(nb_validities).reshape(shape)
             shape_range = range(len(shape))
-            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  #last axis in first
-            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  #last axis in first
+            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
+            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
         elif nb_validities > 0:
             shape = tuple(list(lons.shape) + [nb_validities])
             lons = lons.repeat(nb_validities).reshape(shape)
             lats = lats.repeat(nb_validities).reshape(shape)
             shape_range = range(len(shape))
-            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  #last axis in first
-            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  #last axis in first
+            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
+            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
 
         return (lons, lats)
 
-    def get_datashape(self, nb_validities, horizontal_only=False, d4=False):
+    def get_datashape(self, nb_validities, horizontal_only=False, d4=False, **useless):
         """
         Returns the data shape according to the geometry.
         - *horizontal_only*: the data doesn't have vertical coordinate
@@ -3162,6 +3162,7 @@ class D3GaussGeometry(D3Geometry):
             raise epygramError("geometry must have only one level")
         if self.datashape['k'] and not horizontal_only:
             has_vert_coord = True
+            data = data.squeeze()  # TOBECHECKED: a size=1 time dimension to be squeezed
             if len(data.shape) == 2:
                 flat = True
             elif len(data.shape) == 3:
@@ -3562,7 +3563,7 @@ class D3GaussGeometry(D3Geometry):
         # Map factor
         if map_factor_correction:
             zm = numpy.cos(zlat1) / numpy.cos(zlat2)
-            #zm = self.map_factor(lon, lat) # but redundant computations
+            # zm = self.map_factor(lon, lat) # but redundant computations
         else:
             if self.grid['dilatation_coef'] != 1.:
                 epylog.warning('*map_factor_correction* should be **True** !')
@@ -3622,7 +3623,7 @@ class D3GaussGeometry(D3Geometry):
                                       " reduced gauss grid are not" + \
                                       " implemented.")
 
-        ### internal functions
+        # ## internal functions
         def nearest_lats(latrs, num):
             """
             Internal method used to find the nearest latitude circles.
@@ -3688,8 +3689,8 @@ class D3GaussGeometry(D3Geometry):
                 i = ((lonrs - numpy.pi) % (numpy.pi * 2)) * \
                     lonnummax / (numpy.pi * 2)
             elif latnum >= len(latitudes):
-                #j = len(latitudes) - 1
-                j = len(latitudes) - (latnum - len(latitudes)) - 1  #TOBECHECKED: next circle past the pole
+                # j = len(latitudes) - 1
+                j = len(latitudes) - (latnum - len(latitudes)) - 1  # TOBECHECKED: next circle past the pole
                 lonnummax = self.dimensions['lon_number_by_lat'][j]
                 i = ((lonrs - numpy.pi) % (numpy.pi * 2)) * \
                     lonnummax / (numpy.pi * 2)
@@ -3741,7 +3742,7 @@ class D3GaussGeometry(D3Geometry):
                 points.extend(nearest_lons(lonrs, j, n))
             return points
 
-        ### actual algorithm
+        # ## actual algorithm
         # initializations
         if isinstance(lon, list) or isinstance(lon, tuple):
             lon = numpy.array(lon)

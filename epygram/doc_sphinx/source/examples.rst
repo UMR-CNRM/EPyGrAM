@@ -122,7 +122,7 @@ About Fields
     >>> import matplotlib.pyplot as plt
     >>> u = fcst5.readfield('S030WIND.U.PHYS')
     >>> v = fcst5.readfield('S030WIND.V.PHYS')
-    >>> vectwind = epygram.make_vector_field(u, v)
+    >>> vectwind = epygram.fields.make_vector_field(u, v)
     >>> vectwind.sp2gp()
     >>> FF = vectwind.to_module()
     >>> fig = FF.plotfield()

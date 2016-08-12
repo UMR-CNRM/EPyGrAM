@@ -12,8 +12,16 @@ import numpy
 
 from footprints import FPList, FPDict, proxy as fpx
 
-from epygram.base import Resource, FieldSet, FieldValidityList
 from epygram import epygramError
+from epygram.base import Resource, FieldSet, FieldValidityList
+
+class _open_and_close(object):
+    def __init__(self, r):
+        self.r = r
+    def __enter__(self):
+        self.r.open()
+    def __exit__(self, t, v, tbk):
+        self.r.close()
 
 class MultiValiditiesResource(Resource):
     """Class implementing a MultiValiditiesResource."""
@@ -48,11 +56,11 @@ class MultiValiditiesResource(Resource):
 
         self.lowLevelFormat = self.resources[0].format
 
-    def open(self):
-        """Opens all resources"""
+#    def open(self):
+#        """Opens all resources"""
 
-        for r in self.resources:
-            if not r.isopen: r.open()
+#        for r in self.resources:
+#            if not r.isopen: r.open()
 
     def close(self):
         """Closes all resources."""
@@ -68,7 +76,8 @@ class MultiValiditiesResource(Resource):
 
         tmp = []
         for r in self.resources:
-            tmp.extend(r.find_fields_in_resource(*args, **kwargs))
+            with _open_and_close(r):
+                tmp.extend(r.find_fields_in_resource(*args, **kwargs))
         result = []
         for res in tmp:
             if res not in result:
@@ -81,11 +90,12 @@ class MultiValiditiesResource(Resource):
         complete = 'complete' in kwargs and kwargs['complete']
         tmp = []
         for r in self.resources:
-            fidlist = r.listfields(*args, **kwargs)
-            if complete:
-                for fid in fidlist:
-                    fid[self.format] = fid[self.lowLevelFormat]
-            tmp.extend(fidlist)
+            with _open_and_close(r):
+                fidlist = r.listfields(*args, **kwargs)
+                if complete:
+                    for fid in fidlist:
+                        fid[self.format] = fid[self.lowLevelFormat]
+                tmp.extend(fidlist)
         result = []
         for res in tmp:
             if res not in result:
@@ -97,8 +107,9 @@ class MultiValiditiesResource(Resource):
 
         tmp = {}
         for r in self.resources:
-            for k, v in r.sortfields(*args, **kwargs).iteritems():
-                tmp[k] = tmp.get(k, []) + v
+            with _open_and_close(r):
+                for k, v in r.sortfields(*args, **kwargs).iteritems():
+                    tmp[k] = tmp.get(k, []) + v
         result = {}
         for k, v in tmp.iteritems():
             result[k] = list(set(v))
@@ -110,13 +121,14 @@ class MultiValiditiesResource(Resource):
         """
         fieldset = FieldSet()
         for r in self.resources:
-            fieldset.append(r.readfield(*args, **kwargs))
+            with _open_and_close(r):
+                fieldset.append(r.readfield(*args, **kwargs))
         return self._join_validities(fieldset)
 
     def writefield(self, *args, **kwargs):
         """Write fields."""
         raise NotImplementedError("writefield is not impelemented")
-        #To implement writefield we need to check that each validity is affected to only one resource
+        # To implement writefield we need to check that each validity is affected to only one resource
 
     def extractprofile(self, *args, **kwargs):
         """
@@ -125,7 +137,8 @@ class MultiValiditiesResource(Resource):
 
         fieldset = FieldSet()
         for r in self.resources:
-            fieldset.append(r.extractprofile(*args, **kwargs))
+            with _open_and_close(r):
+                fieldset.append(r.extractprofile(*args, **kwargs))
         return self._join_validities(fieldset)
 
     def extractsection(self, *args, **kwargs):
@@ -135,29 +148,30 @@ class MultiValiditiesResource(Resource):
 
         fieldset = FieldSet()
         for r in self.resources:
-            fieldset.append(r.extractsection(*args, **kwargs))
+            with _open_and_close(r):
+                fieldset.append(r.extractsection(*args, **kwargs))
         return self._join_validities(fieldset)
-    
+
     @property
     def spectral_geometry(self):
         """
         Returns the spectral_geometry
         """
-        
+
         ref = self.resources[0].spectral_geometry
-        
+
         if numpy.all([r.spectral_geometry == ref for r in self.resources]):
             return ref
         else:
             raise epygramError("All spectral_geometry are not identical")
-            
+
 
     def _join_validities(self, fieldset):
         """
         Join the different fields
         """
 
-        #Validities
+        # Validities
         validities = {}
         for i in range(len(fieldset)):
             field = fieldset[i]
@@ -177,7 +191,7 @@ class MultiValiditiesResource(Resource):
             raise epygramError("Several resources have returned the same validity")
         sortedValidities = sorted(validities.keys())
 
-        #Geometries
+        # Geometries
         kwargs_geom = copy.deepcopy(fieldset[0].geometry.footprint_as_dict())
         kwargs_geom['vcoordinate'] = fpx.geometry(structure='V', typeoffirstfixedsurface=255, levels=[255])
         for k, v in kwargs_geom.iteritems():
@@ -220,7 +234,7 @@ class MultiValiditiesResource(Resource):
             if spectral:
                 raise epygramError("Not sure how to merge vertical levels when spectral")
             raise NotImplementedError("a revoir")
-            #il faut revoir:
+            # il faut revoir:
             #  mettre au clair le nb de dimensions de level
             #  utiliser get_level
             if fieldset[0].geometry.datashape['k']:
@@ -239,7 +253,7 @@ class MultiValiditiesResource(Resource):
         else:
             geometry.vcoordinate = fpx.geometry(**kwargs_vcoord)
 
-        #Other metadata
+        # Other metadata
         kwargs_field = copy.deepcopy(fieldset[0].footprint_as_dict())
         kwargs_field.pop('data')
         kwargs_field['validity'] = FieldValidityList()
@@ -255,7 +269,7 @@ class MultiValiditiesResource(Resource):
             kwargs_field['validity'] = FieldValidityList()
             kwargs_field['geometry'] = geometry
             sameProcesstype = sameProcesstype and  kwargs_field['processtype'] == fieldset[0].processtype
-            kwargs_field['processtype'] = fieldset[0].processtype #we exclude processtype from the comparison
+            kwargs_field['processtype'] = fieldset[0].processtype  # we exclude processtype from the comparison
             for k, v in kwargs_field.iteritems():
                 if type(v) == type(FPDict()):
                     kwargs_field[k] = dict(v)
@@ -263,7 +277,7 @@ class MultiValiditiesResource(Resource):
             if field != myf:
                 raise epygramError("All fields must be of the same kind")
 
-        #Returned field
+        # Returned field
         shape = tuple([len(fieldset)] + list(fieldset[0].getdata().shape))
         data = numpy.ndarray(shape)
         fieldvaliditylist = FieldValidityList()

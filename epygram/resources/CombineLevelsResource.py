@@ -88,18 +88,18 @@ class CombineLevelsResource(Resource):
 
         result = {}
 
-        #Loop over the low level resource fids
+        # Loop over the low level resource fids
         for fid in self.resource.listfields(complete=True):
             original_fid = fid[self.resource.format]
             generic_fid = fid['generic']
-            level = generic_fid.pop('level', None)  #we suppress level from generic_fid
+            level = generic_fid.pop('level', None)  # we suppress level from generic_fid
             hashable_generic_fid = tuple([(k, generic_fid[k]) for k in sorted(generic_fid.keys())])
             if not hashable_generic_fid in result:
                 result[hashable_generic_fid] = {'original_fids':[], 'generic':None}
             result[hashable_generic_fid]['original_fids'].append((original_fid, level))
             result[hashable_generic_fid]['generic'] = generic_fid
 
-        #For fields present on only one layer, we put again the level in the generic fid
+        # For fields present on only one layer, we put again the level in the generic fid
         for k, v in result.iteritems():
             if len(v['original_fids']) == 1 and v['original_fids'][0][1] != None:
                 v['generic']['level'] = v['original_fids'][0][1]
@@ -130,7 +130,7 @@ class CombineLevelsResource(Resource):
         Argument *onlykey* can be specified as a string or a tuple of strings,
         so that only specified keys of the fid will returned.
         """
-        #Taken from GRIB.py
+        # Taken from GRIB.py
 
         sortedfields = {}
         listoffields = self.listfields()
@@ -176,15 +176,15 @@ class CombineLevelsResource(Resource):
             if found == None:
                 raise epygramError("Internal error....")
             if not 'parameterNumber' in fid or fid['parameterNumber'] == 255:
-                #We do not join levels when parameterNumber is not known
+                # We do not join levels when parameterNumber is not known
                 for original_fid in cont[found]['original_fid']:
                     field = self.resource.readfield(original_fid[0])
                     field.fid[self.format] = fid
                     fieldset.append(field)
             else:
-                #We join levels
+                # We join levels
 
-                #Fields to join
+                # Fields to join
                 fields = self.resource.readfields([original_fid[0] for original_fid in cont[found]['original_fids']])
 
                 if len(fields) == 1:
@@ -192,18 +192,18 @@ class CombineLevelsResource(Resource):
                     field.fid[self.format] = fid
                     fieldset.append(field)
                 else:
-                    #Geometry check and level list: part I
+                    # Geometry check and level list: part I
                     levellist = {}
                     kwargs_geom = copy.deepcopy(fields[0].geometry.footprint_as_dict())
-                    kwargs_vccord = copy.deepcopy(fields[0].geometry.vcoordinate.footprint_as_dict())
-                    kwargs_vccord['levels'] = [255]
-                    kwargs_geom['vcoordinate'] = fpx.geometry(**kwargs_vccord)
+                    kwargs_vcoord = copy.deepcopy(fields[0].geometry.vcoordinate.footprint_as_dict())
+                    kwargs_vcoord['levels'] = [255]
+                    kwargs_geom['vcoordinate'] = fpx.geometry(**kwargs_vcoord)
                     for k, v in kwargs_geom.iteritems():
                         if type(v) == type(FPDict()):
                             kwargs_geom[k] = dict(v)
                     ref_geometry = fpx.geometry(**kwargs_geom)
                     spectral = fields[0].spectral
-                    #Other metadata check: part I
+                    # Other metadata check: part I
                     kwargs_field = copy.deepcopy(fields[0].footprint_as_dict())
                     kwargs_field.pop('data')
                     kwargs_field['fid'] = {'generic':fid}
@@ -213,13 +213,13 @@ class CombineLevelsResource(Resource):
                             kwargs_field[k] = dict(v)
                     ref_field = fpx.field(**kwargs_field)
                     for i, field in enumerate(fields):
-                        #Geometry check and level list: part II
+                        # Geometry check and level list: part II
                         if spectral != field.spectral:
                             raise epygramError("All fields must be gridpoint or spectral")
                         kwargs_geom = copy.deepcopy(field.geometry.footprint_as_dict())
-                        kwargs_vccord = copy.deepcopy(field.geometry.vcoordinate.footprint_as_dict())
-                        kwargs_vccord['levels'] = [255]
-                        kwargs_geom['vcoordinate'] = fpx.geometry(**kwargs_vccord)
+                        kwargs_vcoord = copy.deepcopy(field.geometry.vcoordinate.footprint_as_dict())
+                        kwargs_vcoord['levels'] = [255]
+                        kwargs_geom['vcoordinate'] = fpx.geometry(**kwargs_vcoord)
                         for k, v in kwargs_geom.iteritems():
                             if type(v) == type(FPDict()):
                                 kwargs_geom[k] = dict(v)
@@ -230,7 +230,7 @@ class CombineLevelsResource(Resource):
                         levellist[i] = field.geometry.vcoordinate.levels[0]
                         if ref_geometry != geometry_field:
                             raise epygramError("All resources must return fields with the same geometry.")
-                        #Other metadata check: part II
+                        # Other metadata check: part II
                         kwargs_field = copy.deepcopy(field.footprint_as_dict())
                         kwargs_field.pop('data')
                         kwargs_field['fid'] = {'generic':fid}
@@ -242,20 +242,29 @@ class CombineLevelsResource(Resource):
                         if ref_field != myf:
                             raise epygramError("All fields must be of the same kind")
 
-                    #levels and data of the resulting field
+                    # levels and data of the resulting field
                     levelsorder = sorted(levellist, key=levellist.get)
                     levels4d = ref_field.geometry.get_levels(d4=True, nb_validities=len(fields[0].validity))
-                    shape = levels4d.shape  #shape of 4D with only one level
+                    shape = levels4d.shape  # shape of 4D with only one level
                     shape = tuple([shape[0], len(fields)] + list(shape[2:]))
                     levels = numpy.ndarray(shape, dtype=levels4d.dtype)
-                    data = numpy.ndarray(shape)
+                    # data = numpy.ndarray(shape) #TODO: remove
 
-                    #Loop over the fields
+                    # Loop over the fields
+                    first = True
                     for i in levelsorder:
                         if fields[i].spectral: fields[i].sp2gp()
-                        data[:, i] = fields[i].getdata(d4=True)[:, 0]
+                        if first:
+                            first = False
+                            data = fields[i].getdata(d4=True)[:, 0:1, :, :]
+                        else:
+                            if isinstance(data, numpy.ma.masked_array):
+                                concat = numpy.ma.concatenate
+                            else:
+                                concat = numpy.concatenate
+                            data = concat((data, fields[i].getdata(d4=True)[:, 0:1, :, :]), axis=1)
+                        # data[:, i] = fields[i].getdata(d4=True)[:, 0] #TODO: remove
                         levels[:, i] = fields[i].geometry.get_levels(d4=True, nb_validities=len(fields[0].validity))[:, 0]
-
                     cst_horizontal = True
                     cst_time = True
                     for k in range(levels.shape[1]):
@@ -266,10 +275,10 @@ class CombineLevelsResource(Resource):
                                              numpy.all(levels[t, k] == levels[t, k].flatten()[0])
                     if cst_time:
                         levels = levels[0]
-                    if cst_horizontal:  #implies cst_time, so levels does not have time dimension
+                    if cst_horizontal:  # implies cst_time, so levels does not have time dimension
                         levels = [levels[k].flatten()[0] for k in range(levels.shape[0])]
-                    kwargs_vccord['levels'] = levels
-                    kwargs_geom['vcoordinate'] = fpx.geometry(**kwargs_vccord)
+                    kwargs_vcoord['levels'] = levels
+                    kwargs_geom['vcoordinate'] = fpx.geometry(**kwargs_vcoord)
                     kwargs_geom['structure'] = {'H2D':'3D', 'point':'V1D', 'H1D':'V2D', 'V1D':'V1D', 'V2D':'V2D'}[kwargs_geom['structure']]
                     kwargs_field['geometry'] = fpx.geometry(**kwargs_geom)
                     kwargs_field['structure'] = kwargs_geom['structure']
@@ -283,7 +292,7 @@ class CombineLevelsResource(Resource):
     def writefield(self, *args, **kwargs):
         """Write fields."""
         raise NotImplementedError("writefield is not implemented")
-        #To implement writefield we need to check that each validity is affected to only one resource
+        # To implement writefield we need to check that each validity is affected to only one resource
 
     def extractprofile(self, *args, **kwargs):
         """
