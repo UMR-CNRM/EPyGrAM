@@ -15,17 +15,15 @@ import sys
 import numpy
 from collections import OrderedDict
 
+import netCDF4
+
 import footprints
 from footprints import proxy as fpx, FPDict, FPList
 
 from epygram import config, epygramError, util
 from epygram.base import FieldValidity, FieldValidityList
 from epygram.resources import FileResource
-from epygram.fields import H2DField
 from epygram.util import stretch_array, Angle, nearlyEqual
-from epygram.geometries.V2DGeometry import V2DUnstructuredGeometry
-
-import netCDF4
 
 epylog = footprints.loggers.getLogger(__name__)
 
@@ -537,9 +535,29 @@ class netCDF(FileResource):
                 assert len(self._dimensions[d]) == size, \
                        "dimensions mismatch: " + d + ": " + \
                        str(self._dimensions[d]) + " != " + str(size)
+        def check_or_add_variable(varname, vartype,
+                                  dimensions=(),
+                                  **kwargs):
+            if unicode(varname) not in self._variables.keys():
+                var = self._nc.createVariable(varname, vartype,
+                                              dimensions=dimensions,
+                                              **kwargs)
+                status = 'created'
+            else:
+                assert self._variables[varname].dtype == vartype, \
+                       ' '.join(['variable', varname,
+                                 'already exist with other type:',
+                                 self._variables[varname].dtype])
+                assert self._variables[varname].dimensions == tuple(dimensions), \
+                       ' '.join(['variable', varname,
+                                 'already exist with other dimensions:',
+                                 str(self._variables[varname].dimensions)])
+                var = self._variables[varname]
+                status = 'match'
+            return var, status
 
         # 1. dimensions
-        T = Z = Y = X = G = N = None
+        T = Y = X = G = N = None
         # time
         if len(field.validity) > 1:
             T = self.behaviour.get('T_dimension',
@@ -582,19 +600,24 @@ class netCDF(FileResource):
             raise NotImplementedError("grid not rectangular nor a gauss one.")
 
         # 2. validity
+        #TODO: deal with unlimited time dimension ?
         if field.validity[0] != FieldValidity():
             tgrid = self.behaviour.get('T_grid',
                                    config.netCDF_usualnames_for_standard_dimensions['T_dimension'][0])
             if len(field.validity) == 1:
-                self._nc.createVariable(tgrid, int)
+                _, _status = check_or_add_variable(tgrid, int)
                 dims = []
             else:
-                self._nc.createVariable(tgrid, int, T)
+                _, _status = check_or_add_variable(tgrid, int, T)
                 dims = [tgrid]
             datetime0 = field.validity[0].getbasis().isoformat(sep=' ')
             datetimes = [int(dt.term().total_seconds()) for dt in field.validity]
-            self._variables[tgrid][:] = datetimes
-            self._variables[tgrid].units = ' '.join(['seconds', 'since', datetime0])
+            if _status == 'created':
+                self._variables[tgrid][:] = datetimes
+                self._variables[tgrid].units = ' '.join(['seconds', 'since', datetime0])
+            else:
+                assert self._variables[tgrid][:] == datetimes, \
+                       ' '.join(['variable', tgrid, 'mismatch.'])
 
         # 3. geometry
         # 3.1 vertical part
@@ -606,34 +629,41 @@ class netCDF(FileResource):
             if field.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
                 ZP1 = Z + '+1'
                 check_or_add_dim(ZP1, size=Z_gridsize + 1)
-                zgrid = self._nc.createVariable(zgridname, int)
-                if field.geometry.vcoordinate.typeoffirstfixedsurface == 119:
-                    zgrid.standard_name = "atmosphere_hybrid_sigma_pressure_coordinate"
-                    zgrid.positive = "down"
-                    zgrid.formula_terms = "ap: hybrid_coef_A b: hybrid_coef_B ps: surface_air_pressure"
-                    self._nc.createVariable('hybrid_coef_A', vartype, ZP1)
-                    self._variables['hybrid_coef_A'][:] = [iab[1]['Ai'] for iab in field.geometry.vcoordinate.grid['gridlevels']]
-                    self._nc.createVariable('hybrid_coef_B', vartype, ZP1)
-                    self._variables['hybrid_coef_B'][:] = [iab[1]['Bi'] for iab in field.geometry.vcoordinate.grid['gridlevels']]
-                elif field.geometry.vcoordinate.typeoffirstfixedsurface == 118:
-                    # TOBECHECKED:
-                    zgrid.standard_name = "atmosphere_hybrid_height_coordinate"
-                    zgrid.positive = "up"
-                    zgrid.formula_terms = "a: hybrid_coef_A b: hybrid_coef_B orog: orography"
-                    self._nc.createVariable('hybrid_coef_A', vartype, ZP1)
-                    self._variables['hybrid_coef_A'][:] = [iab[1]['Ai'] for iab in field.geometry.vcoordinate.grid['gridlevels']]
-                    self._nc.createVariable('hybrid_coef_B', vartype, ZP1)
-                    self._variables['hybrid_coef_B'][:] = [iab[1]['Bi'] for iab in field.geometry.vcoordinate.grid['gridlevels']]
+                zgrid, _status = check_or_add_variable(zgridname, int)
+                if _status == 'created':
+                    if field.geometry.vcoordinate.typeoffirstfixedsurface == 119:
+                        zgrid.standard_name = "atmosphere_hybrid_sigma_pressure_coordinate"
+                        zgrid.positive = "down"
+                        zgrid.formula_terms = "ap: hybrid_coef_A b: hybrid_coef_B ps: surface_air_pressure"
+                        check_or_add_variable('hybrid_coef_A', vartype, ZP1)
+                        self._variables['hybrid_coef_A'][:] = [iab[1]['Ai'] for iab in field.geometry.vcoordinate.grid['gridlevels']]
+                        check_or_add_variable('hybrid_coef_B', vartype, ZP1)
+                        self._variables['hybrid_coef_B'][:] = [iab[1]['Bi'] for iab in field.geometry.vcoordinate.grid['gridlevels']]
+                    elif field.geometry.vcoordinate.typeoffirstfixedsurface == 118:
+                        # TOBECHECKED:
+                        zgrid.standard_name = "atmosphere_hybrid_height_coordinate"
+                        zgrid.positive = "up"
+                        zgrid.formula_terms = "a: hybrid_coef_A b: hybrid_coef_B orog: orography"
+                        check_or_add_variable('hybrid_coef_A', vartype, ZP1)
+                        self._variables['hybrid_coef_A'][:] = [iab[1]['Ai'] for iab in field.geometry.vcoordinate.grid['gridlevels']]
+                        check_or_add_variable('hybrid_coef_B', vartype, ZP1)
+                        self._variables['hybrid_coef_B'][:] = [iab[1]['Bi'] for iab in field.geometry.vcoordinate.grid['gridlevels']]
+                else:
+                    epylog.info('assume 118/119 type vertical grid matches.')
             else:
                 if len(numpy.shape(field.geometry.vcoordinate.grid['gridlevels'])) > 1:
                     dims_Z = [d for d in [Z, Y, X, G, N] if d is not None]
                 else:
                     dims_Z = Z
-                zgrid = self._nc.createVariable(zgridname, vartype, dims_Z)
+                zgrid, _status = check_or_add_variable(zgridname, vartype, dims_Z)
                 u = {102:'m', 103:'m', 100:'hPa'}.get(field.geometry.vcoordinate.typeoffirstfixedsurface, None)
                 if u is not None:
                     zgrid.units = u
-                zgrid[:] = field.geometry.vcoordinate.grid['gridlevels']
+                if _status == 'created':
+                    zgrid[:] = field.geometry.vcoordinate.grid['gridlevels']
+                else:
+                    assert zgrid[:] == field.geometry.vcoordinate.grid['gridlevels'], \
+                           ' '.join(['variable', zgrid, 'mismatch.'])
             if _typeoffirstfixedsurface_dict_inv.get(field.geometry.vcoordinate.typeoffirstfixedsurface, False):
                 zgrid.short_name = _typeoffirstfixedsurface_dict_inv[field.geometry.vcoordinate.typeoffirstfixedsurface]
         # 3.2 grid (lonlat)
@@ -657,55 +687,60 @@ class netCDF(FileResource):
             lats = lats.filled(fill_value)
         else:
             fill_value = None
-        self._nc.createVariable('longitude', vartype, dims_lonlat, fill_value=fill_value)
-        self._nc.createVariable('latitude', vartype, dims_lonlat, fill_value=fill_value)
-        self._variables['longitude'][...] = lons
-        self._variables['latitude'][...] = lats
+        check_or_add_variable('longitude', vartype, dims_lonlat, fill_value=fill_value)
+        check_or_add_variable('latitude', vartype, dims_lonlat, fill_value=fill_value)
+        epylog.info('assume lons/lats match.')
         # 3.3 meta-data
         if field.geometry.dimensions.get('Y', field.geometry.dimensions.get('lat_number', 0)) > 1:
             if all([k in field.geometry.name for k in ('reduced', 'gauss')]):
                 # reduced Gauss case
                 meta = 'Gauss_grid'
-                self._nc.createVariable(meta, int)
-                self._variables[meta].grid_mapping_name = "gauss_grid"
-                self._variables[meta].lon_number_by_lat = 'var: lon_number_by_lat'
-                self._nc.createVariable('lon_number_by_lat', int, Y)
-                self._variables['lon_number_by_lat'][:] = field.geometry.dimensions['lon_number_by_lat']
-                self._variables[meta].latitudes = 'var: gauss_latitudes'
-                self._nc.createVariable('gauss_latitudes', float, Y)
-                self._variables['gauss_latitudes'][:] = [l.get('degrees') for l in field.geometry.grid['latitudes']]
-                if 'pole_lon' in field.geometry.grid.keys():
-                    self._variables[meta].pole_lon = field.geometry.grid['pole_lon'].get('degrees')
-                    self._variables[meta].pole_lat = field.geometry.grid['pole_lat'].get('degrees')
-                if 'dilatation_coef' in field.geometry.grid.keys():
-                    self._variables[meta].dilatation_coef = field.geometry.grid['dilatation_coef']
+                _, _status = check_or_add_variable(meta, int)
+                if _status == 'created':
+                    self._variables[meta].grid_mapping_name = "gauss_grid"
+                    self._variables[meta].lon_number_by_lat = 'var: lon_number_by_lat'
+                    check_or_add_variable('lon_number_by_lat', int, Y)
+                    self._variables['lon_number_by_lat'][:] = field.geometry.dimensions['lon_number_by_lat']
+                    self._variables[meta].latitudes = 'var: gauss_latitudes'
+                    check_or_add_variable('gauss_latitudes', float, Y)
+                    self._variables['gauss_latitudes'][:] = [l.get('degrees') for l in field.geometry.grid['latitudes']]
+                    if 'pole_lon' in field.geometry.grid.keys():
+                        self._variables[meta].pole_lon = field.geometry.grid['pole_lon'].get('degrees')
+                        self._variables[meta].pole_lat = field.geometry.grid['pole_lat'].get('degrees')
+                    if 'dilatation_coef' in field.geometry.grid.keys():
+                        self._variables[meta].dilatation_coef = field.geometry.grid['dilatation_coef']
+                else:
+                    epylog.info('assume Gauss grid parameters match.')
             elif field.geometry.projected_geometry:
                 # projections
                 if field.geometry.name == 'lambert':
                     meta = 'Lambert_Conformal'
-                    self._nc.createVariable(meta, int)
-                    self._variables[meta].grid_mapping_name = 'lambert_conformal_conic'
-                    if field.geometry.grid['X_resolution'] != field.geometry.grid['Y_resolution']:
-                        raise NotImplementedError('anisotropic resolution')
+                    _, _status = check_or_add_variable(meta, int)
+                    if _status == 'created':
+                        self._variables[meta].grid_mapping_name = 'lambert_conformal_conic'
+                        if field.geometry.grid['X_resolution'] != field.geometry.grid['Y_resolution']:
+                            raise NotImplementedError('anisotropic resolution')
+                        else:
+                            self._variables[meta].resolution = field.geometry.grid['X_resolution']
+                        if field.geometry.grid.get('LAMzone'):
+                            _lon_cen, _lat_cen = field.geometry.ij2ll(float(field.geometry.dimensions['X'] - 1.) / 2.,
+                                                                      float(field.geometry.dimensions['Y'] - 1.) / 2.)
+                        else:
+                            _lon_cen = field.geometry._center_lon.get('degrees')
+                            _lat_cen = field.geometry._center_lat.get('degrees')
+                        self._variables[meta].longitude_of_central_meridian = _lon_cen
+                        self._variables[meta].latitude_of_projection_origin = _lat_cen
+                        if not nearlyEqual(field.geometry._center_lon.get('degrees'),
+                                           field.geometry.projection['reference_lon'].get('degrees')):
+                            epylog.warning('center_lon != reference_lon (tilting) is not "on the cards" in CF convention 1.6')
+                            self._variables[meta].standard_meridian = field.geometry.projection['reference_lon'].get('degrees')
+                        if field.geometry.secant_projection:
+                            self._variables[meta].standard_parallel = [field.geometry.projection['secant_lat1'].get('degrees'),
+                                                                                      field.geometry.projection['secant_lat2'].get('degrees')]
+                        else:
+                            self._variables[meta].standard_parallel = field.geometry.projection['reference_lat'].get('degrees')
                     else:
-                        self._variables[meta].resolution = field.geometry.grid['X_resolution']
-                    if field.geometry.grid.get('LAMzone'):
-                        _lon_cen, _lat_cen = field.geometry.ij2ll(float(field.geometry.dimensions['X'] - 1.) / 2.,
-                                                                  float(field.geometry.dimensions['Y'] - 1.) / 2.)
-                    else:
-                        _lon_cen = field.geometry._center_lon.get('degrees')
-                        _lat_cen = field.geometry._center_lat.get('degrees')
-                    self._variables[meta].longitude_of_central_meridian = _lon_cen
-                    self._variables[meta].latitude_of_projection_origin = _lat_cen
-                    if not nearlyEqual(field.geometry._center_lon.get('degrees'),
-                                       field.geometry.projection['reference_lon'].get('degrees')):
-                        epylog.warning('center_lon != reference_lon (tilting) is not "on the cards" in CF convention 1.6')
-                        self._variables[meta].standard_meridian = field.geometry.projection['reference_lon'].get('degrees')
-                    if field.geometry.secant_projection:
-                        self._variables[meta].standard_parallel = [field.geometry.projection['secant_lat1'].get('degrees'),
-                                                                                  field.geometry.projection['secant_lat2'].get('degrees')]
-                    else:
-                        self._variables[meta].standard_parallel = field.geometry.projection['reference_lat'].get('degrees')
+                        epylog.info('assume projection parameters match.')
                 else:
                     raise NotImplementedError('field.geometry.name == ' + field.geometry.name)
             else:
@@ -714,9 +749,10 @@ class netCDF(FileResource):
             meta = False
 
         # 4. Variable
-        self._nc.createVariable(field.fid['netCDF'], vartype, dims,
-                                zlib=bool(compression), complevel=compression,
-                                fill_value=fill_value)
+        _, _status = check_or_add_variable(field.fid['netCDF'], vartype, dims,
+                                           zlib=bool(compression),
+                                           complevel=compression,
+                                           fill_value=fill_value)
         if meta:
             self._variables[field.fid['netCDF']].grid_mapping = meta
         if field.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
@@ -728,6 +764,8 @@ class netCDF(FileResource):
             data = field.getdata()
         if isinstance(data, numpy.ma.masked_array):
             data = data.filled(fill_value)
+        if _status == 'match':
+            epylog.info('overwrite data in variable ' + field.fid['netCDF'])
         self._variables[field.fid['netCDF']][...] = data
 
     def behave(self, **kwargs):

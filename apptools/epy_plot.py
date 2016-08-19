@@ -136,7 +136,7 @@ def main(filename,
     if not diffmode:
         if not computewind:
             field = resource.readfield(fieldseed)
-            if not field.geometry.grid.has_key('LAMzone'):
+            if not field.geometry.grid.get('LAMzone', False):
                 subzone = None
             if field.spectral:
                 field.sp2gp()
