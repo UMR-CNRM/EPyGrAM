@@ -25,6 +25,9 @@ class PointGeometry(V1DGeometry, H2DUnstructuredGeometry):
                 values=set(['DDH:point', 'DDH:ij_point', 'DDH:quadrilateral',
                             'DDH:rectangle', 'DDH:globe', 'DDH:zonal_bands',
                             'unstructured']),
-                optional=True)
+                optional=True),
+            position_on_horizontal_grid=dict(
+                values=['center'],
+                default='center')
         )
     )

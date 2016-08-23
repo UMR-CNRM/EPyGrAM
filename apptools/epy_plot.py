@@ -54,7 +54,7 @@ def main(filename,
          background=False,
          composition=None,
          mask_threshold=None,
-         quiverkey={},
+         quiverkey=None,
          global_shift_center=None
          ):
     """
@@ -122,6 +122,7 @@ def main(filename,
                              to be shifted to a [-180,180] grid, for instance (with -180 argument).
     """
 
+    quiverkey = epygram.util.ifNone_emptydict(quiverkey)
     if outputfilename and not output:
         raise epygramError('*output* format must be defined if outputfilename is supplied.')
 

@@ -7,7 +7,7 @@
 Contains all fields classes.
 """
 
-from .PointField import PointField
+from .PointField import PointField, gimme_one_point
 from .MiscField import MiscField
 from .D3Field import D3Field
 from .H2DField import H2DField

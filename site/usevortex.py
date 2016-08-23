@@ -32,7 +32,7 @@ def set_defaults(**defaults):
                         origin='hst')
     toolbox.defaults(**defaults)
 
-def get_resources(getmode='epygram', **description):
+def get_resources(getmode='epygram', uselocalcache=False, **description):
     """
     Get resources, given their description.
     
@@ -41,7 +41,11 @@ def get_resources(getmode='epygram', **description):
                'exist' return the physical resolved location of the resource and its existence
                'fetch' fetches the resource in local, as filename *local*
                'vortex' return the vortex data handler of the resource
-    
+    *uselocalcache*: if True, store resources in a local cache (not
+                     automatically cleaned, take care) defined either (and by
+                     priority order) in $MTOOL_STEP_CACHE, $MTOOLDIR, $FTDIR,
+                     $WORKDIR, $TMPDIR.
+
     Examples:
     
     - for the analysis of AROME-france from experiment 864G on 2015/08/15/00,
@@ -93,10 +97,14 @@ def get_resources(getmode='epygram', **description):
         description['experiment'] = xp
 
     # set namespace according to status xp/oper...
+    if uselocalcache:
+        _domain = 'multi'
+    else:
+        _domain = 'archive'
     if description.get('experiment', None) and 'namespace' not in description.keys():
-        description['namespace'] = 'olive.archive.fr'
+        description['namespace'] = '.'.join(['olive', _domain, 'fr'])
     elif description.get('suite', None) in ('oper', 'dble') and 'namespace' not in description.keys():
-        description['namespace'] = 'oper.archive.fr'
+        description['namespace'] = '.'.join(['oper', _domain, 'fr'])
     if not description.get('local', None):
         description['local'] = str(uuid.uuid4()) + "_[term]"
     if description.get('kind', None) in ('analysis', 'historic'):
@@ -114,7 +122,7 @@ def get_resources(getmode='epygram', **description):
                 check_desc[k] = description[k][0]
             else:
                 check_desc[k] = description[k]
-            resolved = toolbox.rload(**check_desc)  
+            resolved = toolbox.rload(**check_desc)
     else:
         if getmode == 'prestaging':
             # force namespace archive for prestaging
@@ -122,7 +130,7 @@ def get_resources(getmode='epygram', **description):
                                                  'archive',
                                                  'fr'])
         resolved = toolbox.rload(**description)
-        
+
     # and complete reaching resource according to getmode
     if getmode == 'locate':
         resources = [r.locate() for r in resolved]
@@ -153,17 +161,17 @@ def get_resources(getmode='epygram', **description):
             (_login, _, _passwd) = netrc.netrc().authenticators(archive_name)
         except TypeError:
             if netrc.netrc().authenticators(archive_name) is None:
-                raise IOError("host "+archive_name+" is unknown in .netrc")
+                raise IOError("host " + archive_name + " is unknown in .netrc")
         ftp = ftplib.FTP(archive_name)
         ftp.login(_login, _passwd)
         # build request
         tmpdir = '/dev/shm'
         stagedir = '/DemandeMig/ChargeEnEspaceRapide'
         if 'mail' in description.keys():
-            request = ["#MAIL="+description['mail']+'\n',]
+            request = ["#MAIL=" + description['mail'] + '\n', ]
         else:
             request = []
-        request += [r.locate().split('hendrix.meteo.fr:')[1]+'\n' for r in resolved]
+        request += [r.locate().split('hendrix.meteo.fr:')[1] + '\n' for r in resolved]
         with open(tempfile.mkstemp(prefix='.'.join([_login, 'staging_request', '']),
                                    dir=tmpdir,
                                    suffix='.MIG')[1], 'w') as f:

@@ -509,6 +509,22 @@ class D3CommonField(Field):
 
         return newfield
 
+    def extend(self, another_pointfield_with_time_dimension):
+        """
+        Extend the field with regard to time dimension with the field given as
+        argument.
+        
+        Be careful no check is done for consistency between the two fields
+        geometry (except that dimensions match) nor their validities.
+        """
+
+        another = another_pointfield_with_time_dimension
+        d1 = self.getdata(d4=True)
+        d2 = another.getdata(d4=True)
+        d = numpy.concatenate([d1, d2], axis=0).squeeze()
+        self.validity.extend(another.validity)
+        self.setdata(d)
+
 ###################
 # PRE-APPLICATIVE #
 ###################
@@ -1054,7 +1070,7 @@ class D3Field(D3CommonField):
         dimensions = 0
         if len(self.validity) > 1:
             dimensions += 1
-        if self.geometry.datashape['k']:  # FIXME: to remove: or len(self.validity) > 1:
+        if self.geometry.datashape['k']:
             dimensions += 1
         if self.spectral:
             dimensions += 1
@@ -1067,6 +1083,14 @@ class D3Field(D3CommonField):
             dataType = "gridpoint"
         if len(numpy.shape(data)) != dimensions:
             raise epygramError(dataType + " data must be " + str(dimensions) + "D array.")
+        if not self.spectral:
+            if 'gauss' in self.geometry.name:
+                total_dim = len(self.validity) * len(self.geometry.vcoordinate.levels) \
+                            * self.geometry.dimensions['lat_number'] * self.geometry.dimensions['max_lon_number']
+            else:
+                total_dim = len(self.validity) * len(self.geometry.vcoordinate.levels) \
+                            * self.geometry.dimensions['Y'] * self.geometry.dimensions['X']
+            assert total_dim == len(numpy.array(data).flatten()), 'data has wrong total dimension.'
         super(D3Field, self).setdata(data)
 
     def select_subzone(self, subzone):

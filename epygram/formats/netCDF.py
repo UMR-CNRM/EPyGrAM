@@ -155,8 +155,8 @@ class netCDF(FileResource):
     @FileResource._openbeforedelayed
     def readfield(self, fid,
                   getdata=True,
-                  only={},
-                  adhoc_behaviour={}):
+                  only=None,
+                  adhoc_behaviour=None):
         """
         Reads one field, given its netCDF name, and returns a Field instance.
         
@@ -166,6 +166,8 @@ class netCDF(FileResource):
           contain data.
         - *only*: to specify indexes [0 ... n-1] of specific dimensions,
           e.g. {'time':5,} to select only the 6th term of time dimension.
+        - *adhoc_behaviour*: to specify "on the fly" a behaviour (usual
+          dimensions or grids).
         """
 
         # 0. initialization
@@ -173,6 +175,8 @@ class netCDF(FileResource):
                "cannot read fields in resource if with openmode == 'w'."
         assert fid in self.listfields(), \
                ' '.join(["field", fid, "not found in resource."])
+        only = util.ifNone_emptydict(only)
+        adhoc_behaviour = util.ifNone_emptydict(adhoc_behaviour)
         field_kwargs = {'fid':{'netCDF':fid}}
         variable = self._variables[fid]
         behaviour = self.behaviour.copy()
@@ -435,12 +439,22 @@ class netCDF(FileResource):
         elif V1D or V2D or points:
             var_corresponding_to_X_grid = behaviour.get('X_grid', False)
             if not var_corresponding_to_X_grid in self._variables.keys():
-                raise epygramError('unable to find X_grid in variables.')
+                if points or V1D:
+                    lon = ['_']
+                else:
+                    raise epygramError('unable to find X_grid in variables.')
+            else:
+                lon = self._variables[var_corresponding_to_X_grid][:]
             var_corresponding_to_Y_grid = behaviour.get('Y_grid', False)
             if not var_corresponding_to_Y_grid in self._variables.keys():
-                raise epygramError('unable to find Y_grid in variables.')
-            grid = {'longitudes':self._variables[var_corresponding_to_X_grid][:],
-                    'latitudes':self._variables[var_corresponding_to_Y_grid][:],
+                if points or V1D:
+                    lat = ['_']
+                else:
+                    raise epygramError('unable to find Y_grid in variables.')
+            else:
+                lat = self._variables[var_corresponding_to_Y_grid][:]
+            grid = {'longitudes':lon,
+                    'latitudes':lat,
                     'LAMzone':None}
 
         # 3.4 build geometry
@@ -512,16 +526,17 @@ class netCDF(FileResource):
 
         return field
 
-    def writefield(self, field, compression=4, metadata={}):
+    def writefield(self, field, compression=4, metadata=None):
         """
         Write a field in resource.
         Args:\n
         - *compression* ranges from 1 (low compression, fast writing)
           to 9 (high compression, slow writing). 0 is no compression.
-        - *metadata* can be filled by any meta-data, that will be stored
+        - *metadata*: dict, can be filled by any meta-data, that will be stored
           as attribute of the netCDF variable.
         """
 
+        metadata = util.ifNone_emptydict(metadata)
         vartype = 'f8'
         fill_value = -999999.9
         def check_or_add_dim(d, d_in_field=None, size=None):
@@ -548,6 +563,8 @@ class netCDF(FileResource):
                        ' '.join(['variable', varname,
                                  'already exist with other type:',
                                  self._variables[varname].dtype])
+                if isinstance(dimensions, str):
+                    dimensions = (dimensions,)
                 assert self._variables[varname].dimensions == tuple(dimensions), \
                        ' '.join(['variable', varname,
                                  'already exist with other dimensions:',
@@ -611,12 +628,12 @@ class netCDF(FileResource):
                 _, _status = check_or_add_variable(tgrid, int, T)
                 dims = [tgrid]
             datetime0 = field.validity[0].getbasis().isoformat(sep=' ')
-            datetimes = [int(dt.term().total_seconds()) for dt in field.validity]
+            datetimes = [int((dt.get() - field.validity[0].getbasis()).total_seconds()) for dt in field.validity]
             if _status == 'created':
                 self._variables[tgrid][:] = datetimes
                 self._variables[tgrid].units = ' '.join(['seconds', 'since', datetime0])
             else:
-                assert self._variables[tgrid][:] == datetimes, \
+                assert (self._variables[tgrid][:] == datetimes).all(), \
                        ' '.join(['variable', tgrid, 'mismatch.'])
 
         # 3. geometry
@@ -687,9 +704,20 @@ class netCDF(FileResource):
             lats = lats.filled(fill_value)
         else:
             fill_value = None
-        check_or_add_variable('longitude', vartype, dims_lonlat, fill_value=fill_value)
-        check_or_add_variable('latitude', vartype, dims_lonlat, fill_value=fill_value)
-        epylog.info('assume lons/lats match.')
+        try:
+            _ = float(stretch_array(lons)[0])
+        except ValueError:
+            no_lonlat = True
+        else:
+            no_lonlat = False
+        if not no_lonlat:
+            lons_var, _status = check_or_add_variable('longitude', vartype, dims_lonlat, fill_value=fill_value)
+            lats_var, _status = check_or_add_variable('latitude', vartype, dims_lonlat, fill_value=fill_value)
+            if _status == 'match':
+                epylog.info('assume lons/lats match.')
+            else:
+                lons_var[...] = lons[...]
+                lats_var[...] = lats[...]
         # 3.3 meta-data
         if field.geometry.dimensions.get('Y', field.geometry.dimensions.get('lat_number', 0)) > 1:
             if all([k in field.geometry.name for k in ('reduced', 'gauss')]):
@@ -767,6 +795,10 @@ class netCDF(FileResource):
         if _status == 'match':
             epylog.info('overwrite data in variable ' + field.fid['netCDF'])
         self._variables[field.fid['netCDF']][...] = data
+
+        # 5. metadata
+        for k, v in metadata.items():
+            self._nc.setncattr(k, v)
 
     def behave(self, **kwargs):
         """

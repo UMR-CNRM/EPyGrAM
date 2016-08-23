@@ -341,11 +341,11 @@ class H2DVectorField(Field):
                   symbol='barbs',
                   symbol_options={'color':'k', },
                   plot_module=True,
-                  plot_module_options={},
+                  plot_module_options=None,
                   bluemarble=0.,
                   background=False,
                   quiverkey=None,
-                  quiver_options={},
+                  quiver_options=None,
                   components_are_projected_on='grid',
                   map_factor_correction=True):
         """
@@ -398,7 +398,7 @@ class H2DVectorField(Field):
         - *symbol_options*: a dict of options to be passed to **barbs** or
           **quiver** method.
         - *plot_module*: to plot module as colorshades behind vectors.
-        - *plot_module_options*: options to be passed to module.plotfield().
+        - *plot_module_options*: options (dict) to be passed to module.plotfield().
         - *bluemarble*: if > 0.0 (and <=1.0), displays NASA's "blue marble"
           as background. The numerical value sets its transparency.
         - *background*: if True, set a background color to 
@@ -415,6 +415,9 @@ class H2DVectorField(Field):
         import matplotlib.pyplot as plt
         plt.rc('font', family='serif')
         plt.rc('figure', figsize=config.plotsizes)
+
+        plot_module_options = util.ifNone_emptydict(plot_module_options)
+        quiver_options = util.ifNone_emptydict(quiver_options)
 
         if self.spectral:
             raise epygramError("please convert to gridpoint with sp2gp()" + \

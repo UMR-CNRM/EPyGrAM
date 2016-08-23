@@ -810,17 +810,17 @@ def stdout_redirected(to=os.devnull):
     ####assert libc.fileno(ctypes.c_void_p.in_dll(libc, "stdout")) == fd == 1
 
     def _redirect_stdout(to):
-        sys.stdout.close() # + implicit flush()
-        os.dup2(to.fileno(), fd) # fd writes to 'to' file
-        sys.stdout = os.fdopen(fd, 'w') # Python writes to fd
+        sys.stdout.close()  # + implicit flush()
+        os.dup2(to.fileno(), fd)  # fd writes to 'to' file
+        sys.stdout = os.fdopen(fd, 'w')  # Python writes to fd
 
     with os.fdopen(os.dup(fd), 'w') as old_stdout:
         with open(to, 'w') as file:
             _redirect_stdout(to=file)
         try:
-            yield # allow code to be run with the redirected stdout
+            yield  # allow code to be run with the redirected stdout
         finally:
-            _redirect_stdout(to=old_stdout) # restore stdout.
+            _redirect_stdout(to=old_stdout)  # restore stdout.
                                             # buffering and flags such as
                                             # CLOEXEC may be different
 
@@ -837,17 +837,17 @@ def stderr_redirected(to=os.devnull):
     fd = sys.stderr.fileno()
 
     def _redirect_stderr(to):
-        sys.stderr.close() # + implicit flush()
-        os.dup2(to.fileno(), fd) # fd writes to 'to' file
-        sys.stderr = os.fdopen(fd, 'w') # Python writes to fd
+        sys.stderr.close()  # + implicit flush()
+        os.dup2(to.fileno(), fd)  # fd writes to 'to' file
+        sys.stderr = os.fdopen(fd, 'w')  # Python writes to fd
 
     with os.fdopen(os.dup(fd), 'w') as old_stderr:
         with open(to, 'w') as file:
             _redirect_stderr(to=file)
         try:
-            yield # allow code to be run with the redirected stderr
+            yield  # allow code to be run with the redirected stderr
         finally:
-            _redirect_stderr(to=old_stderr) # restore stderr.
+            _redirect_stderr(to=old_stderr)  # restore stderr.
                                             # buffering and flags such as
                                             # CLOEXEC may be different
 
@@ -864,7 +864,7 @@ def restrain_to_index_i_of_dim_d(a, i, d, n=None):
         indexes[variable.dimensions.index(k)] = [only[k]] # restrain to the "only" give
     return array[numpy.ix_(*indexes)]
     """
-    
+
     if n is None:
         n = a.shape
     if n == 2:
@@ -901,5 +901,49 @@ def restrain_to_index_i_of_dim_d(a, i, d, n=None):
             ra = a[:, :, :, :, [i]]
     else:
         raise NotImplementedError("more than 5 dimensions in array.")
-    
+
     return ra
+
+def datetimes2fieldvaliditylist(datetimes, basis=None):
+    """
+    Return a FieldValidityList from a list of datetime.datetime instances
+    (or a single datetime.datetime).
+    
+    *basis* can be either
+      - None (default): basis = validity
+      - a single datetime.datetime
+      - a list of the same length as datetimes
+    """
+
+    from epygram.base import FieldValidityList
+
+    if isinstance(datetimes, datetime.datetime):
+        assert isinstance(basis, datetime.datetime) \
+               or (isinstance(basis, list) and isinstance(basis[0], datetime.datetime)) \
+               or basis is None
+        if isinstance(basis, list):
+            fvl = FieldValidityList(date_time=[datetimes for _ in basis], basis=basis)
+        else:
+            fvl = FieldValidityList(date_time=datetimes, basis=basis)
+    elif isinstance(datetimes, list) and isinstance(datetimes[0], datetime.datetime):
+        assert isinstance(basis, datetime.datetime) \
+               or basis is None \
+               or (isinstance(basis, list) \
+                   and isinstance(basis[0], datetime.datetime) \
+                   and len(basis) == len(datetimes))
+        if isinstance(basis, datetime.datetime) or basis is None:
+            basis = [basis for _ in range(len(datetimes))]
+        fvl = FieldValidityList(date_time=datetimes,
+                                basis=basis)
+
+    else:
+        raise TypeError("'datetimes' must be a datetime.datetime or a list of.")
+
+    return fvl
+
+def ifNone_emptydict(arg):
+    """ Transforms a None into a {}. """
+    if arg is None:
+        arg = {}
+    return arg
+
