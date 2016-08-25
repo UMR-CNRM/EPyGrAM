@@ -295,6 +295,7 @@ class MultiValiditiesResource(Resource):
         kwargs_field['validity'] = fieldvaliditylist
         kwargs_field['fid'][self.format] = kwargs_field['fid'][self.lowLevelFormat]
         field = fpx.field(**kwargs_field)
+        print data.shape
         field.setdata(data)
 
         return field

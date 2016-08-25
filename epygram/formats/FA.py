@@ -1053,6 +1053,7 @@ class FA(FileResource):
                 modified_compression = True
             else:
                 modified_compression = False
+                compression = self._getrunningcompression()
             if modified_compression:
                 self._setrunningcompression(**compression)
             #FIXME: next export version

@@ -41,6 +41,8 @@ def get_resources(getmode='epygram', uselocalcache=False, **description):
                'exist' return the physical resolved location of the resource and its existence
                'fetch' fetches the resource in local, as filename *local*
                'vortex' return the vortex data handler of the resource
+               'prestaging' puts a prestaging request for the resolved resources,
+                            on the archive system
     *uselocalcache*: if True, store resources in a local cache (not
                      automatically cleaned, take care) defined either (and by
                      priority order) in $MTOOL_STEP_CACHE, $MTOOLDIR, $FTDIR,
@@ -52,6 +54,7 @@ def get_resources(getmode='epygram', uselocalcache=False, **description):
       description will look like:
       
       + experiment='864G',  # the experiment id
+      + model='arome',
       + block='analysis',  # the OLIVE block
       + kind='analysis',  # the kind of resource
       + date='2015081500',  # the initial date and time

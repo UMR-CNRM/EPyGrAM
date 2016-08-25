@@ -161,7 +161,7 @@ def showconfig():
     for k in sorted(cfg.keys()):
         print '- ' + k + ' = ' + str(cfg[k])
 
-def init_env(omp_num_threads=1, no_mpi=True, unlimited_stack=True):
+def init_env(omp_num_threads=1, no_mpi=True, unlimited_stack=True, lfi_C=True):
     """
     A function to modify execution environment (to be called early in
     execution).
@@ -170,7 +170,8 @@ def init_env(omp_num_threads=1, no_mpi=True, unlimited_stack=True):
     - environments variables:\n
       - if *no_mpi*, DR_HOOK_NOT_MPI set to 1
       - OMP_NUM_THREADS set to *omp_num_threads*
-    - stack size unlimited on Bull.
+      - LFI_HNDL_SPEC set to ':1' if *lfi_C*, to use the C version of LFI
+    - stack size unlimited on Bull supercomputers.
     """
     import os
     import resource
@@ -179,6 +180,8 @@ def init_env(omp_num_threads=1, no_mpi=True, unlimited_stack=True):
     os.putenv('OMP_NUM_THREADS', str(omp_num_threads))
     if no_mpi:
         os.putenv('DR_HOOK_NOT_MPI', '1')
+    if lfi_C:
+        os.putenv('LFI_HNDL_SPEC', ':1')
     if unlimited_stack and ('beaufix' in os.getenv('HOSTNAME', '') or \
                             'prolix' in os.getenv('HOSTNAME', '')):
         resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY,
