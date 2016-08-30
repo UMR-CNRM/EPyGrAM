@@ -155,7 +155,7 @@ def main(filename,
                     del toreadin
                 if 'preset' in composition.keys():
                     composefield.operation(composition['preset'])
-                field.operation(composition['operation'], other=composefield)
+                field.operation(composition['operation'], operand=composefield)
             if pressure_unit_hpa and \
                (field.fid['generic'].get('discipline') == 0 and \
                 field.fid['generic'].get('parameterCategory') == 3 and \

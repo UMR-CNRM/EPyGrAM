@@ -186,6 +186,8 @@ class H2DField(D3Field):
         if self.spectral:
             raise epygramError("please convert to gridpoint with sp2gp()" + \
                                " method before plotting.")
+        if len(self.validity) > 1:
+            raise NotImplementedError('plot H2DField with time dimension.')
 
         # add custom colormap if necessary
         if colormap not in plt.colormaps():
@@ -209,10 +211,16 @@ class H2DField(D3Field):
 
         # init basemap
         if existingbasemap is None:
-            bm = self.geometry.make_basemap(gisquality=gisquality,
-                                            subzone=subzone,
-                                            specificproj=specificproj,
-                                            zoom=zoom)
+            if self.geometry.name != 'academic':
+                bm = self.geometry.make_basemap(gisquality=gisquality,
+                                                subzone=subzone,
+                                                specificproj=specificproj,
+                                                zoom=zoom)
+            else:
+                if existingfigure is None:
+                    existingfigure, bm = plt.subplots()
+                else:
+                    bm = existingfigure.axes[0]
             existingbasemap = bm  # needed for zoom case
         else:
             bm = existingbasemap
@@ -225,7 +233,9 @@ class H2DField(D3Field):
             academic = self.geometry.name == 'academic'
             if academic:
                 (lons, lats) = self.geometry.get_lonlat_grid(subzone=subzone)
-                x, y = lons, lats
+                #x, y = lons, lats
+                x = (lons - lons.min()) * self.geometry.grid['X_resolution']
+                y = (lats - lats.min()) * self.geometry.grid['Y_resolution']
             else:
                 if background and existingfigure is None:
                     bm.drawmapboundary(fill_color='lightskyblue')

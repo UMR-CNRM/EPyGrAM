@@ -68,7 +68,8 @@ class V1DField(D3Field):
                   linestyle='-',
                   force_mode=False,
                   repeat=False,
-                  interval=1000):
+                  interval=1000,
+                  **ignored_kwargs):
         """
         Makes a simple (profile) plot of the field.
         Help on arguments can be found in actual plot functions docstrings.
@@ -89,7 +90,7 @@ class V1DField(D3Field):
                 mode = "profile"
             else:
                 mode = "hovmoller"
-        
+
         useless_args = []
         if mode == 'profile':
             if colorbar != 'vertical': useless_args.append('colorbar')
@@ -247,7 +248,6 @@ def plotverticalhovmoller(profile,
             date = 'Basis'
             validities = {profile.validity[i].getbasis():i for i in len(profile.validity)}
         epoch = datetime.datetime(1970, 1, 1)
-
         for i in range(len(profile.validity)):
             d = profile.validity[i].get() if date == 'Validity' else profile.validity[i].getbasis()
             timedelta = d - epoch
@@ -486,7 +486,7 @@ def plotanimation(profile,
                  fidkey=None,
                  Ycoordinate=None,
                  unit='SI',
-                 title=None,
+                 title='__auto__',
                  logscale=False,
                  ema=False,
                  zoom=None,
@@ -518,7 +518,7 @@ def plotanimation(profile,
 
     plt.rc('font', family='serif')
     plt.rc('figure', autolayout=True)
-    
+
     if len(profile.validity) == 1:
         raise epygramError("plotanimation can handle only profile with several validities.")
 
@@ -589,8 +589,12 @@ def plotanimation(profile,
             ax.set_ylim(bottom=zoom['ymin'])
         if 'ymax' in zoom.keys():
             ax.set_ylim(top=zoom['ymax'])
-    if title != None:
-        ax.set_title(title)
+    if title is not None:
+        if title == '__auto__':
+            _title = ''
+        else:
+            _title = title
+        ax.set_title(_title + '\n' + profile.validity[0].get().isoformat())
     legend = ax.legend(loc='upper right', shadow=True)
     for label in legend.get_texts():
         label.set_fontsize('medium')
@@ -601,11 +605,13 @@ def plotanimation(profile,
         ax.xlim(mindata - 10, maxdata + 10)
     else:
         ax.grid()
-        
+
     def update(i):
         plot.set_xdata(data[i])
+        if title is not None:
+            ax.set_title(_title + '\n' + profile.validity[i].get().isoformat())
         return plot,
-            
+
     ani = animation.FuncAnimation(fig, update, range(len(data)), interval=interval, repeat=repeat)
-    
+
     return ani

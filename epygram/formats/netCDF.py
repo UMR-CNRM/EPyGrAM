@@ -209,6 +209,7 @@ class netCDF(FileResource):
                     behaviour[sg] = f
 
         # 2. time
+        validity = FieldValidity()
         def get_validity(T_varname):
             if not T_varname in self._variables.keys():
                 raise epygramError('unable to find T_grid in variables.')
@@ -229,10 +230,11 @@ class netCDF(FileResource):
                 validity = validity[only[dims_dict_e2n['T_dimension']]]
         elif any([t in self._variables.keys() for t in config.netCDF_usualnames_for_standard_dimensions['T_dimension']]):
             # look for a time variable
-            T_varname = [t for t in config.netCDF_usualnames_for_standard_dimensions['T_dimension'] if t in self._variables.keys()][0]
-            validity = get_validity(T_varname)
-        else:
-            validity = FieldValidity()
+            T_varnames = [t for t in config.netCDF_usualnames_for_standard_dimensions['T_dimension'] if t in self._variables.keys()]
+            if len(T_varnames) == 1:
+                _v = get_validity(T_varnames[0])
+                if len(_v) == 1:
+                    validity = _v
         field_kwargs['validity'] = validity
 
         # 3. GEOMETRY
@@ -434,8 +436,13 @@ class netCDF(FileResource):
                     grid = {'longitudes':Xgrid,
                             'latitudes':Ygrid}
                 else:
-                    grid = {'X':Xgrid,
-                            'Y':Ygrid}
+                    # grid is not lon/lat and no other metadata available : Academic
+                    kwargs_geom['name'] = 'academic'
+                    grid = {'LAMzone':None,
+                            'X_resolution':abs(Xgrid[0, 1] - Xgrid[0, 0]),
+                            'Y_resolution':abs(Ygrid[1, 0] - Ygrid[0, 0])}
+                    #grid = {'X':Xgrid,
+                    #        'Y':Ygrid}
         elif V1D or V2D or points:
             var_corresponding_to_X_grid = behaviour.get('X_grid', False)
             if not var_corresponding_to_X_grid in self._variables.keys():
@@ -488,28 +495,29 @@ class netCDF(FileResource):
                     buffdata = util.restrain_to_index_i_of_dim_d(buffdata, i, d, n=n)
             else:
                 buffdata = variable[...]
-            if H2D or D3:
-                # re-shuffle to have data indexed (t,y,x) or (t,z,y,x)
+            # check there is no leftover unknown dimension
+            field_dim_num = 1 if len(field.validity) > 1 else 0
+            if field.structure != 'Point':
+                field_dim_num += [int(c) for c in field.structure if c.isdigit()][0]
+            assert field_dim_num == len(buffdata.squeeze().shape), \
+                   'shape of field and identified usual dimensions do not match:' \
+                    + 'use *only* to filter or *adhoc_behaviour* to identify dimensions'
+            if len(buffdata.shape) > 1:
+                # re-shuffle to have data indexes in order (t,z,y,x)
                 positions = []
                 if 'T_dimension' in dims_dict_e2n.keys():
                     positions.append(variable.dimensions.index(dims_dict_e2n['T_dimension']))
                 if  'Z_dimension' in dims_dict_e2n.keys():
                     positions.append(variable.dimensions.index(dims_dict_e2n['Z_dimension']))
-                positions.append(variable.dimensions.index(dims_dict_e2n['Y_dimension']))
-                positions.append(variable.dimensions.index(dims_dict_e2n['X_dimension']))
+                if  'Y_dimension' in dims_dict_e2n.keys():
+                    positions.append(variable.dimensions.index(dims_dict_e2n['Y_dimension']))
+                if  'X_dimension' in dims_dict_e2n.keys():
+                    positions.append(variable.dimensions.index(dims_dict_e2n['X_dimension']))
                 for d in variable.dimensions:
                     # whatever the order of these, they must have been filtered and dimension 1 (only)
                     if d not in dims_dict_e2n.values():
                         positions.append(variable.dimensions.index(d))
                 buffdata = buffdata.transpose(*positions)
-                if D3:
-                    assert len(buffdata.squeeze().shape) == 3 and len(field.validity) == 1 \
-                           or len(buffdata.squeeze().shape) == 4 and len(field.validity) > 1, \
-                           'unknown remaining dimension ! (use *only* to filter).'
-                elif H2D:
-                    assert len(buffdata.squeeze().shape) == 2 and len(field.validity) == 1 \
-                           or len(buffdata.squeeze().shape) == 3 and len(field.validity) > 1, \
-                           'unknown remaining dimension ! (use *only* to filter).'
                 if return_Yaxis:
                     if 'T_dimension' in dims_dict_e2n.keys():
                         if D3:
@@ -573,16 +581,31 @@ class netCDF(FileResource):
                 status = 'match'
             return var, status
 
+        assert field.fid.has_key('netCDF')
+
         # 1. dimensions
         T = Y = X = G = N = None
+        dims = []
         # time
         if len(field.validity) > 1:
-            T = self.behaviour.get('T_dimension',
-                                   config.netCDF_usualnames_for_standard_dimensions['T_dimension'][0])
+            # default
+            T = config.netCDF_usualnames_for_standard_dimensions['T_dimension'][0]
+            # or any existing identified time dimension
+            T = {'found':v for v in self._dimensions
+                 if (v in config.netCDF_usualnames_for_standard_dimensions['T_dimension']
+                     and len(self._dimensions[v]) == len(field.validity))}.get('found', T)
+            # or specified behaviour
+            T = self.behaviour.get('T_dimension', T)
             check_or_add_dim(T, size=len(field.validity))
         # vertical part
-        Z = self.behaviour.get('Z_dimension',
-                               config.netCDF_usualnames_for_standard_dimensions['Z_dimension'][0])
+        # default
+        Z = config.netCDF_usualnames_for_standard_dimensions['Z_dimension'][0]
+        # or any existing identified time dimension
+        Z = {'found':v for v in self._dimensions
+                 if (v in config.netCDF_usualnames_for_standard_dimensions['Z_dimension']
+                     and len(self._dimensions[v]) == len(field.geometry.vcoordinate.levels))}.get('found', Z)
+        # or specified behaviour
+        Z = self.behaviour.get('Z_dimension', Z)
         if 'gridlevels' in field.geometry.vcoordinate.grid.keys():
             Z_gridsize = max(len(field.geometry.vcoordinate.grid['gridlevels']), 1)
             if field.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
@@ -619,14 +642,15 @@ class netCDF(FileResource):
         # 2. validity
         #TODO: deal with unlimited time dimension ?
         if field.validity[0] != FieldValidity():
-            tgrid = self.behaviour.get('T_grid',
-                                   config.netCDF_usualnames_for_standard_dimensions['T_dimension'][0])
+            tgrid = config.netCDF_usualnames_for_standard_dimensions['T_dimension'][0]
+            tgrid = {'found':v for v in self._variables
+                     if v in config.netCDF_usualnames_for_standard_dimensions['T_dimension']}.get('found', tgrid)
+            tgrid = self.behaviour.get('T_grid', tgrid)
             if len(field.validity) == 1:
                 _, _status = check_or_add_variable(tgrid, int)
-                dims = []
             else:
                 _, _status = check_or_add_variable(tgrid, int, T)
-                dims = [tgrid]
+                dims.append(tgrid)
             datetime0 = field.validity[0].getbasis().isoformat(sep=' ')
             datetimes = [int((dt.get() - field.validity[0].getbasis()).total_seconds()) for dt in field.validity]
             if _status == 'created':
@@ -641,8 +665,10 @@ class netCDF(FileResource):
         if len(field.geometry.vcoordinate.levels) > 1:
             dims.append(Z)
         if Z_gridsize > 1:
-            zgridname = self.behaviour.get('Z_grid',
-                                           config.netCDF_usualnames_for_standard_dimensions['Z_dimension'][0])
+            zgridname = config.netCDF_usualnames_for_standard_dimensions['Z_dimension'][0]
+            zgridname = {'found':v for v in self._variables
+                         if v in config.netCDF_usualnames_for_standard_dimensions['Z_dimension']}.get('found', zgridname)
+            zgridname = self.behaviour.get('Z_grid', zgridname)
             if field.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
                 ZP1 = Z + '+1'
                 check_or_add_dim(ZP1, size=Z_gridsize + 1)
@@ -679,7 +705,7 @@ class netCDF(FileResource):
                 if _status == 'created':
                     zgrid[:] = field.geometry.vcoordinate.grid['gridlevels']
                 else:
-                    assert zgrid[:] == field.geometry.vcoordinate.grid['gridlevels'], \
+                    assert zgrid[:].all() == numpy.array(field.geometry.vcoordinate.grid['gridlevels']).all(), \
                            ' '.join(['variable', zgrid, 'mismatch.'])
             if _typeoffirstfixedsurface_dict_inv.get(field.geometry.vcoordinate.typeoffirstfixedsurface, False):
                 zgrid.short_name = _typeoffirstfixedsurface_dict_inv[field.geometry.vcoordinate.typeoffirstfixedsurface]
