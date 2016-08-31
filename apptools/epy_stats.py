@@ -306,14 +306,14 @@ if __name__ == '__main__':
         _operation = args.operation.split(',')
         operation = {'operation':_operation.pop(0).strip()}
         if len(_operation) > 0:
-            operation['scalar'] = float(_operation.pop(0).strip())
+            operation['operand'] = float(_operation.pop(0).strip())
     else:
         operation = None
     if args.diffoperation != None:
         _diffoperation = args.diffoperation.split(',')
         diffoperation = {'operation':_diffoperation.pop(0).strip()}
         if len(_diffoperation) > 0:
-            diffoperation['scalar'] = float(_diffoperation.pop(0).strip())
+            diffoperation['operand'] = float(_diffoperation.pop(0).strip())
     else:
         diffoperation = None
 

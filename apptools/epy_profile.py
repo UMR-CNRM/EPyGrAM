@@ -51,10 +51,10 @@ def main(filename,
         refname: name of the reference file to be compared to.
         diffonly: if True, only plots the difference field.
         operation: makes the requested operation
-                   (e.g. {'operation':'-','scalar':273.15} or
+                   (e.g. {'operation':'-','operand':273.15} or
                    {'operation':'exp'}) on the field before plot.
         diffoperation: makes the requested operation
-                       (e.g. {'operation':'-','scalar':273.15} or
+                       (e.g. {'operation':'-','operand':273.15} or
                        {'operation':'exp'}) on the difference field before plot.
         legend: legend of plot.
         output: output format for graphics, among ('png', 'pdf', False).
@@ -298,14 +298,14 @@ if __name__ == '__main__':
         _operation = args.operation.split(',')
         operation = {'operation':_operation.pop(0).strip()}
         if len(_operation) > 0:
-            operation['scalar'] = float(_operation.pop(0).strip())
+            operation['operand'] = float(_operation.pop(0).strip())
     else:
         operation = None
     if args.diffoperation != None:
         _diffoperation = args.diffoperation.split(',')
         diffoperation = {'operation':_diffoperation.pop(0).strip()}
         if len(_diffoperation) > 0:
-            diffoperation['scalar'] = float(_diffoperation.pop(0).strip())
+            diffoperation['operand'] = float(_diffoperation.pop(0).strip())
     else:
         diffoperation = None
     if args.external_distance is not None:

@@ -319,7 +319,7 @@ if __name__ == '__main__':
         _operation = args.operation.split(',')
         operation = {'operation':_operation.pop(0).strip()}
         if len(_operation) > 0:
-            operation['scalar'] = float(_operation.pop(0).strip())
+            operation['operand'] = float(_operation.pop(0).strip())
     else:
         operation = None
 
