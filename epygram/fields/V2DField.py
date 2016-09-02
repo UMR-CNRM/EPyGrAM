@@ -50,6 +50,7 @@ class V2DField(D3Field):
 #  including suggestions/developments by users...]
 
     def plotfield(self,
+                  over=(None, None),
                   colorbar='vertical',
                   graphicmode='colorshades',
                   minmax=None,
@@ -64,13 +65,20 @@ class V2DField(D3Field):
                   contourcolor='k',
                   contourwidth=1,
                   contourlabel=True,
-                  existingfigure=None,
                   x_is='distance',
                   mask_threshold=None):
         """
         Makes a simple (profile) plot of the field.
 
         Args: \n
+        - *over* = any existing figure and/or ax to be used for the
+          plot, given as a tuple (fig, ax), with None for
+          missing objects. *fig* is the frame of the
+          matplotlib figure, containing eventually several 
+          subplots (axes); *ax* is the matplotlib axes on 
+          which the drawing is done. When given (!= None),
+          these objects must be coherent, i.e. ax being one of
+          the fig axes.
         - *title* = title for the plot.
         - *fidkey* = type of fid for entitling the plot with *fid[fidkey]*,
                      if title is *None*;
@@ -109,16 +117,15 @@ class V2DField(D3Field):
         """
 
         import matplotlib.pyplot as plt
+        from mpl_toolkits.axes_grid1 import make_axes_locatable
         plt.rc('font', family='serif')
         plt.rc('figure', figsize=config.plotsizes)
         # User colormaps
         if colormap not in plt.colormaps():
             util.add_cmap(colormap)
 
-        if existingfigure == None:
-            f = plt.figure()
-        else:
-            f = existingfigure
+        # Figure, ax
+        fig, ax = util.set_figax(*over)
         # coords
         z = numpy.zeros((len(self.geometry.vcoordinate.levels),
                          self.geometry.dimensions['X']))
@@ -182,27 +189,34 @@ class V2DField(D3Field):
                    l % L == 0] + [levels[-1]]
         # plot
         if reverseY:
-            plt.gca().invert_yaxis()
+            ax.invert_yaxis()
         if logscale:
-            f.axes[0].set_yscale('log')
-        plt.grid()
+            ax.set_yscale('log')
+        ax.grid()
         if graphicmode == 'colorshades':
-            pf = plt.contourf(x, z, data, levels, cmap=colormap,
-                              vmin=vmin, vmax=vmax)
+            pf = ax.contourf(x, z, data, levels, cmap=colormap,
+                             vmin=vmin, vmax=vmax)
             if colorbar:
-                cb = plt.colorbar(pf, orientation=colorbar, ticks=hlevels)
-                if minmax_in_title != '':
+                position = 'right' if colorbar == 'vertical' else 'bottom'
+                cax = make_axes_locatable(ax).append_axes(position,
+                                                          size="5%",
+                                                          pad=0.1)
+                cb = plt.colorbar(pf,
+                                  orientation=colorbar,
+                                  ticks=hlevels,
+                                  cax=cax)
+                if minmax_in_title:
                     cb.set_label(minmax_in_title)
         elif graphicmode == 'contourlines':
-            pf = plt.contour(x, z, data, levels=levels, colors=contourcolor,
-                             linewidths=contourwidth)
+            pf = ax.contour(x, z, data, levels=levels, colors=contourcolor,
+                            linewidths=contourwidth)
             if contourlabel:
-                f.axes[0].clabel(pf, colors=contourcolor)
+                ax.clabel(pf, colors=contourcolor)
         # decoration
         surf = z[-1, :]
         bottom = max(surf) if reverseY else min(surf)
-        plt.fill_between(x[-1, :], surf, numpy.ones(len(surf)) * bottom,
-                         color='k')
+        ax.fill_between(x[-1, :], surf, numpy.ones(len(surf)) * bottom,
+                        color='k')
         if self.geometry.vcoordinate.typeoffirstfixedsurface == 119:
             Ycoordinate = 'Level \nHybrid-Pressure \ncoordinate'
         elif self.geometry.vcoordinate.typeoffirstfixedsurface == 100:
@@ -218,12 +232,12 @@ class V2DField(D3Field):
         else:
             Ycoordinate = 'unknown \ncoordinate'
         if x_is == 'distance':
-            f.axes[0].set_xlabel('Distance from left-end point (m).')
+            ax.set_xlabel('Distance from left-end point (m).')
         elif x_is == 'lon':
-            f.axes[0].set_xlabel(u'Longitude (\u00B0).')
+            ax.set_xlabel(u'Longitude (\u00B0).')
         elif x_is == 'lat':
-            f.axes[0].set_xlabel(u'Latitude (\u00B0).')
-        f.axes[0].set_ylabel(Ycoordinate)
+            ax.set_xlabel(u'Latitude (\u00B0).')
+        ax.set_ylabel(Ycoordinate)
         if zoom != None:
             ykw = {}
             xkw = {}
@@ -237,8 +251,8 @@ class V2DField(D3Field):
                     xkw[pair[0]] = zoom[pair[1]]
                 except Exception:
                     pass
-            f.axes[0].set_ylim(**ykw)
-            f.axes[0].set_xlim(**xkw)
+            ax.set_ylim(**ykw)
+            ax.set_xlim(**xkw)
         if title is None:
             if fidkey is None:
                 fid = self.fid
@@ -250,6 +264,6 @@ class V2DField(D3Field):
                     '(' + str(plast[0]) + ', ' + \
                     str(plast[1]) + ') -> \n' + \
                     str(self.validity.get())
-        f.axes[0].set_title(title)
+        ax.set_title(title)
 
-        return f
+        return (fig, ax)

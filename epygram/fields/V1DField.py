@@ -45,6 +45,7 @@ class V1DField(D3Field):
 #  including suggestions/developments by users...]
 
     def plotfield(self,
+                  over=(None, None),
                   labels=None,
                   fidkey=None,
                   Ycoordinate=None,
@@ -63,7 +64,7 @@ class V1DField(D3Field):
                   contourcolor='k',
                   contourwidth=1,
                   contourlabel=True,
-                  datefmt="%Y%m%d %H:%M:%S %Z",
+                  datefmt=None,
                   linecolor='black',
                   linestyle='-',
                   force_mode=False,
@@ -109,6 +110,7 @@ class V1DField(D3Field):
             if repeat != False: useless_args.append('repeat')
             if interval != 1000: useless_args.append('interval')
             return plotprofiles(self,
+                                over=over,
                                 labels=labels,
                                 fidkey=fidkey,
                                 Ycoordinate=Ycoordinate,
@@ -126,6 +128,7 @@ class V1DField(D3Field):
             if repeat != False: useless_args.append('repeat')
             if interval != 1000: useless_args.append('interval')
             return plotverticalhovmoller(self,
+                                         over=over,
                                          fidkey=fidkey,
                                          Ycoordinate=Ycoordinate,
                                          title=title,
@@ -156,6 +159,7 @@ class V1DField(D3Field):
             if contourlabel != True: useless_args.append('contourlabel')
             if datefmt != "%Y%m%d %H:%M:%S %Z": useless_args.append('datefmt')
             return plotanimation(self,
+                                 over=over,
                                  fidkey=fidkey,
                                  Ycoordinate=Ycoordinate,
                                  unit=unit,
@@ -174,6 +178,7 @@ class V1DField(D3Field):
 #################
 
 def plotverticalhovmoller(profile,
+                          over=(None, None),
                           fidkey=None,
                           Ycoordinate=None,
                           title=None,
@@ -189,12 +194,21 @@ def plotverticalhovmoller(profile,
                           contourcolor='k',
                           contourwidth=1,
                           contourlabel=True,
-                          datefmt="%Y%m%d %H:%M:%S %Z"):
+                          datefmt=None,
+                          showgrid=True):
         """
         Makes a simple vertical Hovmöller plot of the field.
 
         Args: \n
         - *profile* being a :class:`epygram.fields.V1DField`
+        - *over* = any existing figure and/or ax to be used for the
+          plot, given as a tuple (fig, ax), with None for
+          missing objects. *fig* is the frame of the
+          matplotlib figure, containing eventually several 
+          subplots (axes); *ax* is the matplotlib axes on 
+          which the drawing is done. When given (!= None),
+          these objects must be coherent, i.e. ax being one of
+          the fig axes.
         - *fidkey* = type of fid for entitling the plot with *fid[fidkey]*,
                      if title is *None*;
                      if *None*, labels with raw fid.
@@ -220,7 +234,8 @@ def plotverticalhovmoller(profile,
           name.
         - *contourwidth*: width of contours for 'contourlines' graphicmode.
         - *contourlabel*: displays labels on contours.
-        - *datefmt*: date format to use
+        - *datefmt*: date format to use, e.g. "%Y-%m-%d %H:%M:%S %Z"
+        - *showgrid*: True/False to show grid or not
 
         Warning: requires **matplotlib**.
         """
@@ -228,13 +243,17 @@ def plotverticalhovmoller(profile,
         import matplotlib
         import matplotlib.pyplot as plt
         import matplotlib.dates as mdates
+        from mpl_toolkits.axes_grid1 import make_axes_locatable
         plt.rc('font', family='serif')
         plt.rc('figure', figsize=config.plotsizes)
+
         # User colormaps
         if colormap not in plt.colormaps():
             util.add_cmap(colormap)
 
-        f = plt.figure()
+        # Figure, ax
+        fig, ax = util.set_figax(*over)
+
         # coords
         z = numpy.zeros((len(profile.validity),
                          len(profile.geometry.vcoordinate.levels)))
@@ -243,13 +262,13 @@ def plotverticalhovmoller(profile,
         x = numpy.zeros((len(profile.validity),
                          len(profile.geometry.vcoordinate.levels)))
         validities = {profile.validity[i].get():i for i in range(len(profile.validity))}
-        date = 'Validity'
+        xaxis_label = 'Validity'
         if len(validities) == 1 and len(profile.validity) != 1:
-            date = 'Basis'
+            xaxis_label = 'Basis'
             validities = {profile.validity[i].getbasis():i for i in len(profile.validity)}
         epoch = datetime.datetime(1970, 1, 1)
         for i in range(len(profile.validity)):
-            d = profile.validity[i].get() if date == 'Validity' else profile.validity[i].getbasis()
+            d = profile.validity[i].get() if xaxis_label == 'Validity' else profile.validity[i].getbasis()
             timedelta = d - epoch
             p = (timedelta.microseconds + (timedelta.seconds + timedelta.days * 24 * 3600) * 10 ** 6) / 1e6
             x[i, :] = matplotlib.dates.epoch2num(p)
@@ -286,29 +305,39 @@ def plotverticalhovmoller(profile,
                    l % L == 0] + [levels[-1]]
         # plot
         if reverseY:
-            plt.gca().invert_yaxis()
+            ax.invert_yaxis()
         if logscale:
-            f.axes[0].set_yscale('log')
-        plt.grid()
+            ax.set_yscale('log')
+        ax.grid()
         if graphicmode == 'colorshades':
-            pf = plt.contourf(x, z, data, levels, cmap=colormap,
+            pf = ax.contourf(x, z, data, levels, cmap=colormap,
                               vmin=vmin, vmax=vmax)
             if colorbar:
-                cb = plt.colorbar(pf, orientation=colorbar, ticks=hlevels)
+                position = 'right' if colorbar == 'vertical' else 'bottom'
+                cax = make_axes_locatable(ax).append_axes(position,
+                                                          size="5%",
+                                                          pad=0.1)
+                cb = plt.colorbar(pf,
+                                  orientation=colorbar,
+                                  ticks=hlevels,
+                                  cax=cax)
                 if minmax_in_title != '':
                     cb.set_label(minmax_in_title)
         elif graphicmode == 'contourlines':
-            pf = plt.contour(x, z, data, levels=levels, colors=contourcolor,
-                             linewidths=contourwidth)
+            pf = ax.contour(x, z, data, levels=levels, colors=contourcolor,
+                            linewidths=contourwidth)
             if contourlabel:
-                f.axes[0].clabel(pf, colors=contourcolor)
-        f.axes[0].xaxis.set_major_formatter(mdates.DateFormatter(datefmt))
-        matplotlib.pyplot.xticks(rotation='vertical')
+                ax.clabel(pf, colors=contourcolor)
+        # time
+        xmin = mdates.num2date(ax.axis()[0]).replace(tzinfo=None)
+        xmax = mdates.num2date(ax.axis()[1]).replace(tzinfo=None)
+        util.set_DateHour_axis(ax, xmax - xmin,
+                               showgrid=showgrid, datefmt=datefmt)
         # decoration
         surf = z[-1, :]
         bottom = max(surf) if reverseY else min(surf)
-        plt.fill_between(x[-1, :], surf, numpy.ones(len(surf)) * bottom,
-                         color='k')
+        ax.fill_between(x[-1, :], surf, numpy.ones(len(surf)) * bottom,
+                        color='k')
         if Ycoordinate == None:
             if profile.geometry.vcoordinate.typeoffirstfixedsurface == 119:
                 Ycoordinate = 'Level \nHybrid-Pressure \ncoordinate'
@@ -324,8 +353,8 @@ def plotverticalhovmoller(profile,
                 Ycoordinate = 'Potential \nvortex \n(PVU)'
             else:
                 Ycoordinate = 'unknown \ncoordinate'
-        f.axes[0].set_xlabel(date + ' date.')
-        f.axes[0].set_ylabel(Ycoordinate)
+        ax.set_xlabel(xaxis_label)
+        ax.set_ylabel(Ycoordinate)
         if zoom != None:
             ykw = {}
             xkw = {}
@@ -339,19 +368,20 @@ def plotverticalhovmoller(profile,
                     xkw[pair[0]] = zoom[pair[1]]
                 except Exception:
                     pass
-            f.axes[0].set_ylim(**ykw)
-            f.axes[0].set_xlim(**xkw)
+            ax.set_ylim(**ykw)
+            ax.set_xlim(**xkw)
         if title is None:
             if fidkey is None:
-                fid = profile.fid
+                fid = profile.fid[sorted(profile.fid.keys())[0]]
             else:
                 fid = profile.fid[fidkey]
             title = u'Vertical Hovmöller of ' + str(fid)
-        f.axes[0].set_title(title)
+        ax.set_title(title)
 
-        return f
+        return (fig, ax)
 
 def plotprofiles(profiles,
+                 over=(None, None),
                  labels=None,
                  fidkey=None,
                  Ycoordinate=None,
@@ -361,7 +391,8 @@ def plotprofiles(profiles,
                  ema=False,
                  zoom=None):
     """
-    To plot a series of profiles. Returns a :mod:`matplotlib` *Figure*.
+    To plot a series of profiles. Returns a tuple of :mod:`matplotlib`
+    (*Figure*, *ax*).
 
     Args: \n
     - *profiles* being a :class:`epygram.base.FieldSet` of
@@ -369,6 +400,14 @@ def plotprofiles(profiles,
       :class:`epygram.fields.V1DField`. \n
       All profiles are supposed to have the same unit, and the same vertical
       coordinate.
+    - *over* = any existing figure and/or ax to be used for the
+      plot, given as a tuple (fig, ax), with None for
+      missing objects. *fig* is the frame of the
+      matplotlib figure, containing eventually several 
+      subplots (axes); *ax* is the matplotlib axes on 
+      which the drawing is done. When given (!= None),
+      these objects must be coherent, e.g. ax being one of
+      the fig axes.
     - *labels* = a list of labels for the profiles (same length and same order).
     - *fidkey* = key of fid for labelling the curve with *fid[fidkey]*;
                   if *None*, labels with raw fid.
@@ -417,11 +456,23 @@ def plotprofiles(profiles,
             Ycoordinate = 'unknown \ncoordinate'
 
     # Figure
-    fig, ax = plt.subplots(figsize=(6., 9.))
+    fig, ax = over
+    if ax is not None and fig is None:
+        fig = ax.figure
+    elif ax is None and fig is not None:
+        if len(fig.axes) > 0:
+            ax = fig.axes[0]
+        else:
+            ax = fig.gca()
+    elif ax is not None and fig is not None:
+        if ax not in fig.axes:
+            raise epygramError('*over*: inconsistency between given fig and ax')
+    elif fig is ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=(6., 9.))
     if logscale:
         ax.set_yscale('log')
     if reverseY:
-        plt.gca().invert_yaxis()
+        ax.invert_yaxis()
     i = 0
     for p in profiles:
         if len(p.validity) != 1:
@@ -443,18 +494,18 @@ def plotprofiles(profiles,
                                      round(max(data), -1) + 10 + 50,
                                      10)
             for t in templines:
-                plt.plot([t, t + (max(data) - min(data)) * alpha],
-                         [max(Y), min(Y)],
-                         color='grey', linestyle=':')
+                ax.plot([t, t + (max(data) - min(data)) * alpha],
+                        [max(Y), min(Y)],
+                        color='grey', linestyle=':')
             ax.set_yticks(numpy.linspace(0, 1000, 11))
             data = data + abs(Y - Y[-1]) * (data.max() - data.min()) / \
                                            (Y.max() - Y.min()) * alpha
             unit = 'K'
             mindata = min(mindata, data.min())
             maxdata = max(maxdata, data.max())
-        plt.plot(data.flatten(), Y.flatten(), label=label,
-                 color=colors[i % len(colors)],
-                 linestyle=linestyles[i // len(colors)])
+        ax.plot(data.flatten(), Y.flatten(), label=label,
+                color=colors[i % len(colors)],
+                linestyle=linestyles[i // len(colors)])
         i += 1
 
     # Decoration
@@ -475,25 +526,25 @@ def plotprofiles(profiles,
     ax.set_xlabel(r'$' + unit + '$')
     ax.set_ylabel(Ycoordinate)
     if ema:
-        plt.grid(axis='y')
-        plt.xlim(mindata - 10, maxdata + 10)
+        ax.grid(axis='y')
+        ax.xlim(mindata - 10, maxdata + 10)
     else:
-        plt.grid()
+        ax.grid()
 
-    return fig
+    return (fig, ax)
 
 def plotanimation(profile,
-                 fidkey=None,
-                 Ycoordinate=None,
-                 unit='SI',
-                 title='__auto__',
-                 logscale=False,
-                 ema=False,
-                 zoom=None,
-                 linecolor='black',
-                 linestyle='-',
-                 repeat=False,
-                 interval=1000):
+                  fidkey=None,
+                  Ycoordinate=None,
+                  unit='SI',
+                  title='__auto__',
+                  logscale=False,
+                  ema=False,
+                  zoom=None,
+                  linecolor='black',
+                  linestyle='-',
+                  repeat=False,
+                  interval=1000):
     """
     To plot a time-dependent profile as an animation. Returns a :mod:`matplotlib` *Figure*.
 
