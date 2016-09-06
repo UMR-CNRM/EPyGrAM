@@ -1002,7 +1002,7 @@ def set_DateHour_axis(axis, datetimerange,
         plt.xticks(rotation=xtickslabelsrotation)
         plt.sca(_ax)
 
-def set_figax(figure, ax):
+def set_figax(figure, ax, figsize=config.plotsizes):
     """
     Given existing matplotlib *figure* and an *ax* (or None),
     check consistency or generate a consistent (figure, ax) duet.
@@ -1020,7 +1020,7 @@ def set_figax(figure, ax):
         if ax not in figure.axes:
             raise epygramError('*over*: inconsistency between given fig and ax')
     elif figure is ax is None:
-        figure, ax = plt.subplots(1, 1)
+        figure, ax = plt.subplots(1, 1, figsize=figsize)
 
     return (figure, ax)
 

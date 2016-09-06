@@ -2489,7 +2489,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         return f
 
     def make_basemap(self, gisquality='i', subzone=None, specificproj=None,
-                     zoom=None, ax=None):
+                     zoom=None):
         """
         Returns a :class:`matplotlib.basemap.Basemap` object of the 'ad hoc'
         projection (if available). This is designed to avoid explicit handling
@@ -2511,8 +2511,6 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
           'cyl' projection.
           Must be a dict(lonmin=, lonmax=, latmin=, latmax=). \n
           Overwrites *specificproj*.
-        - *ax*: a matplotlib ax on which to plot; if None, plots will be done
-          on matplotlib.pyplot.gca()
         """
         from mpl_toolkits.basemap import Basemap
 
@@ -2549,15 +2547,13 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                                 lat_0=lat_0,
                                 lon_0=self.projection['reference_lon'].get('degrees'),
                                 llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                                urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                                ax=ax)
+                                urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat)
                 else:
                     b = Basemap(resolution=gisquality, projection='lcc',
                                 lat_0=self.projection['reference_lat'].get('degrees'),
                                 lon_0=self.projection['reference_lon'].get('degrees'),
                                 llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                                urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                                ax=ax)
+                                urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat)
             elif self.name == 'mercator':
                 if self.secant_projection:
                     lat = 'secant_lat'
@@ -2567,8 +2563,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                             lat_ts=self.projection[lat].get('degrees'),
                             lon_0=self._center_lon.get('degrees'),
                             llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                            ax=ax)
+                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat)
             elif self.name == 'polar_stereographic':
                 if self.secant_projection:
                     lat = 'secant_lat'
@@ -2579,12 +2574,10 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                             lat_0=numpy.copysign(90., self.projection[lat].get('degrees')),
                             lon_0=self.projection['reference_lon'].get('degrees'),
                             llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                            ax=ax)
+                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat)
             elif self.name == 'space_view':
                 b = Basemap(resolution=gisquality, projection='geos',
-                            lon_0=self.projection['satellite_lon'].get('degrees'),
-                            ax=ax)
+                            lon_0=self.projection['satellite_lon'].get('degrees'))
             else:
                 raise epygramError("Projection name unknown.")
         else:
@@ -2614,24 +2607,20 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                 b = Basemap(resolution=gisquality, projection=specificproj,
                             lon_0=lon0,
                             llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                            ax=ax)
+                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat)
             elif specificproj == 'ortho':
                 b = Basemap(resolution=gisquality, projection=specificproj,
                             lon_0=lon0,
-                            lat_0=lat0,
-                            ax=ax)
+                            lat_0=lat0)
             elif specificproj == 'cyl':
                 b = Basemap(resolution=gisquality, projection=specificproj,
                             llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                            ax=ax)
+                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat)
             elif specificproj == 'moll':
                 b = Basemap(resolution=gisquality, projection=specificproj,
                             lon_0=lon0,
                             llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                            ax=ax)
+                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat)
             elif isinstance(specificproj, tuple) and \
                  specificproj[0] == 'nsper' and \
                  isinstance(specificproj[1], dict):
@@ -2640,8 +2629,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                             projection=specificproj[0],
                             lon_0=specificproj[1].get('lon', lon0),
                             lat_0=specificproj[1].get('lat', lat0),
-                            satellite_height=sat_height,
-                            ax=ax)
+                            satellite_height=sat_height)
 
         return b
 

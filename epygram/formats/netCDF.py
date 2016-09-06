@@ -513,6 +513,8 @@ class netCDF(FileResource):
                     positions.append(variable.dimensions.index(dims_dict_e2n['Y_dimension']))
                 if  'X_dimension' in dims_dict_e2n.keys():
                     positions.append(variable.dimensions.index(dims_dict_e2n['X_dimension']))
+                elif  'N_dimension' in dims_dict_e2n.keys():
+                    positions.append(variable.dimensions.index(dims_dict_e2n['N_dimension']))
                 for d in variable.dimensions:
                     # whatever the order of these, they must have been filtered and dimension 1 (only)
                     if d not in dims_dict_e2n.values():

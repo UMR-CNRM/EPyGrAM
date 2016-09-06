@@ -168,25 +168,24 @@ def main(filename,
             if field.geometry.name != 'academic':
                 bm = field.geometry.make_basemap(subzone=subzone, specificproj=specificproj,
                                                  zoom=zoom, gisquality=gisquality)
-                fig = None
-            else:
-                fig = plt.figure()
-                bm = fig.add_subplot(1, 1, 1)
-            plot = field.plotfield(subzone=subzone, specificproj=specificproj,
-                                   title=title, existingbasemap=bm,
-                                   minmax=minmax, graphicmode=graphicmode,
-                                   levelsnumber=levelsnumber,
-                                   drawrivers=drawrivers,
-                                   parallels=parallels,
-                                   meridians=meridians,
-                                   colormap=colormap,
-                                   center_cmap_on_0=center_cmap_on_0,
-                                   departments=french_depts,
-                                   existingfigure=fig,
-                                   pointsize=pointsize,
-                                   bluemarble=bluemarble,
-                                   background=background,
-                                   mask_threshold=mask_threshold, zoom=zoom)
+            plot, _ = field.plotfield(subzone=subzone,
+                                      specificproj=specificproj,
+                                      title=title,
+                                      use_basemap=bm,
+                                      minmax=minmax,
+                                      graphicmode=graphicmode,
+                                      levelsnumber=levelsnumber,
+                                      drawrivers=drawrivers,
+                                      parallels=parallels,
+                                      meridians=meridians,
+                                      colormap=colormap,
+                                      center_cmap_on_0=center_cmap_on_0,
+                                      departments=french_depts,
+                                      pointsize=pointsize,
+                                      bluemarble=bluemarble,
+                                      background=background,
+                                      mask_threshold=mask_threshold,
+                                      zoom=zoom)
             if not output:
                 plt.show()
         else:
@@ -194,7 +193,7 @@ def main(filename,
             (Ufid, Vfid) = fieldseed
             U = resource.readfield(Ufid)
             field = U
-            if not field.geometry.grid.has_key('LAMzone'):
+            if not field.geometry.grid.get('LAMzone', False):
                 subzone = None
             if U.spectral:
                 U.sp2gp()
@@ -219,33 +218,34 @@ def main(filename,
                 title = str(fieldseed) + "\n" + str(U.validity.get())
             bm = U.geometry.make_basemap(subzone=subzone, specificproj=specificproj,
                                          zoom=zoom, gisquality=gisquality)
-            fig = vectwind.plotfield(subzone=subzone,
-                                     existingbasemap=bm, title=title,
-                                     parallels=parallels,
-                                     meridians=meridians,
-                                     subsampling=vectors_subsampling,
-                                     symbol=symbol,
-                                     bluemarble=bluemarble,
-                                     background=background,
-                                     plot_module=not bluemarble,
-                                     quiverkey=quiverkey,
-                                     plot_module_options=dict(minmax=minmax,
-                                                              graphicmode=graphicmode,
-                                                              levelsnumber=levelsnumber,
-                                                              colormap=colormap,
-                                                              departments=french_depts,
-                                                              pointsize=pointsize,
-                                                              bluemarble=bluemarble,
-                                                              background=background,
-                                                              mask_threshold=mask_threshold),
-                                     components_are_projected_on=wind_components_are_projected_on,
-                                     map_factor_correction=map_factor_correction)
+            fig, _ = vectwind.plotfield(subzone=subzone,
+                                        use_basemap=bm,
+                                        title=title,
+                                        parallels=parallels,
+                                        meridians=meridians,
+                                        subsampling=vectors_subsampling,
+                                        symbol=symbol,
+                                        bluemarble=bluemarble,
+                                        background=background,
+                                        plot_module=not bluemarble,
+                                        quiverkey=quiverkey,
+                                        plot_module_options=dict(minmax=minmax,
+                                                                 graphicmode=graphicmode,
+                                                                 levelsnumber=levelsnumber,
+                                                                 colormap=colormap,
+                                                                 departments=french_depts,
+                                                                 pointsize=pointsize,
+                                                                 bluemarble=bluemarble,
+                                                                 background=background,
+                                                                 mask_threshold=mask_threshold),
+                                        components_are_projected_on=wind_components_are_projected_on,
+                                        map_factor_correction=map_factor_correction)
             plot = fig
             if not output:
                 plt.show()
     else:
         field = resource.readfield(fieldseed)
-        if not field.geometry.grid.has_key('LAMzone'):
+        if not field.geometry.grid.get('LAMzone', False):
             subzone = None
         if field.spectral:
             field.sp2gp()
@@ -265,20 +265,23 @@ def main(filename,
                 title = resource.container.basename + " : " + str(fieldseed) + "\n" + str(field.validity.get())
             bm = field.geometry.make_basemap(subzone=subzone, specificproj=specificproj,
                                              gisquality=gisquality, zoom=zoom)
-            plot = field.plotfield(subzone=subzone, specificproj=specificproj,
-                                   title=title, existingbasemap=bm,
-                                   minmax=minmax, graphicmode=graphicmode,
-                                   levelsnumber=levelsnumber,
-                                   drawrivers=drawrivers,
-                                   parallels=parallels,
-                                   meridians=meridians,
-                                   colormap=colormap,
-                                   center_cmap_on_0=center_cmap_on_0,
-                                   departments=french_depts,
-                                   pointsize=pointsize,
-                                   bluemarble=bluemarble,
-                                   background=background,
-                                   mask_threshold=mask_threshold)
+            plot, _ = field.plotfield(subzone=subzone,
+                                      specificproj=specificproj,
+                                      title=title,
+                                      use_basemap=bm,
+                                      minmax=minmax,
+                                      graphicmode=graphicmode,
+                                      levelsnumber=levelsnumber,
+                                      drawrivers=drawrivers,
+                                      parallels=parallels,
+                                      meridians=meridians,
+                                      colormap=colormap,
+                                      center_cmap_on_0=center_cmap_on_0,
+                                      departments=french_depts,
+                                      pointsize=pointsize,
+                                      bluemarble=bluemarble,
+                                      background=background,
+                                      mask_threshold=mask_threshold)
         else:
             bm = None
         reffield = reference.readfield(fieldseed)
@@ -298,20 +301,23 @@ def main(filename,
                 title = legend
             else:
                 title = reference.container.basename + " : " + str(fieldseed) + "\n" + str(reffield.validity.get())
-            refplot = reffield.plotfield(subzone=subzone, specificproj=specificproj,
-                                         title=title, existingbasemap=bm,
-                                         minmax=minmax, graphicmode=graphicmode,
-                                         levelsnumber=levelsnumber,
-                                         drawrivers=drawrivers,
-                                         parallels=parallels,
-                                         meridians=meridians,
-                                         colormap=colormap,
-                                         center_cmap_on_0=center_cmap_on_0,
-                                         departments=french_depts,
-                                         pointsize=pointsize,
-                                         bluemarble=bluemarble,
-                                         background=background,
-                                         mask_threshold=mask_threshold)
+            refplot, _ = reffield.plotfield(subzone=subzone,
+                                            specificproj=specificproj,
+                                            title=title,
+                                            use_basemap=bm,
+                                            minmax=minmax,
+                                            graphicmode=graphicmode,
+                                            levelsnumber=levelsnumber,
+                                            drawrivers=drawrivers,
+                                            parallels=parallels,
+                                            meridians=meridians,
+                                            colormap=colormap,
+                                            center_cmap_on_0=center_cmap_on_0,
+                                            departments=french_depts,
+                                            pointsize=pointsize,
+                                            bluemarble=bluemarble,
+                                            background=background,
+                                            mask_threshold=mask_threshold)
         if legend != None:
             title = legend
         else:
@@ -322,20 +328,23 @@ def main(filename,
                                             zoom=zoom)
         if diffoperation is not None:
             diff.operation(**diffoperation)
-        diffplot = diff.plotfield(subzone, specificproj=specificproj,
-                                  title=title, existingbasemap=bm,
-                                  minmax=diffminmax, graphicmode=graphicmode,
-                                  levelsnumber=difflevelsnumber,
-                                  drawrivers=drawrivers,
-                                  parallels=parallels,
-                                  meridians=meridians,
-                                  colormap=diffcolormap,
-                                  center_cmap_on_0=diffcenter_cmap_on_0,
-                                  departments=french_depts,
-                                  pointsize=pointsize,
-                                  bluemarble=bluemarble,
-                                  background=background,
-                                  mask_threshold=mask_threshold)
+        diffplot, _ = diff.plotfield(subzone=subzone,
+                                     specificproj=specificproj,
+                                     title=title,
+                                     use_basemap=bm,
+                                     minmax=diffminmax,
+                                     graphicmode=graphicmode,
+                                     levelsnumber=difflevelsnumber,
+                                     drawrivers=drawrivers,
+                                     parallels=parallels,
+                                     meridians=meridians,
+                                     colormap=diffcolormap,
+                                     center_cmap_on_0=diffcenter_cmap_on_0,
+                                     departments=french_depts,
+                                     pointsize=pointsize,
+                                     bluemarble=bluemarble,
+                                     background=background,
+                                     mask_threshold=mask_threshold)
         if not output:
             plt.show()
 
@@ -343,7 +352,7 @@ def main(filename,
     if output:
         epylog.info("save plots...")
         suffix = '.'.join(['plot', output])
-        if 'LAMzone' in field.geometry.grid.keys() and subzone != None:
+        if field.geometry.grid.get('LAMzone', False):
             suffix = '.'.join([subzone, suffix])
         parameter = epygram.util.linearize2str(fieldseed)
         # main resource

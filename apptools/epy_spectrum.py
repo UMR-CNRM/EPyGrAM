@@ -83,7 +83,7 @@ def main(filename,
         for f in fidlist:
             epylog.info(str(f))
             field = resource.readfield(f)
-            if not field.geometry.grid.has_key('LAMzone'):
+            if not field.geometry.grid.get('LAMzone', False):
                 subzone = None
             if field.spectral:
                 field.sp2gp()
@@ -137,7 +137,7 @@ def main(filename,
             if V.spectral:
                 V.sp2gp()
             field = U * U + V * V
-            if not field.geometry.grid.has_key('LAMzone'):
+            if not field.geometry.grid.get('LAMzone', False):
                 subzone = None
             field.setdata(numpy.sqrt(field.getdata()))
             variances = esp.dctspectrum(field.getdata(subzone=subzone),
@@ -204,7 +204,7 @@ def main(filename,
             if f in fidlist:
                 epylog.info("- in " + resource.container.basename)
                 field = resource.readfield(f)
-                if not field.geometry.grid.has_key('LAMzone'):
+                if not field.geometry.grid.get('LAMzone', False):
                     subzone = None
                 if field.spectral:
                     field.sp2gp()
@@ -220,7 +220,7 @@ def main(filename,
             if f in reffidlist:
                 epylog.info("- in " + reference.container.basename)
                 reffield = reference.readfield(f)
-                if not reffield.geometry.grid.has_key('LAMzone'):
+                if not field.geometry.grid.get('LAMzone', False):
                     subzone = None
                 if reffield.spectral:
                     reffield.sp2gp()
@@ -272,7 +272,7 @@ def main(filename,
     # Output
     epylog.info("save output...")
     suffix = "spectrum.out"
-    if 'LAMzone' in field.geometry.grid.keys() and subzone != None:
+    if field.geometry.grid.get('LAMzone', False):
         suffix = '.'.join([subzone, suffix])
     # spectra
     if not diffmode:

@@ -15,6 +15,19 @@ from footprints import FPList, FPDict, proxy as fpx
 from epygram import epygramError
 from epygram.base import Resource, FieldSet, FieldValidityList
 
+
+
+def timeresource(list_of_filenames, openmode):
+    """
+    Build and return a MultiValiditiesResource from a list of filenames.
+    """
+    from epygram.formats import resource
+
+    resources = [resource(f, openmode, fmtdelayedopen=True) for f in list_of_filenames]
+    a2DplusTime_resource = MultiValiditiesResource(name='MultiValidities', resources=resources, openmode=openmode)
+
+    return a2DplusTime_resource
+
 class _open_and_close(object):
     def __init__(self, r):
         self.r = r
@@ -285,8 +298,8 @@ class MultiValiditiesResource(Resource):
         for i in range(len(fieldset)):
             field = fieldset[validities[sortedValidities[i]]]
             fieldvaliditylist.extend(field.validity)
-            data[i] = field.getdata()
-        if not geometry.datashape['k']:
+            data[i, ...] = field.getdata()[...]
+        if geometry.datashape['k']:  #TOBECHECKED: not geometry.datashape['k']:
             shape = tuple([shape[0]] + [1] + list(shape[1:]))
             data = data.reshape(shape)
         if not sameProcesstype:
@@ -295,7 +308,6 @@ class MultiValiditiesResource(Resource):
         kwargs_field['validity'] = fieldvaliditylist
         kwargs_field['fid'][self.format] = kwargs_field['fid'][self.lowLevelFormat]
         field = fpx.field(**kwargs_field)
-        print data.shape
         field.setdata(data)
 
         return field

@@ -129,33 +129,16 @@ class Spectrum(RecursiveObject):
         with open(filename, 'w') as _file:
             self.write(_file)
 
-    def plotfield(self,
-                  over=(None, None),
-                  slopes=[{'exp':-3, 'offset':1, 'label':'-3'},
-                          {'exp':-5. / 3., 'offset':1, 'label':'-5/3'}],
-                  zoom=None,
-                  unit='SI',
-                  title=None):
+    def plotspectrum(self,
+                     over=(None, None),
+                     slopes=[{'exp':-3, 'offset':1, 'label':'-3'},
+                             {'exp':-5. / 3., 'offset':1, 'label':'-5/3'}],
+                     zoom=None,
+                     unit='SI',
+                     title=None):
         """
         Plot the spectrum.
-        
-        Args:\n
-        - over = any existing figure and/or ax to be used for the
-          plot, given as a tuple (fig, ax), with None for
-          missing objects. *fig* is the frame of the
-          matplotlib figure, containing eventually several 
-          subplots (axes); *ax* is the matplotlib axes on 
-          which the drawing is done. When given (!= None),
-          these objects must be coherent, i.e. ax being one of
-          the fig axes.
-        - unit: string accepting LaTeX-mathematical syntaxes
-        - slopes = list of dict(
-          - exp=x where x is exposant of a A*k**-x slope
-          - offset=A where A is logscale offset in a A*k**-x slope;
-            a offset=1 is fitted to intercept the first spectra at wavenumber = 2
-          - label=(optional label) appearing 'k = label' in legend)
-        - zoom = dict(xmin=,xmax=,ymin=,ymax=)
-        - title = string for title
+        Cf. function plotspectra() of this module for arguments.
         """
 
         return plotspectra(self,

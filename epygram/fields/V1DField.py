@@ -456,19 +456,7 @@ def plotprofiles(profiles,
             Ycoordinate = 'unknown \ncoordinate'
 
     # Figure
-    fig, ax = over
-    if ax is not None and fig is None:
-        fig = ax.figure
-    elif ax is None and fig is not None:
-        if len(fig.axes) > 0:
-            ax = fig.axes[0]
-        else:
-            ax = fig.gca()
-    elif ax is not None and fig is not None:
-        if ax not in fig.axes:
-            raise epygramError('*over*: inconsistency between given fig and ax')
-    elif fig is ax is None:
-        fig, ax = plt.subplots(1, 1, figsize=(6., 9.))
+    fig, ax = util.set_figax(*over, figsize=(6., 9.))
     if logscale:
         ax.set_yscale('log')
     if reverseY:
@@ -503,9 +491,12 @@ def plotprofiles(profiles,
             unit = 'K'
             mindata = min(mindata, data.min())
             maxdata = max(maxdata, data.max())
+        plot_kwargs = {}
+        if len(profiles) > 1:
+            plot_kwargs['color'] = colors[i % len(colors)]
+            plot_kwargs['linestyle'] = linestyles[i // len(colors)]
         ax.plot(data.flatten(), Y.flatten(), label=label,
-                color=colors[i % len(colors)],
-                linestyle=linestyles[i // len(colors)])
+                **plot_kwargs)
         i += 1
 
     # Decoration
@@ -513,11 +504,15 @@ def plotprofiles(profiles,
         ax.set_ylim(bottom=numpy.array(Y).max())
     else:
         ax.set_ylim(bottom=numpy.array(Y).min())
-    if zoom != None:
+    if zoom is not None:
         if 'ymin' in zoom.keys():
             ax.set_ylim(bottom=zoom['ymin'])
         if 'ymax' in zoom.keys():
             ax.set_ylim(top=zoom['ymax'])
+        if 'xmin' in zoom.keys():
+            ax.set_xlim(left=zoom['xmin'])
+        if 'xmax' in zoom.keys():
+            ax.set_xlim(right=zoom['xmax'])
     if title != None:
         ax.set_title(title)
     legend = ax.legend(loc='upper right', shadow=True)
@@ -534,135 +529,70 @@ def plotprofiles(profiles,
     return (fig, ax)
 
 def plotanimation(profile,
-                  fidkey=None,
-                  Ycoordinate=None,
-                  unit='SI',
                   title='__auto__',
-                  logscale=False,
-                  ema=False,
-                  zoom=None,
-                  linecolor='black',
-                  linestyle='-',
                   repeat=False,
-                  interval=1000):
+                  interval=1000,
+                  **kwargs):
     """
-    To plot a time-dependent profile as an animation. Returns a :mod:`matplotlib` *Figure*.
+    To plot a time-dependent profile as an animation.
+    Returns a :class:`matplotlib.animation.FuncAnimation`.
 
     Args: \n
     - *profile* being a :class:`epygram.fields.V1DField`.
-    - *fidkey* = key of fid for labelling the curve with *fid[fidkey]*;
-                  if *None*, labels with raw fid.
-    - *Ycoordinate* = label for the Y coordinate.
-    - *unit* = label for X coordinate.
-    - *title* = title for the plot.
-    - *logscale* = to set Y logarithmic scale
-    - *ema* = to make emagram-like plots of Temperature
-    - *zoom*: a dict containing optional limits to zoom on the plot. \n
-      Syntax: e.g. {'ymax':500, ...}.
-    - *linecolor*: color of the profile
-    - *linestyle*: line style to use for plotting the profile
+    - *title* = title for the plot. '__auto__' (default) will print
+      the current validity of the time frame.
     - *repeat*: to repeat animation
     - *interval*: number of milliseconds between two validities
+    
+    Other kwargs passed to plotprofiles().
     """
-    import matplotlib.pyplot as plt
     import matplotlib.animation as animation
-
-    plt.rc('font', family='serif')
-    plt.rc('figure', autolayout=True)
 
     if len(profile.validity) == 1:
         raise epygramError("plotanimation can handle only profile with several validities.")
 
-    if profile.geometry.vcoordinate.typeoffirstfixedsurface in (119, 100):
-        reverseY = True
-    else:
-        reverseY = False
-    if profile.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
-        Y = profile.geometry.vcoordinate.levels
-    if Ycoordinate == None:
-        if profile.geometry.vcoordinate.typeoffirstfixedsurface == 119:
-            Ycoordinate = 'Level \nHybrid-Pressure \ncoordinate'
-        elif profile.geometry.vcoordinate.typeoffirstfixedsurface == 100:
-            Ycoordinate = 'Pressure (hPa)'
-        elif profile.geometry.vcoordinate.typeoffirstfixedsurface == 102:
-            Ycoordinate = 'Altitude (m)'
-        elif profile.geometry.vcoordinate.typeoffirstfixedsurface == 103:
-            Ycoordinate = 'Height (m)'
-        elif profile.geometry.vcoordinate.typeoffirstfixedsurface == 118:
-            Ycoordinate = 'Level \nHybrid-Height \ncoordinate'
-        elif profile.geometry.vcoordinate.typeoffirstfixedsurface == 109:
-            Ycoordinate = 'Potential \nvortex \n(PVU)'
-        else:
-            Ycoordinate = 'unknown \ncoordinate'
-
-    # Figure
-    fig, ax = plt.subplots(figsize=(6., 9.))
-    if logscale:
-        ax.set_yscale('log')
-    if reverseY:
-        plt.gca().invert_yaxis()
-    if profile.geometry.vcoordinate.typeoffirstfixedsurface == 100:
-        Y = numpy.array(profile.geometry.vcoordinate.levels)  # / 100
-    elif profile.geometry.vcoordinate.typeoffirstfixedsurface in (102, 103, 109):
-        Y = numpy.array(profile.geometry.vcoordinate.levels)
-    if fidkey != None:
-        label = profile.fid.get(fidkey, profile.fid)
-    else:
-        label = str(profile.fid)
-    data = profile.data
-    if ema:
-        raise epygramError("ema=True not tested for animations")
-        mindata = numpy.inf
-        maxdata = -numpy.inf
-        alpha = 0.75
-        templines = numpy.arange(round(min(data), -1) - 10,
-                                 round(max(data), -1) + 10 + 50,
-                                 10)
-        for t in templines:
-            plt.plot([t, t + (max(data) - min(data)) * alpha],
-                     [max(Y), min(Y)],
-                     color='grey', linestyle=':')
-        ax.set_yticks(numpy.linspace(0, 1000, 11))
-        data = data + abs(Y - Y[-1]) * (max(data) - min(data)) / \
-                                       (max(Y) - min(Y)) * alpha
-        unit = 'K'
-        mindata = min(mindata, min(data))
-        maxdata = max(maxdata, max(data))
-    plot, = ax.plot(data[0], Y, label=label, color=linecolor, linestyle=linestyle)
-
-    # Decoration
-    if reverseY:
-        ax.set_ylim(bottom=numpy.array(Y).max())
-    else:
-        ax.set_ylim(bottom=numpy.array(Y).min())
-    if zoom != None:
-        if 'ymin' in zoom.keys():
-            ax.set_ylim(bottom=zoom['ymin'])
-        if 'ymax' in zoom.keys():
-            ax.set_ylim(top=zoom['ymax'])
     if title is not None:
         if title == '__auto__':
-            _title = ''
+            title_prefix = ''
         else:
-            _title = title
-        ax.set_title(_title + '\n' + profile.validity[0].get().isoformat())
-    legend = ax.legend(loc='upper right', shadow=True)
-    for label in legend.get_texts():
-        label.set_fontsize('medium')
-    ax.set_xlabel(r'$' + unit + '$')
-    ax.set_ylabel(Ycoordinate)
-    if ema:
-        ax.grid(axis='y')
-        ax.xlim(mindata - 10, maxdata + 10)
+            title_prefix = title
+        title = title_prefix + '\n' + profile.validity[0].get().isoformat(sep=' ')
     else:
-        ax.grid()
+        title_prefix = None
+    profile0 = profile.deepcopy()
+    profile0.validity = profile.validity[0]
+    profile0.setdata(profile.getdata()[0, ...])
+    mindata = profile.getdata().min()
+    maxdata = profile.getdata().max()
+    mindata -= (maxdata - mindata) / 10
+    maxdata += (maxdata - mindata) / 10
 
-    def update(i):
-        plot.set_xdata(data[i])
-        if title is not None:
-            ax.set_title(_title + '\n' + profile.validity[i].get().isoformat())
-        return plot,
+    if kwargs.get('ema', False):
+        epylog.warning("'ema' option not fully tested in animation: min/max may not be optimised.")
+    zoom = kwargs.get('zoom')
+    zoom = util.ifNone_emptydict(zoom)
+    if not 'xmax' in zoom.keys():
+        zoom.update(xmax=maxdata)
+    if not 'xmin' in zoom.keys():
+        zoom.update(xmin=mindata)
+    kwargs['zoom'] = zoom
 
-    ani = animation.FuncAnimation(fig, update, range(len(data)), interval=interval, repeat=repeat)
+    fig, ax = plotprofiles(profile0,
+                           title=title,
+                           **kwargs)
 
-    return ani
+    def update(i, ax=None, profile=None, title_prefix=None):
+        if i < len(profile.validity):
+            ax.lines[0].set_xdata(profile.getdata()[i, ...])
+            if title_prefix is not None:
+                ax.set_title(title_prefix + '\n' + profile.validity[i].get().isoformat(sep=' '))
+
+        return ax.lines[0],
+
+    anim = animation.FuncAnimation(fig, update,
+                                   fargs=[ax, profile, title_prefix],
+                                   frames=range(len(profile.validity) + 1),  # AM: don't really understand why but needed for the last frame to be shown
+                                   interval=interval,
+                                   repeat=repeat)
+
+    return anim

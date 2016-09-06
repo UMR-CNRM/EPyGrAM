@@ -73,6 +73,7 @@ class H2DField(D3Field):
                   specificproj=None,
                   zoom=None,
                   over=(None, None),
+                  colorbar_over=None,
                   use_basemap=None,
                   minmax=None,
                   graphicmode='colorshades',
@@ -131,6 +132,7 @@ class H2DField(D3Field):
                          which the drawing is done. When given (!= None),
                          these objects must be coherent, i.e. ax being one of
                          the fig axes.
+        colorbar_over    an optional existing ax to plot the colorbar on.
         use_basemap      a basemap.Basemap object used to handle the
                          projection of the map. If given, the map projection
                          options (*specificproj*, *zoom*, *gisquality* ...)
@@ -210,7 +212,7 @@ class H2DField(D3Field):
             raise epygramError("please convert to gridpoint with sp2gp()" + \
                                " method before plotting.")
         if len(self.validity) > 1:
-            raise NotImplementedError('plot H2DField with time dimension.')
+            raise epygramError('to plot H2DField with time dimension, use plotanimation().')
 
         # 0.3 add custom colormap if necessary
         if colormap not in plt.colormaps():
@@ -347,9 +349,12 @@ class H2DField(D3Field):
                     pf = bm.contourf(xf, yf, zf, levels, ax=ax,
                                      **plot_kwargs)
                 if colorbar:
-                    cax = make_axes_locatable(ax).append_axes(colorbar,
-                                                              size="5%",
-                                                              pad=0.1)
+                    if colorbar_over is None:
+                        cax = make_axes_locatable(ax).append_axes(colorbar,
+                                                                  size="5%",
+                                                                  pad=0.2)
+                    else:
+                        cax = colorbar_over
                     orientation = 'vertical' if colorbar in ('right', 'left') else 'horizontal'
                     cb = plt.colorbar(pf,
                                       orientation=orientation,
@@ -401,9 +406,12 @@ class H2DField(D3Field):
                     pf = bm.scatter(xf, yf, c=zf, ax=ax,
                                     **plot_kwargs)
                 if colorbar:
-                    cax = make_axes_locatable(ax).append_axes(colorbar,
-                                                              size="5%",
-                                                              pad=0.2)
+                    if colorbar_over is None:
+                        cax = make_axes_locatable(ax).append_axes(colorbar,
+                                                                  size="5%",
+                                                                  pad=0.2)
+                    else:
+                        cax = colorbar_over
                     orientation = 'vertical' if colorbar in ('right', 'left') else 'horizontal'
                     cb = plt.colorbar(pf,
                                       orientation=orientation,
@@ -430,6 +438,78 @@ class H2DField(D3Field):
             fig, ax = zoom_field.plotfield(**kwargs)
 
         return (fig, ax)
+
+    def plotanimation(self, title='__auto__', repeat=False, interval=1000, **kwargs):
+        """
+        Plot the field with animation with regards to time dimension.
+        Returns a :class:`matplotlib.animation.FuncAnimation`.
+        
+        In addition to those specified below, all :meth:`plotfield` method
+        arguments can be provided.
+        
+        Args:\n
+        - *title* = title for the plot. '__auto__' (default) will print
+          the current validity of the time frame.
+        - *repeat*: to repeat animation
+        - *interval*: number of milliseconds between two validities 
+        """
+
+        import matplotlib.animation as animation
+
+        if len(self.validity) == 1:
+            raise epygramError("plotanimation can handle only field with several validities.")
+
+        if title is not None:
+            if title == '__auto__':
+                title_prefix = ''
+            else:
+                title_prefix = title
+            title = title_prefix + '\n' + self.validity[0].get().isoformat(sep=' ')
+        else:
+            title_prefix = None
+        field0 = self.deepcopy()
+        field0.validity = self.validity[0]
+        field0.setdata(self.getdata()[0, ...])
+        mindata = self.getdata(subzone=kwargs.get('subzone')).min()
+        maxdata = self.getdata(subzone=kwargs.get('subzone')).max()
+
+        minmax = kwargs.get('minmax')
+        if minmax is None:
+            minmax = (mindata, maxdata)
+        kwargs['minmax'] = minmax
+        academic = self.geometry.name == 'academic'
+        if not academic:
+            bm = kwargs.get('use_basemap')
+            if bm is None:
+                bm = self.geometry.make_basemap(gisquality=kwargs.get('gisquality', 'i'),
+                                                subzone=kwargs.get('subzone'),
+                                                specificproj=kwargs.get('specificproj'),
+                                                zoom=kwargs.get('zoom'))
+            kwargs['use_basemap'] = bm
+        fig, ax = field0.plotfield(title=title,
+                                   **kwargs)
+        if kwargs.get('colorbar_over') is None:
+            kwargs['colorbar_over'] = fig.axes[-1]  # the last being created, in plotfield()
+        kwargs['over'] = (fig, ax)
+
+        def update(i, ax, myself, fieldi, title_prefix, kwargs):
+            if i < len(myself.validity):
+                if kwargs.get('colorbar_over') is None:
+                    kwargs['colorbar_over'].clear()
+                fieldi.validity = myself.validity[i]
+                fieldi.setdata(myself.getdata()[i, ...])
+                if title_prefix is not None:
+                    title = title_prefix + '\n' + fieldi.validity.get().isoformat(sep=' ')
+                fieldi.plotfield(title=title,
+                                 **kwargs)
+
+        anim = animation.FuncAnimation(fig, update,
+                                       fargs=[ax, self, field0, title_prefix, kwargs],
+                                       frames=range(len(self.validity) + 1),  # AM: don't really understand why but needed for the last frame to be shown
+                                       interval=interval,
+                                       repeat=repeat)
+
+        return anim
 
     def extract_zoom(self, zoom):
         """

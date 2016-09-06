@@ -333,6 +333,10 @@ class Field(RecursiveObject, FootprintBase):
     def __div__(self, other):
         return self._div(other)
 
+    __radd__ = __add__
+    __rmul__ = __mul__
+    __rdiv__ = __div__
+    __rsub__ = __sub__
 
 
 class FieldSet(RecursiveObject, list):
@@ -903,10 +907,15 @@ class FieldValidityList(RecursiveObject, list):
     This class handles a list of temporal validity.
     """
 
-    def __init__(self, validity_instance=None, **kwargs):
+    def __init__(self, validity_instance=None, length=1, **kwargs):
         """
         Constructor.
-        *validity_instance*, if given is an instance of FieldValidity
+        
+        - *validity_instance*, if given is an instance of FieldValidity
+        - *length*, to build a series of validities from either the
+        *validity_instance* or from an uninitialized one.
+        - other kwargs: same as :class:`FieldValidity` constructor.
+        
         """
 
         super(list, self).__init__([])
@@ -916,11 +925,14 @@ class FieldValidityList(RecursiveObject, list):
                 raise epygramError("One can not give, at the same time, validity_instance and other argument.")
             if isinstance(validity_instance, FieldValidity):
                 self.append(validity_instance)
+                if length > 1:
+                    for _ in range(length - 1):
+                        self.append(validity_instance.deepcopy())
             elif isinstance(validity_instance, FieldValidityList):
                 self.extend(validity_instance)
             else:
                 raise epygramError("FieldValidityList must be built from FieldValidity or from FieldValidityList instances.")
-        else:
+        elif kwargs != {}:
             #Check that all lengths are equal
             length = None
             mykwargs = {}
@@ -939,6 +951,9 @@ class FieldValidityList(RecursiveObject, list):
             if length == None:
                 length = 1
             self.extend([FieldValidity(**{key: value[i] for (key, value) in mykwargs.iteritems()}) for i in range(length)])
+        elif isinstance(length, int):
+            for _ in range(length):
+                self.append(FieldValidity())
 
     def term(self, one=True, **kwargs):
         """This method returns the terms of all the validities"""

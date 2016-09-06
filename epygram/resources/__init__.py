@@ -12,5 +12,5 @@ Module contains:
 """
 
 from .FileResource import FileResource
-from .MultiValiditiesResource import MultiValiditiesResource
+from .MultiValiditiesResource import MultiValiditiesResource, timeresource
 from .CombineLevelsResource import CombineLevelsResource

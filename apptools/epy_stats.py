@@ -76,7 +76,7 @@ def main(filename,
                 printstatus(n, numfields)
                 n += 1
             field = resource.readfield(f)
-            if not field.geometry.grid.has_key('LAMzone'):
+            if not field.geometry.grid.get('LAMzone', False):
                 subzone = None
             if field.spectral:
                 field.sp2gp()
@@ -110,7 +110,7 @@ def main(filename,
                 n += 1
             if f in fidlist:
                 field = resource.readfield(f)
-                if not field.geometry.grid.has_key('LAMzone'):
+                if not field.geometry.grid.get('LAMzone', False):
                     subzone = None
                 if field.spectral:
                     field.sp2gp()
@@ -124,7 +124,7 @@ def main(filename,
                 stats[f] = field.stats(subzone=subzone)
             if f in reffidlist:
                 reffield = reference.readfield(f)
-                if not reffield.geometry.grid.has_key('LAMzone'):
+                if not reffield.geometry.grid.get('LAMzone', False):
                     subzone = None
                 if reffield.spectral:
                     reffield.sp2gp()
@@ -149,7 +149,7 @@ def main(filename,
     singlemap = {'min':'min', 'max':'max', 'mean':'mean', 'std':'std', 'bias':None, 'rmsd':None, 'quadmean':'quadmean', 'nonzero':'nonzero'}
     diffmap = {'min':'min', 'max':'max', 'mean':None, 'std':None, 'bias':'mean', 'rmsd':'quadmean', 'nonzero':'nonzero'}
     suffix = "stats.out"
-    if 'LAMzone' in field.geometry.grid.keys() and subzone != None:
+    if field.geometry.grid.get('LAMzone', False):
         suffix = '.'.join([subzone, suffix])
     if not diffmode:
         printlist = fidlist

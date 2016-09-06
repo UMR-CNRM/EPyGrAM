@@ -52,6 +52,7 @@ class V2DField(D3Field):
     def plotfield(self,
                   over=(None, None),
                   colorbar='vertical',
+                  colorbar_over=None,
                   graphicmode='colorshades',
                   minmax=None,
                   levelsnumber=21,
@@ -79,6 +80,7 @@ class V2DField(D3Field):
           which the drawing is done. When given (!= None),
           these objects must be coherent, i.e. ax being one of
           the fig axes.
+        - *colorbar_over*: an optional existing ax to plot the colorbar on.
         - *title* = title for the plot.
         - *fidkey* = type of fid for entitling the plot with *fid[fidkey]*,
                      if title is *None*;
@@ -198,9 +200,12 @@ class V2DField(D3Field):
                              vmin=vmin, vmax=vmax)
             if colorbar:
                 position = 'right' if colorbar == 'vertical' else 'bottom'
-                cax = make_axes_locatable(ax).append_axes(position,
-                                                          size="5%",
-                                                          pad=0.1)
+                if colorbar_over is None:
+                    cax = make_axes_locatable(ax).append_axes(position,
+                                                              size="5%",
+                                                              pad=0.2)
+                else:
+                    cax = colorbar_over
                 cb = plt.colorbar(pf,
                                   orientation=colorbar,
                                   ticks=hlevels,
@@ -267,3 +272,67 @@ class V2DField(D3Field):
         ax.set_title(title)
 
         return (fig, ax)
+
+    def plotanimation(self, title='__auto__', repeat=False, interval=1000, **kwargs):
+        """
+        Plot the field with animation with regards to time dimension.
+        Returns a :class:`matplotlib.animation.FuncAnimation`.
+        
+        In addition to those specified below, all :meth:`plotfield` method
+        arguments can be provided.
+        
+        Args:\n
+        - *title* = title for the plot. '__auto__' (default) will print
+          the current validity of the time frame.
+        - *repeat*: to repeat animation
+        - *interval*: number of milliseconds between two validities 
+        """
+
+        import matplotlib.animation as animation
+
+        if len(self.validity) == 1:
+            raise epygramError("plotanimation can handle only field with several validities.")
+
+        if title is not None:
+            if title == '__auto__':
+                title_prefix = ''
+            else:
+                title_prefix = title
+            title = title_prefix + '\n' + self.validity[0].get().isoformat(sep=' ')
+        else:
+            title_prefix = None
+        field0 = self.deepcopy()
+        field0.validity = self.validity[0]
+        field0.setdata(self.getdata()[0, ...])
+        mindata = self.getdata().min()
+        maxdata = self.getdata().max()
+
+        minmax = kwargs.get('minmax')
+        if minmax is None:
+            minmax = (mindata, maxdata)
+        kwargs['minmax'] = minmax
+        fig, ax = field0.plotfield(title=title,
+                                   **kwargs)
+        if kwargs.get('colorbar_over') is None:
+            kwargs['colorbar_over'] = fig.axes[-1]  # the last being created, in plotfield()
+        kwargs['over'] = (fig, ax)
+
+        def update(i, ax, myself, fieldi, title_prefix, kwargs):
+            if i < len(myself.validity):
+                ax.clear()
+                if kwargs.get('colorbar_over') is None:
+                    kwargs['colorbar_over'].clear()
+                fieldi.validity = myself.validity[i]
+                fieldi.setdata(myself.getdata()[i, ...])
+                if title_prefix is not None:
+                    title = title_prefix + '\n' + fieldi.validity.get().isoformat(sep=' ')
+                fieldi.plotfield(title=title,
+                                 **kwargs)
+
+        anim = animation.FuncAnimation(fig, update,
+                                       fargs=[ax, self, field0, title_prefix, kwargs],
+                                       frames=range(len(self.validity) + 1),  # AM: don't really understand why but needed for the last frame to be shown
+                                       interval=interval,
+                                       repeat=repeat)
+
+        return anim
