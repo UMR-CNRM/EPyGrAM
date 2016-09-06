@@ -1233,7 +1233,7 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
                         corners['ur'][1])
 
     def make_basemap(self, gisquality='i', specificproj=None,
-                     zoom=None, **kwargs):
+                     zoom=None, ax=None, **kwargs):
         """
         Returns a :class:`matplotlib.basemap.Basemap` object of the 'ad hoc'
         projection (if available). This is designed to avoid explicit handling
@@ -1253,6 +1253,8 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
           'cyl' projection.
           Must be a dict(lonmin=, lonmax=, latmin=, latmax=). \n
           Overwrites *specificproj*.
+        - *ax*: a matplotlib ax on which to plot; if None, plots will be done
+          on matplotlib.pyplot.gca()
         """
         from mpl_toolkits.basemap import Basemap
 
@@ -1291,7 +1293,8 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
                         llcrnrlon=lonmin,
                         llcrnrlat=latmin,
                         urcrnrlon=lonmax,
-                        urcrnrlat=latmax)
+                        urcrnrlat=latmax,
+                        ax=ax)
         else:
             # specificproj
             lon0 = self._center_lon.get('degrees')
@@ -1300,20 +1303,24 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
                 b = Basemap(resolution=gisquality, projection=specificproj,
                             lon_0=lon0,
                             llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat)
+                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
+                            ax=ax)
             elif specificproj == 'ortho':
                 b = Basemap(resolution=gisquality, projection=specificproj,
                             lon_0=lon0,
-                            lat_0=lat0)
+                            lat_0=lat0,
+                            ax=ax)
             elif specificproj == 'cyl':
                 b = Basemap(resolution=gisquality, projection=specificproj,
                             llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat)
+                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
+                            ax=ax)
             elif specificproj == 'moll':
                 b = Basemap(resolution=gisquality, projection=specificproj,
                             lon_0=lon0,
                             llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat)
+                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
+                            ax=ax)
             elif isinstance(specificproj, tuple) and \
                  specificproj[0] == 'nsper' and \
                  isinstance(specificproj[1], dict):
@@ -1322,7 +1329,8 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
                             projection=specificproj[0],
                             lon_0=specificproj[1].get('lon', lon0),
                             lat_0=specificproj[1].get('lat', lat0),
-                            satellite_height=sat_height)
+                            satellite_height=sat_height,
+                            ax=ax)
 
         return b
 
@@ -1761,7 +1769,8 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
 
         return self.ij2ll(*self.xy2ij(x, y))
 
-    def make_basemap(self, gisquality='i', subzone=None, specificproj=None, zoom=None):
+    def make_basemap(self, gisquality='i', subzone=None, specificproj=None,
+                     zoom=None, ax=None):
         """
         Returns a :class:`matplotlib.basemap.Basemap` object of the 'ad hoc'
         projection (if available). This is designed to avoid explicit handling
@@ -1783,6 +1792,8 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
           a 'cyl' projection.
           Must be a dict(lonmin=, lonmax=, latmin=, latmax=).\n
           Overwrites *specificproj*.
+        - *ax*: a matplotlib ax on which to plot; if None, plots will be done
+          on matplotlib.pyplot.gca()
         """
         from mpl_toolkits.basemap import Basemap
 
@@ -1807,7 +1818,8 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
                 proj = 'merc'
             b = Basemap(resolution=gisquality, projection=proj,
                         llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                        urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat)
+                        urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
+                        ax=ax)
         else:
             # specificproj
             lon0 = self._center_lon.get('degrees')
@@ -1816,20 +1828,24 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
                 b = Basemap(resolution=gisquality, projection=specificproj,
                             lon_0=lon0,
                             llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat)
+                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
+                            ax=ax)
             elif specificproj == 'ortho':
                 b = Basemap(resolution=gisquality, projection=specificproj,
                             lon_0=lon0,
-                            lat_0=lat0)
+                            lat_0=lat0,
+                            ax=ax)
             elif specificproj == 'cyl':
                 b = Basemap(resolution=gisquality, projection=specificproj,
                             llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat)
+                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
+                            ax=ax)
             elif specificproj == 'moll':
                 b = Basemap(resolution=gisquality, projection=specificproj,
                             lon_0=lon0,
                             llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat)
+                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
+                            ax=ax)
             elif isinstance(specificproj, tuple) and \
                  specificproj[0] == 'nsper' and \
                  isinstance(specificproj[1], dict):
@@ -1838,7 +1854,8 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
                             projection=specificproj[0],
                             lon_0=specificproj[1].get('lon', lon0),
                             lat_0=specificproj[1].get('lat', lat0),
-                            satellite_height=sat_height)
+                            satellite_height=sat_height,
+                            ax=ax)
 
         return b
 
@@ -3221,7 +3238,7 @@ class D3GaussGeometry(D3Geometry):
 
 
     def make_basemap(self, gisquality='i', specificproj=None, zoom=None,
-                     **kwargs):
+                     ax=None, **kwargs):
         """
         Returns a :class:`matplotlib.basemap.Basemap` object of the 'ad hoc'
         projection (if available). This is designed to avoid explicit handling
@@ -3241,6 +3258,8 @@ class D3GaussGeometry(D3Geometry):
           'cyl' projection.
           Must be a dict(lonmin=, lonmax=, latmin=, latmax=). \n
           Overwrites *specificproj*.
+        - *ax*: a matplotlib ax on which to plot; if None, plots will be done
+          on matplotlib.pyplot.gca()
         """
         # !!! **kwargs enables the method to receive arguments specific to
         #     other geometries, useless here ! Do not remove.
@@ -3269,7 +3288,8 @@ class D3GaussGeometry(D3Geometry):
             else:
                 lon0 = 0.0
             b = Basemap(resolution=gisquality, projection='moll',
-                        lon_0=lon0)
+                        lon_0=lon0,
+                        ax=ax)
         else:
             # specificproj
             if 'rotated' in self.name:
@@ -3282,20 +3302,24 @@ class D3GaussGeometry(D3Geometry):
                 b = Basemap(resolution=gisquality, projection=specificproj,
                             lon_0=lon0,
                             llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat)
+                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
+                            ax=ax)
             elif specificproj == 'ortho':
                 b = Basemap(resolution=gisquality, projection=specificproj,
                             lon_0=lon0,
-                            lat_0=lat0)
+                            lat_0=lat0,
+                            ax=ax)
             elif specificproj == 'cyl':
                 b = Basemap(resolution=gisquality, projection=specificproj,
                             llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat)
+                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
+                            ax=ax)
             elif specificproj == 'moll':
                 b = Basemap(resolution=gisquality, projection=specificproj,
                             lon_0=lon0,
                             llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat)
+                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
+                            ax=ax)
             elif isinstance(specificproj, tuple) and \
                  specificproj[0] == 'nsper' and \
                  isinstance(specificproj[1], dict):
@@ -3304,7 +3328,8 @@ class D3GaussGeometry(D3Geometry):
                             projection=specificproj[0],
                             lon_0=specificproj[1].get('lon', lon0),
                             lat_0=specificproj[1].get('lat', lat0),
-                            satellite_height=sat_height)
+                            satellite_height=sat_height,
+                            ax=ax)
 
         return b
 

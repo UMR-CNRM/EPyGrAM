@@ -72,7 +72,9 @@ class H2DField(D3Field):
                   gisquality='i',
                   specificproj=None,
                   zoom=None,
-                  existingbasemap=None,
+                  over=(None, None),
+                  colorbar_over=None,
+                  use_basemap=None,
                   minmax=None,
                   graphicmode='colorshades',
                   levelsnumber=21,
@@ -86,7 +88,7 @@ class H2DField(D3Field):
                   colorbar='right',
                   minmax_in_title=True,
                   departments=False,
-                  existingfigure=None,
+                  boundariescolor='0.25',
                   pointsize=20,
                   contourcolor='blue',
                   contourwidth=1,
@@ -100,170 +102,174 @@ class H2DField(D3Field):
         Makes a simple plot of the field, with a number of options.
 
         Requires :mod:`matplotlib`
+        
+        .. tabularcolumns:: |l|L|
 
-        Options: \n
-        - *subzone*: among ('C', 'CI'), for LAM fields only, plots the data
-          resp. on the C or C+I zone. \n
-          Default is no subzone, i.e. the whole field.
-        - *gisquality*: among ('c', 'l', 'i', 'h', 'f') -- by increasing
-          quality. Defines the quality for GIS elements (coastlines,
-          countries boundaries...).
-          Cf. 'basemap' doc for more details.
-        - *specificproj*: enables to make basemap on the specified projection,
-          among: 'kav7', 'cyl', 'ortho', ('nsper', {...}) (cf. Basemap doc). \n 
-          In 'nsper' case, the {} may contain:\n
-          - 'sat_height' = satellite height in km;
-          - 'lon' = longitude of nadir in degrees;
-          - 'lat' = latitude of nadir in degrees. \n
-        - *zoom*: specifies the lon/lat borders of the map, implying hereby
-          a 'cyl' projection.
-          Must be a dict(lonmin=, lonmax=, latmin=, latmax=).\n
-          Overwrites *specificproj*.
-        - *existingbasemap*: as making Basemap is the most time-consuming step,
-          it is possible to bring an already existing basemap object.
-          In that case, all the above options are ignored,
-          overwritten by those of the *existingbasemap*.
-        - *title*: title for the plot. Default is field identifier.
-        - *minmax*: defines the min and max values for the plot colorbar. \n
-          Syntax: [min, max]. [0.0, max] also works. Default is min/max of the
-          field.
-        - *graphicmode*: among ('colorshades', 'contourlines', 'points').
-        - *levelsnumber*: number of levels for contours and colorbar.
-        - *colormap*: name of the ``matplotlib`` colormap to use (or an
-          ``epygram`` one, or a user-defined one, cf. config.usercolormaps).
-        - *center_cmap_on_0*: aligns the colormap center on the value 0.
-        - *drawrivers*: to add rivers on map.
-        - *drawcoastlines*: to add coast lines on map.
-        - *drawcountries*: to add countries on map.
-        - *colorbar*: if *False*, hide colorbar the plot; else, befines the
-          colorbar position, among ('bottom', 'right'). Defaults to 'right'.
-        - *meridians* and *parallels* enable to fine-tune the choice of lines to
-          plot, with either:\n
-          - 'auto': automatic scaling to the basemap extents
-          - 'default': range(0,360,10) and range(-90,90,10)
-          - a list of values
-          - a grid step, e.g. 5 to plot each 5 degree.
-          - None: no one is plot
-          - *meridians* == 'greenwich' // 'datechange' // 'greenwich+datechange'
-            *parallels* == 'equator' // 'polarcircles' // 'tropics' or any
-            combination (+) will plot only these.
-        - *minmax_in_title*: if True and minmax != None, adds min and max
-          values in title.
-        - *departments*: if True, adds the french departments on map (instead 
-          of countries).
-        - *existingfigure*: to plot the field over an existing figure (e.g.
-          contourlines over colorshades).
-          Be aware that no check is done between the *existingfigure*  basemap
-          and either the *existingbasemap* or the one that is created from the
-          field geometry: there might be inconsistency.
-        - *pointsize*: size of points for *graphicmode* == 'points'.
-        - *contourcolor*: color or colormap to be used for 'contourlines'
-          graphicmode. It can be either a legal html color name, or a colormap
-          name.
-        - *contourwidth*: width of contours for 'contourlines' graphicmode.
-        - *contourlabel*: displays labels on contours.
-        - *bluemarble*: if > 0.0 (and <=1.0), displays NASA's "blue marble"
-          as background. The numerical value sets its transparency.
-        - *background*: if True, set a background color to 
-          continents and oceans.
-        - *mask_threshold*: dict with min and/or max value(s) to mask outside.
-        - *contourlabelfmt*: format of the contour labels: e.g. 273.15 will
-          appear: '%0i' => 273, '%0f' => 273.150000, '%0.2f' => 273.15,
-                  '%04i' => 0273, '%0.5e' => 2.731500e+02
-        - *pointsmarker*: shape of the points if graphicmode='points'.
-          Cf. matplotlib.scatter() for possible markers.
-
+        ==============   ====================================================
+        Keywords         Description
+        ==============   ====================================================
+        subzone          among ('C', 'CI'), for LAM fields only, plots the 
+                         data resp. on the C or C+I zone. \n
+                         Default is no subzone, i.e. the whole field.
+        gisquality       among ('c', 'l', 'i', 'h', 'f') -- by increasing
+                         quality. Defines the quality for GIS elements
+                         (coastlines, countries boundaries...).
+        specificproj     enables to make basemap on the specified projection,
+                         among: 'kav7', 'cyl', 'ortho', ('nsper', {...})
+                         (cf. Basemap doc). \n 
+                         In 'nsper' case, the {} may contain: ('sat_height' =
+                         satellite height in km; 'lon' = longitude of nadir
+                         in degrees; 'lat' = latitude of nadir in degrees.
+        zoom             specifies the lon/lat borders of the map, implying
+                         hereby a 'cyl' projection. Must be a dict(lonmin=,
+                         lonmax=, latmin=, latmax=).\n
+                         Overwrites *specificproj*.
+        over             any existing figure and/or ax to be used for the
+                         plot, given as a tuple (fig, ax), with None for
+                         missing objects. *fig* is the frame of the
+                         matplotlib figure, containing eventually several 
+                         subplots (axes); *ax* is the matplotlib axes on 
+                         which the drawing is done. When given (!= None),
+                         these objects must be coherent, i.e. ax being one of
+                         the fig axes.
+        colorbar_over    an optional existing ax to plot the colorbar on.
+        use_basemap      a basemap.Basemap object used to handle the
+                         projection of the map. If given, the map projection
+                         options (*specificproj*, *zoom*, *gisquality* ...)
+                         are ignored, keeping the properties of the
+                         *use_basemap* object.
+        title            title for the plot. Default is field identifier.
+        minmax           defines the min and max values for the plot
+                         colorbar. \n
+                         Syntax: [min, max]. [0.0, max] also works. Default
+                         is min/max of the field.
+        graphicmode      among ('colorshades', 'contourlines', 'points').
+        levelsnumber     number of levels for contours and colorbar.
+        colormap         name of the ``matplotlib`` colormap to use (or an
+                         ``epygram`` one, or a user-defined one, cf.
+                         config.usercolormaps).
+        center_cmap_on_0 aligns the colormap center on the value 0.
+        drawrivers       to add rivers on map.
+        drawcoastlines   to add coast lines on map.
+        drawcountries    to add countries on map.
+        colorbar         if *False*, hide colorbar the plot; else, befines the
+                         colorbar position, among ('bottom', 'right').
+                         Defaults to 'right'.
+        meridians        enable to fine-tune the choice of lines to
+                         plot, with either:\n
+                         - 'auto': automatic scaling to the basemap extents
+                         - 'default': range(0,360,10) and range(-90,90,10)
+                         - a list of values
+                         - a grid step, e.g. 5 to plot each 5 degree.
+                         - None: no one is plot
+                         - *meridians* == 'greenwich' // 'datechange' //
+                           'greenwich+datechange' or any combination (+)
+                           will plot only these.
+        parallels        cf. meridians doc, with specific ones being
+                         *parallels* == 'equator' // 'polarcircles' //
+                         'tropics'
+        minmax_in_title  if True and minmax != None, adds min and max
+                         values in title.
+        departments      if True, adds the french departments on map (instead 
+                         of countries).
+        boundariescolor  color of lines for boundaries (countries,
+                         departments, coastlines)
+        pointsize        size of points for *graphicmode* == 'points'.
+        contourcolor     color or colormap to be used for 'contourlines'
+                         graphicmode. It can be either a legal html color
+                         name, or a colormap name.
+        contourwidth     width of contours for 'contourlines' graphicmode.
+        contourlabel     displays labels on contours.
+        bluemarble       if > 0.0 (and <=1.0), displays NASA's "blue marble"
+                         as background. The numerical value sets its
+                         transparency.
+        background       if True, set a background color to 
+                         continents and oceans.
+        mask_threshold   dict with min and/or max value(s) to mask outside.
+        contourlabelfmt  format of the contour labels: e.g. 273.15 will
+                         appear: '%0i' => 273, '%0f' => 273.150000,
+                         '%0.2f' => 273.15, '%04i' => 0273,
+                         '%0.5e' => 2.731500e+02
+        pointsmarker     shape of the points if graphicmode='points'.
+                         Cf. matplotlib.scatter() for possible markers.
+        
+        ==============   ====================================================
+        
         This method uses (hence requires) 'matplotlib' and 'basemap' libraries.
         """
 
-        # initializations
+        # 0. Initializations
+        #####################
+        # 0.1 matplotlib initializations
         import matplotlib.pyplot as plt
         from matplotlib.colors import cnames
+        from mpl_toolkits.axes_grid1 import make_axes_locatable
         plt.rc('font', family='serif')
         plt.rc('figure', figsize=config.plotsizes)
 
-        # checkings
+        # 0.2 checkings
         if self.spectral:
             raise epygramError("please convert to gridpoint with sp2gp()" + \
                                " method before plotting.")
         if len(self.validity) > 1:
-            raise NotImplementedError('plot H2DField with time dimension.')
+            raise epygramError('to plot H2DField with time dimension, use plotanimation().')
 
-        # add custom colormap if necessary
+        # 0.3 add custom colormap if necessary
         if colormap not in plt.colormaps():
-            from epygram.util import add_cmap
             if colormap in config.colormaps:
                 util.add_cmap(colormap)
             else:
                 from mpl_toolkits.basemap import cm
                 if colormap in cm.datad.keys():
                     plt.register_cmap(name=colormap, cmap=cm.__dict__[colormap])
-
-        # color of contours
-        if graphicmode == 'contourlines':
+        if graphicmode == 'contourlines':  # color of contours
             if contourcolor in cnames or contourcolor[0] == '#':
                 colormap = None
             else:
                 if contourcolor not in plt.colormaps():
-                    add_cmap(contourcolor)
+                    util.add_cmap(contourcolor)
                 colormap = contourcolor
                 contourcolor = None
 
-        # init basemap
-        if existingbasemap is None:
-            if self.geometry.name != 'academic':
+        if zoom in (None, {}):  # actual build of figure
+            # 1. Figure, ax
+            ###############
+            fig, ax = util.set_figax(*over)
+
+            # 2. Set up the map
+            ###################
+            academic = self.geometry.name == 'academic'
+            if (academic and use_basemap is not None):
+                epylog.warning('*use_basemap* is ignored for academic geometries fields')
+            if use_basemap is None and not academic:
                 bm = self.geometry.make_basemap(gisquality=gisquality,
                                                 subzone=subzone,
                                                 specificproj=specificproj,
                                                 zoom=zoom)
-            else:
-                if existingfigure is None:
-                    existingfigure, bm = plt.subplots()
-                else:
-                    bm = existingfigure.axes[0]
-            existingbasemap = bm  # needed for zoom case
-        else:
-            bm = existingbasemap
-        if zoom in (None, {}):  # actual build of figure
-            if existingfigure is None:
-                f = plt.figure()
-            else:
-                f = existingfigure
-            # set up the map
-            academic = self.geometry.name == 'academic'
+            elif use_basemap is not None:
+                bm = use_basemap
+            if not academic:
+                util.set_map_up(bm, ax,
+                                drawrivers=drawrivers,
+                                drawcoastlines=drawcoastlines,
+                                drawcountries=drawcountries,
+                                meridians=meridians,
+                                parallels=parallels,
+                                departments=departments,
+                                boundariescolor=boundariescolor,
+                                bluemarble=bluemarble,
+                                background=background)
+
+            # 3. Prepare data
+            #################
             if academic:
                 (lons, lats) = self.geometry.get_lonlat_grid(subzone=subzone)
                 #x, y = lons, lats
                 x = (lons - lons.min()) * self.geometry.grid['X_resolution']
                 y = (lats - lats.min()) * self.geometry.grid['Y_resolution']
             else:
-                if background and existingfigure is None:
-                    bm.drawmapboundary(fill_color='lightskyblue')
-                    bm.fillcontinents(color='wheat', lake_color='skyblue',
-                                      zorder=0)
-                if bluemarble and existingfigure is None:
-                    bm.bluemarble(alpha=bluemarble)
-                if drawcoastlines:
-                    bm.drawcoastlines()
-                if departments:
-                    import json
-                    with open(config.installdir + '/data/departments.json', 'r') as dp:
-                        depts = json.load(dp)[1]
-                    for d in range(len(depts)):
-                        for part in range(len(depts[d])):
-                            dlon = depts[d][part][0]
-                            dlat = depts[d][part][1]
-                            (x, y) = bm(dlon, dlat)
-                            bm.plot(x, y, color='0.25')
-                else:
-                    if drawcountries:
-                        bm.drawcountries()
-                if drawrivers:
-                    bm.drawrivers(color='blue')
-                util.add_meridians_and_parallels_to(bm, parallels=parallels, meridians=meridians)
                 (lons, lats) = self.geometry.get_lonlat_grid(subzone=subzone)
                 x, y = bm(lons, lats)
-
             # mask values
             mask_outside = {'min':-config.mask_outside,
                             'max':config.mask_outside}
@@ -276,6 +282,8 @@ class H2DField(D3Field):
                                            mask_outside['min'],
                                            mask_outside['max'])
 
+            # 4. Plot configuration
+            #######################
             # handle min/max values
             m = data.min()
             M = data.max()
@@ -295,16 +303,14 @@ class H2DField(D3Field):
                     M = data.max()
             else:
                 minmax_in_title = ''
-            if abs(float(m) - float(M)) > config.epsilon:
-                levels = numpy.linspace(m, M, levelsnumber)
-                vmin = vmax = None
-                if center_cmap_on_0:
-                    vmax = max(abs(m), M)
-                    vmin = -vmax
-            else:
+            if abs(float(m) - float(M)) < config.epsilon:
                 raise epygramError("cannot plot uniform field.")
-
-            # set levels
+            vmin = vmax = None
+            if center_cmap_on_0:
+                vmax = max(abs(m), M)
+                vmin = -vmax
+            # set levels and ticks levels
+            levels = numpy.linspace(m, M, levelsnumber)
             L = int((levelsnumber - 1) // 15) + 1
             tick_levels = [levels[l] for l in range(len(levels) - (L / 3 + 1)) if
                            l % L == 0] + [levels[-1]]
@@ -314,7 +320,8 @@ class H2DField(D3Field):
             else:
                 norm = None
 
-            # plot
+            # 5. Plot
+            #########
             if graphicmode == 'colorshades':
                 if not self.geometry.rectangular_grid:
                     xf = numpy.ma.masked_where(data.mask, x).compressed()
@@ -331,16 +338,28 @@ class H2DField(D3Field):
                     yf = y
                     zf = data
                     tri = False
-                pf = bm.contourf(xf, yf, zf, levels,
-                                 cmap=colormap, vmin=vmin, vmax=vmax,
-                                 norm=norm,
-                                 tri=tri)
+                plot_kwargs = dict(cmap=colormap,
+                                   vmin=vmin, vmax=vmax,
+                                   norm=norm,
+                                   tri=tri)
+                if academic:
+                    pf = ax.contourf(xf, yf, zf, levels,
+                                     **plot_kwargs)
+                else:
+                    pf = bm.contourf(xf, yf, zf, levels, ax=ax,
+                                     **plot_kwargs)
                 if colorbar:
-                    if academic:
-                        cb = f.colorbar(pf, ticks=tick_levels, ax=bm)
+                    if colorbar_over is None:
+                        cax = make_axes_locatable(ax).append_axes(colorbar,
+                                                                  size="5%",
+                                                                  pad=0.2)
                     else:
-                        cb = bm.colorbar(pf, location=colorbar, pad="5%",
-                                         ticks=tick_levels)
+                        cax = colorbar_over
+                    orientation = 'vertical' if colorbar in ('right', 'left') else 'horizontal'
+                    cb = plt.colorbar(pf,
+                                      orientation=orientation,
+                                      ticks=tick_levels,
+                                      cax=cax)
                     if minmax_in_title:
                         cb.set_label(minmax_in_title)
             elif graphicmode == 'contourlines':
@@ -351,37 +370,60 @@ class H2DField(D3Field):
                     tri = True
                     #FIXME: problem of duplicate points with arpege grid
                 else:
+                    #TOBECHECKED: self.geometry.dimensions['Y'] == 1 does not need specific treatment, as in colorshades ?
                     xf = x
                     yf = y
                     zf = data
                     tri = False
-                pf = bm.contour(xf, yf, zf, levels=levels, colors=contourcolor,
-                                cmap=colormap, linewidths=contourwidth,
-                                tri=tri)
+                plot_kwargs = dict(levels=levels,
+                                   colors=contourcolor,
+                                   cmap=colormap,
+                                   linewidths=contourwidth,
+                                   tri=tri)
+                if academic:
+                    pf = ax.contour(xf, yf, zf,
+                                    **plot_kwargs)
+                else:
+                    pf = bm.contour(xf, yf, zf, ax=ax,
+                                    **plot_kwargs)
                 if contourlabel:
-                    f.axes[0].clabel(pf, colors=contourcolor, cmap=colormap,
-                                     fmt=contourlabelfmt)
+                    ax.clabel(pf, colors=contourcolor, cmap=colormap,
+                              fmt=contourlabelfmt)
             elif graphicmode == 'points':
                 xf = x.flatten()
                 yf = y.flatten()
                 zf = numpy.ma.masked_outside(data.flatten(), m, M)
-                pf = bm.scatter(xf, yf, c=zf, s=pointsize, norm=norm,
-                                marker=pointsmarker, linewidths=0,
-                                cmap=colormap, vmin=vmin, vmax=vmax)
+                plot_kwargs = dict(s=pointsize,
+                                   norm=norm,
+                                   marker=pointsmarker,
+                                   linewidths=0,
+                                   cmap=colormap,
+                                   vmin=vmin, vmax=vmax)
+                if academic:
+                    pf = ax.scatter(xf, yf, c=zf,
+                                    **plot_kwargs)
+                else:
+                    pf = bm.scatter(xf, yf, c=zf, ax=ax,
+                                    **plot_kwargs)
                 if colorbar:
-                    if academic:
-                        cb = f.colorbar(pf, ticks=tick_levels, ax=bm)
+                    if colorbar_over is None:
+                        cax = make_axes_locatable(ax).append_axes(colorbar,
+                                                                  size="5%",
+                                                                  pad=0.2)
                     else:
-                        cb = bm.colorbar(pf, location=colorbar, pad="5%",
-                                         ticks=tick_levels)
+                        cax = colorbar_over
+                    orientation = 'vertical' if colorbar in ('right', 'left') else 'horizontal'
+                    cb = plt.colorbar(pf,
+                                      orientation=orientation,
+                                      ticks=tick_levels,
+                                      cax=cax)
                     if minmax_in_title != '':
                         cb.set_label(minmax_in_title)
-
-            # set title
             if title == None:
-                f.axes[0].set_title(str(self.fid) + "\n" + str(self.validity.get()))
+                ax.set_title("\n".join([str(self.fid[sorted(self.fid.keys())[0]]),
+                                        str(self.validity.get())]))
             else:
-                f.axes[0].set_title(title)
+                ax.set_title(title)
         else:
             # zoom: create zoom_field and plot it
             zoom_field = self.extract_zoom(zoom)
@@ -393,9 +435,81 @@ class H2DField(D3Field):
             kwargs.pop('zoom')
             kwargs.pop('subzone')
             # forward plot
-            f = zoom_field.plotfield(**kwargs)
+            fig, ax = zoom_field.plotfield(**kwargs)
 
-        return f
+        return (fig, ax)
+
+    def plotanimation(self, title='__auto__', repeat=False, interval=1000, **kwargs):
+        """
+        Plot the field with animation with regards to time dimension.
+        Returns a :class:`matplotlib.animation.FuncAnimation`.
+        
+        In addition to those specified below, all :meth:`plotfield` method
+        arguments can be provided.
+        
+        Args:\n
+        - *title* = title for the plot. '__auto__' (default) will print
+          the current validity of the time frame.
+        - *repeat*: to repeat animation
+        - *interval*: number of milliseconds between two validities 
+        """
+
+        import matplotlib.animation as animation
+
+        if len(self.validity) == 1:
+            raise epygramError("plotanimation can handle only field with several validities.")
+
+        if title is not None:
+            if title == '__auto__':
+                title_prefix = ''
+            else:
+                title_prefix = title
+            title = title_prefix + '\n' + self.validity[0].get().isoformat(sep=' ')
+        else:
+            title_prefix = None
+        field0 = self.deepcopy()
+        field0.validity = self.validity[0]
+        field0.setdata(self.getdata()[0, ...])
+        mindata = self.getdata(subzone=kwargs.get('subzone')).min()
+        maxdata = self.getdata(subzone=kwargs.get('subzone')).max()
+
+        minmax = kwargs.get('minmax')
+        if minmax is None:
+            minmax = (mindata, maxdata)
+        kwargs['minmax'] = minmax
+        academic = self.geometry.name == 'academic'
+        if not academic:
+            bm = kwargs.get('use_basemap')
+            if bm is None:
+                bm = self.geometry.make_basemap(gisquality=kwargs.get('gisquality', 'i'),
+                                                subzone=kwargs.get('subzone'),
+                                                specificproj=kwargs.get('specificproj'),
+                                                zoom=kwargs.get('zoom'))
+            kwargs['use_basemap'] = bm
+        fig, ax = field0.plotfield(title=title,
+                                   **kwargs)
+        if kwargs.get('colorbar_over') is None:
+            kwargs['colorbar_over'] = fig.axes[-1]  # the last being created, in plotfield()
+        kwargs['over'] = (fig, ax)
+
+        def update(i, ax, myself, fieldi, title_prefix, kwargs):
+            if i < len(myself.validity):
+                if kwargs.get('colorbar_over') is None:
+                    kwargs['colorbar_over'].clear()
+                fieldi.validity = myself.validity[i]
+                fieldi.setdata(myself.getdata()[i, ...])
+                if title_prefix is not None:
+                    title = title_prefix + '\n' + fieldi.validity.get().isoformat(sep=' ')
+                fieldi.plotfield(title=title,
+                                 **kwargs)
+
+        anim = animation.FuncAnimation(fig, update,
+                                       fargs=[ax, self, field0, title_prefix, kwargs],
+                                       frames=range(len(self.validity) + 1),  # AM: don't really understand why but needed for the last frame to be shown
+                                       interval=interval,
+                                       repeat=repeat)
+
+        return anim
 
     def extract_zoom(self, zoom):
         """

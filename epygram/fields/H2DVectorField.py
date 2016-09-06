@@ -325,16 +325,18 @@ class H2DVectorField(Field):
 #  including suggestions/developments by users...]
 
     def plotfield(self,
-                  existingfigure=None,
+                  over=(None, None),
                   subzone=None,
                   title=None,
                   gisquality='i',
                   specificproj=None,
                   zoom=None,
-                  existingbasemap=None,
+                  use_basemap=None,
                   drawcoastlines=True,
                   drawcountries=True,
                   drawrivers=False,
+                  departments=False,
+                  boundariescolor='0.25',
                   parallels='auto',
                   meridians='auto',
                   subsampling=1,
@@ -352,11 +354,16 @@ class H2DVectorField(Field):
         Makes a simple plot of the field, with a number of options.
 
         Options: \n
-        - *existingfigure*: to plot the vectors over an existing figure
+        - *over*: to plot the vectors over an existing figure
           (e.g. colorshades).
-          Be aware that no check is done between the *existingfigure*  basemap
-          and either the *existingbasemap* or the one that is created from the
-          field geometry: there might be inconsistency.
+          Any existing figure and/or ax to be used for the
+          plot, given as a tuple (fig, ax), with None for
+          missing objects. *fig* is the frame of the
+          matplotlib figure, containing eventually several 
+          subplots (axes); *ax* is the matplotlib axes on 
+          which the drawing is done. When given (!= None),
+          these objects must be coherent, i.e. ax being one of
+          the fig axes.
         - *subzone*: among ('C', 'CI'), for LAM fields only, plots the data
           resp. on the C or C+I zone. \n
           Default is no subzone, i.e. the whole field.
@@ -374,11 +381,17 @@ class H2DVectorField(Field):
           a 'cyl' projection.
           Must be a dict(lonmin=, lonmax=, latmin=, latmax=).\n
           Overwrites *specificproj*.
-        - *existingbasemap*: as making Basemap is the most time-consuming step,
-          it is possible to bring an already existing basemap object.
-          In that case, all the above options are ignored,
-          overwritten by those of the *existingbasemap*.
+        - *use_basemap*: a basemap.Basemap object used to handle the
+          projection of the map. If given, the map projection
+          options (*specificproj*, *zoom*, *gisquality* ...)
+          are ignored, keeping the properties of the
+          *use_basemap* object. (because making Basemap is the most
+          time-consuming step).
         - *drawrivers*: to add rivers on map.
+        - *departments*: if True, adds the french departments on map (instead 
+          of countries).
+        - *boundariescolor*: color of lines for boundaries (countries,
+          departments, coastlines)
         - *drawcoastlines*: to add coast lines on map.
         - *drawcountries*: to add countries on map.
         - *title*: title for the plot. Default is field identifier.
@@ -423,44 +436,55 @@ class H2DVectorField(Field):
             raise epygramError("please convert to gridpoint with sp2gp()" + \
                                " method before plotting.")
 
-        if existingfigure == None:
-            f = plt.figure()
-        else:
-            f = existingfigure
+        # 1. Figure, ax
+        if not plot_module:
+            fig, ax = util.set_figax(*over)
 
-        if existingbasemap == None:
+        # 2. Set up the map
+        academic = self.geometry.name == 'academic'
+        if (academic and use_basemap is not None):
+            epylog.warning('*use_basemap* is ignored for academic geometries fields')
+        if use_basemap is None and not academic:
             bm = self.geometry.make_basemap(gisquality=gisquality,
                                             subzone=subzone,
                                             specificproj=specificproj,
                                             zoom=zoom)
-        else:
-            bm = existingbasemap
-        if background and existingfigure is None:
-            bm.drawmapboundary(fill_color='lightskyblue')
-            bm.fillcontinents(color='wheat', lake_color='skyblue',
-                              zorder=0)
-        if bluemarble:
-            bm.bluemarble(alpha=bluemarble)
-        if plot_module:
-            module = self.to_module()
-            if 'gauss' in self.geometry.name and self.geometry.grid['dilatation_coef'] != 1.:
-                module.operation_with_other('*', self.geometry.map_factor_field())
-            f = module.plotfield(existingbasemap=bm,
-                                 existingfigure=f,
-                                 subzone=subzone,
-                                 specificproj=specificproj,
-                                 title=title,
-                                 drawrivers=drawrivers,
-                                 parallels=parallels,
-                                 meridians=meridians,
-                                 **plot_module_options)
-        if drawcoastlines:
-            bm.drawcoastlines()
-        if drawcountries:
-            bm.drawcountries()
-        if drawrivers:
-            bm.drawrivers(color='blue')
-        util.add_meridians_and_parallels_to(bm, parallels=parallels, meridians=meridians)
+        elif use_basemap is not None:
+            bm = use_basemap
+        elif academic:
+            raise NotImplementedError('plot VectorField in academic geometry')
+            bm = None
+        if not academic:
+            if plot_module:
+                module = self.to_module()
+                if 'gauss' in self.geometry.name and self.geometry.grid['dilatation_coef'] != 1.:
+                    module.operation_with_other('*', self.geometry.map_factor_field())
+                fig, ax = module.plotfield(use_basemap=bm,
+                                           subzone=subzone,
+                                           specificproj=specificproj,
+                                           title=title,
+                                           drawrivers=drawrivers,
+                                           drawcoastlines=drawcoastlines,
+                                           drawcountries=drawcountries,
+                                           meridians=meridians,
+                                           parallels=parallels,
+                                           departments=departments,
+                                           boundariescolor=boundariescolor,
+                                           bluemarble=bluemarble,
+                                           background=background,
+                                           **plot_module_options)
+            else:
+                util.set_map_up(bm, ax,
+                                drawrivers=drawrivers,
+                                drawcoastlines=drawcoastlines,
+                                drawcountries=drawcountries,
+                                meridians=meridians,
+                                parallels=parallels,
+                                departments=departments,
+                                boundariescolor=boundariescolor,
+                                bluemarble=bluemarble,
+                                background=background)
+        # 3. Prepare data
         (lons, lats) = self.geometry.get_lonlat_grid(subzone=subzone)
         lons = lons[::subsampling, ::subsampling]
         lats = lats[::subsampling, ::subsampling]
@@ -510,19 +534,19 @@ class H2DVectorField(Field):
                 u = util.stretch_array(u_map)
                 v = util.stretch_array(v_map)
         if symbol == 'barbs':
-            bm.barbs(xf, yf, u, v, **symbol_options)
+            bm.barbs(xf, yf, u, v, ax=ax, **symbol_options)
         elif symbol == 'arrows':
-            q = bm.quiver(xf, yf, u, v, **symbol_options)
+            q = bm.quiver(xf, yf, u, v, ax=ax, **symbol_options)
             if quiverkey:
-                plt.quiverkey(q, **quiverkey)
+                ax.quiverkey(q, **quiverkey)
         elif symbol == 'stream':
-            bm.streamplot(xf, yf, u, v, linewidth=speed_width, **symbol_options)
+            bm.streamplot(xf, yf, u, v, ax=ax, linewidth=speed_width, **symbol_options)
         if title == None:
-            f.axes[0].set_title(str(self.fid) + "\n" + str(self.validity.get()))
+            ax.set_title(str(self.fid) + "\n" + str(self.validity.get()))
         else:
-            f.axes[0].set_title(title)
+            ax.set_title(title)
 
-        return f
+        return (fig, ax)
 
     def getvalue_ij(self, *args, **kwargs):
         """

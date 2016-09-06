@@ -625,7 +625,7 @@ def str_or_int_to_datetime(dt):
 
     return dt
 
-def add_meridians_and_parallels_to(bm, meridians='auto', parallels='auto'):
+def add_meridians_and_parallels_to(bm, meridians='auto', parallels='auto', ax=None):
     """
     Adds meridians and parallels to a basemap instance *bm*.
     
@@ -702,20 +702,27 @@ def add_meridians_and_parallels_to(bm, meridians='auto', parallels='auto'):
 
     if parallels is not None:
         if bm.projection in ('ortho', 'nsper'):
-            bm.drawparallels(parallels, labels=[False, False, False, False])
+            bm.drawparallels(parallels, labels=[False, False, False, False],
+                             ax=ax)
         else:
-            bm.drawparallels(parallels, labels=[True, False, False, False])
+            bm.drawparallels(parallels, labels=[True, False, False, False],
+                             ax=ax)
     if meridians is not None:
         if bm.projection in ('spstere', 'npstere'):
-            bm.drawmeridians(meridians, labels=[True, False, False, True])
+            bm.drawmeridians(meridians, labels=[True, False, False, True],
+                             ax=ax)
         elif bm.projection in ('ortho', 'moll', 'nsper'):
-            bm.drawmeridians(meridians, labels=[False, False, False, False])
+            bm.drawmeridians(meridians, labels=[False, False, False, False],
+                             ax=ax)
         else:
-            bm.drawmeridians(meridians, labels=[False, False, False, True])
+            bm.drawmeridians(meridians, labels=[False, False, False, True],
+                             ax=ax)
         bm.drawmeridians([0], labels=[False] * 4, linewidth=1,
-                         dashes=[10, 1])
+                         dashes=[10, 1],
+                         ax=ax)
         bm.drawparallels([0], labels=[False] * 4, linewidth=1,
-                         dashes=[10, 1])
+                         dashes=[10, 1],
+                         ax=ax)
 
 def nearlyEqual(a, b, epsilon=config.epsilon):
     """
@@ -947,3 +954,111 @@ def ifNone_emptydict(arg):
         arg = {}
     return arg
 
+def set_DateHour_axis(axis, datetimerange,
+                      showgrid=True,
+                      datefmt=None,
+                      xtickslabelsrotation=30.):
+    """
+    Set an adequate axis ticks and ticks labels for Date/Hour axis.
+    
+    *datetimerange* supposed to be a :class:`datetime.timedelta` instance
+    """
+    import matplotlib.dates as mdates
+    import matplotlib.pyplot as plt
+
+    dayhourformatter = mdates.DateFormatter('%Y-%m-%d\n%H:%M:%S')
+    dayformatter = mdates.DateFormatter('%Y-%m-%d')
+    if datetimerange <= datetime.timedelta(2):
+        major_locator = mdates.HourLocator(interval=6)
+        minor_locator = mdates.HourLocator(interval=1)
+        formatter = mdates.AutoDateFormatter(major_locator)
+    elif datetimerange <= datetime.timedelta(7):
+        major_locator = mdates.DayLocator(interval=1)
+        minor_locator = mdates.HourLocator(interval=6)
+        formatter = dayhourformatter
+    elif datetimerange <= datetime.timedelta(21):
+        major_locator = mdates.DayLocator(interval=2)
+        minor_locator = mdates.DayLocator(interval=1)
+        formatter = dayhourformatter
+    elif datetimerange <= datetime.timedelta(100):
+        major_locator = mdates.DayLocator(interval=7)
+        minor_locator = mdates.DayLocator(interval=1)
+        formatter = dayformatter
+    else:
+        major_locator = mdates.AutoDateLocator()
+        minor_locator = None
+        formatter = mdates.AutoDateFormatter(major_locator)
+    if datefmt is not None:
+        formatter = mdates.DateFormatter(datefmt)
+    axis.xaxis.set_major_locator(major_locator)
+    axis.xaxis.set_major_formatter(formatter)
+    axis.grid(showgrid)
+    if minor_locator is not None:
+        axis.xaxis.set_minor_locator(minor_locator)
+        axis.grid(showgrid, which='minor', axis='x', color='grey')
+    if xtickslabelsrotation != 0.:
+        _ax = plt.gca()
+        plt.sca(axis)
+        plt.xticks(rotation=xtickslabelsrotation)
+        plt.sca(_ax)
+
+def set_figax(figure, ax, figsize=config.plotsizes):
+    """
+    Given existing matplotlib *figure* and an *ax* (or None),
+    check consistency or generate a consistent (figure, ax) duet.
+    """
+    import matplotlib.pyplot as plt
+
+    if ax is not None and figure is None:
+        figure = ax.figure
+    elif ax is None and figure is not None:
+        if len(figure.axes) > 0:
+            ax = figure.axes[0]
+        else:
+            ax = figure.gca()
+    elif ax is not None and figure is not None:
+        if ax not in figure.axes:
+            raise epygramError('*over*: inconsistency between given fig and ax')
+    elif figure is ax is None:
+        figure, ax = plt.subplots(1, 1, figsize=figsize)
+
+    return (figure, ax)
+
+def set_map_up(bm, ax,
+               drawrivers=False,
+               drawcoastlines=True,
+               drawcountries=True,
+               meridians='auto',
+               parallels='auto',
+               departments=False,
+               boundariescolor='0.25',
+               bluemarble=0.0,
+               background=False):
+    """Cf. :meth:`H2DField.plotfield` documentation."""
+
+    if background:
+        bm.drawmapboundary(fill_color='lightskyblue', ax=ax)
+        bm.fillcontinents(color='wheat', lake_color='skyblue',
+                          zorder=0, ax=ax)
+    if bluemarble:
+        bm.bluemarble(alpha=bluemarble, ax=ax)
+    if drawcoastlines:
+        bm.drawcoastlines(color=boundariescolor, ax=ax)
+    if departments:
+        import json
+        with open(config.installdir + '/data/departments.json', 'r') as dp:
+            depts = json.load(dp)[1]
+        for d in range(len(depts)):
+            for part in range(len(depts[d])):
+                dlon = depts[d][part][0]
+                dlat = depts[d][part][1]
+                (x, y) = bm(dlon, dlat)
+                bm.plot(x, y, color=boundariescolor, ax=ax)
+    elif drawcountries:
+        bm.drawcountries(color=boundariescolor, ax=ax)
+    if drawrivers:
+        bm.drawrivers(color='blue', ax=ax)
+    add_meridians_and_parallels_to(bm,
+                                   parallels=parallels,
+                                   meridians=meridians,
+                                   ax=ax)

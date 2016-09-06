@@ -86,6 +86,7 @@ def main(filename,
     if resource.format not in ('GRIB', 'FA', 'LFI'):
         epylog.warning(" ".join(["tool NOT TESTED with format",
                                  resource.format, "!"]))
+    nosave = False
     diffmode = refname != None
     if diffmode:
         reference = epygram.formats.resource(refname, openmode='r')
@@ -131,13 +132,13 @@ def main(filename,
                 title = legend
             else:
                 title = profile.comment + '\n' + str(profile.validity.get())
-            plot = plotprofiles(profile,
-                                fidkey=resource.format,
-                                unit=unit,
-                                logscale=logscale,
-                                title=title,
-                                ema=emagramlike,
-                                zoom=zoom)
+            plot, _ = plotprofiles(profile,
+                                   fidkey=resource.format,
+                                   unit=unit,
+                                   logscale=logscale,
+                                   title=title,
+                                   ema=emagramlike,
+                                   zoom=zoom)
             if not output:
                 plt.show()
     else:
@@ -161,9 +162,13 @@ def main(filename,
             if diffoperation is not None:
                 diffprofile.operation(**diffoperation)
             toplot.append(diffprofile)
+            same_Z = True
         else:
-            raise epygram.epygramError("unable to compute profiles difference because of vertical grids differ: \
-                                        surely, because surface pressure differ.")
+            epygram.epylog.warning('profiles vertical grids differ (surface pressure ?): cannot compute difference.')
+            same_Z = False
+            nosave = True
+            #raise epygram.epygramError("unable to compute profiles difference because of vertical grids differ: \
+            #                            surely, because surface pressure differ.")
         if not noplot:
             if emagramlike and profile.geometry.vcoordinate.typeoffirstfixedsurface != 100:
                 emagramlike = False
@@ -171,14 +176,28 @@ def main(filename,
                 title = legend
             else:
                 title = str(profile.fid.get(resource.format, profile.fid)) + '\n' + profile.comment
-            plot = plotprofiles(toplot,
-                                labels=labels,
-                                fidkey=resource.format,
-                                unit=unit,
-                                logscale=logscale,
-                                title=title,
-                                ema=emagramlike,
-                                zoom=zoom)
+            if same_Z:
+                plot = plotprofiles(toplot,
+                                    labels=labels,
+                                    fidkey=resource.format,
+                                    unit=unit,
+                                    logscale=logscale,
+                                    title=title,
+                                    ema=emagramlike,
+                                    zoom=zoom)
+            else:
+                plot, ax = plt.subplots()
+                for i in range(len(toplot)):
+                    plot, _ = plotprofiles(toplot[i],
+                                           over=(plot, ax),
+                                           labels=[labels[i]],
+                                           fidkey=resource.format,
+                                           unit=unit,
+                                           logscale=logscale,
+                                           title=title,
+                                           ema=emagramlike,
+                                           zoom=zoom)
+
             if not output:
                 plt.show()
 
@@ -190,28 +209,29 @@ def main(filename,
         filename = '.'.join([resource.container.abspath,
                              parameter, position, suffix])
         profiletosave = profile
-    else:
+    elif not nosave:
         filename = '.'.join([resource.container.absdir + 'diff',
                              resource.container.basename + '-' + reference.container.basename,
                              parameter, position, suffix])
         profiletosave = diffprofile
     if outputfilename:
         filename = outputfilename
-    L = len(profile.geometry.vcoordinate.levels)
-    precision = 4
-    fieldnamelength = 16
-    length_Z = len(str(profile.geometry.vcoordinate.typeoffirstfixedsurface))
-    Z = numpy.array(profile.geometry.vcoordinate.levels).flatten()
+    if not nosave:
+        L = len(profile.geometry.vcoordinate.levels)
+        precision = 4
+        fieldnamelength = 16
+        length_Z = len(str(profile.geometry.vcoordinate.typeoffirstfixedsurface))
+        Z = numpy.array(profile.geometry.vcoordinate.levels).flatten()
 
-    flds = '{:<{width}}'.format("Z: " + str(profile.geometry.vcoordinate.typeoffirstfixedsurface), width=length_Z) \
-           + '{:^{width}}'.format(parameter, width=fieldnamelength + 2)
-    with open(filename, 'w') as o:
-        o.write(flds + "\n")
-        for k in range(0, L):
-            line = '{:^{width}}'.format(str(Z[k]), width=length_Z)
-            valstr = '{:.{precision}{type}}'.format(profiletosave.data[k], type='E', precision=precision)
-            line += '{:^{width}}'.format(valstr, width=fieldnamelength + 2)
-            o.write(line + "\n")
+        flds = '{:<{width}}'.format("Z: " + str(profile.geometry.vcoordinate.typeoffirstfixedsurface), width=length_Z) \
+               + '{:^{width}}'.format(parameter, width=fieldnamelength + 2)
+        with open(filename, 'w') as o:
+            o.write(flds + "\n")
+            for k in range(0, L):
+                line = '{:^{width}}'.format(str(Z[k]), width=length_Z)
+                valstr = '{:.{precision}{type}}'.format(profiletosave.data[k], type='E', precision=precision)
+                line += '{:^{width}}'.format(valstr, width=fieldnamelength + 2)
+                o.write(line + "\n")
 
     # Graphical Output
     if output:

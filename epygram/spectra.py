@@ -16,7 +16,7 @@ import numpy
 import copy
 
 from epygram import epygramError
-from epygram.util import RecursiveObject, write_formatted_table
+from epygram.util import RecursiveObject, write_formatted_table, set_figax
 
 
 
@@ -52,7 +52,6 @@ def read_Spectrum(filename):
         variances = [float(line[2]) for line in table]
 
         return Spectrum(variances, **init_kwargs)
-
 
 
 class Spectrum(RecursiveObject):
@@ -129,6 +128,25 @@ class Spectrum(RecursiveObject):
         """
         with open(filename, 'w') as _file:
             self.write(_file)
+
+    def plotspectrum(self,
+                     over=(None, None),
+                     slopes=[{'exp':-3, 'offset':1, 'label':'-3'},
+                             {'exp':-5. / 3., 'offset':1, 'label':'-5/3'}],
+                     zoom=None,
+                     unit='SI',
+                     title=None):
+        """
+        Plot the spectrum.
+        Cf. function plotspectra() of this module for arguments.
+        """
+
+        return plotspectra(self,
+                           over=over,
+                           slopes=slopes,
+                           zoom=zoom,
+                           unit=unit,
+                           title=title)
 
 ### internal
 
@@ -256,6 +274,7 @@ def dctspectrum(x, log=None, verbose=False):
     return variance
 
 def plotspectra(spectra,
+                over=(None, None),
                 slopes=[{'exp':-3, 'offset':1, 'label':'-3'},
                         {'exp':-5. / 3., 'offset':1, 'label':'-5/3'}],
                 zoom=None,
@@ -265,6 +284,14 @@ def plotspectra(spectra,
     To plot a series of spectra.
     
     Args:\n
+    - over = any existing figure and/or ax to be used for the
+      plot, given as a tuple (fig, ax), with None for
+      missing objects. *fig* is the frame of the
+      matplotlib figure, containing eventually several 
+      subplots (axes); *ax* is the matplotlib axes on 
+      which the drawing is done. When given (!= None),
+      these objects must be coherent, i.e. ax being one of
+      the fig axes.
     - spectra = a Spectrum instance or a list of.
     - unit: string accepting LaTeX-mathematical syntaxes
     - slopes = list of dict(
@@ -277,6 +304,8 @@ def plotspectra(spectra,
     """
     import matplotlib.pyplot as plt
     plt.rc('font', family='serif')
+
+    fig, ax = set_figax(*over)
 
     if isinstance(spectra, Spectrum):
         spectra = [spectra]
@@ -298,7 +327,6 @@ def plotspectra(spectra,
     linestyles = ['-', '--', '-.', ':']
 
     # axes
-    fig, ax = plt.subplots()
     if title != None : ax.set_title(title)
     ax.set_yscale('log')
     ax.set_ylim(window['ymin'], window['ymax'])
@@ -344,4 +372,4 @@ def plotspectra(spectra,
     for label in legend.get_texts():
         label.set_fontsize('medium')
 
-    return fig
+    return (fig, ax)

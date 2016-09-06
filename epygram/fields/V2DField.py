@@ -50,7 +50,9 @@ class V2DField(D3Field):
 #  including suggestions/developments by users...]
 
     def plotfield(self,
+                  over=(None, None),
                   colorbar='vertical',
+                  colorbar_over=None,
                   graphicmode='colorshades',
                   minmax=None,
                   levelsnumber=21,
@@ -64,13 +66,21 @@ class V2DField(D3Field):
                   contourcolor='k',
                   contourwidth=1,
                   contourlabel=True,
-                  existingfigure=None,
                   x_is='distance',
                   mask_threshold=None):
         """
         Makes a simple (profile) plot of the field.
 
         Args: \n
+        - *over* = any existing figure and/or ax to be used for the
+          plot, given as a tuple (fig, ax), with None for
+          missing objects. *fig* is the frame of the
+          matplotlib figure, containing eventually several 
+          subplots (axes); *ax* is the matplotlib axes on 
+          which the drawing is done. When given (!= None),
+          these objects must be coherent, i.e. ax being one of
+          the fig axes.
+        - *colorbar_over*: an optional existing ax to plot the colorbar on.
         - *title* = title for the plot.
         - *fidkey* = type of fid for entitling the plot with *fid[fidkey]*,
                      if title is *None*;
@@ -109,16 +119,15 @@ class V2DField(D3Field):
         """
 
         import matplotlib.pyplot as plt
+        from mpl_toolkits.axes_grid1 import make_axes_locatable
         plt.rc('font', family='serif')
         plt.rc('figure', figsize=config.plotsizes)
         # User colormaps
         if colormap not in plt.colormaps():
             util.add_cmap(colormap)
 
-        if existingfigure == None:
-            f = plt.figure()
-        else:
-            f = existingfigure
+        # Figure, ax
+        fig, ax = util.set_figax(*over)
         # coords
         z = numpy.zeros((len(self.geometry.vcoordinate.levels),
                          self.geometry.dimensions['X']))
@@ -182,27 +191,37 @@ class V2DField(D3Field):
                    l % L == 0] + [levels[-1]]
         # plot
         if reverseY:
-            plt.gca().invert_yaxis()
+            ax.invert_yaxis()
         if logscale:
-            f.axes[0].set_yscale('log')
-        plt.grid()
+            ax.set_yscale('log')
+        ax.grid()
         if graphicmode == 'colorshades':
-            pf = plt.contourf(x, z, data, levels, cmap=colormap,
-                              vmin=vmin, vmax=vmax)
+            pf = ax.contourf(x, z, data, levels, cmap=colormap,
+                             vmin=vmin, vmax=vmax)
             if colorbar:
-                cb = plt.colorbar(pf, orientation=colorbar, ticks=hlevels)
-                if minmax_in_title != '':
+                position = 'right' if colorbar == 'vertical' else 'bottom'
+                if colorbar_over is None:
+                    cax = make_axes_locatable(ax).append_axes(position,
+                                                              size="5%",
+                                                              pad=0.2)
+                else:
+                    cax = colorbar_over
+                cb = plt.colorbar(pf,
+                                  orientation=colorbar,
+                                  ticks=hlevels,
+                                  cax=cax)
+                if minmax_in_title:
                     cb.set_label(minmax_in_title)
         elif graphicmode == 'contourlines':
-            pf = plt.contour(x, z, data, levels=levels, colors=contourcolor,
-                             linewidths=contourwidth)
+            pf = ax.contour(x, z, data, levels=levels, colors=contourcolor,
+                            linewidths=contourwidth)
             if contourlabel:
-                f.axes[0].clabel(pf, colors=contourcolor)
+                ax.clabel(pf, colors=contourcolor)
         # decoration
         surf = z[-1, :]
         bottom = max(surf) if reverseY else min(surf)
-        plt.fill_between(x[-1, :], surf, numpy.ones(len(surf)) * bottom,
-                         color='k')
+        ax.fill_between(x[-1, :], surf, numpy.ones(len(surf)) * bottom,
+                        color='k')
         if self.geometry.vcoordinate.typeoffirstfixedsurface == 119:
             Ycoordinate = 'Level \nHybrid-Pressure \ncoordinate'
         elif self.geometry.vcoordinate.typeoffirstfixedsurface == 100:
@@ -218,12 +237,12 @@ class V2DField(D3Field):
         else:
             Ycoordinate = 'unknown \ncoordinate'
         if x_is == 'distance':
-            f.axes[0].set_xlabel('Distance from left-end point (m).')
+            ax.set_xlabel('Distance from left-end point (m).')
         elif x_is == 'lon':
-            f.axes[0].set_xlabel(u'Longitude (\u00B0).')
+            ax.set_xlabel(u'Longitude (\u00B0).')
         elif x_is == 'lat':
-            f.axes[0].set_xlabel(u'Latitude (\u00B0).')
-        f.axes[0].set_ylabel(Ycoordinate)
+            ax.set_xlabel(u'Latitude (\u00B0).')
+        ax.set_ylabel(Ycoordinate)
         if zoom != None:
             ykw = {}
             xkw = {}
@@ -237,8 +256,8 @@ class V2DField(D3Field):
                     xkw[pair[0]] = zoom[pair[1]]
                 except Exception:
                     pass
-            f.axes[0].set_ylim(**ykw)
-            f.axes[0].set_xlim(**xkw)
+            ax.set_ylim(**ykw)
+            ax.set_xlim(**xkw)
         if title is None:
             if fidkey is None:
                 fid = self.fid
@@ -250,6 +269,70 @@ class V2DField(D3Field):
                     '(' + str(plast[0]) + ', ' + \
                     str(plast[1]) + ') -> \n' + \
                     str(self.validity.get())
-        f.axes[0].set_title(title)
+        ax.set_title(title)
 
-        return f
+        return (fig, ax)
+
+    def plotanimation(self, title='__auto__', repeat=False, interval=1000, **kwargs):
+        """
+        Plot the field with animation with regards to time dimension.
+        Returns a :class:`matplotlib.animation.FuncAnimation`.
+        
+        In addition to those specified below, all :meth:`plotfield` method
+        arguments can be provided.
+        
+        Args:\n
+        - *title* = title for the plot. '__auto__' (default) will print
+          the current validity of the time frame.
+        - *repeat*: to repeat animation
+        - *interval*: number of milliseconds between two validities 
+        """
+
+        import matplotlib.animation as animation
+
+        if len(self.validity) == 1:
+            raise epygramError("plotanimation can handle only field with several validities.")
+
+        if title is not None:
+            if title == '__auto__':
+                title_prefix = ''
+            else:
+                title_prefix = title
+            title = title_prefix + '\n' + self.validity[0].get().isoformat(sep=' ')
+        else:
+            title_prefix = None
+        field0 = self.deepcopy()
+        field0.validity = self.validity[0]
+        field0.setdata(self.getdata()[0, ...])
+        mindata = self.getdata().min()
+        maxdata = self.getdata().max()
+
+        minmax = kwargs.get('minmax')
+        if minmax is None:
+            minmax = (mindata, maxdata)
+        kwargs['minmax'] = minmax
+        fig, ax = field0.plotfield(title=title,
+                                   **kwargs)
+        if kwargs.get('colorbar_over') is None:
+            kwargs['colorbar_over'] = fig.axes[-1]  # the last being created, in plotfield()
+        kwargs['over'] = (fig, ax)
+
+        def update(i, ax, myself, fieldi, title_prefix, kwargs):
+            if i < len(myself.validity):
+                ax.clear()
+                if kwargs.get('colorbar_over') is None:
+                    kwargs['colorbar_over'].clear()
+                fieldi.validity = myself.validity[i]
+                fieldi.setdata(myself.getdata()[i, ...])
+                if title_prefix is not None:
+                    title = title_prefix + '\n' + fieldi.validity.get().isoformat(sep=' ')
+                fieldi.plotfield(title=title,
+                                 **kwargs)
+
+        anim = animation.FuncAnimation(fig, update,
+                                       fargs=[ax, self, field0, title_prefix, kwargs],
+                                       frames=range(len(self.validity) + 1),  # AM: don't really understand why but needed for the last frame to be shown
+                                       interval=interval,
+                                       repeat=repeat)
+
+        return anim

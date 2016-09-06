@@ -698,17 +698,17 @@ class D3CommonField(Field):
         """
 
         if isinstance(other, self.__class__):
-            if self.spectral != other.spectral:
-                raise epygramError("cannot operate a spectral field with a" + \
-                                   " non-spectral field.")
-            if self.geometry.dimensions != other.geometry.dimensions:
-                raise epygramError("operations on fields cannot be done if" + \
-                                   " fields do not share their gridpoint" + \
-                                   " dimensions.")
-            if self.spectral_geometry != other.spectral_geometry:
-                raise epygramError("operations on fields cannot be done if" + \
-                                   " fields do not share their spectral" + \
-                                   " geometry.")
+            assert self.spectral == other.spectral, \
+                   "cannot operate a spectral field with a non-spectral field."
+            assert self.geometry.dimensions == other.geometry.dimensions, \
+                   ' '.join(["operations on fields cannot be done if fields do",
+                             "not share their gridpoint dimensions."])
+            assert self.spectral_geometry == other.spectral_geometry, \
+                   ' '.join(["operations on fields cannot be done if fields do",
+                             "not share their spectral geometry."])
+            assert len(self.validity) == len(other.validity), \
+                   ' '.join(["operations on fields cannot be done if fields do",
+                             "not share their time dimension."])
         else:
             super(D3CommonField, self)._check_operands(other)
 
@@ -724,7 +724,8 @@ class D3CommonField(Field):
         newfield = self._add(other,
                              structure=self.structure,
                              geometry=self.geometry,
-                             spectral_geometry=self.spectral_geometry)
+                             spectral_geometry=self.spectral_geometry,
+                             validity=FieldValidityList(length=len(self.validity)))
         return newfield
 
     def __mul__(self, other):
@@ -739,7 +740,8 @@ class D3CommonField(Field):
         newfield = self._mul(other,
                              structure=self.structure,
                              geometry=self.geometry,
-                             spectral_geometry=self.spectral_geometry)
+                             spectral_geometry=self.spectral_geometry,
+                             validity=FieldValidityList(length=len(self.validity)))
         return newfield
 
     def __sub__(self, other):
@@ -754,7 +756,8 @@ class D3CommonField(Field):
         newfield = self._sub(other,
                              structure=self.structure,
                              geometry=self.geometry,
-                             spectral_geometry=self.spectral_geometry)
+                             spectral_geometry=self.spectral_geometry,
+                             validity=FieldValidityList(length=len(self.validity)))
         return newfield
 
     def __div__(self, other):
@@ -769,7 +772,8 @@ class D3CommonField(Field):
         newfield = self._div(other,
                              structure=self.structure,
                              geometry=self.geometry,
-                             spectral_geometry=self.spectral_geometry)
+                             spectral_geometry=self.spectral_geometry,
+                             validity=FieldValidityList(length=len(self.validity)))
         return newfield
 
 class D3Field(D3CommonField):

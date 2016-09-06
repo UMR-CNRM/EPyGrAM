@@ -130,33 +130,7 @@ def main(filename,
             diff.operation(**diffoperation)
     # make plots
     if not diffmode:
-        sectionplot = section.plotfield(graphicmode=graphicmode,
-                                        minmax=minmax,
-                                        levelsnumber=levelsnumber,
-                                        center_cmap_on_0=center_cmap_on_0,
-                                        colormap=colormap,
-                                        zoom=zoom,
-                                        title=legend,
-                                        x_is=section_abscissa,
-                                        mask_threshold=mask_threshold)
-    else:
-        if not diffonly:
-            legend = resource.container.basename + " : " + \
-                     str(section.fid.get(resource.format, section.fid)) + "\n" + \
-                     str(section.validity.get())
-            sectionplot = section.plotfield(graphicmode=graphicmode,
-                                            minmax=minmax,
-                                            levelsnumber=levelsnumber,
-                                            center_cmap_on_0=center_cmap_on_0,
-                                            colormap=colormap,
-                                            zoom=zoom,
-                                            title=legend,
-                                            x_is=section_abscissa,
-                                            mask_threshold=mask_threshold)
-            legend = reference.container.basename + " : " + \
-                     str(refsection.fid.get(reference.format, refsection.fid)) + "\n" + \
-                     str(refsection.validity.get())
-            refplot = refsection.plotfield(graphicmode=graphicmode,
+        sectionplot, _ = section.plotfield(graphicmode=graphicmode,
                                            minmax=minmax,
                                            levelsnumber=levelsnumber,
                                            center_cmap_on_0=center_cmap_on_0,
@@ -165,19 +139,45 @@ def main(filename,
                                            title=legend,
                                            x_is=section_abscissa,
                                            mask_threshold=mask_threshold)
+    else:
+        if not diffonly:
+            legend = resource.container.basename + " : " + \
+                     str(section.fid.get(resource.format, section.fid)) + "\n" + \
+                     str(section.validity.get())
+            sectionplot, _ = section.plotfield(graphicmode=graphicmode,
+                                               minmax=minmax,
+                                               levelsnumber=levelsnumber,
+                                               center_cmap_on_0=center_cmap_on_0,
+                                               colormap=colormap,
+                                               zoom=zoom,
+                                               title=legend,
+                                               x_is=section_abscissa,
+                                               mask_threshold=mask_threshold)
+            legend = reference.container.basename + " : " + \
+                     str(refsection.fid.get(reference.format, refsection.fid)) + "\n" + \
+                     str(refsection.validity.get())
+            refplot, _ = refsection.plotfield(graphicmode=graphicmode,
+                                              minmax=minmax,
+                                              levelsnumber=levelsnumber,
+                                              center_cmap_on_0=center_cmap_on_0,
+                                              colormap=colormap,
+                                              zoom=zoom,
+                                              title=legend,
+                                              x_is=section_abscissa,
+                                              mask_threshold=mask_threshold)
         if legend == None:
             legend = resource.container.basename + " - " + \
                      reference.container.basename + " : " + \
                      str(section.fid.get(resource.format, section.fid))
-        diffplot = diff.plotfield(graphicmode=graphicmode,
-                                  minmax=diffminmax,
-                                  levelsnumber=difflevelsnumber,
-                                  center_cmap_on_0=diffcenter_cmap_on_0,
-                                  colormap=diffcolormap,
-                                  zoom=zoom,
-                                  title=legend,
-                                  x_is=section_abscissa,
-                                  mask_threshold=mask_threshold)
+        diffplot, _ = diff.plotfield(graphicmode=graphicmode,
+                                     minmax=diffminmax,
+                                     levelsnumber=difflevelsnumber,
+                                     center_cmap_on_0=diffcenter_cmap_on_0,
+                                     colormap=diffcolormap,
+                                     zoom=zoom,
+                                     title=legend,
+                                     x_is=section_abscissa,
+                                     mask_threshold=mask_threshold)
 
     if not output:
         plt.show()

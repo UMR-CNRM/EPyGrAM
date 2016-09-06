@@ -45,6 +45,7 @@ class V1DField(D3Field):
 #  including suggestions/developments by users...]
 
     def plotfield(self,
+                  over=(None, None),
                   labels=None,
                   fidkey=None,
                   Ycoordinate=None,
@@ -63,7 +64,7 @@ class V1DField(D3Field):
                   contourcolor='k',
                   contourwidth=1,
                   contourlabel=True,
-                  datefmt="%Y%m%d %H:%M:%S %Z",
+                  datefmt=None,
                   linecolor='black',
                   linestyle='-',
                   force_mode=False,
@@ -109,6 +110,7 @@ class V1DField(D3Field):
             if repeat != False: useless_args.append('repeat')
             if interval != 1000: useless_args.append('interval')
             return plotprofiles(self,
+                                over=over,
                                 labels=labels,
                                 fidkey=fidkey,
                                 Ycoordinate=Ycoordinate,
@@ -126,6 +128,7 @@ class V1DField(D3Field):
             if repeat != False: useless_args.append('repeat')
             if interval != 1000: useless_args.append('interval')
             return plotverticalhovmoller(self,
+                                         over=over,
                                          fidkey=fidkey,
                                          Ycoordinate=Ycoordinate,
                                          title=title,
@@ -156,6 +159,7 @@ class V1DField(D3Field):
             if contourlabel != True: useless_args.append('contourlabel')
             if datefmt != "%Y%m%d %H:%M:%S %Z": useless_args.append('datefmt')
             return plotanimation(self,
+                                 over=over,
                                  fidkey=fidkey,
                                  Ycoordinate=Ycoordinate,
                                  unit=unit,
@@ -174,6 +178,7 @@ class V1DField(D3Field):
 #################
 
 def plotverticalhovmoller(profile,
+                          over=(None, None),
                           fidkey=None,
                           Ycoordinate=None,
                           title=None,
@@ -189,12 +194,21 @@ def plotverticalhovmoller(profile,
                           contourcolor='k',
                           contourwidth=1,
                           contourlabel=True,
-                          datefmt="%Y%m%d %H:%M:%S %Z"):
+                          datefmt=None,
+                          showgrid=True):
         """
         Makes a simple vertical Hovmöller plot of the field.
 
         Args: \n
         - *profile* being a :class:`epygram.fields.V1DField`
+        - *over* = any existing figure and/or ax to be used for the
+          plot, given as a tuple (fig, ax), with None for
+          missing objects. *fig* is the frame of the
+          matplotlib figure, containing eventually several 
+          subplots (axes); *ax* is the matplotlib axes on 
+          which the drawing is done. When given (!= None),
+          these objects must be coherent, i.e. ax being one of
+          the fig axes.
         - *fidkey* = type of fid for entitling the plot with *fid[fidkey]*,
                      if title is *None*;
                      if *None*, labels with raw fid.
@@ -220,7 +234,8 @@ def plotverticalhovmoller(profile,
           name.
         - *contourwidth*: width of contours for 'contourlines' graphicmode.
         - *contourlabel*: displays labels on contours.
-        - *datefmt*: date format to use
+        - *datefmt*: date format to use, e.g. "%Y-%m-%d %H:%M:%S %Z"
+        - *showgrid*: True/False to show grid or not
 
         Warning: requires **matplotlib**.
         """
@@ -228,13 +243,17 @@ def plotverticalhovmoller(profile,
         import matplotlib
         import matplotlib.pyplot as plt
         import matplotlib.dates as mdates
+        from mpl_toolkits.axes_grid1 import make_axes_locatable
         plt.rc('font', family='serif')
         plt.rc('figure', figsize=config.plotsizes)
+
         # User colormaps
         if colormap not in plt.colormaps():
             util.add_cmap(colormap)
 
-        f = plt.figure()
+        # Figure, ax
+        fig, ax = util.set_figax(*over)
+
         # coords
         z = numpy.zeros((len(profile.validity),
                          len(profile.geometry.vcoordinate.levels)))
@@ -243,13 +262,13 @@ def plotverticalhovmoller(profile,
         x = numpy.zeros((len(profile.validity),
                          len(profile.geometry.vcoordinate.levels)))
         validities = {profile.validity[i].get():i for i in range(len(profile.validity))}
-        date = 'Validity'
+        xaxis_label = 'Validity'
         if len(validities) == 1 and len(profile.validity) != 1:
-            date = 'Basis'
+            xaxis_label = 'Basis'
             validities = {profile.validity[i].getbasis():i for i in len(profile.validity)}
         epoch = datetime.datetime(1970, 1, 1)
         for i in range(len(profile.validity)):
-            d = profile.validity[i].get() if date == 'Validity' else profile.validity[i].getbasis()
+            d = profile.validity[i].get() if xaxis_label == 'Validity' else profile.validity[i].getbasis()
             timedelta = d - epoch
             p = (timedelta.microseconds + (timedelta.seconds + timedelta.days * 24 * 3600) * 10 ** 6) / 1e6
             x[i, :] = matplotlib.dates.epoch2num(p)
@@ -286,29 +305,39 @@ def plotverticalhovmoller(profile,
                    l % L == 0] + [levels[-1]]
         # plot
         if reverseY:
-            plt.gca().invert_yaxis()
+            ax.invert_yaxis()
         if logscale:
-            f.axes[0].set_yscale('log')
-        plt.grid()
+            ax.set_yscale('log')
+        ax.grid()
         if graphicmode == 'colorshades':
-            pf = plt.contourf(x, z, data, levels, cmap=colormap,
+            pf = ax.contourf(x, z, data, levels, cmap=colormap,
                               vmin=vmin, vmax=vmax)
             if colorbar:
-                cb = plt.colorbar(pf, orientation=colorbar, ticks=hlevels)
+                position = 'right' if colorbar == 'vertical' else 'bottom'
+                cax = make_axes_locatable(ax).append_axes(position,
+                                                          size="5%",
+                                                          pad=0.1)
+                cb = plt.colorbar(pf,
+                                  orientation=colorbar,
+                                  ticks=hlevels,
+                                  cax=cax)
                 if minmax_in_title != '':
                     cb.set_label(minmax_in_title)
         elif graphicmode == 'contourlines':
-            pf = plt.contour(x, z, data, levels=levels, colors=contourcolor,
-                             linewidths=contourwidth)
+            pf = ax.contour(x, z, data, levels=levels, colors=contourcolor,
+                            linewidths=contourwidth)
             if contourlabel:
-                f.axes[0].clabel(pf, colors=contourcolor)
-        f.axes[0].xaxis.set_major_formatter(mdates.DateFormatter(datefmt))
-        matplotlib.pyplot.xticks(rotation='vertical')
+                ax.clabel(pf, colors=contourcolor)
+        # time
+        xmin = mdates.num2date(ax.axis()[0]).replace(tzinfo=None)
+        xmax = mdates.num2date(ax.axis()[1]).replace(tzinfo=None)
+        util.set_DateHour_axis(ax, xmax - xmin,
+                               showgrid=showgrid, datefmt=datefmt)
         # decoration
         surf = z[-1, :]
         bottom = max(surf) if reverseY else min(surf)
-        plt.fill_between(x[-1, :], surf, numpy.ones(len(surf)) * bottom,
-                         color='k')
+        ax.fill_between(x[-1, :], surf, numpy.ones(len(surf)) * bottom,
+                        color='k')
         if Ycoordinate == None:
             if profile.geometry.vcoordinate.typeoffirstfixedsurface == 119:
                 Ycoordinate = 'Level \nHybrid-Pressure \ncoordinate'
@@ -324,8 +353,8 @@ def plotverticalhovmoller(profile,
                 Ycoordinate = 'Potential \nvortex \n(PVU)'
             else:
                 Ycoordinate = 'unknown \ncoordinate'
-        f.axes[0].set_xlabel(date + ' date.')
-        f.axes[0].set_ylabel(Ycoordinate)
+        ax.set_xlabel(xaxis_label)
+        ax.set_ylabel(Ycoordinate)
         if zoom != None:
             ykw = {}
             xkw = {}
@@ -339,19 +368,20 @@ def plotverticalhovmoller(profile,
                     xkw[pair[0]] = zoom[pair[1]]
                 except Exception:
                     pass
-            f.axes[0].set_ylim(**ykw)
-            f.axes[0].set_xlim(**xkw)
+            ax.set_ylim(**ykw)
+            ax.set_xlim(**xkw)
         if title is None:
             if fidkey is None:
-                fid = profile.fid
+                fid = profile.fid[sorted(profile.fid.keys())[0]]
             else:
                 fid = profile.fid[fidkey]
             title = u'Vertical Hovmöller of ' + str(fid)
-        f.axes[0].set_title(title)
+        ax.set_title(title)
 
-        return f
+        return (fig, ax)
 
 def plotprofiles(profiles,
+                 over=(None, None),
                  labels=None,
                  fidkey=None,
                  Ycoordinate=None,
@@ -361,7 +391,8 @@ def plotprofiles(profiles,
                  ema=False,
                  zoom=None):
     """
-    To plot a series of profiles. Returns a :mod:`matplotlib` *Figure*.
+    To plot a series of profiles. Returns a tuple of :mod:`matplotlib`
+    (*Figure*, *ax*).
 
     Args: \n
     - *profiles* being a :class:`epygram.base.FieldSet` of
@@ -369,6 +400,14 @@ def plotprofiles(profiles,
       :class:`epygram.fields.V1DField`. \n
       All profiles are supposed to have the same unit, and the same vertical
       coordinate.
+    - *over* = any existing figure and/or ax to be used for the
+      plot, given as a tuple (fig, ax), with None for
+      missing objects. *fig* is the frame of the
+      matplotlib figure, containing eventually several 
+      subplots (axes); *ax* is the matplotlib axes on 
+      which the drawing is done. When given (!= None),
+      these objects must be coherent, e.g. ax being one of
+      the fig axes.
     - *labels* = a list of labels for the profiles (same length and same order).
     - *fidkey* = key of fid for labelling the curve with *fid[fidkey]*;
                   if *None*, labels with raw fid.
@@ -417,11 +456,11 @@ def plotprofiles(profiles,
             Ycoordinate = 'unknown \ncoordinate'
 
     # Figure
-    fig, ax = plt.subplots(figsize=(6., 9.))
+    fig, ax = util.set_figax(*over, figsize=(6., 9.))
     if logscale:
         ax.set_yscale('log')
     if reverseY:
-        plt.gca().invert_yaxis()
+        ax.invert_yaxis()
     i = 0
     for p in profiles:
         if len(p.validity) != 1:
@@ -443,18 +482,21 @@ def plotprofiles(profiles,
                                      round(max(data), -1) + 10 + 50,
                                      10)
             for t in templines:
-                plt.plot([t, t + (max(data) - min(data)) * alpha],
-                         [max(Y), min(Y)],
-                         color='grey', linestyle=':')
+                ax.plot([t, t + (max(data) - min(data)) * alpha],
+                        [max(Y), min(Y)],
+                        color='grey', linestyle=':')
             ax.set_yticks(numpy.linspace(0, 1000, 11))
             data = data + abs(Y - Y[-1]) * (data.max() - data.min()) / \
                                            (Y.max() - Y.min()) * alpha
             unit = 'K'
             mindata = min(mindata, data.min())
             maxdata = max(maxdata, data.max())
-        plt.plot(data.flatten(), Y.flatten(), label=label,
-                 color=colors[i % len(colors)],
-                 linestyle=linestyles[i // len(colors)])
+        plot_kwargs = {}
+        if len(profiles) > 1:
+            plot_kwargs['color'] = colors[i % len(colors)]
+            plot_kwargs['linestyle'] = linestyles[i // len(colors)]
+        ax.plot(data.flatten(), Y.flatten(), label=label,
+                **plot_kwargs)
         i += 1
 
     # Decoration
@@ -462,139 +504,17 @@ def plotprofiles(profiles,
         ax.set_ylim(bottom=numpy.array(Y).max())
     else:
         ax.set_ylim(bottom=numpy.array(Y).min())
-    if zoom != None:
+    if zoom is not None:
         if 'ymin' in zoom.keys():
             ax.set_ylim(bottom=zoom['ymin'])
         if 'ymax' in zoom.keys():
             ax.set_ylim(top=zoom['ymax'])
+        if 'xmin' in zoom.keys():
+            ax.set_xlim(left=zoom['xmin'])
+        if 'xmax' in zoom.keys():
+            ax.set_xlim(right=zoom['xmax'])
     if title != None:
         ax.set_title(title)
-    legend = ax.legend(loc='upper right', shadow=True)
-    for label in legend.get_texts():
-        label.set_fontsize('medium')
-    ax.set_xlabel(r'$' + unit + '$')
-    ax.set_ylabel(Ycoordinate)
-    if ema:
-        plt.grid(axis='y')
-        plt.xlim(mindata - 10, maxdata + 10)
-    else:
-        plt.grid()
-
-    return fig
-
-def plotanimation(profile,
-                 fidkey=None,
-                 Ycoordinate=None,
-                 unit='SI',
-                 title='__auto__',
-                 logscale=False,
-                 ema=False,
-                 zoom=None,
-                 linecolor='black',
-                 linestyle='-',
-                 repeat=False,
-                 interval=1000):
-    """
-    To plot a time-dependent profile as an animation. Returns a :mod:`matplotlib` *Figure*.
-
-    Args: \n
-    - *profile* being a :class:`epygram.fields.V1DField`.
-    - *fidkey* = key of fid for labelling the curve with *fid[fidkey]*;
-                  if *None*, labels with raw fid.
-    - *Ycoordinate* = label for the Y coordinate.
-    - *unit* = label for X coordinate.
-    - *title* = title for the plot.
-    - *logscale* = to set Y logarithmic scale
-    - *ema* = to make emagram-like plots of Temperature
-    - *zoom*: a dict containing optional limits to zoom on the plot. \n
-      Syntax: e.g. {'ymax':500, ...}.
-    - *linecolor*: color of the profile
-    - *linestyle*: line style to use for plotting the profile
-    - *repeat*: to repeat animation
-    - *interval*: number of milliseconds between two validities
-    """
-    import matplotlib.pyplot as plt
-    import matplotlib.animation as animation
-
-    plt.rc('font', family='serif')
-    plt.rc('figure', autolayout=True)
-
-    if len(profile.validity) == 1:
-        raise epygramError("plotanimation can handle only profile with several validities.")
-
-    if profile.geometry.vcoordinate.typeoffirstfixedsurface in (119, 100):
-        reverseY = True
-    else:
-        reverseY = False
-    if profile.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
-        Y = profile.geometry.vcoordinate.levels
-    if Ycoordinate == None:
-        if profile.geometry.vcoordinate.typeoffirstfixedsurface == 119:
-            Ycoordinate = 'Level \nHybrid-Pressure \ncoordinate'
-        elif profile.geometry.vcoordinate.typeoffirstfixedsurface == 100:
-            Ycoordinate = 'Pressure (hPa)'
-        elif profile.geometry.vcoordinate.typeoffirstfixedsurface == 102:
-            Ycoordinate = 'Altitude (m)'
-        elif profile.geometry.vcoordinate.typeoffirstfixedsurface == 103:
-            Ycoordinate = 'Height (m)'
-        elif profile.geometry.vcoordinate.typeoffirstfixedsurface == 118:
-            Ycoordinate = 'Level \nHybrid-Height \ncoordinate'
-        elif profile.geometry.vcoordinate.typeoffirstfixedsurface == 109:
-            Ycoordinate = 'Potential \nvortex \n(PVU)'
-        else:
-            Ycoordinate = 'unknown \ncoordinate'
-
-    # Figure
-    fig, ax = plt.subplots(figsize=(6., 9.))
-    if logscale:
-        ax.set_yscale('log')
-    if reverseY:
-        plt.gca().invert_yaxis()
-    if profile.geometry.vcoordinate.typeoffirstfixedsurface == 100:
-        Y = numpy.array(profile.geometry.vcoordinate.levels)  # / 100
-    elif profile.geometry.vcoordinate.typeoffirstfixedsurface in (102, 103, 109):
-        Y = numpy.array(profile.geometry.vcoordinate.levels)
-    if fidkey != None:
-        label = profile.fid.get(fidkey, profile.fid)
-    else:
-        label = str(profile.fid)
-    data = profile.data
-    if ema:
-        raise epygramError("ema=True not tested for animations")
-        mindata = numpy.inf
-        maxdata = -numpy.inf
-        alpha = 0.75
-        templines = numpy.arange(round(min(data), -1) - 10,
-                                 round(max(data), -1) + 10 + 50,
-                                 10)
-        for t in templines:
-            plt.plot([t, t + (max(data) - min(data)) * alpha],
-                     [max(Y), min(Y)],
-                     color='grey', linestyle=':')
-        ax.set_yticks(numpy.linspace(0, 1000, 11))
-        data = data + abs(Y - Y[-1]) * (max(data) - min(data)) / \
-                                       (max(Y) - min(Y)) * alpha
-        unit = 'K'
-        mindata = min(mindata, min(data))
-        maxdata = max(maxdata, max(data))
-    plot, = ax.plot(data[0], Y, label=label, color=linecolor, linestyle=linestyle)
-
-    # Decoration
-    if reverseY:
-        ax.set_ylim(bottom=numpy.array(Y).max())
-    else:
-        ax.set_ylim(bottom=numpy.array(Y).min())
-    if zoom != None:
-        if 'ymin' in zoom.keys():
-            ax.set_ylim(bottom=zoom['ymin'])
-        if 'ymax' in zoom.keys():
-            ax.set_ylim(top=zoom['ymax'])
-    if title is not None:
-        if title == '__auto__':
-            _title = ''
-        else:
-            _title = title
-        ax.set_title(_title + '\n' + profile.validity[0].get().isoformat())
     legend = ax.legend(loc='upper right', shadow=True)
     for label in legend.get_texts():
         label.set_fontsize('medium')
@@ -606,12 +526,73 @@ def plotanimation(profile,
     else:
         ax.grid()
 
-    def update(i):
-        plot.set_xdata(data[i])
-        if title is not None:
-            ax.set_title(_title + '\n' + profile.validity[i].get().isoformat())
-        return plot,
+    return (fig, ax)
 
-    ani = animation.FuncAnimation(fig, update, range(len(data)), interval=interval, repeat=repeat)
+def plotanimation(profile,
+                  title='__auto__',
+                  repeat=False,
+                  interval=1000,
+                  **kwargs):
+    """
+    To plot a time-dependent profile as an animation.
+    Returns a :class:`matplotlib.animation.FuncAnimation`.
 
-    return ani
+    Args: \n
+    - *profile* being a :class:`epygram.fields.V1DField`.
+    - *title* = title for the plot. '__auto__' (default) will print
+      the current validity of the time frame.
+    - *repeat*: to repeat animation
+    - *interval*: number of milliseconds between two validities
+    
+    Other kwargs passed to plotprofiles().
+    """
+    import matplotlib.animation as animation
+
+    if len(profile.validity) == 1:
+        raise epygramError("plotanimation can handle only profile with several validities.")
+
+    if title is not None:
+        if title == '__auto__':
+            title_prefix = ''
+        else:
+            title_prefix = title
+        title = title_prefix + '\n' + profile.validity[0].get().isoformat(sep=' ')
+    else:
+        title_prefix = None
+    profile0 = profile.deepcopy()
+    profile0.validity = profile.validity[0]
+    profile0.setdata(profile.getdata()[0, ...])
+    mindata = profile.getdata().min()
+    maxdata = profile.getdata().max()
+    mindata -= (maxdata - mindata) / 10
+    maxdata += (maxdata - mindata) / 10
+
+    if kwargs.get('ema', False):
+        epylog.warning("'ema' option not fully tested in animation: min/max may not be optimised.")
+    zoom = kwargs.get('zoom')
+    zoom = util.ifNone_emptydict(zoom)
+    if not 'xmax' in zoom.keys():
+        zoom.update(xmax=maxdata)
+    if not 'xmin' in zoom.keys():
+        zoom.update(xmin=mindata)
+    kwargs['zoom'] = zoom
+
+    fig, ax = plotprofiles(profile0,
+                           title=title,
+                           **kwargs)
+
+    def update(i, ax=None, profile=None, title_prefix=None):
+        if i < len(profile.validity):
+            ax.lines[0].set_xdata(profile.getdata()[i, ...])
+            if title_prefix is not None:
+                ax.set_title(title_prefix + '\n' + profile.validity[i].get().isoformat(sep=' '))
+
+        return ax.lines[0],
+
+    anim = animation.FuncAnimation(fig, update,
+                                   fargs=[ax, profile, title_prefix],
+                                   frames=range(len(profile.validity) + 1),  # AM: don't really understand why but needed for the last frame to be shown
+                                   interval=interval,
+                                   repeat=repeat)
+
+    return anim
