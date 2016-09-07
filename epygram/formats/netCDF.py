@@ -259,9 +259,10 @@ class netCDF(FileResource):
                                              'Z_dimension'])
         V2D = set(squeezed_variables) == set(['N_dimension',
                                               'Z_dimension'])
+        H1D = set(squeezed_variables) == set(['N_dimension'])
         V1D = set(squeezed_variables) == set(['Z_dimension'])
         points = set(squeezed_variables) == set([])
-        if not any([H2D, D3, V1D, V2D, points]):
+        if not any([D3, H2D, V2D, H1D, V1D, points]):
             raise epygramError("unable to guess structure of the field: " \
                                + str(variable_dimensions.keys())\
                                + "refine behaviour dimensions or filter dimensions with 'only'.")
@@ -272,6 +273,9 @@ class netCDF(FileResource):
                 structure = 'H2D'
             elif V2D:
                 structure = 'V2D'
+            elif H1D:
+                structure = 'H1D'
+                raise NotImplementedError('H1D: not yet.')  #TODO:
             elif V1D:
                 structure = 'V1D'
             elif points:
@@ -295,7 +299,7 @@ class netCDF(FileResource):
         if D3 or H2D:
             dimensions['X'] = variable_dimensions[dims_dict_e2n['X_dimension']]
             dimensions['Y'] = variable_dimensions[dims_dict_e2n['Y_dimension']]
-        if V2D:
+        if V2D or H1D:
             dimensions['X'] = variable_dimensions[dims_dict_e2n['N_dimension']]
             dimensions['Y'] = 1
         if V1D or points:
@@ -308,8 +312,9 @@ class netCDF(FileResource):
                    'unable to find Z_grid in variables.'
             levels = None
             if var_corresponding_to_Z_grid in self._variables.keys():
-                if self._variables[var_corresponding_to_Z_grid].standard_name in ('atmosphere_hybrid_sigma_pressure_coordinate',
-                                                                                  'atmosphere_hybrid_height_coordinate'):
+                if hasattr(self._variables[var_corresponding_to_Z_grid], 'standard_name') \
+                   and self._variables[var_corresponding_to_Z_grid].standard_name in ('atmosphere_hybrid_sigma_pressure_coordinate',
+                                                                                      'atmosphere_hybrid_height_coordinate'):
                     formula_terms = self._variables[var_corresponding_to_Z_grid].formula_terms.split(' ')
                     if 'a:' in formula_terms and 'p0:' in formula_terms:
                         a_name = formula_terms[formula_terms.index('a:') + 1]
@@ -500,39 +505,58 @@ class netCDF(FileResource):
             if field.structure != 'Point':
                 field_dim_num += [int(c) for c in field.structure if c.isdigit()][0]
             assert field_dim_num == len(buffdata.squeeze().shape), \
-                   'shape of field and identified usual dimensions do not match:' \
-                    + 'use *only* to filter or *adhoc_behaviour* to identify dimensions'
+                   ' '.join(['shape of field and identified usual dimensions',
+                             'do not match: use *only* to filter or',
+                             '*adhoc_behaviour* to identify dimensions'])
             if len(buffdata.shape) > 1:
                 # re-shuffle to have data indexes in order (t,z,y,x)
                 positions = []
+                shp4D = [1, 1, 1, 1]
                 if 'T_dimension' in dims_dict_e2n.keys():
-                    positions.append(variable.dimensions.index(dims_dict_e2n['T_dimension']))
+                    idx = variable.dimensions.index(dims_dict_e2n['T_dimension'])
+                    positions.append(idx)
+                    shp4D[0] = buffdata.shape[idx]
                 if  'Z_dimension' in dims_dict_e2n.keys():
-                    positions.append(variable.dimensions.index(dims_dict_e2n['Z_dimension']))
+                    idx = variable.dimensions.index(dims_dict_e2n['Z_dimension'])
+                    positions.append(idx)
+                    shp4D[1] = buffdata.shape[idx]
                 if  'Y_dimension' in dims_dict_e2n.keys():
-                    positions.append(variable.dimensions.index(dims_dict_e2n['Y_dimension']))
+                    idx = variable.dimensions.index(dims_dict_e2n['Y_dimension'])
+                    positions.append(idx)
+                    shp4D[2] = buffdata.shape[idx]
                 if  'X_dimension' in dims_dict_e2n.keys():
-                    positions.append(variable.dimensions.index(dims_dict_e2n['X_dimension']))
+                    idx = variable.dimensions.index(dims_dict_e2n['X_dimension'])
+                    positions.append(idx)
+                    shp4D[3] = buffdata.shape[idx]
                 elif  'N_dimension' in dims_dict_e2n.keys():
-                    positions.append(variable.dimensions.index(dims_dict_e2n['N_dimension']))
+                    idx = variable.dimensions.index(dims_dict_e2n['N_dimension'])
+                    positions.append(idx)
+                    shp4D[3] = buffdata.shape[idx]
                 for d in variable.dimensions:
                     # whatever the order of these, they must have been filtered and dimension 1 (only)
                     if d not in dims_dict_e2n.values():
                         positions.append(variable.dimensions.index(d))
-                buffdata = buffdata.transpose(*positions)
+                shp4D = tuple(shp4D)
+                buffdata = buffdata.transpose(*positions).squeeze()
+                if isinstance(buffdata, numpy.ma.masked_array):
+                    data = numpy.ma.zeros(shp4D)
+                else:
+                    data = numpy.empty(shp4D)
+                data[...] = buffdata.reshape(data.shape)
                 if return_Yaxis:
-                    if 'T_dimension' in dims_dict_e2n.keys():
-                        if D3:
-                            buffdata = buffdata[:, :, ::-1, ...]
-                        elif H2D:
-                            buffdata = buffdata[:, ::-1, ...]
-                    else:
-                        if D3:
-                            buffdata = buffdata[:, ::-1, ...]
-                        elif H2D:
-                            buffdata = buffdata[::-1, ...]
+                    data[...] = data[:, :, ::-1, :]
+                    #if 'T_dimension' in dims_dict_e2n.keys():
+                    #    if D3:
+                    #        buffdata = buffdata[:, :, ::-1, ...]
+                    #    elif H2D:
+                    #        buffdata = buffdata[:, ::-1, ...]
+                    #else:
+                    #    if D3:
+                    #        buffdata = buffdata[:, ::-1, ...]
+                    #    elif H2D:
+                    #        buffdata = buffdata[::-1, ...]
 
-            field.setdata(buffdata.squeeze())
+            field.setdata(data)
 
         return field
 

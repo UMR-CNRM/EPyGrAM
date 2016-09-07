@@ -217,19 +217,24 @@ def main(filename,
     if outputfilename:
         filename = outputfilename
     if not nosave:
+        print profiletosave.getdata().shape
+        print type(profiletosave.getdata()[0]), profiletosave.getdata()[0]
         L = len(profile.geometry.vcoordinate.levels)
         precision = 4
         fieldnamelength = 16
         length_Z = len(str(profile.geometry.vcoordinate.typeoffirstfixedsurface))
         Z = numpy.array(profile.geometry.vcoordinate.levels).flatten()
 
-        flds = '{:<{width}}'.format("Z: " + str(profile.geometry.vcoordinate.typeoffirstfixedsurface), width=length_Z) \
+        flds = '{:<{width}}'.format("Z: " + str(profile.geometry.vcoordinate.typeoffirstfixedsurface),
+                                    width=length_Z) \
                + '{:^{width}}'.format(parameter, width=fieldnamelength + 2)
         with open(filename, 'w') as o:
             o.write(flds + "\n")
             for k in range(0, L):
                 line = '{:^{width}}'.format(str(Z[k]), width=length_Z)
-                valstr = '{:.{precision}{type}}'.format(profiletosave.data[k], type='E', precision=precision)
+                valstr = '{:.{precision}{type}}'.format(profiletosave.getdata()[k],
+                                                        type='E',
+                                                        precision=precision)
                 line += '{:^{width}}'.format(valstr, width=fieldnamelength + 2)
                 o.write(line + "\n")
 

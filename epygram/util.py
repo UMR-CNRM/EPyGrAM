@@ -911,6 +911,22 @@ def restrain_to_index_i_of_dim_d(a, i, d, n=None):
 
     return ra
 
+def resize_to_4D(a, indexes, ma=False):
+    """
+    Of an array a[d1, d2, d3, ... dn], returns the array as a 4D one restricted to index i
+    of the dimension d.
+    
+    A more elegant solution would have been the following, except that it does
+    not work when accessing netCDF variable (for which it was necessary).
+    
+    indexes = [range(len(self._dimensions[d])) for d in variable.dimensions] # equivalent to [:, :, :, ...]
+    for k in only.keys():
+        indexes[variable.dimensions.index(k)] = [only[k]] # restrain to the "only" give
+    return array[numpy.ix_(*indexes)]
+    """
+
+
+
 def datetimes2fieldvaliditylist(datetimes, basis=None):
     """
     Return a FieldValidityList from a list of datetime.datetime instances

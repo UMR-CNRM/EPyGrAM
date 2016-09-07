@@ -272,7 +272,7 @@ def plotverticalhovmoller(profile,
             timedelta = d - epoch
             p = (timedelta.microseconds + (timedelta.seconds + timedelta.days * 24 * 3600) * 10 ** 6) / 1e6
             x[i, :] = matplotlib.dates.epoch2num(p)
-        data = profile.data
+        data = profile.getdata()
         if profile.geometry.vcoordinate.typeoffirstfixedsurface in (119, 100):
             reverseY = True
         else:
@@ -473,7 +473,7 @@ def plotprofiles(profiles,
                 label = p.fid.get(fidkey, p.fid)
             else:
                 label = str(p.fid)
-        data = p.data
+        data = p.getdata()
         if ema:
             mindata = numpy.inf
             maxdata = -numpy.inf

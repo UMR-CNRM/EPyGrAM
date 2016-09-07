@@ -511,51 +511,9 @@ class H2DField(D3Field):
 
         return anim
 
-    def extract_zoom(self, zoom):
-        """
-        Extract an unstructured field with the gridpoints contained in *zoom*,
-        *zoom* being a dict(lonmin=, lonmax=, latmin=, latmax=).
-        """
-
-        (lons, lats) = self.geometry.get_lonlat_grid()
-        lons = lons.flatten()
-        lats = lats.flatten()
-        values = self.getdata().flatten()
-        zoomlons = footprints.FPList([])
-        zoomlats = footprints.FPList([])
-        zoomvals = []
-        for i in range(len(lons)):
-            if zoom['lonmin'] <= lons[i] <= zoom['lonmax'] and \
-               zoom['latmin'] <= lats[i] <= zoom['latmax']:
-                zoomlons.append(lons[i])
-                zoomlats.append(lats[i])
-                zoomvals.append(values[i])
-        assert len(zoomlons) > 0, "zoom not in domain."
-        zoom_geom = footprints.proxy.geometry(structure=self.geometry.structure,
-                                              name='unstructured',
-                                              grid={'longitudes':zoomlons,
-                                                    'latitudes':zoomlats},
-                                              dimensions={'X':len(zoomlons), 'Y':1},
-                                              vcoordinate=self.geometry.vcoordinate,
-                                              position_on_horizontal_grid=self.geometry.position_on_horizontal_grid,
-                                              geoid=self.geometry.geoid)
-        fid = {k:v for k, v in self.fid.items()}
-        for k, v in fid.items():
-            if isinstance(v, dict):
-                fid[k] = footprints.FPDict(v)
-        #zoom_field = self.extract_subdomain(zoom_geom)  #TODO: ? serait plus élégant mais pb d'efficacité (2x plus lent)
-        #zoom_field.fid = fid                            # car extract_subdomain fait une recherche des plus proches points
-        zoom_field = footprints.proxy.field(fid=fid,
-                                            structure=self.structure,
-                                            geometry=zoom_geom,
-                                            validity=self.validity,
-                                            spectral_geometry=None,
-                                            processtype=self.processtype)
-        zoom_field.setdata(numpy.array(zoomvals).reshape((len(zoomvals), 1)))
-
-        return zoom_field
-
-    def morph_with_points(self, points, alpha=1., morphing='nearest', **kwargs):
+    def morph_with_points(self, points, alpha=1., morphing='nearest',
+                          increment=False,
+                          **kwargs):
         """
         Perturb the field values with the values of a set of points.
         
@@ -570,10 +528,14 @@ class H2DField(D3Field):
           - 'gaussian': modifies the surrounding points with an isotrop
             gaussian weighting. Its standard deviation *sigma* must then
             be passed as argument, in meters.
+        *increment*: if True, the final value of the point is
+          original_field.value + point.value
         """
 
         assert isinstance(points, list)
         assert all([isinstance(p, PointField) for p in points])
+        if len(self.validity) != 1:
+            raise NotImplementedError('morph field with a time dimension.')
 
         for p in points:
             if morphing == 'nearest':
@@ -582,7 +544,10 @@ class H2DField(D3Field):
                 i, j = self.geometry.ll2ij(lon, lat)
                 i = int(i)
                 j = int(j)
-                self.data[j, i] = alpha * p.data + (1. - alpha) * self.data[j, i]
+                if increment:
+                    self.data[:, :, j, i] = self.data[:, :, j, i] + p.data
+                else:
+                    self.data[:, :, j, i] = alpha * p.data + (1. - alpha) * self.data[:, :, j, i]
             elif morphing == 'gaussian':
                 sigma = kwargs['sigma']
                 lon = p.geometry.grid['longitudes'][0]
@@ -595,8 +560,12 @@ class H2DField(D3Field):
                     distance = self.geometry.distance((lon, lat), sp)
                     if distance <= zero_radius:
                         (i, j) = selection_points_ij[selection_points_ll.index(sp)]
-                        local_alpha = alpha * numpy.exp(-distance ** 2 / (2 * sigma ** 2))
-                        self.data[j, i] = local_alpha * p.data + (1. - local_alpha) * self.data[j, i]
+                        if increment:
+                            local_alpha = numpy.exp(-distance ** 2 / (2 * sigma ** 2))
+                            self.data[:, :, j, i] = self.data[:, :, j, i] + local_alpha * p.data
+                        else:
+                            local_alpha = alpha * numpy.exp(-distance ** 2 / (2 * sigma ** 2))
+                            self.data[:, :, j, i] = local_alpha * p.data + (1. - local_alpha) * self.data[j, i]
             else:
                 raise NotImplementedError("not yet.")
 

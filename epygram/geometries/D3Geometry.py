@@ -147,8 +147,8 @@ class D3Geometry(RecursiveObject, FootprintBase):
                 raise epygramError("Wrong number of dimensions")
             if levels.shape[-len(h_shape):] != h_shape:
                 raise epygramError("Shape of self.vcoordinate.levels does not agree with horizontal dimensions")
-            if subzone != None:
-                levels = self.extract_subzone(levels, nb_validities, subzone)
+            if subzone is not None:
+                levels = self.extract_subzone(levels, subzone)
             if d4 and ((not self.datashape['i']) or (not self.datashape['j'])):
                 shape = levels.shape[-len(h_shape):]  # shape without the horizontal dimensions
                 shape = tuple(list(shape) + list(h_shape2D))  # shape with the new horizontal dimensions
@@ -556,8 +556,8 @@ class D3RectangularGridGeometry(D3Geometry):
         a = self.reshape_data(a, 1, horizontal_only=True)
         b = self.reshape_data(b, 1, horizontal_only=True)
         if subzone and self.grid.get('LAMzone') is not None:
-            a = self.extract_subzone(a, None, subzone, horizontal_only=True)
-            b = self.extract_subzone(b, None, subzone, horizontal_only=True)
+            a = self.extract_subzone(a, subzone)
+            b = self.extract_subzone(b, subzone)
 
         return (a, b)
 
@@ -610,16 +610,14 @@ class D3RectangularGridGeometry(D3Geometry):
 
         return (lons, lats)
 
-    def extract_subzone(self, data, nb_validities, subzone, horizontal_only=False):
+    def extract_subzone(self, data, subzone):  #TOBECHECKED: AM:hope nothing is broken since removal of 2 arguments
         """
         Extracts the subzone C or CI from a LAM field.
 
         Args: \n
         - *data*: the data values with shape concording with geometry.
-        - *nb_validities* is the number of validities represented in data values
         - *subzone*: optional, among ('C', 'CI'), for LAM grids only, extracts
           the data resp. from the C or C+I zone off the C+I(+E) zone.
-        - *horizontal_only*: the input data doesn't have vertical coordinate
         """
 
         if subzone not in ('C', 'CI'):
@@ -628,41 +626,44 @@ class D3RectangularGridGeometry(D3Geometry):
         if not 'LAMzone' in self.grid.keys():
             raise epygramError("method for LAM grids only.")
 
-        selection1 = []  # To remove E-zone
-        selection2 = []  # To eventually remove I-zone
-        if (not horizontal_only) and nb_validities > 1:
-            selection1.append(slice(None))
-            selection2.append(slice(None))
-        if (not horizontal_only) and (self.datashape['k'] or nb_validities > 1):
-            selection1.append(slice(None))
-            selection2.append(slice(None))
+        selectionE = []  # To remove E-zone
+        selectionI = []  # To eventually remove I-zone
+        if len(data.shape) == 4:
+            selectionE.extend([slice(None)] * 2)
+            selectionI.extend([slice(None)] * 2)
+        elif len(data.shape) == 3:
+            selectionE.append(slice(None))
+            selectionI.append(slice(None))
         if self.datashape['j']:
             y1 = self.dimensions['Y_CIoffset']
             y2 = self.dimensions['Y_CIoffset'] + self.dimensions['Y_CIzone']
-            selection1.append(slice(y1, y2))
+            selectionE.append(slice(y1, y2))
             y1 = self.dimensions['Y_Iwidth']
             y2 = -self.dimensions['Y_Iwidth']
-            selection2.append(slice(y1, y2))
+            selectionI.append(slice(y1, y2))
         if self.datashape['i']:
             x1 = self.dimensions['X_CIoffset']
             x2 = self.dimensions['X_CIoffset'] + self.dimensions['X_CIzone']
-            selection1.append(slice(x1, x2))
+            selectionE.append(slice(x1, x2))
             x1 = self.dimensions['X_Iwidth']
             x2 = -self.dimensions['X_Iwidth']
-            selection2.append(slice(x1, x2))
+            selectionI.append(slice(x1, x2))
 
         if self.grid['LAMzone'] == 'CIE':
             # remove E-zone
-            edata = data[tuple(selection1)]
+            edata = data[tuple(selectionE)]
         else:
             edata = data
         if subzone == 'C':
             # remove I-zone
-            edata = edata[tuple(selection2)]
+            edata = edata[tuple(selectionI)]
 
         return edata
 
-    def get_datashape(self, nb_validities, horizontal_only=False, d4=False, subzone=None):
+    def get_datashape(self, nb_validities,
+                      horizontal_only=False,
+                      d4=False,
+                      subzone=None):
         """
         Returns the data shape according to the geometry.
         - *horizontal_only*: the data doesn't have vertical coordinate
@@ -1082,8 +1083,8 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
         lons = self.reshape_data(numpy.array(self.grid['longitudes']), None, horizontal_only=True)
         lats = self.reshape_data(numpy.array(self.grid['latitudes']), None, horizontal_only=True)
         if subzone and 'LAMzone' in self.grid.keys():
-            lons = self.extract_subzone(lons, None, subzone, horizontal_only=True)
-            lats = self.extract_subzone(lats, None, subzone, horizontal_only=True)
+            lons = self.extract_subzone(lons, subzone)
+            lats = self.extract_subzone(lats, subzone)
 
         if d4:
             if nb_validities < 1:

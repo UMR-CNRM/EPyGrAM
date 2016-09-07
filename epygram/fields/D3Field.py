@@ -487,16 +487,16 @@ class D3CommonField(Field):
 
 
         # Values
-        shape = [] if len(self.validity) == 1 else [len(self.validity)]
-        shape += [len(newgeometry.vcoordinate.levels)] + list(lons.shape)
-        data = numpy.ndarray(tuple(shape))
+        shp = newgeometry.get_datashape(len(self.validity), d4=True)
+        data = numpy.ndarray(shp)
         for t in range(len(self.validity)):
             for k in range(len(newgeometry.vcoordinate.levels)):
                 level = newgeometry.vcoordinate.levels[k]
-                pos = (k) if len(self.validity) == 1 else (t, k)
-                data[pos] = self.getvalue_ll(lons, lats, level, self.validity[t],
-                                            interpolation=interpolation,
-                                            external_distance=external_distance)
+                extracted = self.getvalue_ll(lons, lats, level, self.validity[t],
+                                             interpolation=interpolation,
+                                             external_distance=external_distance,
+                                             one=False)
+                data[t, k, :, :] = newgeometry.reshape_data(extracted, 1, horizontal_only=True)
 
         # Field
         newfield = fpx.field(fid=FPDict(subdomainfid),
@@ -505,11 +505,68 @@ class D3CommonField(Field):
                              validity=self.validity,
                              processtype=self.processtype,
                              comment=comment)
-        newfield.setdata(newgeometry.reshape_data(data, len(self.validity)))
+        newfield.setdata(data)
 
         return newfield
 
-    def extend(self, another_pointfield_with_time_dimension):
+    def extract_zoom(self, zoom):
+        """
+        Extract an unstructured field with the gridpoints contained in *zoom*,
+        *zoom* being a dict(lonmin=, lonmax=, latmin=, latmax=).
+        """
+
+        (lons, lats) = self.geometry.get_lonlat_grid()
+        lons = lons.flatten()
+        lats = lats.flatten()
+        zoomlons = footprints.FPList([])
+        zoomlats = footprints.FPList([])
+        flat_indexes = []
+        for i in range(len(lons)):
+            if zoom['lonmin'] <= lons[i] <= zoom['lonmax'] and \
+               zoom['latmin'] <= lats[i] <= zoom['latmax']:
+                zoomlons.append(lons[i])
+                zoomlats.append(lats[i])
+                flat_indexes.append(i)
+        assert len(zoomlons) > 0, "zoom not in domain."
+
+        zoom_geom = footprints.proxy.geometry(structure=self.geometry.structure,
+                                              name='unstructured',
+                                              grid={'longitudes':zoomlons,
+                                                    'latitudes':zoomlats},
+                                              dimensions={'X':len(zoomlons), 'Y':1},
+                                              vcoordinate=self.geometry.vcoordinate,
+                                              position_on_horizontal_grid=self.geometry.position_on_horizontal_grid,
+                                              geoid=self.geometry.geoid)
+
+        #zoom_field = self.extract_subdomain(zoom_geom)  #TODO: ? serait plus élégant mais pb d'efficacité (2x plus lent)
+        #zoom_field.fid = fid                            # car extract_subdomain fait une recherche des plus proches points
+
+        shp = zoom_geom.get_datashape(len(self.validity), d4=True)
+        data = numpy.empty(shp)
+        values = self.getdata(d4=True)
+        for t in range(len(self.validity)):
+            for k in range(len(self.geometry.vcoordinate.levels)):
+                vals = values[t, k, :, :].flatten()
+                zoomvals = []
+                for i in flat_indexes:
+                    zoomvals.append(vals[i])
+                data[t, k, :, :] = numpy.array(zoomvals).reshape(shp[2:])
+
+        fid = {k:v for k, v in self.fid.items()}
+        for k, v in fid.items():
+            if isinstance(v, dict):
+                fid[k] = footprints.FPDict(v)
+        zoom_field = footprints.proxy.field(fid=fid,
+                                            structure=self.structure,
+                                            geometry=zoom_geom,
+                                            validity=self.validity,
+                                            spectral_geometry=None,
+                                            processtype=self.processtype)
+        zoom_field.setdata(data)
+
+        return zoom_field
+
+    def extend(self, another_field_with_time_dimension):
         """
         Extend the field with regard to time dimension with the field given as
         argument.
@@ -518,10 +575,10 @@ class D3CommonField(Field):
         geometry (except that dimensions match) nor their validities.
         """
 
-        another = another_pointfield_with_time_dimension
+        another = another_field_with_time_dimension
         d1 = self.getdata(d4=True)
         d2 = another.getdata(d4=True)
-        d = numpy.concatenate([d1, d2], axis=0).squeeze()
+        d = numpy.concatenate([d1, d2], axis=0)
         self.validity.extend(another.validity)
         self.setdata(d)
 
@@ -598,7 +655,7 @@ class D3CommonField(Field):
                                                                - config.mask_outside,
                                                                config.mask_outside)) > config.epsilon)
 
-    def dctspectrum(self, k=None, subzone=None):
+    def dctspectrum(self, level_index=None, validity_index=None, subzone=None):
         """
         Returns the DCT spectrum of the field, as a
         :class:`epygram.spectra.Spectrum` instance.
@@ -606,21 +663,30 @@ class D3CommonField(Field):
         """
         import epygram.spectra as esp
 
-        if k == None and self.geometry.datashape['k']:
-            raise epygramError("One must choose the level for a 3D field.")
-        if (not self.geometry.datashape['k']) and k not in [None, 0]:
-            raise epygramError("k must be None or 0 for a 2D field.")
-        if k == None:
-            my_k = 0
+        if level_index is None:
+            if self.geometry.datashape['k']:
+                raise epygramError("must provide *level_index* for a 3D field.")
+            else:
+                level_index = 0
+        elif level_index > 0 and not self.geometry.datashape['k']:
+            raise epygramError("invalid *level_index* with regard to vertical levels.")
+        if validity_index is None:
+            if len(self.validity) > 1:
+                raise epygramError("must provide *validity_index* for a time-dimensioned field.")
+            else:
+                validity_index = 0
+        elif validity_index > 0 and len(self.validity) == 1:
+            raise epygramError("invalid *validity_index* with regard to time dimension.")
+
+        if self.geometry.datashape['k']:
+            field2d = self.getlevel(k=level_index)
         else:
-            my_k = k
-
+            field2d = self
         if len(self.validity) > 1:
-            # One must add a validity argument to enable feature
-            raise NotImplementedError("dctspectrum not yet implemented for multi validities fields.")
-
-        field2d = self.getlevel(k=my_k)
-        variances = esp.dctspectrum(field2d.getdata(subzone=subzone, d4=True)[0, 0])
+            field2dt0 = field2d.getvalidity(validity_index)
+        else:
+            field2dt0 = field2d
+        variances = esp.dctspectrum(field2dt0.getdata(subzone=subzone))
         spectrum = esp.Spectrum(variances[1:],
                                 name=str(self.fid),
                                 resolution=self.geometry.grid['X_resolution'] / 1000.,
@@ -640,14 +706,10 @@ class D3CommonField(Field):
             raise epygramError("only for regular lonlat geometries.")
         self.geometry.global_shift_center(longitude_shift)
         n = longitude_shift / self.geometry.grid['X_resolution'].get('degrees')
-        data4d = self.getdata(d4=True)
-        data4d[:, :, :, :] = numpy.concatenate((data4d[:, :, :, n:], data4d[:, :, :, 0:n]),
-                                               axis=3)
-        # for t in range(len(self.validity)):
-        #    for k in range(len(self.data)):
-        #        data4d[t, k, :, :] = numpy.concatenate((data4d[t, k, :, n:], data4d[t, k, :, 0:n]),
-        #                                         axis=1)
-        self.setdata(self.geometry.reshape_data(data4d, len(self.validity)))
+        data = self.getdata(d4=True)
+        data[:, :, :, :] = numpy.concatenate((data[:, :, :, n:], data[:, :, :, 0:n]),
+                                             axis=3)
+        self.setdata(data)
 
     def what(self, out=sys.stdout,
              validity=True,
@@ -828,122 +890,72 @@ class D3Field(D3CommonField):
         """
 
         if self.spectral:
-            if len(self.validity) == 1:
-                expected = 2 if self.geometry.datashape['k'] else 1
-            else:
-                expected = 3  # vertical dimension mandatory for multivalidities fields
-            if len(self.data.shape) != expected:
-                raise epygramError("spectral data must be 2D for a 3D field and 1D for a 2D field")
+            gpdims = self._get_gpdims_for_spectral_transforms()
             if self.geometry.rectangular_grid:
                 # LAM
-                gpdims = {}
-                for dim in ['X', 'Y', 'X_CIzone', 'Y_CIzone']:
-                    gpdims[dim] = self.geometry.dimensions[dim]
-                for item in ['X_resolution', 'Y_resolution']:
-                    gpdims[item] = self.geometry.grid[item]
+                gpdata = numpy.empty(self.geometry.get_datashape(len(self.validity), d4=True))
             else:
                 # global
-                gpdims = {}
-                for dim in ['lat_number', 'lon_number_by_lat']:
-                    gpdims[dim] = self.geometry.dimensions[dim]
-            if len(self.validity) == 1:
-                if self.geometry.datashape['k']:
-                    # one validity, several levels
-                    dataList = []
-                    for k in range(len(self.data)):
-                        data2d = self.geometry.reshape_data(self.spectral_geometry.sp2gp(self.data[k], gpdims), 1)
-                        dataList.append(data2d)
-                    result = numpy.array(dataList)
-                else:
-                    # one validity, one level
-                    result = self.geometry.reshape_data(self.spectral_geometry.sp2gp(self.data, gpdims), 1)
-            else:
-                # several validities (implies to have an array dimension for the vertical dimension)
-                result = []
-                for t in range(len(self.data)):
-                    dataList = []
-                    for k in range(len(self.data[t])):
-                        data2d = self.geometry.reshape_data(self.spectral_geometry.sp2gp(self.data[t][k], gpdims), 1)
-                        dataList.append(data2d)
-                    result.append(numpy.array(dataList))
-                result = numpy.array(result)
+                gpdata = numpy.ma.zeros(self.geometry.get_datashape(len(self.validity), d4=True))
+            for t in range(len(self.validity)):
+                for k in range(len(self.geometry.vcoordinate.levels)):
+                    spdata_i = self.getdata(d4=True)[t, k, :]
+                    gpdata_i = self.spectral_geometry.sp2gp(spdata_i, gpdims)
+                    gpdata_i = self.geometry.reshape_data(gpdata_i, 1, horizontal_only=True)
+                    gpdata[t, k, :, :] = gpdata_i[:, :]
 
             self._attributes['spectral_geometry'] = None
-            self.setdata(result)
+            self.setdata(gpdata)
 
     def gp2sp(self, spectral_geometry):
         """
         Transforms the gridpoint field into spectral space, according to the
-        *spectral geometry* mandatorily passed as argument. Replaces data in
+        *spectral_geometry* mandatorily passed as argument. Replaces data in
         place.
 
         The spectral transform subroutine is actually included in the spectral
         geometry's *gp2sp()* method.
         """
 
+        assert isinstance(spectral_geometry, SpectralGeometry)
+
         if not self.spectral:
-            if len(self.validity) == 1:
-                expected = 3 if self.geometry.datashape['k'] else 2
-            else:
-                expected = 4  # vertical dimension mandatory for multivalidities fields
-            if len(self.data.shape) != expected:
-                raise epygramError("spectral data must be 3D for a 3D field and 2D for a 2D field")
-            if not isinstance(spectral_geometry, SpectralGeometry):
-                raise epygramError("a spectral geometry (SpectralGeometry" + \
-                                   " instance) must be passed as argument" + \
-                                   " to gp2sp()")
-
-            if self.geometry.rectangular_grid:
-                # LAM
-                if self.geometry.grid['LAMzone'] != 'CIE':
-                    raise epygramError("this field is not bi-periodicized:" + \
-                                       " it cannot be transformed into" + \
-                                       " spectral space.")
-                gpdims = {}
-                for dim in ['X', 'Y', 'X_CIzone', 'Y_CIzone']:
-                    gpdims[dim] = self.geometry.dimensions[dim]
-                for item in ['X_resolution', 'Y_resolution']:
-                    gpdims[item] = self.geometry.grid[item]
-            else:
-                # global
-                gpdims = {}
-                for dim in ['lat_number', 'lon_number_by_lat']:
-                    gpdims[dim] = self.geometry.dimensions[dim]
-
-            if len(self.validity) == 1:
-                if self.geometry.datashape['k']:
-                    # one validity, several levels
-                    dataList = []
-                    for k in range(len(self.data)):
-                        if self.geometry.rectangular_grid:
-                            data1d = self.data[k].flatten()
-                        else:
-                            data1d = self.data[k].compressed()
-                        dataList.append(spectral_geometry.gp2sp(data1d, gpdims))
-                    result = numpy.array(dataList)
-                else:
-                    # one validity, one level
-                    if self.geometry.rectangular_grid:
-                        data1d = self.data.flatten()
-                    else:
-                        data1d = self.data.compressed()
-                    result = spectral_geometry.gp2sp(data1d, gpdims)
-            else:
-                # several validities (implies to have an array dimension for the vertical dimension)
-                result = []
-                for t in range(len(self.data)):
-                    dataList = []
-                    for k in range(len(self.data[t])):
-                        if self.geometry.rectangular_grid:
-                            data1d = self.data[t][k].flatten()
-                        else:
-                            data1d = self.data[t][k].compressed()
-                        dataList.append(spectral_geometry.gp2sp(data1d, gpdims))
-                    result.append(numpy.array(dataList))
-                result = numpy.array(result)
+            gpdims = self._get_gpdims_for_spectral_transforms()
+            spdata = None
+            for t in range(len(self.validity)):
+                for k in range(len(self.geometry.vcoordinate.levels)):
+                    gpdata_i = stretch_array(self.getdata(d4=True)[t, k, :, :])
+                    spdata_i = spectral_geometry.gp2sp(gpdata_i, gpdims)
+                    n = len(spdata_i)
+                    if spdata is None:
+                        spdata = numpy.empty((len(self.validity),
+                                              len(self.geometry.vcoordinate.levels),
+                                              n))
+                    spdata[t, k, :] = spdata_i[:]
 
             self._attributes['spectral_geometry'] = spectral_geometry
-            self.setdata(result)
+            self.setdata(spdata)
+
+    def _get_gpdims_for_spectral_transforms(self):
+        """
+        Build a dictionary containing gridpoint dimensions for the call to
+        spectral transforms.
+        """
+
+        if self.geometry.rectangular_grid:
+            # LAM
+            gpdims = {}
+            for dim in ['X', 'Y', 'X_CIzone', 'Y_CIzone']:
+                gpdims[dim] = self.geometry.dimensions[dim]
+            for item in ['X_resolution', 'Y_resolution']:
+                gpdims[item] = self.geometry.grid[item]
+        else:
+            # global
+            gpdims = {}
+            for dim in ['lat_number', 'lon_number_by_lat']:
+                gpdims[dim] = self.geometry.dimensions[dim]
+
+        return gpdims
 
     def compute_xy_spderivatives(self):
         """
@@ -956,77 +968,35 @@ class D3Field(D3CommonField):
         """
 
         if self.spectral:
-            if len(self.validity) == 1:
-                expected = 2 if self.geometry.datashape['k'] else 1
-            else:
-                expected = 3  # vertical dimension mandatory for multivalidities fields
-            if len(self.data.shape) != expected:
-                raise epygramError("spectral data must be 2D for a 3D field and 1D for a 2D field")
+            gpdims = self._get_gpdims_for_spectral_transforms()
             if self.geometry.rectangular_grid:
                 # LAM
-                gpdims = {}
-                for dim in ['X', 'Y', 'X_CIzone', 'Y_CIzone']:
-                    gpdims[dim] = self.geometry.dimensions[dim]
-                for item in ['X_resolution', 'Y_resolution']:
-                    gpdims[item] = self.geometry.grid[item]
+                gpderivX = numpy.empty(self.geometry.get_datashape(len(self.validity), d4=True))
+                gpderivY = numpy.empty(self.geometry.get_datashape(len(self.validity), d4=True))
             else:
                 # global
-                gpdims = {}
-                for dim in ['lat_number', 'lon_number_by_lat']:
-                    gpdims[dim] = self.geometry.dimensions[dim]
-            if len(self.validity) == 1:
-                if self.geometry.datashape['k']:
-                    # one validity, several levels
-                    dataListX = []
-                    dataListY = []
-                    for k in range(len(self.data)):
-                        (dx, dy) = self.spectral_geometry.compute_xy_spderivatives(self.data[k], gpdims)
-                        dataListX.append(self.geometry.reshape_data(dx, 1))
-                        dataListX.append(self.geometry.reshape_data(dy, 1))
-                    resultX = copy.deepcopy(self)
-                    resultX._attributes['spectral_geometry'] = None
-                    resultX.fid = {'derivative':'x'}
-                    resultX.setdata(numpy.array(dataListX))  # TOBECHECKED:
-                    resultY = copy.deepcopy(self)
-                    resultY._attributes['spectral_geometry'] = None
-                    resultY.fid = {'derivative':'y'}
-                    resultY.setdata(numpy.array(dataListY))  # TOBECHECKED:
-                else:
-                    # one validity, one level
-                    (dx, dy) = self.spectral_geometry.compute_xy_spderivatives(self.data, gpdims)
-                    resultX = copy.deepcopy(self)
-                    resultX._attributes['spectral_geometry'] = None
-                    resultX.fid = {'derivative':'x'}
-                    resultX.setdata(numpy.array(self.geometry.reshape_data(dx, 1)))
-                    resultY = copy.deepcopy(self)
-                    resultY._attributes['spectral_geometry'] = None
-                    resultY.fid = {'derivative':'y'}
-                    resultY.setdata(numpy.array(self.geometry.reshape_data(dy, 1)))
-            else:
-                # several validities (implies to have an array dimension for the vertical dimension)
-                D4arrayX = []
-                D4arrayY = []
-                for t in range(len(self.data)):
-                    dataListX = []
-                    dataListY = []
-                    for k in range(len(self.data[t])):
-                        (dx, dy) = self.spectral_geometry.compute_xy_spderivatives(self.data[t][k], gpdims)
-                        dataListX.append(self.geometry.reshape_data(dx, 1))
-                        dataListY.append(self.geometry.reshape_data(dy, 1))
-                    D4arrayX.append(numpy.array(dataListX))
-                    D4arrayY.append(numpy.array(dataListY))
-                resultX = copy.deepcopy(self)
-                resultX._attributes['spectral_geometry'] = None
-                resultX.fid = {'derivative':'x'}
-                resultX.setdata(numpy.array(D4arrayX))  # TOBECHECKED:
-                resultY = copy.deepcopy(self)
-                resultY._attributes['spectral_geometry'] = None
-                resultY.fid = {'derivative':'y'}
-                resultY.setdata(numpy.array(D4arrayY))  # TOBECHECKED:
+                gpderivX = numpy.ma.zeros(self.geometry.get_datashape(len(self.validity), d4=True))
+                gpderivY = numpy.ma.zeros(self.geometry.get_datashape(len(self.validity), d4=True))
+            for t in range(len(self.validity)):
+                for k in range(len(self.geometry.vcoordinate.levels)):
+                    spdata_i = self.getdata(d4=True)[t, k, :]
+                    (dx, dy) = self.spectral_geometry.compute_xy_spderivatives(spdata_i, gpdims)
+                    dx = self.geometry.reshape_data(dx, 1, horizontal_only=True)
+                    dy = self.geometry.reshape_data(dy, 1, horizontal_only=True)
+                    gpderivX[t, k, :, :] = dx[:, :]
+                    gpderivY[t, k, :, :] = dy[:, :]
+
+            field_dX = copy.deepcopy(self)
+            field_dY = copy.deepcopy(self)
+            for field in (field_dX, field_dY):
+                field._attributes['spectral_geometry'] = None
+                field.fid = {'derivative':'x'}
+            field_dX.setdata(gpderivX)
+            field_dY.setdata(gpderivY)
         else:
             raise epygramError('field must be spectral to compute its spectral derivatives.')
 
-        return (resultX, resultY)
+        return (field_dX, field_dY)
 
     def getdata(self, subzone=None, d4=False):
         """
@@ -1039,62 +1009,150 @@ class D3Field(D3CommonField):
         - *d4*: if True,  returned values are shaped in a 4 dimensions array
                 if False, shape of returned values is determined with respect to geometry
 
-        Shape of 3D data: \n
+        Shape of 4D data: \n
         - Rectangular grids:\n
-          grid[k,0,0] is SW, grid[k,-1,-1] is NE \n
-          grid[k,0,-1] is SE, grid[k,-1,0] is NW \n
-          with k the level
+          grid[t,k,0,0] is SW, grid[t,k,-1,-1] is NE \n
+          grid[t,k,0,-1] is SE, grid[t,k,-1,0] is NW \n
+          with k the level, t the temporal dimension
         - Gauss grids:\n
-          grid[k,0,:Nj] is first (Northern) band of latitude, masked after
+          grid[t,k,0,:Nj] is first (Northern) band of latitude, masked after
           Nj = number of longitudes for latitude j \n
-          grid[k,-1,:Nj] is last (Southern) band of latitude (idem). \n
-          with k the level
+          grid[t,k,-1,:Nj] is last (Southern) band of latitude (idem). \n
+          with k the level, t the temporal dimension
         """
 
-        if not self.spectral and subzone and \
-           self.geometry.grid.get('LAMzone') is not None:
-            data = self.geometry.extract_subzone(self.data, len(self.validity), subzone)
-            if d4:
-                data = self.geometry.reshape_data(data, len(self.validity), d4=True, subzone=subzone)
+        data = self.data
+        if self.spectral:
+            # just remove t and k dimensions if of size 1
+            if not d4:
+                data = self.data.squeeze()
         else:
-            if subzone:
-                raise epygramError("subzone cannot be provided for this field.")
-            if d4:
-                data = self.geometry.reshape_data(self.data, len(self.validity), d4=True)
-            else:
-                data = self.data
+            if subzone is not None:
+                if self.geometry.grid.get('LAMzone') is not None:
+                    data = self.geometry.extract_subzone(data, subzone)
+                else:
+                    raise epygramError("*subzone* cannot be provided for this field.")
+            if not d4:
+                data = data.squeeze()  #TOBECHECKED: OK or make it depend on the structure ?
+            #shp = self.geometry.get_datashape(len(self.validity), d4=True)
+            #if shp[0] == shp[1] == 1:
+            #    data = data[0, 0, ...]
+            #elif shp[0] == 1:
+            #    data = data[0, ...]
+            #elif shp[1] == 1:
+            #    data = data[:, 0, ...]
 
         return data
 
     def setdata(self, data):
         """
-        Sets field data, checking *data* to have the good shape according to geometry.
+        Sets field data, checking *data* to have the good shape according to
+        geometry.
+        *data* dimensions should in any case be ordered in a subset of
+        (t,z,y,x), or (t,z,n) if spectral (2D spectral coefficients must be 1D
+        with ad hoc ordering, n being the total number of spectral
+        coefficients).
+        
+        *data* may be 4D (3D if spectral) even if the field is not, as long as
+        the above dimensions ordering is respected.
         """
 
-        dimensions = 0
-        if len(self.validity) > 1:
-            dimensions += 1
-        if self.geometry.datashape['k']:
-            dimensions += 1
+        if not isinstance(data, numpy.ndarray):
+            data = numpy.array(data)
+
         if self.spectral:
-            dimensions += 1
-            dataType = "spectral"
+            shp = (len(self.validity),
+                   len(self.geometry.vcoordinate.levels),
+                   data.shape[-1])
+        elif 'gauss' in self.geometry.name:
+            shp = (len(self.validity),
+                   len(self.geometry.vcoordinate.levels),
+                   self.geometry.dimensions['lat_number'],
+                   self.geometry.dimensions['max_lon_number'])
         else:
-            if self.geometry.datashape['j']:
+            shp = (len(self.validity),
+                   len(self.geometry.vcoordinate.levels),
+                   self.geometry.dimensions['Y'],
+                   self.geometry.dimensions['X'])
+
+        if self.spectral:
+            d4 = len(data.shape) == 3
+        else:
+            d4 = len(data.shape) == 4
+        if d4:
+            assert data.shape == shp, \
+                   ' '.join(['data', str(data.shape),
+                             'should have shape', str(shp)])
+        else:
+            # find indexes corresponding to dimensions
+            dimensions = 0
+            indexes = {'t':0, 'z':1, 'y':2, 'x':3}
+            # t, z
+            if len(self.validity) > 1:
                 dimensions += 1
-            if self.geometry.datashape['i']:
-                dimensions += 1
-            dataType = "gridpoint"
-        if len(numpy.shape(data)) != dimensions:
-            raise epygramError(dataType + " data must be " + str(dimensions) + "D array.")
-        if not self.spectral:
-            if 'gauss' in self.geometry.name:
-                total_dim = len(self.validity) * len(self.geometry.vcoordinate.levels) \
-                            * self.geometry.dimensions['lat_number'] * self.geometry.dimensions['max_lon_number']
             else:
-                total_dim = len(self.validity) * len(self.geometry.vcoordinate.levels) \
-                            * self.geometry.dimensions['Y'] * self.geometry.dimensions['X']
-            assert total_dim == len(numpy.array(data).flatten()), 'data has wrong total dimension.'
+                indexes['t'] = None
+                for i in ('z', 'y', 'x'):
+                    indexes[i] = indexes[i] - 1
+            if self.geometry.datashape['k']:
+                dimensions += 1
+            else:
+                indexes['z'] = None
+                for i in ('y', 'x'):
+                    indexes[i] = indexes[i] - 1
+            # y, x or spectral ordering
+            if self.spectral:
+                dimensions += 1
+                dataType = "spectral"
+            else:
+                if self.geometry.datashape['j']:
+                    dimensions += 1
+                else:
+                    indexes['y'] = None
+                    for i in ('x',):
+                        indexes[i] = indexes[i] - 1
+                if self.geometry.datashape['i']:
+                    dimensions += 1
+                else:
+                    indexes['x'] = None
+                dataType = "gridpoint"
+            # check dimensions
+            if len(numpy.shape(data)) != dimensions:
+                raise epygramError(dataType + " data should be " + str(dimensions) + "D array.")
+            if indexes['t'] is not None:
+                assert data.shape[0] == len(self.validity), \
+                       ' == '.join(['data.shape[0] should be len(self.validity)',
+                                    str(len(self.validity))])
+            if self.geometry.datashape['k']:
+                assert data.shape[indexes['z']] == len(self.geometry.vcoordinate.levels), \
+                       ' == '.join(['data.shape[' + str(indexes['z']) + \
+                                    '] should be len(self.geometry.vcoordinate.levels)',
+                                    str(len(self.geometry.vcoordinate.levels))])
+            if not self.spectral:
+                if 'gauss' in self.geometry.name:
+                    if self.geometry.datashape['j']:
+                        assert data.shape[indexes['y']] == self.geometry.dimensions['lat_number'], \
+                               ' == '.join(['data.shape[' + str(indexes['y']) + \
+                                            "] should be self.geometry.dimensions['lat_number']",
+                                            str(self.geometry.dimensions['lat_number'])])
+                    if self.geometry.datashape['i']:
+                        assert data.shape[indexes['x']] == self.geometry.dimensions['max_lon_number'], \
+                               ' == '.join(['data.shape[' + str(indexes['x']) + \
+                                            "] should be self.geometry.dimensions['max_lon_number']",
+                                            str(self.geometry.dimensions['max_lon_number'])])
+                else:
+                    if self.geometry.datashape['j']:
+                        assert data.shape[indexes['y']] == self.geometry.dimensions['Y'], \
+                               ' == '.join(['data.shape[' + str(indexes['y']) + \
+                                            "] should be self.geometry.dimensions['Y']",
+                                            str(self.geometry.dimensions['Y'])])
+                    if self.geometry.datashape['i']:
+                        assert data.shape[indexes['x']] == self.geometry.dimensions['X'], \
+                               ' == '.join(['data.shape[' + str(indexes['x']) + \
+                                            "] should be self.geometry.dimensions['X']",
+                                            str(self.geometry.dimensions['X'])])
+            # reshape to 4D
+            data = data.reshape(shp)
         super(D3Field, self).setdata(data)
 
     def select_subzone(self, subzone):
@@ -1168,7 +1226,6 @@ class D3Field(D3CommonField):
             value = value.item()
         return value
 
-
     def getlevel(self, level=None, k=None):
         """
         Returns a level of the field as a new field.
@@ -1226,7 +1283,34 @@ class D3Field(D3CommonField):
         if self.spectral_geometry is not None:
             kwargs_field['spectral_geometry'] = self.spectral_geometry.copy()
         newfield = fpx.field(**kwargs_field)
-        newfield.setdata(self.data[my_k, :, :])
+        newfield.setdata(self.getdata(d4=True)[:, my_k:my_k + 1, :, :])
+
+        return newfield
+
+    def getvalidity(self, index_or_validity):
+        """
+        Returns the field restrained to one of its temporal validity as a new
+        field.
+        
+        *index_or_validity* can be either a :class:`epygram.base.FieldValidity`
+        instance or the index of the requested validity in the field's
+        FieldValidityList.
+        """
+
+        assert isinstance(index_or_validity, FieldValidity) or isinstance(index_or_validity, int), \
+               "index_or_validity* should be either a FieldValidity instance or an int."
+        if isinstance(index_or_validity, FieldValidity):
+            validity = index_or_validity
+            try:
+                index = self.validity.index(index_or_validity)
+            except ValueError:
+                raise ValueError('*validity* not in field validity.')
+        else:
+            index = index_or_validity
+            validity = self.validity[index]
+        newfield = self.deepcopy()
+        newfield.validity = validity
+        newfield.setdata(self.getdata(d4=True)[index:index + 1, :, :, ])
 
         return newfield
 
