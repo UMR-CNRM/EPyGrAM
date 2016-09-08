@@ -321,8 +321,6 @@ class V2DField(D3Field):
         def update(i, ax, myself, fieldi, title_prefix, kwargs):
             if i < len(myself.validity):
                 ax.clear()
-                if kwargs.get('colorbar_over') is None:
-                    kwargs['colorbar_over'].clear()
                 fieldi.validity = myself.validity[i]
                 fieldi.setdata(myself.getdata()[i, ...])
                 if title_prefix is not None:

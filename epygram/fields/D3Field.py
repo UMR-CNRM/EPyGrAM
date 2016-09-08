@@ -751,7 +751,30 @@ class D3CommonField(Field):
             for key in self.fid:
                 write_formatted(out, "fid " + key, self.fid[key])
 
+    def dump_to_nc(self, filename, variablename=None, fidkey=None):
+        """
+        Dumps the field in a netCDF file named *filename*, with variable
+        name being either *variablename* or self.fid[*fidkey*] or
+        self.fid['netCDF'] if existing.
+        """
+        from epygram.formats import resource
 
+        r = resource(filename, 'w', fmt='netCDF')
+        _fid = self.fid.get('netCDF')
+        assert None in (variablename, fidkey), \
+               "only one of *variablename*, *fidkey* can be provided."
+        if variablename is not None:
+            self.fid['netCDF'] = variablename
+        elif fidkey is not None:
+            self.fid['netCDF'] = self.fid[fidkey]
+        else:
+            assert 'netCDF' in self.fid.keys(), \
+                   ''.join(["must provide *variablename* or *fidkey* for"
+                            "determining variable name in netCDF."])
+        with resource(filename, 'w', fmt='netCDF') as r:
+            r.writefield(self)
+        if _fid is not None:
+            self.fid['netCDF'] = _fid
 
 #############
 # OPERATORS #

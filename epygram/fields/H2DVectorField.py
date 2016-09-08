@@ -167,12 +167,8 @@ class H2DVectorField(Field):
 
     def setdata(self, data):
         """
-        Sets data, checking it to be:
-
-        - 2D if not spectral,
-        - 1D if spectral.
-        
-        data = (data_i for i components)
+        Sets data to its components.
+        *data* = (data_i for i components)
         """
 
         if len(data) != len(self.components):
@@ -460,6 +456,7 @@ class H2DVectorField(Field):
                 if 'gauss' in self.geometry.name and self.geometry.grid['dilatation_coef'] != 1.:
                     module.operation_with_other('*', self.geometry.map_factor_field())
                 fig, ax = module.plotfield(use_basemap=bm,
+                                           over=over,
                                            subzone=subzone,
                                            specificproj=specificproj,
                                            title=title,
@@ -547,6 +544,86 @@ class H2DVectorField(Field):
             ax.set_title(title)
 
         return (fig, ax)
+
+    def plotanimation(self, title='__auto__', repeat=False, interval=1000, **kwargs):
+        """
+        Plot the field with animation with regards to time dimension.
+        Returns a :class:`matplotlib.animation.FuncAnimation`.
+        
+        In addition to those specified below, all :meth:`plotfield` method
+        arguments can be provided.
+        
+        Args:\n
+        - *title* = title for the plot. '__auto__' (default) will print
+          the current validity of the time frame.
+        - *repeat*: to repeat animation
+        - *interval*: number of milliseconds between two validities 
+        """
+
+        import matplotlib.animation as animation
+
+        if len(self.validity) == 1:
+            raise epygramError("plotanimation can handle only field with several validities.")
+
+        if title is not None:
+            if title == '__auto__':
+                title_prefix = ''
+            else:
+                title_prefix = title
+            title = title_prefix + '\n' + self.validity[0].get().isoformat(sep=' ')
+        else:
+            title_prefix = None
+        field0 = self.deepcopy()
+        for c in field0.components:
+            c.validity = self.validity[0]
+        field0.validity = field0.components[0].validity
+        field0.setdata([d[0, ...] for d in self.getdata()])
+        if kwargs.get('plot_module', True):
+            module = self.to_module()
+            mindata = module.getdata(subzone=kwargs.get('subzone')).min()
+            maxdata = module.getdata(subzone=kwargs.get('subzone')).max()
+            plot_module_options = kwargs.get('plot_module_options', {})
+            if plot_module_options == {}:
+                kwargs['plot_module_options'] = {}
+            minmax = plot_module_options.get('minmax')
+            if minmax is None:
+                minmax = (mindata, maxdata)
+            kwargs['plot_module_options']['minmax'] = minmax
+        academic = self.geometry.name == 'academic'
+        if not academic:
+            bm = kwargs.get('use_basemap')
+            if bm is None:
+                bm = self.geometry.make_basemap(gisquality=kwargs.get('gisquality', 'i'),
+                                                subzone=kwargs.get('subzone'),
+                                                specificproj=kwargs.get('specificproj'),
+                                                zoom=kwargs.get('zoom'))
+            kwargs['use_basemap'] = bm
+        fig, ax = field0.plotfield(title=title,
+                                   **kwargs)
+        if kwargs.get('plot_module', True):
+            if kwargs['plot_module_options'].get('colorbar_over') is None:
+                kwargs['plot_module_options']['colorbar_over'] = fig.axes[-1]  # the last being created, in plotfield()
+        kwargs['over'] = (fig, ax)
+
+        def update(i, ax, myself, fieldi, title_prefix, kwargs):
+            if i < len(myself.validity):
+                ax.clear()
+                for c in fieldi.components:
+                    c.validity = myself.validity[i]
+                fieldi.validity = fieldi.components[0].validity
+                fieldi.setdata([d[i, ...] for d in myself.getdata()])
+                if title_prefix is not None:
+                    title = title_prefix + '\n' + fieldi.validity.get().isoformat(sep=' ')
+                fieldi.plotfield(title=title,
+                                 **kwargs)
+
+        anim = animation.FuncAnimation(fig, update,
+                                       fargs=[ax, self, field0, title_prefix, kwargs],
+                                       frames=range(len(self.validity) + 1),  # AM: don't really understand why but needed for the last frame to be shown
+                                       interval=interval,
+                                       repeat=repeat)
+
+        return anim
 
     def getvalue_ij(self, *args, **kwargs):
         """
