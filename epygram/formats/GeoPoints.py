@@ -454,7 +454,7 @@ class GeoPoints(FileResource):
                                               " that are not PointField.")
                 writebuffer['LON'].append(pt.geometry.hlocation['lon'].get('degrees'))
                 writebuffer['LAT'].append(pt.geometry.hlocation['lat'].get('degrees'))
-                writebuffer['VALUE'].append(float(pt.data))
+                writebuffer['VALUE'].append(float(pt.getdata()))
                 if 'DATE' in self.columns or 'TIME' in self.columns:
                     date = pt.validity.get(fmt='IntStr')
                     if 'TIME' in self.columns:

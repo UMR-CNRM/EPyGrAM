@@ -155,7 +155,7 @@ class V2DField(D3Field):
                         'max':config.mask_outside}
         if mask_threshold is not None:
             mask_outside.update(mask_threshold)
-        data = numpy.ma.masked_outside(self.data,
+        data = numpy.ma.masked_outside(self.getdata(),
                                        mask_outside['min'],
                                        mask_outside['max'])
         #FIXME: mask_threshold does not produce expected results
@@ -196,6 +196,7 @@ class V2DField(D3Field):
             ax.set_yscale('log')
         ax.grid()
         if graphicmode == 'colorshades':
+            print x.shape, z.shape, data.shape
             pf = ax.contourf(x, z, data, levels, cmap=colormap,
                              vmin=vmin, vmax=vmax)
             if colorbar:

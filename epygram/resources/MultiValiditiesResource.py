@@ -17,17 +17,6 @@ from epygram.base import Resource, FieldSet, FieldValidityList
 
 
 
-def timeresource(list_of_filenames, openmode):
-    """
-    Build and return a MultiValiditiesResource from a list of filenames.
-    """
-    from epygram.formats import resource
-
-    resources = [resource(f, openmode, fmtdelayedopen=True) for f in list_of_filenames]
-    a2DplusTime_resource = MultiValiditiesResource(name='MultiValidities', resources=resources, openmode=openmode)
-
-    return a2DplusTime_resource
-
 class _open_and_close(object):
     def __init__(self, r):
         self.r = r
@@ -291,17 +280,19 @@ class MultiValiditiesResource(Resource):
                 raise epygramError("All fields must be of the same kind")
 
         # Returned field
-        shape = tuple([len(fieldset)] + list(fieldset[0].getdata().shape))
-        data = numpy.ndarray(shape)
         fieldvaliditylist = FieldValidityList()
         fieldvaliditylist.pop()
         for i in range(len(fieldset)):
             field = fieldset[validities[sortedValidities[i]]]
             fieldvaliditylist.extend(field.validity)
-            data[i, ...] = field.getdata()[...]
-        if geometry.datashape['k']:  #TOBECHECKED: not geometry.datashape['k']:
-            shape = tuple([shape[0]] + [1] + list(shape[1:]))
-            data = data.reshape(shape)
+            if i == 0:
+                data = field.getdata(d4=True)
+            else:
+                if isinstance(data, numpy.ma.masked_array):
+                    concat = numpy.ma.concatenate
+                else:
+                    concat = numpy.concatenate
+                data = concat([data, field.getdata(d4=True)], axis=0)
         if not sameProcesstype:
             kwargs_field['processtype'] = None
 

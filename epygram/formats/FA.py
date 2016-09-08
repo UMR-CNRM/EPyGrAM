@@ -993,7 +993,7 @@ class FA(FileResource):
                         " this FA: overwrite.")
 
         if isinstance(field, MiscField):
-            data = field.data
+            data = field.getdata()
             if field.shape in ((1,), ()):
                 if 'int' in field.datatype.name:
                     dataReal = data.view('float64')
@@ -1043,7 +1043,7 @@ class FA(FileResource):
             if self.validity.cumulativeduration() is None and field.validity.cumulativeduration() is not None:
                 self.validity.set(cumulativeduration=field.validity.cumulativeduration())
                 self._set_validity()
-            data = numpy.ma.copy(field.data).flatten()
+            data = numpy.ma.copy(field.getdata()).flatten()
             if isinstance(data, numpy.ma.core.MaskedArray):
                 data = numpy.copy(data[data.mask == False].data)
             if compression is not None:

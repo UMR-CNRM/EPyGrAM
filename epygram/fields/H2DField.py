@@ -545,9 +545,9 @@ class H2DField(D3Field):
                 i = int(i)
                 j = int(j)
                 if increment:
-                    self.data[:, :, j, i] = self.data[:, :, j, i] + p.data
+                    self.data[:, :, j, i] = self.data[:, :, j, i] + p.getdata()
                 else:
-                    self.data[:, :, j, i] = alpha * p.data + (1. - alpha) * self.data[:, :, j, i]
+                    self.data[:, :, j, i] = alpha * p.getdata() + (1. - alpha) * self.data[:, :, j, i]
             elif morphing == 'gaussian':
                 sigma = kwargs['sigma']
                 lon = p.geometry.grid['longitudes'][0]
@@ -562,10 +562,10 @@ class H2DField(D3Field):
                         (i, j) = selection_points_ij[selection_points_ll.index(sp)]
                         if increment:
                             local_alpha = numpy.exp(-distance ** 2 / (2 * sigma ** 2))
-                            self.data[:, :, j, i] = self.data[:, :, j, i] + local_alpha * p.data
+                            self.data[:, :, j, i] = self.data[:, :, j, i] + local_alpha * p.getdata()
                         else:
                             local_alpha = alpha * numpy.exp(-distance ** 2 / (2 * sigma ** 2))
-                            self.data[:, :, j, i] = local_alpha * p.data + (1. - local_alpha) * self.data[j, i]
+                            self.data[:, :, j, i] = local_alpha * p.getdata() + (1. - local_alpha) * self.data[:, :, j, i]
             else:
                 raise NotImplementedError("not yet.")
 

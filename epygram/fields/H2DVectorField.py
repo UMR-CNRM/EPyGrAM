@@ -163,7 +163,7 @@ class H2DVectorField(Field):
 
     @property
     def data(self):
-        return self.getdata()
+        return self.getdata(d4=True)  #TOBECHECKED: overload of a footprints attribute seems not to work
 
     def setdata(self, data):
         """

@@ -16,6 +16,8 @@ from footprints import FPDict, proxy as fpx
 from epygram.base import Resource, FieldSet
 from epygram import epygramError
 
+
+
 class CombineLevelsResource(Resource):
     """Class implementing a CombineLevelsResource."""
 

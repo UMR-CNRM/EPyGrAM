@@ -310,6 +310,27 @@ class D3Geometry(RecursiveObject, FootprintBase):
                                   'LAMzone':None},
                             position_on_horizontal_grid='center' if position == None else position)
 
+    def _reshape_lonlat_4d(self, lons, lats, nb_validities):
+        """Make lons, lats grids 4D."""
+        if nb_validities < 1:
+            raise ValueError("nb_validities must be >=1 when d4==True")
+        # We add vertical dimension
+        shape = tuple(list(lons.shape) + [len(self.vcoordinate.levels)])
+        lons = lons.repeat(len(self.vcoordinate.levels)).reshape(shape)
+        lats = lats.repeat(len(self.vcoordinate.levels)).reshape(shape)
+        shape_range = range(len(shape))
+        lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
+        lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
+        # We add validities
+        shape = tuple(list(lons.shape) + [nb_validities])
+        lons = lons.repeat(nb_validities).reshape(shape)
+        lats = lats.repeat(nb_validities).reshape(shape)
+        shape_range = range(len(shape))
+        lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
+        lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
+
+        return lons, lats
+
 ###################
 # PRE-APPLICATIVE #
 ###################
@@ -584,29 +605,12 @@ class D3RectangularGridGeometry(D3Geometry):
         (lons, lats) = self._get_grid('ll', subzone=subzone, position=position)
 
         if d4:
-            if nb_validities < 1:
-                raise ValueError("nb_validities must be >=1 when d4==True")
-            # We add vertical dimension
-            shape = tuple(list(lons.shape) + [len(self.vcoordinate.levels)])
-            lons = lons.repeat(len(self.vcoordinate.levels)).reshape(shape)
-            lats = lats.repeat(len(self.vcoordinate.levels)).reshape(shape)
-            shape_range = range(len(shape))
-            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
-            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
-            # We add validities
-            shape = tuple(list(lons.shape) + [nb_validities])
-            lons = lons.repeat(nb_validities).reshape(shape)
-            lats = lats.repeat(nb_validities).reshape(shape)
-            shape_range = range(len(shape))
-            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
-            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
-        elif nb_validities > 0:
-            shape = tuple(list(lons.shape) + [nb_validities])
-            lons = lons.repeat(nb_validities).reshape(shape)
-            lats = lats.repeat(nb_validities).reshape(shape)
-            shape_range = range(len(shape))
-            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
-            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
+            lons, lats = self._reshape_lonlat_4d(lons, lats, nb_validities)
+        elif not d4 and nb_validities != 0:
+            raise ValueError("*nb_validities* must be 0 when d4==False")
+        else:
+            lons = lons.squeeze()
+            lats = lats.squeeze()
 
         return (lons, lats)
 
@@ -1087,29 +1091,12 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
             lats = self.extract_subzone(lats, subzone)
 
         if d4:
-            if nb_validities < 1:
-                raise ValueError("nb_validities must be >=1 when d4==True")
-            # We add vertical dimension
-            shape = tuple(list(lons.shape) + [len(self.vcoordinate.levels)])
-            lons = lons.repeat(len(self.vcoordinate.levels)).reshape(shape)
-            lats = lats.repeat(len(self.vcoordinate.levels)).reshape(shape)
-            shape_range = range(len(shape))
-            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
-            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
-            # We add validities
-            shape = tuple(list(lons.shape) + [nb_validities])
-            lons = lons.repeat(nb_validities).reshape(shape)
-            lats = lats.repeat(nb_validities).reshape(shape)
-            shape_range = range(len(shape))
-            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
-            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
-        elif nb_validities > 0:
-            shape = tuple(list(lons.shape) + [nb_validities])
-            lons = lons.repeat(nb_validities).reshape(shape)
-            lats = lats.repeat(nb_validities).reshape(shape)
-            shape_range = range(len(shape))
-            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
-            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
+            lons, lats = self._reshape_lonlat_4d(lons, lats, nb_validities)
+        elif not d4 and nb_validities != 0:
+            raise ValueError("*nb_validities* must be 0 when d4==False")
+        else:
+            lons = lons.squeeze()
+            lats = lats.squeeze()
 
         return (lons, lats)
 
@@ -3074,7 +3061,7 @@ class D3GaussGeometry(D3Geometry):
         if hasattr(self, '_buffered_gauss_grid'):
             del self._buffered_gauss_grid
 
-    def get_lonlat_grid(self, position=None, d4=False, nb_validities=0, **kwargs):
+    def get_lonlat_grid(self, position=None, d4=False, nb_validities=0, **useless):
         """
         Returns a tuple of two tables containing one the longitude of each
         point, the other the latitude, with 2D shape.
@@ -3092,7 +3079,7 @@ class D3GaussGeometry(D3Geometry):
                 d4=True requires nb_validities > 0
         - *nb_validities* is the number of validities represented in data values
         """
-        # !!! **kwargs enables the method to receive arguments specific to
+        # !!! **useless enables the method to receive arguments specific to
         #     other geometries but useless here ! Do not remove.
 
         if hasattr(self, '_buffered_gauss_grid') and self._buffered_gauss_grid.get('filled'):
@@ -3115,29 +3102,9 @@ class D3GaussGeometry(D3Geometry):
                 self._buffered_gauss_grid['filled'] = True
 
         if d4:
-            if nb_validities < 1:
-                raise ValueError("nb_validities must be >=1 when d4==True")
-            # We add vertical dimension
-            shape = tuple(list(lons.shape) + [len(self.vcoordinate.levels)])
-            lons = lons.repeat(len(self.vcoordinate.levels)).reshape(shape)
-            lats = lats.repeat(len(self.vcoordinate.levels)).reshape(shape)
-            shape_range = range(len(shape))
-            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
-            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
-            # We add validities
-            shape = tuple(list(lons.shape) + [nb_validities])
-            lons = lons.repeat(nb_validities).reshape(shape)
-            lats = lats.repeat(nb_validities).reshape(shape)
-            shape_range = range(len(shape))
-            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
-            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
-        elif nb_validities > 0:
-            shape = tuple(list(lons.shape) + [nb_validities])
-            lons = lons.repeat(nb_validities).reshape(shape)
-            lats = lats.repeat(nb_validities).reshape(shape)
-            shape_range = range(len(shape))
-            lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
-            lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
+            lons, lats = self._reshape_lonlat_4d(lons, lats, nb_validities)
+        elif not d4 and nb_validities != 0:
+            raise ValueError("*nb_validities* must be 0 when d4==False")
 
         return (lons, lats)
 

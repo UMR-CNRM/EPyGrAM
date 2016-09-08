@@ -515,6 +515,9 @@ class D3CommonField(Field):
         *zoom* being a dict(lonmin=, lonmax=, latmin=, latmax=).
         """
 
+        assert not self.spectral, \
+               "spectral field: convert to gridpoint beforehand"
+
         (lons, lats) = self.geometry.get_lonlat_grid()
         lons = lons.flatten()
         lats = lats.flatten()
@@ -1022,25 +1025,13 @@ class D3Field(D3CommonField):
         """
 
         data = self.data
-        if self.spectral:
-            # just remove t and k dimensions if of size 1
-            if not d4:
-                data = self.data.squeeze()
-        else:
-            if subzone is not None:
-                if self.geometry.grid.get('LAMzone') is not None:
-                    data = self.geometry.extract_subzone(data, subzone)
-                else:
-                    raise epygramError("*subzone* cannot be provided for this field.")
-            if not d4:
-                data = data.squeeze()  #TOBECHECKED: OK or make it depend on the structure ?
-            #shp = self.geometry.get_datashape(len(self.validity), d4=True)
-            #if shp[0] == shp[1] == 1:
-            #    data = data[0, 0, ...]
-            #elif shp[0] == 1:
-            #    data = data[0, ...]
-            #elif shp[1] == 1:
-            #    data = data[:, 0, ...]
+        if not self.spectral and subzone is not None:
+            if self.geometry.grid.get('LAMzone') is not None:
+                data = self.geometry.extract_subzone(data, subzone)
+            else:
+                raise epygramError("*subzone* cannot be provided for this field.")
+        if not d4:
+            data = data.squeeze()  #TOBECHECKED: OK or keep Y ? In that case, need to modify geometry.get_lonlat_grid() too
 
         return data
 

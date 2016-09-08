@@ -720,7 +720,7 @@ class LFI(FileResource):
             elif fid in writtenfields:
                 keep = False
                 #In case of a special record already written in file, value must be the same
-                if self.readfield(fid).data != field.data:
+                if self.readfield(fid).getdata() != field.getdata():
                     raise epygramError("there already is a field with the same name in this LFI with a different value.")
             #check for level validity
             if isinstance(field, H2DField) or isinstance(field, D3Field):
@@ -744,9 +744,9 @@ class LFI(FileResource):
                 if record not in specialValues:
                     if (record if self.true3d else (record, None)) in appendedfields:
                         for f in myFieldset:
-                            if (f.fid if self.true3d else f.fid[0]) == record: specialValues[record] = f.data
+                            if (f.fid if self.true3d else f.fid[0]) == record: specialValues[record] = f.getdata()
                     elif (record if self.true3d else (record, None)) in writtenfields:
-                        specialValues[record] = self.readfield(record if self.true3d else (record, None)).data
+                        specialValues[record] = self.readfield(record if self.true3d else (record, None)).getdata()
                     else:
                         specialValues[record] = value
                         if record == 'LFI_COMPRESSED': keep = value  #we keep it only if its value is True
@@ -805,13 +805,13 @@ class LFI(FileResource):
                             raise epygramError("All fields composing a same 3D field must have the same position on grid.")
                         done.append(num)
                         if dataInt == None:
-                            dataInt = numpy.ndarray(field.data.size * (len(field.geometry.vcoordinate.grid['gridlevels']) + 1), dtype='int64')
-                        dataInt[level * field.data.size:(level + 1) * field.data.size] = numpy.ma.copy(f.data).view('int64').flatten()
+                            dataInt = numpy.ndarray(field.getdata().size * (len(field.geometry.vcoordinate.grid['gridlevels']) + 1), dtype='int64')
+                        dataInt[level * field.getdata().size:(level + 1) * field.getdata().size] = numpy.ma.copy(f.getdata()).view('int64').flatten()
                 else:
                     if (isinstance(field, H2DField) and not self.true3d) or (isinstance(field, D3Field) and self.true3d):
-                        dataInt = numpy.ma.copy(field.data).view('int64').flatten()
+                        dataInt = numpy.ma.copy(field.getdata()).view('int64').flatten()
                     else:  #Misc type
-                        data = field.data
+                        data = field.getdata()
                         if 'int' in field.datatype.name:
                             dataInt = data.flatten()
                         elif 'str' in field.datatype.name:
@@ -1176,19 +1176,19 @@ class LFI(FileResource):
                 return (name, level)
         listnames = self._listLFInames()
         if 'CARTESIAN' in listnames:
-            cartesian = self.readfield(s('CARTESIAN', None)).data
+            cartesian = self.readfield(s('CARTESIAN', None)).getdata()
         else: cartesian = False
         if cartesian:
-            imax = int(self.readfield(s('IMAX', None)).data)
-            jmax = int(self.readfield(s('JMAX', None)).data)
-            xhat = self.readfield(s('XHAT', None)).data
-            yhat = self.readfield(s('YHAT', None)).data
-            lat0 = self.readfield(s('LAT0', None)).data
-            lon0 = self.readfield(s('LON0', None)).data
+            imax = int(self.readfield(s('IMAX', None)).getdata())
+            jmax = int(self.readfield(s('JMAX', None)).getdata())
+            xhat = self.readfield(s('XHAT', None)).getdata()
+            yhat = self.readfield(s('YHAT', None)).getdata()
+            lat0 = self.readfield(s('LAT0', None)).getdata()
+            lon0 = self.readfield(s('LON0', None)).getdata()
             if 'KMAX' in listnames:
-                kmax = int(self.readfield(s('KMAX', None)).data)
+                kmax = int(self.readfield(s('KMAX', None)).getdata())
                 if kmax > 1:
-                    zhat = self.readfield(s('ZHAT', None)).data
+                    zhat = self.readfield(s('ZHAT', None)).getdata()
                     kmax += 2
             else: kmax = 0
             grid = {'X_resolution':xhat[1] - xhat[0],
@@ -1216,20 +1216,20 @@ class LFI(FileResource):
                                geoid=config.LFI_default_geoid,
                               )
         else:
-            lat0 = self.readfield(s('LAT0', None)).data
-            lon0 = self.readfield(s('LON0', None)).data
-            lat1 = self.readfield(s('LATORI' if 'LATORI' in listnames else 'LATOR', None)).data
-            lon1 = self.readfield(s('LONORI' if 'LONORI' in listnames else 'LONOR', None)).data
-            rpk = self.readfield(s('RPK', None)).data
-            beta = float(self.readfield(s('BETA', None)).data)
-            imax = int(self.readfield(s('IMAX', None)).data)
-            jmax = int(self.readfield(s('JMAX', None)).data)
-            xhat = self.readfield(s('XHAT', None)).data
-            yhat = self.readfield(s('YHAT', None)).data
+            lat0 = self.readfield(s('LAT0', None)).getdata()
+            lon0 = self.readfield(s('LON0', None)).getdata()
+            lat1 = self.readfield(s('LATORI' if 'LATORI' in listnames else 'LATOR', None)).getdata()
+            lon1 = self.readfield(s('LONORI' if 'LONORI' in listnames else 'LONOR', None)).getdata()
+            rpk = self.readfield(s('RPK', None)).getdata()
+            beta = float(self.readfield(s('BETA', None)).getdata())
+            imax = int(self.readfield(s('IMAX', None)).getdata())
+            jmax = int(self.readfield(s('JMAX', None)).getdata())
+            xhat = self.readfield(s('XHAT', None)).getdata()
+            yhat = self.readfield(s('YHAT', None)).getdata()
             if 'KMAX' in listnames:
-                kmax = int(self.readfield(s('KMAX', None)).data)
+                kmax = int(self.readfield(s('KMAX', None)).getdata())
                 if kmax > 1:
-                    zhat = self.readfield(s('ZHAT', None)).data
+                    zhat = self.readfield(s('ZHAT', None)).getdata()
                     kmax += 2
             else: kmax = 0
 
@@ -1292,7 +1292,7 @@ class LFI(FileResource):
         if kmax > 1:
             H = zhat[-1]
             if 'SLEVE' in listnames:
-                sleve = self.readfield(s('SLEVE', None)).data
+                sleve = self.readfield(s('SLEVE', None)).getdata()
             else: sleve = False
             Ai = [c for c in zhat[0:kmax + 2]][1:]
             Bi = [1 - c / H for c in zhat[0:kmax + 2]][1:]
@@ -1327,22 +1327,22 @@ class LFI(FileResource):
         listnames = self._listLFInames()
         kwargs = {}
         if 'DTEXP%TDATE' in listnames:
-            dtexpDate = self.readfield(s('DTEXP%TDATE', None)).data
-            dtexpTime = float(self.readfield(s('DTEXP%TIME', None)).data)
+            dtexpDate = self.readfield(s('DTEXP%TDATE', None)).getdata()
+            dtexpTime = float(self.readfield(s('DTEXP%TIME', None)).getdata())
             kwargs['basis'] = (datetime.datetime(dtexpDate[0],
                                                  dtexpDate[1],
                                                  dtexpDate[2]) +
                                datetime.timedelta(seconds=dtexpTime))
             if 'DTCUR%TDATE' in listnames:
-                dtcurDate = self.readfield(s('DTCUR%TDATE', None)).data
-                dtcurTime = float(self.readfield(s('DTCUR%TIME', None)).data)
+                dtcurDate = self.readfield(s('DTCUR%TDATE', None)).getdata()
+                dtcurTime = float(self.readfield(s('DTCUR%TIME', None)).getdata())
                 kwargs['term'] = (datetime.datetime(dtcurDate[0],
                                                     dtcurDate[1],
                                                     dtcurDate[2]) +
                                   datetime.timedelta(seconds=dtcurTime) - kwargs['basis'])
         elif 'DTCUR%TDATE' in listnames:
-            dtcurDate = self.readfield(s('DTCUR%TDATE', None)).data
-            dtcurTime = float(self.readfield(s('DTCUR%TIME', None)).data)
+            dtcurDate = self.readfield(s('DTCUR%TDATE', None)).getdata()
+            dtcurTime = float(self.readfield(s('DTCUR%TIME', None)).getdata())
             kwargs['date_time'] = datetime.datetime(dtcurDate[0],
                                                     dtcurDate[1],
                                                     dtcurDate[2]) + \
@@ -1357,7 +1357,7 @@ class LFI(FileResource):
         """
         if self._compressed == None:
             if 'LFI_COMPRESSED' in self._listLFInames():
-                self._compressed = self.readfield('LFI_COMPRESSED' if self.true3d else ('LFI_COMPRESSED', None)).data
+                self._compressed = self.readfield('LFI_COMPRESSED' if self.true3d else ('LFI_COMPRESSED', None)).getdata()
             else:
                 self._compressed = False
 

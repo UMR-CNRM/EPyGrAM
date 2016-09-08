@@ -93,7 +93,7 @@ class DDHLFA(LFA):
 
         if self.openmode == 'r':
             # read info
-            self._attributes['xpid'] = super(DDHLFA, self).readfield('INDICE EXPERIENCE').data[0]
+            self._attributes['xpid'] = super(DDHLFA, self).readfield('INDICE EXPERIENCE').getdata()[0]
             self._read_geometry()
             self._read_validity()
         else:
@@ -200,7 +200,7 @@ class DDHLFA(LFA):
                 # surface fields
                 for d in range(self.domains['number']):
                     if getdata:
-                        value = field_from_LFA.data[d]
+                        value = field_from_LFA.getdata()[d]
                     domain = self.domains['geometry'][d]
                     pgeometry = geom_builder(structure='Point',
                                              name='DDH:' + domain['type'],
@@ -224,7 +224,7 @@ class DDHLFA(LFA):
                     fieldlevels = wlfa.wlfacas(self._unit, fieldname)[1]\
                                   / self.domains['number']
                 else:
-                    fieldlevels = len(field_from_LFA.data)\
+                    fieldlevels = len(field_from_LFA.getdata())\
                                   / self.domains['number']
                 if fieldlevels == self.levels['VT']:
                     position_on_grid = 'mass'
@@ -257,7 +257,7 @@ class DDHLFA(LFA):
                                                  position_on_grid=position_on_grid),
                                              dimensions={'X':1, 'Y':1})
                     if getdata:
-                        profile = field_from_LFA.data[d * fieldlevels:(d + 1) * fieldlevels]
+                        profile = field_from_LFA.getdata()[d * fieldlevels:(d + 1) * fieldlevels]
                     field = field_builder(structure='V1D',
                                           fid={self.format:fieldname, 'generic':FPDict()},
                                           geometry=vgeometry,
@@ -436,18 +436,18 @@ class DDHLFA(LFA):
         vpp_init = super(DDHLFA, self).readfield('VPP0')
         vpp_term = super(DDHLFA, self).readfield('VPP1')
 
-        NFLEV = DOCFICHIER.data[5]
+        NFLEV = DOCFICHIER.getdata()[5]
         self._attributes['levels'] = {'VT':NFLEV, 'F':NFLEV + 1}
 
-        if DOCFICHIER.data[0] == 1:
+        if DOCFICHIER.getdata()[0] == 1:
             domains['type'] = 'limited_area_domains'
-        elif DOCFICHIER.data[0] == 5:
+        elif DOCFICHIER.getdata()[0] == 5:
             domains['type'] = 'global_domain'
-        elif DOCFICHIER.data[0] == 6:
+        elif DOCFICHIER.getdata()[0] == 6:
             domains['type'] = 'zonal_bands'
         else:
             raise NotImplementedError("DOCFICHIER[0] not among (1,5,6).")
-        domains['number'] = DOCFICHIER.data[14]
+        domains['number'] = DOCFICHIER.getdata()[14]
         domains['geometry'] = []
         domains['vertical_grid'] = []
         if self.xpid == 'ARPE':
@@ -457,64 +457,65 @@ class DDHLFA(LFA):
         for d in range(1, domains['number'] + 1):
             DOCD = self.readfield('DOCD' + '{:0>{width}}'.format(str(d),
                                                                  width=3))
+            DOCD_data = DOCD.getdata()
             geom = {}
-            if DOCD.data[10] == 1.:
+            if DOCD_data[10] == 1.:
                 geom['type'] = 'ij_point'
-                geom['lon'] = Angle(DOCD.data[2], 'radians')
-                geom['lat'] = Angle(math.asin(DOCD.data[3]), 'radians')
-                geom['jlon'] = int(DOCD.data[4])
-                geom['jlgl'] = int(DOCD.data[5])
-            elif DOCD.data[10] == 4.:
+                geom['lon'] = Angle(DOCD_data[2], 'radians')
+                geom['lat'] = Angle(math.asin(DOCD_data[3]), 'radians')
+                geom['jlon'] = int(DOCD_data[4])
+                geom['jlgl'] = int(DOCD_data[5])
+            elif DOCD_data[10] == 4.:
                 geom['type'] = 'point'
-                geom['lon'] = Angle(DOCD.data[2], 'radians')
-                geom['lat'] = Angle(math.asin(DOCD.data[3]), 'radians')
-                geom['jlon'] = int(DOCD.data[4])
-                geom['jgl'] = int(DOCD.data[5])
-                geom['user_lon'] = Angle(DOCD.data[6], 'radians')
-                geom['user_lat'] = Angle(math.asin(DOCD.data[7]), 'radians')
-            elif DOCD.data[10] == 2.:
+                geom['lon'] = Angle(DOCD_data[2], 'radians')
+                geom['lat'] = Angle(math.asin(DOCD_data[3]), 'radians')
+                geom['jlon'] = int(DOCD_data[4])
+                geom['jgl'] = int(DOCD_data[5])
+                geom['user_lon'] = Angle(DOCD_data[6], 'radians')
+                geom['user_lat'] = Angle(math.asin(DOCD_data[7]), 'radians')
+            elif DOCD_data[10] == 2.:
                 geom['type'] = 'quadrilateral'
-                geom['lon1'] = Angle(DOCD.data[2], 'radians')
-                geom['lat1'] = Angle(math.asin(DOCD.data[3]), 'radians')
-                geom['lon2'] = Angle(DOCD.data[4], 'radians')
-                geom['lat2'] = Angle(math.asin(DOCD.data[5]), 'radians')
-                geom['lon3'] = Angle(DOCD.data[6], 'radians')
-                geom['lat3'] = Angle(math.asin(DOCD.data[7]), 'radians')
-                geom['lon4'] = Angle(DOCD.data[8], 'radians')
-                geom['lat4'] = Angle(math.asin(DOCD.data[9]), 'radians')
-            elif DOCD.data[10] == 3.:
+                geom['lon1'] = Angle(DOCD_data[2], 'radians')
+                geom['lat1'] = Angle(math.asin(DOCD_data[3]), 'radians')
+                geom['lon2'] = Angle(DOCD_data[4], 'radians')
+                geom['lat2'] = Angle(math.asin(DOCD_data[5]), 'radians')
+                geom['lon3'] = Angle(DOCD_data[6], 'radians')
+                geom['lat3'] = Angle(math.asin(DOCD_data[7]), 'radians')
+                geom['lon4'] = Angle(DOCD_data[8], 'radians')
+                geom['lat4'] = Angle(math.asin(DOCD_data[9]), 'radians')
+            elif DOCD_data[10] == 3.:
                 geom['type'] = 'rectangle'
-                geom['lon1'] = Angle(DOCD.data[2], 'radians')
-                geom['lat1'] = Angle(math.asin(DOCD.data[3]), 'radians')
-                geom['lon2'] = Angle(DOCD.data[4], 'radians')
-                geom['lat2'] = Angle(math.asin(DOCD.data[5]), 'radians')
-                geom['lon3'] = Angle(DOCD.data[6], 'radians')
-                geom['lat3'] = Angle(math.asin(DOCD.data[7]), 'radians')
-                geom['lon4'] = Angle(DOCD.data[8], 'radians')
-                geom['lat4'] = Angle(math.asin(DOCD.data[9]), 'radians')
-            elif DOCD.data[10] == 5.:
+                geom['lon1'] = Angle(DOCD_data[2], 'radians')
+                geom['lat1'] = Angle(math.asin(DOCD_data[3]), 'radians')
+                geom['lon2'] = Angle(DOCD_data[4], 'radians')
+                geom['lat2'] = Angle(math.asin(DOCD_data[5]), 'radians')
+                geom['lon3'] = Angle(DOCD_data[6], 'radians')
+                geom['lat3'] = Angle(math.asin(DOCD_data[7]), 'radians')
+                geom['lon4'] = Angle(DOCD_data[8], 'radians')
+                geom['lat4'] = Angle(math.asin(DOCD_data[9]), 'radians')
+            elif DOCD_data[10] == 5.:
                 geom['type'] = 'globe'
-            elif DOCD.data[10] == 6.:
+            elif DOCD_data[10] == 6.:
                 geom['type'] = 'zonal_bands'
-                geom['lat'] = Angle(math.asin(DOCD.data[3]), 'radians')
-                geom['band'] = DOCD.data[1]
-                geom['bands_number'] = DOCD.data[2]
+                geom['lat'] = Angle(math.asin(DOCD_data[3]), 'radians')
+                geom['band'] = DOCD_data[1]
+                geom['bands_number'] = DOCD_data[2]
             else:
-                raise ValueError('unknown value: ' + str(DOCD.data[10]) + \
+                raise ValueError('unknown value: ' + str(DOCD_data[10]) + \
                                  ' for DOCD' + '{:0>{width}}'.format(str(d),
                                                                      width=3))
             # vertical grid
             dm1 = d - 1
             vgrid = {}
-            fluxlevels_pressure_init = vpp_init.data[dm1 * self.levels['VT']:(dm1 + 1) * self.levels['VT']
-                                                     ] * config.g0
+            fluxlevels_pressure_init = vpp_init.getdata()[dm1 * self.levels['VT']:(dm1 + 1) * self.levels['VT']
+                                                          ] * config.g0
             fluxlevels_pressure_init = [sum(fluxlevels_pressure_init[0:i])
                                         for i in range(1, len(fluxlevels_pressure_init) + 1)]
             vgrid['fluxlevels_pressure_init'] = [0.] + fluxlevels_pressure_init
             vgrid['masslevels_pressure_init'] = profiles.flux2masspressures(fluxlevels_pressure_init,
                                                                             vertical_mean)
-            fluxlevels_pressure_term = vpp_term.data[dm1 * self.levels['VT']:(dm1 + 1) * self.levels['VT']
-                                                     ] * config.g0
+            fluxlevels_pressure_term = vpp_term.getdata()[dm1 * self.levels['VT']:(dm1 + 1) * self.levels['VT']
+                                                          ] * config.g0
             fluxlevels_pressure_term = [sum(fluxlevels_pressure_term[0:i])
                                         for i in range(1, len(fluxlevels_pressure_term) + 1)]
             vgrid['fluxlevels_pressure_term'] = [0.] + fluxlevels_pressure_term
@@ -533,24 +534,25 @@ class DDHLFA(LFA):
         """
 
         DATE = self.readfield('DATE')
-        year = DATE.data[0]
-        month = DATE.data[1]
-        day = DATE.data[2]
-        hour = DATE.data[3]
-        minute = DATE.data[4]
-        processtype = DATE.data[8]
+        DATE_data = DATE.getdata()
+        year = DATE_data[0]
+        month = DATE_data[1]
+        day = DATE_data[2]
+        hour = DATE_data[3]
+        minute = DATE_data[4]
+        processtype = DATE_data[8]
         if   processtype == 0:
             self.processtype = 'analysis'
         elif processtype == 1:
             self.processtype = 'initialization'
         elif processtype == 10:
             self.processtype = 'forecast'
-        # cumulated_timesteps = DATE.data[9]
+        # cumulated_timesteps = DATE_data[9]
 
         basis = datetime.datetime(year, month, day, hour, minute)
 
         ECHEANCE = self.readfield('ECHEANCE')
-        term = datetime.timedelta(seconds=int(ECHEANCE.data[0]))
+        term = datetime.timedelta(seconds=int(ECHEANCE.getdata()[0]))
         cumulativeduration = term
 
         self.validity = FieldValidity(basis=basis,

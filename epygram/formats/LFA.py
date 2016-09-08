@@ -143,7 +143,7 @@ class LFA(FileResource):
         if not isinstance(field, epygram.base.Field):
             raise epygramError("'field' argument has to be a" + \
                                " epygram.base.Field.")
-        data = numpy.array(field.data)
+        data = numpy.array(field.getdata())
         if len(data.shape) != 1:
             raise epygramError("LFA can only hold 1D arrays.")
 
