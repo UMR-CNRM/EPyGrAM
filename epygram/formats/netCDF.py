@@ -608,6 +608,7 @@ class netCDF(FileResource):
             return var, status
 
         assert field.fid.has_key('netCDF')
+        assert not field.spectral
 
         # 1. dimensions
         T = Y = X = G = N = None

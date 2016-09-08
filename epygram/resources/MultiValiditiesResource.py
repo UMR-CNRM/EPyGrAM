@@ -201,6 +201,8 @@ class MultiValiditiesResource(Resource):
                 kwargs_geom[k] = dict(v)
         geometry = fpx.geometry(**kwargs_geom)
         kwargs_vcoord = copy.deepcopy(fieldset[0].geometry.vcoordinate.footprint_as_dict())
+        if kwargs_vcoord['grid'].get('gridlevels'):
+            kwargs_vcoord['grid']['gridlevels'] = FPList(kwargs_vcoord['grid']['gridlevels'])
         kwargs_vcoord['levels'] = []
         vcoordinate = fpx.geometry(**kwargs_vcoord)
         levels = fieldset[0].geometry.vcoordinate.levels
@@ -216,6 +218,8 @@ class MultiValiditiesResource(Resource):
                     kwargs_geom[k] = dict(v)
             geometry_field = fpx.geometry(**kwargs_geom)
             kwargs_vcoord = copy.deepcopy(field.geometry.vcoordinate.footprint_as_dict())
+            if kwargs_vcoord['grid'].get('gridlevels'):
+                kwargs_vcoord['grid']['gridlevels'] = FPList(kwargs_vcoord['grid']['gridlevels'])
             kwargs_vcoord['levels'] = []
             vcoordinate_field = fpx.geometry(**kwargs_vcoord)
             levels_field = field.geometry.vcoordinate.levels

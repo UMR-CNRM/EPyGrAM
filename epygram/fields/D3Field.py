@@ -759,7 +759,6 @@ class D3CommonField(Field):
         """
         from epygram.formats import resource
 
-        r = resource(filename, 'w', fmt='netCDF')
         _fid = self.fid.get('netCDF')
         assert None in (variablename, fidkey), \
                "only one of *variablename*, *fidkey* can be provided."
@@ -768,7 +767,7 @@ class D3CommonField(Field):
         elif fidkey is not None:
             self.fid['netCDF'] = self.fid[fidkey]
         else:
-            assert 'netCDF' in self.fid.keys(), \
+            assert self.fid.has_key('netCDF'), \
                    ''.join(["must provide *variablename* or *fidkey* for"
                             "determining variable name in netCDF."])
         with resource(filename, 'w', fmt='netCDF') as r:

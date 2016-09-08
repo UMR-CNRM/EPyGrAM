@@ -196,7 +196,6 @@ class V2DField(D3Field):
             ax.set_yscale('log')
         ax.grid()
         if graphicmode == 'colorshades':
-            print x.shape, z.shape, data.shape
             pf = ax.contourf(x, z, data, levels, cmap=colormap,
                              vmin=vmin, vmax=vmax)
             if colorbar:

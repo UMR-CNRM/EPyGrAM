@@ -217,8 +217,6 @@ def main(filename,
     if outputfilename:
         filename = outputfilename
     if not nosave:
-        print profiletosave.getdata().shape
-        print type(profiletosave.getdata()[0]), profiletosave.getdata()[0]
         L = len(profile.geometry.vcoordinate.levels)
         precision = 4
         fieldnamelength = 16
