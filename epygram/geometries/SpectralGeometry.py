@@ -52,7 +52,7 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
                                                 self.truncation['in_Y'],
                                                 config.KNUMMAXRESOL,
                                                 len(data),
-                                                False,  # no computation of derivatives
+                                                False,  # no derivatives
                                                 spectral_coeff_order != 'model',
                                                 gpdims['X_resolution'],
                                                 gpdims['Y_resolution'],
@@ -65,8 +65,9 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
                                                   len(gpdims['lon_number_by_lat']),
                                                   numpy.array(gpdims['lon_number_by_lat']),
                                                   len(data),
+                                                  False,  # no derivatives
                                                   spectral_coeff_order != 'model',
-                                                  data)
+                                                  data)[0]
         elif self.space == 'fourier':
             if self.truncation['in_Y'] > 1:
                 gpdata = wtransforms.w_spec2gpt_fft1d(len(data),
@@ -173,32 +174,26 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
                                                 self.truncation['in_Y'],
                                                 config.KNUMMAXRESOL,
                                                 len(data),
-                                                True,
+                                                True,  # derivatives
                                                 spectral_coeff_order != 'model',
                                                 gpdims['X_resolution'],
                                                 gpdims['Y_resolution'],
                                                 data)
             gpdata = (gpdata[2], gpdata[1])
         elif self.space == 'legendre':
-            raise NotImplementedError('legendre: not yet !')
-            #gpdata = wtransforms.w_spec2gpt_gauss(gpdims['lat_number'],
-            #                                    self.truncation['max'],
-            #                                    config.KNUMMAXRESOL,
-            #                                    sum(gpdims['lon_number_by_lat']),
-            #                                    len(gpdims['lon_number_by_lat']),
-            #                                    numpy.array(gpdims['lon_number_by_lat']),
-            #                                    len(data),
-            #                                    config.reorder_spectral_coeff,
-            #                                    data)
+            gpdata = wtransforms.w_spec2gpt_gauss(gpdims['lat_number'],
+                                                  self.truncation['max'],
+                                                  config.KNUMMAXRESOL,
+                                                  sum(gpdims['lon_number_by_lat']),
+                                                  len(gpdims['lon_number_by_lat']),
+                                                  numpy.array(gpdims['lon_number_by_lat']),
+                                                  len(data),
+                                                  True,  # derivatives
+                                                  spectral_coeff_order != 'model',
+                                                  data)
+            gpdata = (gpdata[2], gpdata[1])
         elif self.space == 'fourier':
             raise NotImplementedError('fourier(1D): not yet !')
-            #if self.truncation['in_Y'] > 1:
-            #    gpdata = wtransforms.w_spec2gpt_fft1d(len(data),
-            #                                        self.truncation['in_Y'],
-            #                                        data,
-            #                                        gpdims['Y'])
-            #else:
-            #    gpdata = numpy.ones(gpdims['Y']) * data[0]
         else:
             raise epygramError("unknown spectral space:" + self.space + ".")
 

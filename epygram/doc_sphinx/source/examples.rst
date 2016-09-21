@@ -125,8 +125,8 @@ About Fields
     >>> vectwind = epygram.fields.make_vector_field(u, v)
     >>> vectwind.sp2gp()
     >>> FF = vectwind.to_module()
-    >>> fig = FF.plotfield()
-    >>> fig = vectwind.plotfield(existingfigure=fig)
+    >>> fig, ax = FF.plotfield()
+    >>> fig, ax = vectwind.plotfield(over=(fig, ax))
     >>> plt.show()
 
 

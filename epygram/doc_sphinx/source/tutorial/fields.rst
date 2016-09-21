@@ -255,7 +255,7 @@ Although referring to each kind of field actual documentation is highly
 recommended, here is a short introduction:
 
 >>> t = r.readfield('CLSTEMPERATURE')  # 2m temperature
->>> fig = t.plotfield()
+>>> fig, ax = t.plotfield()
 
 then either
 
@@ -271,7 +271,7 @@ several plots one should save and reuse the basemap object
 >>> bm = temp[0].geometry.make_basemap()  # specific basemap can be addressed through optional arguments
 >>> for t in temp:
 ...     t.sp2gp()
-...     fig = t.plotfield(existingbasemap=bm, ...)
+...     fig, ax = t.plotfield(use_basemap=bm, ...)
 ...     fig.savefig(t.fid['FA'] + '.png')
 
 Similarly, superposition of plots can be done:
@@ -280,5 +280,5 @@ Similarly, superposition of plots can be done:
 >>> geop = r.readfield('SPECSURFGEOPOTEN')
 >>> geop.sp2gp()
 >>> bm = t.geometry.make_basemap()
->>> fig = geop.plotfield(existingbasemap=bm, graphicmode='contourlines')
->>> fig = t.plotfield(existingbasemap=bm, existingfigure=fig)
+>>> fig, ax = geop.plotfield(use_basemap=bm, graphicmode='contourlines')
+>>> fig, ax = t.plotfield(use_basemap=bm, over=(fig, ax))

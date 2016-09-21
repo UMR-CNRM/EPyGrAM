@@ -164,11 +164,14 @@ def w_spec2gpt_gauss(*args):
     5) KSLOEN: Size of KLOEN
     6) KLOEN:
     7) KSIZE: Size of PSPEC
-    8) LREORDER: reorder spectral coefficients or not
-    9) PSPEC: spectral coefficient array
+    8) LGRADIENT: compute derivatives
+    9) LREORDER: reorder spectral coefficients or not
+    10) PSPEC: spectral coefficient array
     
     Returns:\n
     1) PGPT: grid-point field
+    2) PGPTM: N-S derivative if LGRADIENT
+    3) PGPTL: E-W derivative if LGRADIENT
     """
     return [(c_longlong(args[0]), IN),
             (c_longlong(args[1]), IN),
@@ -178,7 +181,10 @@ def w_spec2gpt_gauss(*args):
             (args[5], IN),
             (c_longlong(args[6]), IN),
             (c_bool(args[7]), IN),
-            (args[8], IN),
+            (c_bool(args[8]), IN),
+            (args[9], IN),
+            (np.ndarray((args[3],), dtype=np.float64), OUT),
+            (np.ndarray((args[3],), dtype=np.float64), OUT),
             (np.ndarray((args[3],), dtype=np.float64), OUT)]
 
 @treatReturnCode
