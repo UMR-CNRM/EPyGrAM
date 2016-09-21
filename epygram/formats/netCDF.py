@@ -545,17 +545,8 @@ class netCDF(FileResource):
                 data[...] = buffdata.reshape(data.shape)
                 if return_Yaxis:
                     data[...] = data[:, :, ::-1, :]
-                    #if 'T_dimension' in dims_dict_e2n.keys():
-                    #    if D3:
-                    #        buffdata = buffdata[:, :, ::-1, ...]
-                    #    elif H2D:
-                    #        buffdata = buffdata[:, ::-1, ...]
-                    #else:
-                    #    if D3:
-                    #        buffdata = buffdata[:, ::-1, ...]
-                    #    elif H2D:
-                    #        buffdata = buffdata[::-1, ...]
-
+            else:
+                data = buffdata
             field.setdata(data)
 
         return field

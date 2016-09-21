@@ -591,7 +591,15 @@ class GRIBmessage(RecursiveObject, dict):
                     raise NotImplementedError('this ordering: not yet.')
 
         # part 9 --- values
-        values = field.getdata()
+        values = field.getdata().copy()
+        if isinstance(values, numpy.ma.masked_array):
+            self['bitMapIndicator'] = 0
+            self['bitmapPresent'] = 1
+            self['missingValue'] = values.fill_value
+            if 'gauss' in field.geometry.name:
+                values = field.geometry.fill_maskedvalues(values)  #TOBECHECKED:
+            else:
+                values = values.filled(values.fill_value)
         if not field.spectral:
             # is it necessary to pre-write values ? (packingType != from sample)
             if required_packingType is None:  # unable to guess
@@ -602,9 +610,9 @@ class GRIBmessage(RecursiveObject, dict):
                 except gribapi.GribInternalError:
                     pre_write = True
             if pre_write:
-                self.set_values(values)  #field.getdata())
+                self.set_values(values)
         self.set_packing(packing)
-        self.set_values(values)  #field.getdata())
+        self.set_values(values)
 
     def set_packing(self, packing):
         """
@@ -852,7 +860,7 @@ class GRIBmessage(RecursiveObject, dict):
             elif 'regular' in self['gridType']:
                 lon_number_by_lat = [self['Ni'] for _ in range(self['Nj'])]
             else:
-                raise NotImplementedError('gauss grid of that type'+self['gridType'])
+                raise NotImplementedError('gauss grid of that type' + self['gridType'])
             dimensions = {'max_lon_number':int(max(lon_number_by_lat)),
                           'lat_number':len(latitudes),
                           'lon_number_by_lat':FPList([int(n) for n in
@@ -1047,6 +1055,9 @@ class GRIBmessage(RecursiveObject, dict):
                                             order='C')[:, ::-1]
                 else:
                     raise NotImplementedError("not yet !")
+            if self['bitMapIndicator'] == 0:
+                data2d = numpy.ma.masked_equal(data2d, self['missingValue'])
+            print self['missingValue']
             field.setdata(data2d)
 
         return field

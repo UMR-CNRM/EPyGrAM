@@ -103,7 +103,7 @@ class PointField(D3Field):
 
         if title is not None:
             if title == '__timerange__':
-                title = '[' + xmax.isoformat() + ' to ' + xmin.isoformat() + ']'
+                title = '[' + xmin.isoformat() + ' to ' + xmax.isoformat() + ']'
             ax.set_title(title)
         ax.set_xlabel(xaxis_label)
         if unit is not None:

@@ -3203,7 +3203,33 @@ class D3GaussGeometry(D3Geometry):
 
         return rdata.reshape(tuple(shape))
 
+    def fill_maskedvalues(self, data, fill_value=None):
+        """
+        Fill the 'real' masked values (i.e. not those linked to reduced Gauss)
+        with *fill_value*.
+        """
 
+        assert isinstance(data, numpy.ma.masked_array)
+
+        if fill_value is None:
+            fill_value = data.fill_value
+        shape = data.shape
+        if len(shape) == 2:
+            data4d = data.reshape((1, 1, shape[0], shape[1]))
+        elif len(shape) == 3:
+            data4d = data.reshape((1, shape[0], shape[1], shape[3]))
+        elif len(shape) == 4:
+            data4d = data
+        else:
+            raise epygramError('*data* with shape' + str(shape))
+        for t in range(data4d.shape[0]):
+            for k in range(data4d.shape[1]):
+                for j in range(self.dimensions['lat_number']):
+                    for i in range(self.dimensions['lon_number_by_lat'][j]):
+                        if data4d.mask[t, k, j, i]:
+                            data4d[t, k, j, i] = fill_value
+
+        return data4d.squeeze()
 
     def make_basemap(self, gisquality='i', specificproj=None, zoom=None,
                      ax=None, **kwargs):
