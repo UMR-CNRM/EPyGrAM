@@ -821,14 +821,15 @@ class netCDF(FileResource):
             meta = False
 
         # 4. Variable
-        _, _status = check_or_add_variable(field.fid['netCDF'], vartype, dims,
+        varname = field.fid['netCDF'].replace('.', config.netCDF_replace_dot_in_variable_names)
+        _, _status = check_or_add_variable(varname, vartype, dims,
                                            zlib=bool(compression),
                                            complevel=compression,
                                            fill_value=fill_value)
         if meta:
-            self._variables[field.fid['netCDF']].grid_mapping = meta
+            self._variables[varname].grid_mapping = meta
         if field.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
-            self._variables[field.fid['netCDF']].vertical_grid = zgridname
+            self._variables[varname].vertical_grid = zgridname
         if self.behaviour['flatten_non_rectangular_grids'] \
         and not field.geometry.rectangular_grid:
             data = stretch_array(field.getdata())
@@ -837,8 +838,8 @@ class netCDF(FileResource):
         if isinstance(data, numpy.ma.masked_array):
             data = data.filled(fill_value)
         if _status == 'match':
-            epylog.info('overwrite data in variable ' + field.fid['netCDF'])
-        self._variables[field.fid['netCDF']][...] = data
+            epylog.info('overwrite data in variable ' + varname)
+        self._variables[varname][...] = data
 
         # 5. metadata
         for k, v in metadata.items():

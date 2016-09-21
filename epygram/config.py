@@ -193,6 +193,8 @@ netCDF_default_behaviour = {  # 'A_dimension':'name_of_the_dimension_in_netCDF_f
                             }
 #: netCDF default compression
 netCDF_default_compression = 4
+#: netCDF, replace dots in variable names by...
+netCDF_replace_dot_in_variable_names = '.'
 
 
 
