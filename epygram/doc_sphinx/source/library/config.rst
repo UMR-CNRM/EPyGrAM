@@ -76,7 +76,12 @@ LFI
 netCDF
 ......
 
+.. autodata:: netCDF_standard_dimensions
+.. autodata:: netCDF_usualnames_for_standard_dimensions
 .. autodata:: netCDF_default_behaviour
+.. autodata:: netCDF_default_compression
+.. autodata:: netCDF_replace_dot_in_variable_names
+
 
 Options
 -------
@@ -92,6 +97,7 @@ Options
 .. autodata:: vector_symbol
 .. autodata:: default_figures_dpi
 .. autodata:: spectral_coeff_order
+.. autodata:: init_at_import
 
 User modules
 ------------
