@@ -480,8 +480,11 @@ class GRIBmessage(RecursiveObject, dict):
             if field.spectral_geometry.space == 'bi-fourier':
                 self['gridType'] = 'sh'  # in bi-fourier case, this is a bypass
                 #self['sphericalHarmonics'] = 1  # in bi-fourier case, this is a bypass
-                self['J'] = field.spectral_geometry.truncation['in_X']
-                self['K'] = field.spectral_geometry.truncation['in_Y']
+                #self['J'] = field.spectral_geometry.truncation['in_X']
+                #self['K'] = field.spectral_geometry.truncation['in_Y']
+                self['J'] = max(field.spectral_geometry.truncation['in_X'],  #TOBECHECKED:
+                                field.spectral_geometry.truncation['in_Y'])
+                self['K'] = self['J']
                 self['M'] = self['J']
             elif field.spectral_geometry.space == 'legendre':
                 self['gridType'] = 'sh'
@@ -593,13 +596,16 @@ class GRIBmessage(RecursiveObject, dict):
         # part 9 --- values
         values = field.getdata().copy()
         if isinstance(values, numpy.ma.masked_array):
-            self['bitMapIndicator'] = 0
-            self['bitmapPresent'] = 1
-            self['missingValue'] = values.fill_value
-            if 'gauss' in field.geometry.name:
-                values = field.geometry.fill_maskedvalues(values)  #TOBECHECKED:
+            if self['editionNumber'] == 2:
+                self['bitMapIndicator'] = 0
+                self['bitmapPresent'] = 1
+                self['missingValue'] = values.fill_value
+                if 'gauss' in field.geometry.name:
+                    values = field.geometry.fill_maskedvalues(values)  #TOBECHECKED:
+                else:
+                    values = values.filled(values.fill_value)
             else:
-                values = values.filled(values.fill_value)
+                pass  #TODO: bitmap in GRIB1 ?
         if not field.spectral:
             # is it necessary to pre-write values ? (packingType != from sample)
             if required_packingType is None:  # unable to guess
@@ -1055,9 +1061,8 @@ class GRIBmessage(RecursiveObject, dict):
                                             order='C')[:, ::-1]
                 else:
                     raise NotImplementedError("not yet !")
-            if self['bitMapIndicator'] == 0:
+            if self['editionNumber'] == 2 and self['bitMapIndicator'] == 0:  #TODO: GRIB1
                 data2d = numpy.ma.masked_equal(data2d, self['missingValue'])
-            print self['missingValue']
             field.setdata(data2d)
 
         return field

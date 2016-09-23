@@ -133,8 +133,6 @@ def femars_2files(fileA, fileB,
             printstatus(n, numfields)
             n += 1
         field = resourceA.readfield(f)
-        if 'gauss' in field.geometry.name:
-            raise NotImplementedError('Gauss geometries in femars: not yet !')
         field.operation_with_other('-', resourceB.readfield(f))
         if not field.spectral:
             field.gp2sp(resourceA.spectral_geometry)
@@ -144,6 +142,8 @@ def femars_2files(fileA, fileB,
 
     # U/V => vor/div particular case
     for f in windfields:
+        if 'gauss' in resourceA.geometry.name:  #TODO:
+            raise NotImplementedError('Gauss geometries and wind treatment in femars: not yet !')
         if progressmode == 'verbose':
             epylog.info(str(f))
         elif progressmode == 'percentage':
@@ -260,7 +260,7 @@ def femars_avg(filenames,
                                                 cdiden=r.cdiden,
                                                 default_compression=r.default_compression,
                                                 processtype=r.processtype)
-    avg_resource.close()
+        avg_resource.close()
     avg_resource.open(openmode='a')
     for i in range(len(filenames)):
         with epygram.formats.resource(filenames[i], 'r') as r:
@@ -268,13 +268,13 @@ def femars_avg(filenames,
             for f in fieldslist:
                 field = r.readfield(f)
                 if i == 0:  # only copy
-                    avg_resource.writefield(field)
+                    avg_resource.writefield(field, compression=r.fieldscompression.get(f, None))
                 else:  # add
                     avg = avg_resource.readfield(f)
                     avg.operation('+', field)
                     if i == len(filenames) - 1:  # last: divide by n !
                         avg.operation('/', float(len(filenames)))
-                    avg_resource.writefield(avg)
+                    avg_resource.writefield(avg, compression=r.fieldscompression.get(f, None))
     del avg_resource
 
     # classical femars against average (parallel zone)

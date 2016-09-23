@@ -121,6 +121,7 @@ def gimme_one_point(longitude, latitude,
     Arguments *field_args*, *geometry_args*, *vertical_geometry_args*
     can be provided as dictionaries containing kwargs for the corresponding
     objects.
+    E.g. a validity should be stored in *field_args*.
     """
 
     field_args = ifNone_emptydict(field_args)
