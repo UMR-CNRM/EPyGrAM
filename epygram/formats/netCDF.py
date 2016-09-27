@@ -920,11 +920,10 @@ class netCDF(FileResource):
             nc_vars = [var for var in nc.variables]  # list of nc variables
             outwrite("NetCDF variable information:")
             for var in nc_vars:
-                if var not in nc_dims:
-                    outwrite('\tName:', var)
-                    outwrite("\t\tdimensions:", nc.variables[var].dimensions)
-                    outwrite("\t\tsize:", nc.variables[var].size)
-                    print_ncattr(var)
+                outwrite('\tName:', var)
+                outwrite("\t\tdimensions:", nc.variables[var].dimensions)
+                outwrite("\t\tsize:", nc.variables[var].size)
+                print_ncattr(var)
             return nc_attrs, nc_dims, nc_vars
 
         out.write("### FORMAT: " + self.format + "\n")
