@@ -308,8 +308,8 @@ class netCDF(FileResource):
         # 3.3.2 vertical part
         if D3 or V1D or V2D:
             var_corresponding_to_Z_grid = behaviour.get('Z_grid', False)
-            assert var_corresponding_to_Z_grid in self._variables.keys(), \
-                   'unable to find Z_grid in variables.'
+            #assert var_corresponding_to_Z_grid in self._variables.keys(), \
+            #       'unable to find Z_grid in variables.'
             levels = None
             if var_corresponding_to_Z_grid in self._variables.keys():
                 if hasattr(self._variables[var_corresponding_to_Z_grid], 'standard_name') \
@@ -329,14 +329,15 @@ class netCDF(FileResource):
                     levels = [i + 1 for i in range(len(a))]
                 else:
                     gridlevels = self._variables[var_corresponding_to_Z_grid][:]
+                if hasattr(self._variables[behaviour['Z_grid']], 'standard_name'):
+                    kwargs_vcoord['typeoffirstfixedsurface'] = _typeoffirstfixedsurface_dict.get(self._variables[behaviour['Z_grid']].standard_name, 255)
+                # TODO: complete the reading of variable units to convert
+                if hasattr(self._variables[behaviour['Z_grid']], 'units'):
+                    if self._variables[behaviour['Z_grid']].units == 'km':
+                        gridlevels = gridlevels * 1000.  # get back to metres
             else:
                 gridlevels = range(1, variable_dimensions[dims_dict_e2n['Z_dimension']] + 1)
-            if hasattr(self._variables[behaviour['Z_grid']], 'standard_name'):
-                kwargs_vcoord['typeoffirstfixedsurface'] = _typeoffirstfixedsurface_dict.get(self._variables[behaviour['Z_grid']].standard_name, 255)
-            # TODO: complete the reading of variable units to convert
-            if hasattr(self._variables[behaviour['Z_grid']], 'units'):
-                if self._variables[behaviour['Z_grid']].units == 'km':
-                    gridlevels = gridlevels * 1000.  # get back to metres
+                kwargs_vcoord['typeoffirstfixedsurface'] = 255
             kwargs_vcoord['grid']['gridlevels'] = [p for p in gridlevels]  # footprints purpose
             if levels is None:
                 kwargs_vcoord['levels'] = kwargs_vcoord['grid']['gridlevels']  # could it be else ?

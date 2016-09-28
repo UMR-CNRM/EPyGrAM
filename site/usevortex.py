@@ -32,7 +32,8 @@ def set_defaults(**defaults):
                         origin='hst')
     toolbox.defaults(**defaults)
 
-def get_resources(getmode='epygram', uselocalcache=False, **description):
+def get_resources(getmode='epygram', uselocalcache=False, meta_rtype=None,
+                  **description):
     """
     Get resources, given their description.
     
@@ -47,6 +48,9 @@ def get_resources(getmode='epygram', uselocalcache=False, **description):
                      automatically cleaned, take care) defined either (and by
                      priority order) in $MTOOL_STEP_CACHE, $MTOOLDIR, $FTDIR,
                      $WORKDIR, $TMPDIR.
+    *meta_rtype*: if not None and *getmode* == 'epygram', return the resource(s)
+                  as meta_resource. Cf. epygram.resources.meta_resources() for
+                  documentation.
 
     Examples:
     
@@ -191,6 +195,11 @@ def get_resources(getmode='epygram', uselocalcache=False, **description):
         resources = ['/'.join([stagedir, staging_request])]
     else:
         raise ValueError('*getmode* unknown: ' + getmode)
+
+    if meta_rtype is not None:
+        assert getmode == 'epygram', "*meta_rtype* needs getmode='epygram'"
+        import epygram
+        resources = epygram.resources.meta_resource(resources, openmode='r', rtype=meta_rtype)
 
     return resources
 

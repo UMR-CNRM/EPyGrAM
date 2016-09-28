@@ -15,6 +15,7 @@ from .D3Field import D3Field
 from .PointField import PointField
 from epygram import config, util, epygramError
 from epygram.geometries import H2DGeometry
+from . import gimme_one_point
 
 epylog = footprints.loggers.getLogger(__name__)
 
@@ -56,6 +57,26 @@ class H2DField(D3Field):
             if level not in self.geometry.vcoordinate.levels:
                 raise epygramError("The requested level does not exist.")
         return self
+
+    def extract_point(self, lon, lat,
+                      interpolation='nearest',
+                      external_distance=None):
+        """
+        Extract a point as a PointField.
+        
+        Cf. getvalue_ll() doc for other arguments.
+        """
+        value = self.getvalue_ll(lon, lat,
+                                 interpolation=interpolation,
+                                 external_distance=external_distance)
+        pt = gimme_one_point(lon, lat,
+                             field_args={'validity':self.validity,
+                                         'fid':self.fid},
+                             geometry_args={'vcoordinate':self.geometry.vcoordinate},
+                             vertical_geometry_args=None)
+        pt.setdata(value)
+
+        return pt
 
 
 
