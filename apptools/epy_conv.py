@@ -110,7 +110,7 @@ def convert(filename,
         if progressmode == 'verbose':
             epylog.info(str(f))
         field = resource.readfield(f)
-        if not field.geometry.grid.has_key('LAMzone'):
+        if not field.geometry.grid.get('LAMzone', False):
             subzone = None
         # options for write
         write_kwargs = get_write_kwargs(resource, field, kwargs)
@@ -128,6 +128,9 @@ def convert(filename,
             if 'generic' not in field.fid.keys():
                 raise NotImplementedError("how to convert this fid to GRIB2 ?")
             field.fid['GRIB2'] = epygram.formats.fid_converter(field.fid['generic'], 'generic', 'GRIB2')
+            assert all([k in field.fid['GRIB2']
+                        for k in ('discipline', 'parameterCategory', 'parameterNumber')]), \
+                   "missing key(s) among ('discipline', 'parameterCategory', 'parameterNumber')"
         else:
             try:
                 field.fid[fmt_dict[output_format_suffix]] = epygram.formats.fid_converter(fid,
@@ -227,6 +230,8 @@ class Griber(Converter):
                     else:
                         # not compressed field : no packing !
                         packing = {'packingType':'grid_ieee'}
+                if packing.get('bitsPerValue') == 0:
+                    packing.pop('bitsPerValue')
             write_kwargs['packing'] = packing
             write_kwargs['other_GRIB_options'] = kwargs.get('other_GRIB_options', {})
             write_kwargs['grib_edition'] = 2
