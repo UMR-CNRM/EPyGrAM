@@ -95,6 +95,7 @@ name:SURFACCPLUIE,type:H2D,typeOfFirstFixedSurface:1,discipline:0,parameterCateg
 name:SURFAEROS.LAND,type:H2D,typeOfFirstFixedSurface:1,discipline:0,parameterCategory:13,parameterNumber:255
 name:SURFAEROS.SEA,type:H2D,typeOfFirstFixedSurface:1,discipline:0,parameterCategory:13,parameterNumber:255
 name:SURFAEROS.SOOT,type:H2D,typeOfFirstFixedSurface:1,discipline:0,parameterCategory:13,parameterNumber:255
+name:SURFAEROS.DESERT,type:H2D,typeOfFirstFixedSurface:1,discipline:0,parameterCategory:13,parameterNumber:255
 name:SURFALBEDO,type:H2D,typeOfFirstFixedSurface:1,discipline:0,parameterCategory:19,parameterNumber:1
 name:SURFALBEDO NEIGE,type:H2D,typeOfFirstFixedSurface:1,discipline:0,parameterCategory:19,parameterNumber:19
 name:SURFALBEDO.SOLNU,type:H2D,typeOfFirstFixedSurface:1,discipline:0,parameterCategory:19,parameterNumber:18
