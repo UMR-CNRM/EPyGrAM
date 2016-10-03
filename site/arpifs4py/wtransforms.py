@@ -63,7 +63,6 @@ def w_trans_inq(*args):
     1) KGPTOT: number of gridpoints
     2) KSPEC: number of spectral coefficients
     3) KNMENG: cut-off zonal wavenumber
-    4) KASM0: Address in a spectral array of (m, n=0)
     """
     return [(c_longlong(args[0]), IN),
             (c_longlong(args[1]), IN),
@@ -72,8 +71,7 @@ def w_trans_inq(*args):
             (c_longlong(args[4]), IN),
             (c_longlong(), OUT),
             (c_longlong(), OUT),
-            (np.ndarray((args[0],), dtype=np.int64), OUT),
-            (np.ndarray((args[1],), dtype=np.int64), OUT)]
+            (np.ndarray((args[0],), dtype=np.int64), OUT)]
 
 @treatReturnCode
 @ctypesFF
