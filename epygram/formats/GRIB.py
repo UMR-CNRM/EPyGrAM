@@ -1356,6 +1356,9 @@ class GRIB(FileResource):
         if len(filtered_matchingfields) > 1:
             raise epygramError("several fields found for that *handgrip*;" + \
                                " please refine.")
+        elif len(filtered_matchingfields) == 0:
+            raise epygramError("inconsistency in *handgrip*; check again" + \
+                               " values and types of values")
 
         return filtered_matchingfields[0]
 

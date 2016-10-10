@@ -390,8 +390,12 @@ class H2DField(D3Field):
                     zf = data.compressed()
                     tri = True
                     #FIXME: problem of duplicate points with arpege grid
+                elif self.geometry.dimensions['Y'] == 1:
+                    xf = x.flatten()
+                    yf = y.flatten()
+                    zf = data.flatten()
+                    tri = True
                 else:
-                    #TOBECHECKED: self.geometry.dimensions['Y'] == 1 does not need specific treatment, as in colorshades ?
                     xf = x
                     yf = y
                     zf = data

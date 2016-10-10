@@ -56,7 +56,11 @@ def main(filename,
                 else:
                     fieldcompression = {'KNBPDG':source.fieldscompression[f]['KNBCSP']}
             else:
+                if in_place:
+                    continue
                 fieldcompression = source.fieldscompression[f]
+            if fieldcompression.get('KNBPDG') == 0:
+                fieldcompression['KNGRIB'] = 0
         output.writefield(field, fieldcompression)
 
 # end of main() ###############################################################

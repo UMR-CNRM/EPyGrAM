@@ -13,6 +13,10 @@ name:S[0-9][0-9][0-9]INPRRTOT3D,type:H2D,typeOfFirstFixedSurface:119,discipline:
 name:S[0-9][0-9][0-9]LIQUID_WATER,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:83
 name:S[0-9][0-9][0-9]POT.VITESSE,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:2,parameterNumber:5
 name:S[0-9][0-9][0-9]PRESS.DEPART,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:3,parameterNumber:8
+name:S[0-9][0-9][0-9]QL_CONV,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:255
+name:S[0-9][0-9][0-9]QR_CONV,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:255
+name:S[0-9][0-9][0-9]QI_CONV,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:255
+name:S[0-9][0-9][0-9]QS_CONV,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:255
 name:S[0-9][0-9][0-9]RAD_LIQUID_W,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:69
 name:S[0-9][0-9][0-9]RAD_SOLID_WA,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:70
 name:S[0-9][0-9][0-9]RAIN,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:85
@@ -23,6 +27,8 @@ name:S[0-9][0-9][0-9]SNOW,type:H2D,typeOfFirstFixedSurface:119,discipline:0,para
 name:S[0-9][0-9][0-9]SOLID_WATER,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:84
 name:S[0-9][0-9][0-9]TEMPERATURE,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:0,parameterNumber:0
 name:S[0-9][0-9][0-9]TKE,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:19,parameterNumber:11
+name:S[0-9][0-9][0-9]UD_OMEGA,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:3,parameterNumber:255
+name:S[0-9][0-9][0-9]UD_MESH_FRAC,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:3,parameterNumber:255
 name:S[0-9][0-9][0-9]VENT_MERIDIE,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:2,parameterNumber:3
 name:S[0-9][0-9][0-9]VENT_ZONAL,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:2,parameterNumber:2
 name:S[0-9][0-9][0-9]VERTIC.DIVER,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:2,parameterNumber:11

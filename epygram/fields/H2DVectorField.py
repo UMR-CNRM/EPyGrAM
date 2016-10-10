@@ -483,15 +483,23 @@ class H2DVectorField(Field):
                                 background=background)
         # 3. Prepare data
         (lons, lats) = self.geometry.get_lonlat_grid(subzone=subzone)
-        lons = lons[::subsampling, ::subsampling]
-        lats = lats[::subsampling, ::subsampling]
+        if self.geometry.dimensions['Y'] == 1:
+            lons = lons[::subsampling]
+            lats = lats[::subsampling]
+        else:
+            lons = lons[::subsampling, ::subsampling]
+            lats = lats[::subsampling, ::subsampling]
         x, y = bm(lons, lats)
         data = [numpy.ma.masked_outside(data,
                                         - config.mask_outside,
                                         config.mask_outside) for data in
                 self.getdata(subzone=subzone)]
-        u = data[0][::subsampling, ::subsampling]
-        v = data[1][::subsampling, ::subsampling]
+        if self.geometry.dimensions['Y'] == 1:
+            u = data[0][::subsampling]
+            v = data[1][::subsampling]
+        else:
+            u = data[0][::subsampling, ::subsampling]
+            v = data[1][::subsampling, ::subsampling]
 
         # Calculate the orientation of the vectors
         assert components_are_projected_on in ('grid', 'lonlat')
