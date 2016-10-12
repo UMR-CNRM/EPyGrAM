@@ -822,8 +822,8 @@ def stdout_redirected(to=os.devnull):
         sys.stdout = os.fdopen(fd, 'w')  # Python writes to fd
 
     with os.fdopen(os.dup(fd), 'w') as old_stdout:
-        with open(to, 'w') as file:
-            _redirect_stdout(to=file)
+        with open(to, 'w') as f:
+            _redirect_stdout(to=f)
         try:
             yield  # allow code to be run with the redirected stdout
         finally:
@@ -849,8 +849,8 @@ def stderr_redirected(to=os.devnull):
         sys.stderr = os.fdopen(fd, 'w')  # Python writes to fd
 
     with os.fdopen(os.dup(fd), 'w') as old_stderr:
-        with open(to, 'w') as file:
-            _redirect_stderr(to=file)
+        with open(to, 'w') as f:
+            _redirect_stderr(to=f)
         try:
             yield  # allow code to be run with the redirected stderr
         finally:
@@ -1078,3 +1078,98 @@ def set_map_up(bm, ax,
                                    parallels=parallels,
                                    meridians=meridians,
                                    ax=ax)
+
+def datetimerange(start, stop, step, stepunit='h', tzinfo=None):
+    """
+    A generator of datetime.datetime objects ranging from *start* to *stop*
+    (included) by *step*.
+    
+    Arguments syntax:\n
+    - *start* and *stop* being either:\n
+      - a string: 'YYYYMMDDhhmmssx', hh, mm, ss and x being optional (x = microseconds)
+                  or a date/time in ISO 8601 format (cf. datetime.datetime.isoformat())
+      - a tuple or list: (year, month, day[, hour[, minute[, seconde[, microsecond]]]])
+      - a datetime.datetime instance
+    - *step* being a integer, which unit is specified in *stepunit*
+      (or a datetime.timedelta instance)
+    - *stepunit* among ('D', 'h', 'm', 's', 'x')
+    - *tzinfo*: time zone info, cf. datetime.datetime
+    """
+
+    def parse_iterable(i):
+        return datetime.datetime(*i, tzinfo=tzinfo)
+
+    def parse_str(s):
+        try:
+            from dateutil.parser import parse
+            dt = parse(s)
+        except (ImportError, ValueError):
+            hour = 0
+            minute = 0
+            second = 0
+            microsecond = 0
+            try:
+                year = int(s[:4])
+                month = int(s[4:6])
+                day = int(s[6:8])
+                if len(s) >= 10:
+                    hour = int(s[8:10])
+                if len(s) >= 12:
+                    minute = int(s[10:12])
+                if len(s) >= 12:
+                    second = int(s[12:14])
+                if len(s) > 12:
+                    microsecond = int(s[12:])
+            except ValueError:
+                raise ValueError('please check syntax of date/time string.')
+            dt = parse_iterable((year, month, day,
+                                 hour, minute, second, microsecond))
+        return dt
+
+    if not isinstance(start, datetime.datetime):
+        if isinstance(start, str):
+            start = parse_str(start)
+        elif isinstance(start, list) or isinstance(start, tuple):
+            start = parse_iterable(start)
+        else:
+            raise TypeError("unknown type for *start*: " + str(type(start)))
+    if not isinstance(stop, datetime.datetime):
+        if isinstance(stop, str):
+            stop = parse_str(stop)
+        elif isinstance(stop, list) or isinstance(stop, tuple):
+            stop = parse_iterable(stop)
+        else:
+            raise TypeError("unknown type for *stop*: " + str(type(stop)))
+    if not isinstance(step, datetime.timedelta):
+        if isinstance(stop, str):
+            step = int(step)
+        assert isinstance(step, int)
+        assert stepunit in ('D', 'h', 'm', 's', 'x')
+        if stepunit == 'D':
+            step = datetime.timedelta(step)
+        elif stepunit == 'h':
+            step = datetime.timedelta(0, step * 3600)
+        elif stepunit == 'm':
+            step = datetime.timedelta(0, step * 60)
+        elif stepunit == 's':
+            step = datetime.timedelta(0, step)
+        elif stepunit == 'x':
+            step = datetime.timedelta(0, microseconds=step)
+
+    if start < stop:
+        assert step > datetime.timedelta(0), 'step must be > 0 for start < stop'
+    elif start > stop:
+        assert step < datetime.timedelta(0), 'step must be < 0 for start > stop'
+
+    rng = [start]
+    dt = start + step
+    if start < stop:
+        while dt <= stop:
+            rng.append(dt)
+            dt += step
+    elif start > stop:
+        while dt >= stop:
+            rng.append(dt)
+            dt += step  # step < 0
+
+    return rng

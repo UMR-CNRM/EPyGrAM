@@ -299,6 +299,27 @@ class Field(RecursiveObject, FootprintBase):
         newfield.setdata(result)
         return newfield
 
+    def _rsub(self, other, **kwargs):
+        """
+        Definition of reverse substraction, 'other' being:
+        - a scalar (integer/float)
+        - another Field of the same subclass.
+        Returns a new Field whose data is the resulting operation,
+        with 'fid' = {'op':'-'} and null validity.
+        """
+
+        self._check_operands(other)
+        if isinstance(other, self.__class__):
+            rhs = other.data
+        else:
+            rhs = other
+        result = rhs - self.data
+        newid = {'op':'-'}
+        newfield = footprints.proxy.field(fid=newid,
+                                          **kwargs)
+        newfield.setdata(result)
+        return newfield
+
     def _div(self, other, **kwargs):
         """
         Definition of division, 'other' being:
@@ -320,6 +341,27 @@ class Field(RecursiveObject, FootprintBase):
         newfield.setdata(result)
         return newfield
 
+    def _rdiv(self, other, **kwargs):
+        """
+        Definition of reverse division, 'other' being:
+        - a scalar (integer/float)
+        - another Field of the same subclass.
+        Returns a new Field whose data is the resulting operation,
+        with 'fid' = {'op':'/'} and null validity.
+        """
+
+        self._check_operands(other)
+        if isinstance(other, self.__class__):
+            rhs = other.data
+        else:
+            rhs = other
+        result = rhs / self.data
+        newid = {'op':'/'}
+        newfield = footprints.proxy.field(fid=newid,
+                                          **kwargs)
+        newfield.setdata(result)
+        return newfield
+
     # default behaviors
     def __add__(self, other):
         return self._add(other)
@@ -332,11 +374,13 @@ class Field(RecursiveObject, FootprintBase):
 
     def __div__(self, other):
         return self._div(other)
-
     __radd__ = __add__
     __rmul__ = __mul__
-    __rdiv__ = __div__
-    __rsub__ = __sub__
+    def __rsub__(self, other):
+        return self._rsub(other)
+
+    def __rdiv__(self, other):
+        return self._rdiv(other)
 
 
 class FieldSet(RecursiveObject, list):
@@ -923,6 +967,7 @@ class FieldValidityList(RecursiveObject, list):
         if validity_instance is not None:
             if len(kwargs) != 0:
                 raise epygramError("One can not give, at the same time, validity_instance and other argument.")
+            failed = False
             if isinstance(validity_instance, FieldValidity):
                 self.append(validity_instance)
                 if length > 1:
@@ -930,8 +975,17 @@ class FieldValidityList(RecursiveObject, list):
                         self.append(validity_instance.deepcopy())
             elif isinstance(validity_instance, FieldValidityList):
                 self.extend(validity_instance)
+            elif isinstance(validity_instance, list):
+                if all([isinstance(f, FieldValidity) for f in validity_instance]):
+                    self.extend(validity_instance)
+                else:
+                    failed = True
             else:
-                raise epygramError("FieldValidityList must be built from FieldValidity or from FieldValidityList instances.")
+                failed = True
+            if failed:
+                raise epygramError("FieldValidityList must be built from" \
+                                 + " FieldValidity, from FieldValidityList" \
+                                 + " instances or from a list of FieldValidity.")
         elif kwargs != {}:
             #Check that all lengths are equal
             length = None
@@ -954,6 +1008,18 @@ class FieldValidityList(RecursiveObject, list):
         elif isinstance(length, int):
             for _ in range(length):
                 self.append(FieldValidity())
+
+    def __getitem__(self, key):
+        result = super(FieldValidityList, self).__getitem__(key)
+        if isinstance(key, slice):
+            result = FieldValidityList(result)
+        elif not isinstance(key, int):
+            raise TypeError("*key* should be of type 'int' or 'slice'")
+        return result
+
+    def __getslice__(self, start, end):  # deprecated but not for some builtins such as list...
+        result = super(FieldValidityList, self).__getitem__(slice(start, end))
+        return FieldValidityList(result)
 
     def term(self, one=True, **kwargs):
         """This method returns the terms of all the validities"""
