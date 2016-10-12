@@ -10,6 +10,7 @@ Contains the class for DDH-in-LFA format.
 __all__ = ['DDHLFA']
 
 import math
+import numpy
 import datetime
 import sys
 
@@ -247,6 +248,7 @@ class DDHLFA(LFA):
                         else:
                             pressure_vertical_grid = self.domains['vertical_grid'][d]['fluxlevels_pressure_term']
                     vgeometry = geom_builder(structure='V1D',
+                                             name='DDH:' + domain['type'],
                                              grid={'DDH_domain':domain},
                                              vcoordinate=VGeometry(
                                                  structure='V',
@@ -511,14 +513,14 @@ class DDHLFA(LFA):
                                                           ] * config.g0
             fluxlevels_pressure_init = [sum(fluxlevels_pressure_init[0:i])
                                         for i in range(1, len(fluxlevels_pressure_init) + 1)]
-            vgrid['fluxlevels_pressure_init'] = [0.] + fluxlevels_pressure_init
+            vgrid['fluxlevels_pressure_init'] = numpy.array([0.] + fluxlevels_pressure_init)
             vgrid['masslevels_pressure_init'] = profiles.flux2masspressures(fluxlevels_pressure_init,
                                                                             vertical_mean)
             fluxlevels_pressure_term = vpp_term.getdata()[dm1 * self.levels['VT']:(dm1 + 1) * self.levels['VT']
                                                           ] * config.g0
             fluxlevels_pressure_term = [sum(fluxlevels_pressure_term[0:i])
                                         for i in range(1, len(fluxlevels_pressure_term) + 1)]
-            vgrid['fluxlevels_pressure_term'] = [0.] + fluxlevels_pressure_term
+            vgrid['fluxlevels_pressure_term'] = numpy.array([0.] + fluxlevels_pressure_term)
             vgrid['masslevels_pressure_term'] = profiles.flux2masspressures(fluxlevels_pressure_term,
                                                                             vertical_mean)
             domains['geometry'].append(geom)

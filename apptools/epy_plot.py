@@ -128,6 +128,8 @@ def main(filename,
 
     resource = epygram.formats.resource(filename, openmode='r')
     if resource.format not in ('GRIB', 'FA', 'LFI', 'TIFFMF'):
+        if resource.format == 'DDHLFA':
+            raise epygramError('use ddhlfa_plot.py tool for DDHLFA files.')
         epylog.warning(" ".join(["tool NOT TESTED with format",
                                  resource.format, "!"]))
     diffmode = refname != None
