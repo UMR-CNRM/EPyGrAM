@@ -734,9 +734,15 @@ class H2DVectorField(Field):
             newcomponents = [self.components[i] + other.components[i] for i in range(len(self.components))]
         else:
             newcomponents = [self.components[i] + other for i in range(len(self.components))]
-        newfield = self._add(other,
+
+        newid = {'op':'+'}
+        newfield = fpx.field(fid=newid,
+                             structure=self.structure,
+                             validity=self.validity,
+                             processtype=self.processtype,
                              vector=True,
                              components=newcomponents)
+
         return newfield
 
     def __mul__(self, other):
@@ -752,7 +758,11 @@ class H2DVectorField(Field):
             newcomponents = [self.components[i] * other.components[i] for i in range(len(self.components))]
         else:
             newcomponents = [self.components[i] * other for i in range(len(self.components))]
-        newfield = self._mul(other,
+        newid = {'op':'*'}
+        newfield = fpx.field(fid=newid,
+                             structure=self.structure,
+                             validity=self.validity,
+                             processtype=self.processtype,
                              vector=True,
                              components=newcomponents)
         return newfield
@@ -770,7 +780,11 @@ class H2DVectorField(Field):
             newcomponents = [self.components[i] - other.components[i] for i in range(len(self.components))]
         else:
             newcomponents = [self.components[i] - other for i in range(len(self.components))]
-        newfield = self._sub(other,
+        newid = {'op':'-'}
+        newfield = fpx.field(fid=newid,
+                             structure=self.structure,
+                             validity=self.validity,
+                             processtype=self.processtype,
                              vector=True,
                              components=newcomponents)
         return newfield
@@ -788,7 +802,58 @@ class H2DVectorField(Field):
             newcomponents = [self.components[i] / other.components[i] for i in range(len(self.components))]
         else:
             newcomponents = [self.components[i] / other for i in range(len(self.components))]
-        newfield = self._div(other,
+        newid = {'op':'/'}
+        newfield = fpx.field(fid=newid,
+                             structure=self.structure,
+                             validity=self.validity,
+                             processtype=self.processtype,
+                             vector=True,
+                             components=newcomponents)
+        return newfield
+
+    __radd__ = __add__
+    __rmul__ = __mul__
+
+    def __rsub__(self, other):
+        """
+        Definition of substraction, 'other' being:
+        - a scalar (integer/float)
+        - another Field of the same subclass.
+        Returns a new Field whose data is the resulting operation,
+        with 'fid' = {'op':'-'} and null validity.
+        """
+
+        if isinstance(other, self.__class__):
+            newcomponents = [other.components[i] - self.components[i] for i in range(len(self.components))]
+        else:
+            newcomponents = [other - self.components[i] for i in range(len(self.components))]
+        newid = {'op':'-'}
+        newfield = fpx.field(fid=newid,
+                             structure=self.structure,
+                             validity=self.validity,
+                             processtype=self.processtype,
+                             vector=True,
+                             components=newcomponents)
+        return newfield
+
+    def __rdiv__(self, other):
+        """
+        Definition of division, 'other' being:
+        - a scalar (integer/float)
+        - another Field of the same subclass.
+        Returns a new Field whose data is the resulting operation,
+        with 'fid' = {'op':'/'} and null validity.
+        """
+
+        if isinstance(other, self.__class__):
+            newcomponents = [other.components[i] / self.components[i] for i in range(len(self.components))]
+        else:
+            newcomponents = [other / self.components[i] for i in range(len(self.components))]
+        newid = {'op':'/'}
+        newfield = fpx.field(fid=newid,
+                             structure=self.structure,
+                             validity=self.validity,
+                             processtype=self.processtype,
                              vector=True,
                              components=newcomponents)
         return newfield

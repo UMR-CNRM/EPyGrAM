@@ -863,6 +863,41 @@ class D3CommonField(Field):
                              validity=FieldValidityList(length=len(self.validity)))
         return newfield
 
+    __radd__ = __add__
+    __rmul__ = __mul__
+
+    def __rsub__(self, other):
+        """
+        Definition of substraction, 'other' being:
+        - a scalar (integer/float)
+        - another Field of the same subclass.
+        Returns a new Field whose data is the resulting operation,
+        with 'fid' = {'op':'-'} and null validity.
+        """
+
+        newfield = self._rsub(other,
+                              structure=self.structure,
+                              geometry=self.geometry,
+                              spectral_geometry=self.spectral_geometry,
+                              validity=FieldValidityList(length=len(self.validity)))
+        return newfield
+
+    def __rdiv__(self, other):
+        """
+        Definition of division, 'other' being:
+        - a scalar (integer/float)
+        - another Field of the same subclass.
+        Returns a new Field whose data is the resulting operation,
+        with 'fid' = {'op':'/'} and null validity.
+        """
+
+        newfield = self._rdiv(other,
+                              structure=self.structure,
+                              geometry=self.geometry,
+                              spectral_geometry=self.spectral_geometry,
+                              validity=FieldValidityList(length=len(self.validity)))
+        return newfield
+
 class D3Field(D3CommonField):
     """
     3-Dimensions field class.
