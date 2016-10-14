@@ -2316,7 +2316,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
 
         Xresolution = self.grid['X_resolution']
         Yresolution = self.grid['Y_resolution']
-        if self.grid['LAMzone'] == None:
+        if self.grid.get('LAMzone', None) is None:
             Xpoints = self.dimensions['X']
             Ypoints = self.dimensions['Y']
         else:
@@ -2354,7 +2354,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
 
         Xresolution = self.grid['X_resolution']
         Yresolution = self.grid['Y_resolution']
-        if self.grid['LAMzone'] == None:
+        if self.grid.get('LAMzone', None) is None:
             Xpoints = self.dimensions['X']
             Ypoints = self.dimensions['Y']
         else:
@@ -2363,8 +2363,8 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         Xorigin = 0.
         Yorigin = 0.
         # origin of coordinates is the center of CI domain
-        i0 = self.dimensions['X_CIoffset'] + float(Xpoints - 1) / 2.
-        j0 = self.dimensions['Y_CIoffset'] + float(Ypoints - 1) / 2.
+        i0 = self.dimensions.get('X_CIoffset', 0) + float(Xpoints - 1) / 2.
+        j0 = self.dimensions.get('Y_CIoffset', 0) + float(Ypoints - 1) / 2.
         (oi, oj) = self._getoffset(position)
         i = i0 + (x - Xorigin) / Xresolution - oi
         j = j0 + (y - Yorigin) / Yresolution - oj

@@ -177,7 +177,7 @@ netCDF_standard_dimensions = ['N_dimension',  # numerotation (obs, profile, ...)
                               'Z_dimension']  # Z-axis (vertical)
 #: netCDF usual names for standard dimensions
 netCDF_usualnames_for_standard_dimensions = {'N_dimension':('transect', 'obs', 'profile', 'N', 'n'),
-                                             'T_dimension':('time', 'T', 't', 'validity'),
+                                             'T_dimension':('time', 'T', 't', 'validity', 'time_counter'),
                                              'X_dimension':('X', 'x', 'xx', 'LON', 'lon', 'Nbre_lon', 'longitude', 'max_lon_number'),
                                              'Y_dimension':('Y', 'y', 'yy', 'LAT', 'lat', 'Nbre_lat', 'latitude', 'lat_number'),
                                              'Z_dimension':('Z', 'z', 'zz', 'level', 'pressure', 'hybrid-pressure', 'height', 'altitude')}

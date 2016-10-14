@@ -760,7 +760,7 @@ class FieldValidity(RecursiveObject):
                       term=term,
                       cumulativeduration=cumulativeduration,
                       statistical_process_on_duration=statistical_process_on_duration)
-        if not (date_time == None and basis == None and term == None):
+        if not (date_time is None and basis is None and term is None):
             self.set(**kwargs)
 
     def term(self, fmt=None):
@@ -906,43 +906,43 @@ class FieldValidity(RecursiveObject):
 
         if isinstance(date_time, datetime.datetime):
             self._date_time = date_time
-        elif date_time != None:
+        elif date_time is not None:
             raise epygramError("argument 'date_time' must be of type" + \
-                               " datetime.datime")
+                               " datetime.datetime")
         if isinstance(basis, datetime.datetime):
             self._basis = basis
-        elif basis != None:
+        elif basis is not None:
             raise epygramError("argument 'basis' must be of type" + \
-                               " datetime.datime")
-        if term != None and not isinstance(term, datetime.timedelta):
+                               " datetime.datetime")
+        if term is not None and not isinstance(term, datetime.timedelta):
             raise epygramError("argument 'term' must be of type" + \
                                " datetime.timedelta")
-        if cumulativeduration != None and\
+        if cumulativeduration is not None and\
            not isinstance(cumulativeduration, datetime.timedelta):
             raise epygramError("argument 'cumulativeduration' must be of" + \
                                " type datetime.timedelta")
 
         if isinstance(term, datetime.timedelta):
-            if date_time != None and basis != None and term != None \
+            if date_time is not None and basis is not None and term is not None \
                and date_time - basis != term:
                 raise epygramError("inconsistency between 'term', 'basis'" + \
                                    " and 'date_time' arguments.")
 
-            if self._date_time == None:
-                if self._basis == None:
+            if self._date_time is None:
+                if self._basis is None:
                     raise epygramError("cannot set 'term' without 'basis'" + \
                                        " nor 'date_time'.")
                 else:
                     self._date_time = self._basis + term
             else:
-                if self._basis == None:
+                if self._basis is None:
                     self._basis = self._date_time - term
                 else:
                     self._date_time = self._basis + term
 
-        if cumulativeduration != None:
+        if cumulativeduration is not None:
             self._cumulativeduration = cumulativeduration
-        if self._cumulativeduration != None and  statistical_process_on_duration != None:
+        if self._cumulativeduration is not None and  statistical_process_on_duration is not None:
             self._statistical_process_on_duration = statistical_process_on_duration
 
 
