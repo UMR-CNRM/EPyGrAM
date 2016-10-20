@@ -487,7 +487,7 @@ class D3CommonField(Field):
 
 
         # Values
-        shp = newgeometry.get_datashape(len(self.validity), d4=True)
+        shp = newgeometry.get_datashape(dimT=len(self.validity), d4=True)
         data = numpy.ndarray(shp)
         for t in range(len(self.validity)):
             for k in range(len(newgeometry.vcoordinate.levels)):
@@ -496,7 +496,7 @@ class D3CommonField(Field):
                                              interpolation=interpolation,
                                              external_distance=external_distance,
                                              one=False)
-                data[t, k, :, :] = newgeometry.reshape_data(extracted, 1, horizontal_only=True)
+                data[t, k, :, :] = newgeometry.reshape_data(extracted)
 
         # Field
         newfield = fpx.field(fid=FPDict(subdomainfid),
@@ -544,7 +544,7 @@ class D3CommonField(Field):
         #zoom_field = self.extract_subdomain(zoom_geom)  #TODO: ? serait plus élégant mais pb d'efficacité (2x plus lent)
         #zoom_field.fid = fid                            # car extract_subdomain fait une recherche des plus proches points
 
-        shp = zoom_geom.get_datashape(len(self.validity), d4=True)
+        shp = zoom_geom.get_datashape(dimT=len(self.validity), d4=True)
         data = numpy.empty(shp)
         values = self.getdata(d4=True)
         for t in range(len(self.validity)):
@@ -953,15 +953,15 @@ class D3Field(D3CommonField):
             gpdims = self._get_gpdims_for_spectral_transforms()
             if self.geometry.rectangular_grid:
                 # LAM
-                gpdata = numpy.empty(self.geometry.get_datashape(len(self.validity), d4=True))
+                gpdata = numpy.empty(self.geometry.get_datashape(dimT=len(self.validity), d4=True))
             else:
                 # global
-                gpdata = numpy.ma.zeros(self.geometry.get_datashape(len(self.validity), d4=True))
+                gpdata = numpy.ma.zeros(self.geometry.get_datashape(dimT=len(self.validity), d4=True))
             for t in range(len(self.validity)):
                 for k in range(len(self.geometry.vcoordinate.levels)):
                     spdata_i = self.getdata(d4=True)[t, k, :]
                     gpdata_i = self.spectral_geometry.sp2gp(spdata_i, gpdims)
-                    gpdata_i = self.geometry.reshape_data(gpdata_i, 1, horizontal_only=True)
+                    gpdata_i = self.geometry.reshape_data(gpdata_i)
                     gpdata[t, k, :, :] = gpdata_i[:, :]
 
             self._attributes['spectral_geometry'] = None
@@ -1031,18 +1031,18 @@ class D3Field(D3CommonField):
             gpdims = self._get_gpdims_for_spectral_transforms()
             if self.geometry.rectangular_grid:
                 # LAM
-                gpderivX = numpy.empty(self.geometry.get_datashape(len(self.validity), d4=True))
-                gpderivY = numpy.empty(self.geometry.get_datashape(len(self.validity), d4=True))
+                gpderivX = numpy.empty(self.geometry.get_datashape(dimT=len(self.validity), d4=True))
+                gpderivY = numpy.empty(self.geometry.get_datashape(dimT=len(self.validity), d4=True))
             else:
                 # global
-                gpderivX = numpy.ma.zeros(self.geometry.get_datashape(len(self.validity), d4=True))
-                gpderivY = numpy.ma.zeros(self.geometry.get_datashape(len(self.validity), d4=True))
+                gpderivX = numpy.ma.zeros(self.geometry.get_datashape(dimT=len(self.validity), d4=True))
+                gpderivY = numpy.ma.zeros(self.geometry.get_datashape(dimT=len(self.validity), d4=True))
             for t in range(len(self.validity)):
                 for k in range(len(self.geometry.vcoordinate.levels)):
                     spdata_i = self.getdata(d4=True)[t, k, :]
                     (dx, dy) = self.spectral_geometry.compute_xy_spderivatives(spdata_i, gpdims)
-                    dx = self.geometry.reshape_data(dx, 1, horizontal_only=True)
-                    dy = self.geometry.reshape_data(dy, 1, horizontal_only=True)
+                    dx = self.geometry.reshape_data(dx)
+                    dy = self.geometry.reshape_data(dy)
                     gpderivX[t, k, :, :] = dx[:, :]
                     gpderivY[t, k, :, :] = dy[:, :]
 

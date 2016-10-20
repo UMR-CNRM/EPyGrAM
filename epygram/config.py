@@ -176,20 +176,29 @@ netCDF_standard_dimensions = ['N_dimension',  # numerotation (obs, profile, ...)
                               'Y_dimension',  # Y-axis (cartesian projection or latitude)
                               'Z_dimension']  # Z-axis (vertical)
 #: netCDF usual names for standard dimensions
-netCDF_usualnames_for_standard_dimensions = {'N_dimension':('transect', 'obs', 'profile', 'N', 'n'),
+netCDF_usualnames_for_standard_dimensions = {'N_dimension':('transect', 'obs', 'profile', 'N', 'n',
+                                                            'Number_of_points', 'gridpoints_number'),
                                              'T_dimension':('time', 'T', 't', 'validity', 'time_counter'),
-                                             'X_dimension':('X', 'x', 'xx', 'LON', 'lon', 'Nbre_lon', 'longitude', 'max_lon_number'),
-                                             'Y_dimension':('Y', 'y', 'yy', 'LAT', 'lat', 'Nbre_lat', 'latitude', 'lat_number'),
-                                             'Z_dimension':('Z', 'z', 'zz', 'level', 'pressure', 'hybrid-pressure', 'height', 'altitude')}
-
+                                             'X_dimension':('X', 'x', 'xx',
+                                                            'LON', 'lon', 'Nbre_lon', 'longitude',
+                                                            'max_lon_number'),
+                                             'Y_dimension':('Y', 'y', 'yy',
+                                                            'LAT', 'lat', 'Nbre_lat', 'latitude',
+                                                            'lat_number'),
+                                             'Z_dimension':('Z', 'z', 'zz', 'level',
+                                                            'pressure', 'hybrid-pressure', 'height', 'altitude')}
+#: netCDF usual names for storing lon, lat grids
+netCDF_usualnames_for_lonlat_grids = {'X':['LON', 'lon', 'lons', 'longitude', 'longitudes'],
+                                      'Y':['LAT', 'lat', 'lats', 'latitude', 'latitudes']}
 #: netCDF default behaviour
 #: the behaviour can be updated with specific netCDF_usualnames_for_standard_dimensions,
 #: e.g. 'X_dimension':'nb_lon'
 #: and eventual according grid, e.g. 'X_grid':'longitudes'
-netCDF_default_behaviour = {  # 'A_dimension':'name_of_the_dimension_in_netCDF_file',
-                            # 'A_grid':'name_of_the_grid_in_netCDF_file',
+netCDF_default_behaviour = {'reverse_Yaxis':False,
                             # writing behaviours:
-                            'flatten_non_rectangular_grids':False,
+                            'flatten_horizontal_grids':False,
+                            'write_lonlat_grid':True,
+                            'H1D_is_H2D_unstructured':True,
                             }
 #: netCDF default compression
 netCDF_default_compression = 4

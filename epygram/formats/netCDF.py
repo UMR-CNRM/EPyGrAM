@@ -14,6 +14,8 @@ import json
 import sys
 import numpy
 from collections import OrderedDict
+import datetime
+from dateutil import parser as dt_parser
 
 import netCDF4
 
@@ -34,6 +36,12 @@ _typeoffirstfixedsurface_dict = {'altitude':102,
                                  'hybrid-height':118,
                                  'pressure':100}
 _typeoffirstfixedsurface_dict_inv = {v:k for k, v in _typeoffirstfixedsurface_dict.items()}
+
+_proj_dict = {'lambert':'lambert_conformal_conic',
+              'mercator':'mercator',
+              'polar_stereographic':'polar_stereographic'}
+_proj_dict_inv = {v:k for k, v in _proj_dict.items()}
+
 
 
 class netCDF(FileResource):
@@ -167,7 +175,7 @@ class netCDF(FileResource):
         - *only*: to specify indexes [0 ... n-1] of specific dimensions,
           e.g. {'time':5,} to select only the 6th term of time dimension.
         - *adhoc_behaviour*: to specify "on the fly" a behaviour (usual
-          dimensions or grids).
+          dimensions or grids, ...).
         """
 
         # 0. initialization
@@ -181,9 +189,13 @@ class netCDF(FileResource):
         variable = self._variables[fid]
         behaviour = self.behaviour.copy()
         behaviour.update(adhoc_behaviour)
-        return_Yaxis = False
 
         # 1.1 identify usual dimensions
+        all_dimensions_e2n = {}
+        for d in self._dimensions.keys():
+            for sd in config.netCDF_standard_dimensions:
+                if d in config.netCDF_usualnames_for_standard_dimensions[sd]:
+                    all_dimensions_e2n[sd] = d
         variable_dimensions = {d:len(self._dimensions[d]) for d in variable.dimensions}
         for d in variable_dimensions.keys():
             for sd in config.netCDF_standard_dimensions:
@@ -219,8 +231,21 @@ class netCDF(FileResource):
             validity = FieldValidityList()
             validity.pop()
             basis = netCDF4.num2date(0, time_unit)
+            if not isinstance(basis, datetime.datetime):
+                basis = '{:0>19}'.format(str(basis).strip())
+                basis = dt_parser.parse(basis, yearfirst=True)  #FIXME: years < 1000 become > 2000
             for v in T:
-                validity.append(FieldValidity(date_time=v, basis=basis))
+                if isinstance(v, datetime.datetime):
+                    fv = FieldValidity(date_time=v, basis=basis)
+                else:
+                    if v is None:
+                        epylog.info('time information not available.')
+                        fv = FieldValidity()
+                    else:
+                        v = '{:0>19}'.format(str(v).strip())
+                        v = dt_parser.parse(v, yearfirst=True)  #FIXME: years < 1000 become > 2000
+                        fv = FieldValidity(date_time=v, basis=basis)
+                validity.append(fv)
             return validity
         if 'T_dimension' in dims_dict_e2n.keys():
             # field has a time dimension
@@ -240,6 +265,7 @@ class netCDF(FileResource):
         # 3. GEOMETRY
         # ===========
         kwargs_geom = {}
+        kwargs_geom['position_on_horizontal_grid'] = 'center'
         # 3.1 identify the structure
         keys = copy.copy(variable_dimensions.keys())
         for k in only.keys():
@@ -253,19 +279,44 @@ class netCDF(FileResource):
                               for k in keys
                               if variable_dimensions[k] != 1]
         H2D = set(squeezed_variables) == set(['X_dimension',
-                                              'Y_dimension'])
+                                              'Y_dimension']) \
+              or (set(squeezed_variables) == set(['N_dimension']) \
+                  and all([d in all_dimensions_e2n for d in ['X_dimension',  # flattened grids
+                                                             'Y_dimension']])) \
+              or (set(squeezed_variables) == set(['N_dimension']) \
+                  and behaviour.get('H1D_is_H2D_unstructured', False))  # or 2D unstructured grids
         D3 = set(squeezed_variables) == set(['X_dimension',
                                              'Y_dimension',
-                                             'Z_dimension'])
+                                             'Z_dimension']) \
+             or (set(squeezed_variables) == set(['N_dimension',
+                                                 'Z_dimension']) \
+                 and all([d in all_dimensions_e2n for d in ['X_dimension',  # flattened grids
+                                                            'Y_dimension']])) \
+             or (set(squeezed_variables) == set(['N_dimension',
+                                                 'Z_dimension']) \
+                 and behaviour.get('H1D_is_H2D_unstructured', False))  # or 2D unstructured grids
         V2D = set(squeezed_variables) == set(['N_dimension',
-                                              'Z_dimension'])
-        H1D = set(squeezed_variables) == set(['N_dimension'])
+                                              'Z_dimension']) and not D3
+        H1D = set(squeezed_variables) == set(['N_dimension']) and not H2D
         V1D = set(squeezed_variables) == set(['Z_dimension'])
         points = set(squeezed_variables) == set([])
         if not any([D3, H2D, V2D, H1D, V1D, points]):
-            raise epygramError("unable to guess structure of the field: " \
-                               + str(variable_dimensions.keys())\
-                               + "refine behaviour dimensions or filter dimensions with 'only'.")
+            for d in set(variable_dimensions.keys()) - set(dims_dict_n2e.keys()):
+                epylog.error(" ".join(["dimension:",
+                                       d,
+                                       "has not been identified as a usual",
+                                       "(T,Z,Y,X) dimension. Please specify",
+                                       "with readfield() argument",
+                                       "adhoc_behaviour={'T_dimension':'" + d + "'}",
+                                       "for instance or",
+                                       "my_resource.behave(T_dimension=" + d + ")",
+                                       "or complete",
+                                       "config.netCDF_usualnames_for_standard_dimensions",
+                                       "in $HOME/.epygram/userconfig.py"]))
+            raise epygramError(" ".join(["unable to guess structure of field:",
+                                         str(variable_dimensions.keys()),
+                                         "=> refine behaviour dimensions or",
+                                         "filter dimensions with 'only'."]))
         else:
             if D3:
                 structure = '3D'
@@ -296,15 +347,47 @@ class netCDF(FileResource):
         # 3.3.1 dimensions
         dimensions = {}
         kwargs_geom['name'] = 'unstructured'
-        if D3 or H2D:
-            dimensions['X'] = variable_dimensions[dims_dict_e2n['X_dimension']]
-            dimensions['Y'] = variable_dimensions[dims_dict_e2n['Y_dimension']]
         if V2D or H1D:
             dimensions['X'] = variable_dimensions[dims_dict_e2n['N_dimension']]
             dimensions['Y'] = 1
         if V1D or points:
             dimensions['X'] = 1
             dimensions['Y'] = 1
+        if D3 or H2D:
+            if set(['X_dimension', 'Y_dimension']).issubset(set(dims_dict_e2n.keys())):
+                flattened = False
+            elif 'N_dimension' in dims_dict_e2n.keys():
+                flattened = True
+            else:
+                raise epygramError('unable to find grid dimensions.')
+            if not flattened:
+                dimensions['X'] = variable_dimensions[dims_dict_e2n['X_dimension']]
+                dimensions['Y'] = variable_dimensions[dims_dict_e2n['Y_dimension']]
+            else:  # flattened
+                if behaviour.get('H1D_is_H2D_unstructured', False):
+                    dimensions['X'] = variable_dimensions[dims_dict_e2n['N_dimension']]
+                    dimensions['Y'] = 1
+                else:
+                    assert 'X_dimension' in all_dimensions_e2n.keys(), \
+                           ' '.join(["unable to find X_dimension of field:",
+                                     "please specify with readfield() argument",
+                                     "adhoc_behaviour={'X_dimension':'" + d + "'}",
+                                     "for instance or",
+                                     "my_resource.behave(X_dimension=" + d + ")",
+                                     "or complete",
+                                     "config.netCDF_usualnames_for_standard_dimensions",
+                                     "in $HOME/.epygram/userconfig.py"])
+                    assert 'Y_dimension' in all_dimensions_e2n.keys(), \
+                           ' '.join(["unable to find Y_dimension of field:",
+                                     "please specify with readfield() argument",
+                                     "adhoc_behaviour={'Y_dimension':'" + d + "'}",
+                                     "for instance or",
+                                     "my_resource.behave(Y_dimension=" + d + ")",
+                                     "or complete",
+                                     "config.netCDF_usualnames_for_standard_dimensions",
+                                     "in $HOME/.epygram/userconfig.py"])
+                    dimensions['X'] = len(self._dimensions[all_dimensions_e2n['X_dimension']])
+                    dimensions['Y'] = len(self._dimensions[all_dimensions_e2n['Y_dimension']])
         # 3.3.2 vertical part
         if D3 or V1D or V2D:
             var_corresponding_to_Z_grid = behaviour.get('Z_grid', False)
@@ -347,79 +430,227 @@ class netCDF(FileResource):
         # 3.3.3 horizontal part
         # find grid in variables
         if H2D or D3:
-            var_corresponding_to_X_grid = behaviour.get('X_grid', False)
-            if not var_corresponding_to_X_grid in self._variables.keys():
-                raise epygramError('unable to find X_grid in variables.')
-            var_corresponding_to_Y_grid = behaviour.get('Y_grid', False)
-            if not var_corresponding_to_Y_grid in self._variables.keys():
-                raise epygramError('unable to find Y_grid in variables.')
-            else:
-                if hasattr(self._variables[var_corresponding_to_Y_grid], 'standard_name') \
-                and self._variable[var_corresponding_to_Y_grid].standard_name == 'projection_y_coordinate':
-                    behaviour['grid_is_lonlat'] = False
-                elif 'lat' in var_corresponding_to_Y_grid.lower() \
-                and 'grid_is_lonlat' not in behaviour.keys():
-                    behaviour['grid_is_lonlat'] = True
-            if len(self._variables[var_corresponding_to_X_grid].dimensions) == 1 \
-            and len(self._variables[var_corresponding_to_Y_grid].dimensions) == 1:
-                X = self._variables[var_corresponding_to_X_grid][:]
-                Y = self._variables[var_corresponding_to_Y_grid][:]
-                Xgrid = numpy.ones((Y.size, X.size)) * X
-                Ygrid = (numpy.ones((Y.size, X.size)).transpose() * Y).transpose()
-            elif len(self._variables[var_corresponding_to_X_grid].dimensions) == 2 \
-            and len(self._variables[var_corresponding_to_Y_grid].dimensions) == 2:
-                Xgrid = self._variables[var_corresponding_to_X_grid][:, :]
-                Ygrid = self._variables[var_corresponding_to_Y_grid][:, :]
-            if Ygrid[0, 0] > Ygrid[-1, 0]:
-                return_Yaxis = True
-                Ygrid = Ygrid[::-1, :]
+            def find_grid_in_variables():
+                var_corresponding_to_X_grid = behaviour.get('X_grid', False)
+                if not var_corresponding_to_X_grid in self._variables.keys():
+                    epylog.error(" ".join(["unable to find X_grid in variables.",
+                                           "Please specify with readfield()",
+                                           "argument",
+                                           "adhoc_behaviour={'X_grid':'name_of_the_variable'}",
+                                           "for instance or",
+                                           "my_resource.behave(X_grid='name_of_the_variable')"]))
+                    raise epygramError('unable to find X_grid in variables.')
+                var_corresponding_to_Y_grid = behaviour.get('Y_grid', False)
+                if not var_corresponding_to_Y_grid in self._variables.keys():
+                    epylog.error(" ".join(["unable to find Y_grid in variables.",
+                                           "Please specify with readfield()",
+                                           "argument",
+                                           "adhoc_behaviour={'Y_grid':'name_of_the_variable'}",
+                                           "for instance or",
+                                           "my_resource.behave(Y_grid='name_of_the_variable')"]))
+                    raise epygramError('unable to find Y_grid in variables.')
+                else:
+                    if hasattr(self._variables[var_corresponding_to_Y_grid], 'standard_name') \
+                    and self._variables[var_corresponding_to_Y_grid].standard_name == 'projection_y_coordinate' \
+                    and self._variables[var_corresponding_to_X_grid].standard_name == 'projection_x_coordinate':
+                        behaviour['grid_is_lonlat'] = False
+                    elif 'lat' in var_corresponding_to_Y_grid.lower() \
+                    and 'lon' in var_corresponding_to_X_grid.lower() \
+                    and 'grid_is_lonlat' not in behaviour.keys():
+                        behaviour['grid_is_lonlat'] = True
+                if len(self._variables[var_corresponding_to_X_grid].dimensions) == 1 \
+                and len(self._variables[var_corresponding_to_Y_grid].dimensions) == 1:
+                    # case of a flat grid
+                    if not flattened:
+                        # case of a regular grid where X is constant on a column
+                        # and Y constant on a row: reconstruct 2D
+                        X = self._variables[var_corresponding_to_X_grid][:]
+                        Y = self._variables[var_corresponding_to_Y_grid][:]
+                        Xgrid = numpy.ones((Y.size, X.size)) * X
+                        Ygrid = (numpy.ones((Y.size, X.size)).transpose() * Y).transpose()
+                    elif behaviour.get('H1D_is_H2D_unstructured', False):
+                        # case of a H2D unstructured field
+                        X = self._variables[var_corresponding_to_X_grid][:]
+                        Y = self._variables[var_corresponding_to_Y_grid][:]
+                        Xgrid = X.reshape((1, len(X)))
+                        Ygrid = Y.reshape((1, len(Y)))
+                    else:
+                        # case of a H2D field with flattened grid
+                        if len(X) == dimensions['X'] * dimensions['Y']:
+                            Xgrid = X.reshape((dimensions['Y'], dimensions['X']))
+                            Ygrid = Y.reshape((dimensions['Y'], dimensions['X']))
+                        else:
+                            raise epygramError('unable to reconstruct 2D grid.')
+                elif len(self._variables[var_corresponding_to_X_grid].dimensions) == 2 \
+                and len(self._variables[var_corresponding_to_Y_grid].dimensions) == 2:
+                    Xgrid = self._variables[var_corresponding_to_X_grid][:, :]
+                    Ygrid = self._variables[var_corresponding_to_Y_grid][:, :]
+                if Ygrid[0, 0] > Ygrid[-1, 0] and not behaviour.get('reverse_Ygrid'):
+                    epylog.warning("Ygrid seems to be reversed; shouldn't behaviour['reverse_Yaxis'] be True ?")
+                elif behaviour.get('reverse_Yaxis'):
+                    Ygrid = Ygrid[::-1, :]
+
+                return Xgrid, Ygrid
 
             # projection or grid
-            if hasattr(variable, 'grid_mapping'):
+            if hasattr(variable, 'grid_mapping') and \
+               (self._variables[variable.grid_mapping].grid_mapping_name in ('lambert_conformal_conic',
+                                                                             'mercator',
+                                                                             'polar_stereographic',
+                                                                             'latitude_longitude') \
+                or 'gauss' in self._variables[variable.grid_mapping].grid_mapping_name.lower()):
                 # geometry described as "grid_mapping" meta-data
                 gm = variable.grid_mapping
                 grid_mapping = self._variables[gm]
-                if grid_mapping.grid_mapping_name in ('lambert_conformal_conic',):
-                    if (hasattr(self._variables[variable.grid_mapping], 'resolution') \
+                if hasattr(grid_mapping, 'ellipsoid'):
+                    kwargs_geom['geoid'] = {'ellps':grid_mapping.ellipsoid}
+                elif hasattr(grid_mapping, 'earth_radius'):
+                    kwargs_geom['geoid'] = {'a':grid_mapping.earth_radius,
+                                            'b':grid_mapping.earth_radius}
+                elif hasattr(grid_mapping, 'semi_major_axis') and hasattr(grid_mapping, 'semi_minor_axis'):
+                    kwargs_geom['geoid'] = {'a':grid_mapping.semi_major_axis,
+                                            'b':grid_mapping.semi_minor_axis}
+                elif hasattr(grid_mapping, 'semi_major_axis') and hasattr(grid_mapping, 'inverse_flattening'):
+                    kwargs_geom['geoid'] = {'a':grid_mapping.semi_major_axis,
+                                            'rf':grid_mapping.inverse_flattening}
+                else:
+                    kwargs_geom['geoid'] = config.default_geoid
+                if hasattr(grid_mapping, 'position_on_horizontal_grid'):
+                    kwargs_geom['position_on_horizontal_grid'] = grid_mapping.position_on_horizontal_grid
+                if grid_mapping.grid_mapping_name in ('lambert_conformal_conic', 'mercator', 'polar_stereographic'):
+                    if (hasattr(self._variables[variable.grid_mapping], 'x_resolution') \
                     or not behaviour.get('grid_is_lonlat', False)):
                         # if resolution is either in grid_mapping attributes or in the grid itself
-                        if grid_mapping.grid_mapping_name == 'lambert_conformal_conic':
-                            kwargs_geom['name'] = 'lambert'
-                            if hasattr(grid_mapping, 'resolution'):
-                                Xresolution = Yresolution = grid_mapping.resolution
+                        kwargs_geom['name'] = _proj_dict_inv[grid_mapping.grid_mapping_name]
+                        if hasattr(grid_mapping, 'x_resolution'):
+                            Xresolution = grid_mapping.x_resolution
+                            Yresolution = grid_mapping.y_resolution
+                        else:
+                            Xgrid, Ygrid = find_grid_in_variables()
+                            if behaviour.get('H1D_is_H2D_unstructured', False):
+                                raise epygramError('unable to retrieve both X_resolution and Y_resolution from a 1D list of points.')
                             else:
                                 Xresolution = abs(Xgrid[0, 0] - Xgrid[0, 1])
                                 Yresolution = abs(Ygrid[0, 0] - Ygrid[1, 0])
-                            grid = {'input_lon':Angle(grid_mapping.longitude_of_central_meridian, 'degrees'),
-                                    'input_lat':Angle(grid_mapping.latitude_of_projection_origin, 'degrees'),
-                                    'input_position':((float(dimensions['X']) - 1) / 2.,
-                                                      (float(dimensions['Y']) - 1) / 2.),
-                                    'X_resolution':Xresolution,
-                                    'Y_resolution':Yresolution,
-                                    'LAMzone':None}
+                        grid = {
+                                'X_resolution':Xresolution,
+                                'Y_resolution':Yresolution,
+                                'LAMzone':None}
+                        import pyproj
+                        if kwargs_geom['name'] == 'lambert':
                             kwargs_geom['projection'] = {'reference_lon':Angle(grid_mapping.longitude_of_central_meridian, 'degrees'),
-                                                         'reference_lat':Angle(grid_mapping.standard_parallel, 'degrees'),
-                                                         'rotation':Angle(0., 'radians')}
-                            if hasattr(grid_mapping, 'standard_meridian'):
-                                kwargs_geom['projection']['reference_lon'] = Angle(grid_mapping.standard_meridian, 'degrees')
-                        else:
-                            raise NotImplementedError('grid_mapping.grid_mapping_name == ' + grid_mapping.grid_mapping_name)
+                                                         'rotation':Angle(0., 'degrees')}
+                            if hasattr(grid_mapping, 'rotation'):
+                                kwargs_geom['projection']['rotation'] = Angle(grid_mapping.rotation, 'degrees')
+                            if isinstance(grid_mapping.standard_parallel, numpy.ndarray):
+                                s1, s2 = grid_mapping.standard_parallel
+                                kwargs_geom['projection']['secant_lat1'] = Angle(s1, 'degrees')
+                                kwargs_geom['projection']['secant_lat2'] = Angle(s2, 'degrees')
+                            else:
+                                r = grid_mapping.standard_parallel
+                                kwargs_geom['projection']['reference_lat'] = Angle(r, 'degrees')
+                                s1 = s2 = r
+                            fe = grid_mapping.false_easting
+                            fn = grid_mapping.false_northing
+                            reference_lat = grid_mapping.latitude_of_projection_origin
+
+                            # compute x_0, y_0...
+                            p = pyproj.Proj(proj='lcc',
+                                            lon_0=kwargs_geom['projection']['reference_lon'].get('degrees'),
+                                            lat_1=s1, lat_2=s2,
+                                            **kwargs_geom['geoid'])
+                            dx, dy = p(kwargs_geom['projection']['reference_lon'].get('degrees'),
+                                       reference_lat)
+                            # ... for getting center coords from false_easting, false_northing
+                            p = pyproj.Proj(proj='lcc',
+                                            lon_0=kwargs_geom['projection']['reference_lon'].get('degrees'),
+                                            lat_1=s1, lat_2=s2,
+                                            x_0=-dx, y_0=-dy,
+                                            **kwargs_geom['geoid'])
+                            llc = p(-fe, -fn, inverse=True)
+                            del p
+                            grid['input_lon'] = Angle(llc[0], 'degrees')
+                            grid['input_lat'] = Angle(llc[1], 'degrees')
+                            grid['input_position'] = (float(dimensions['X'] - 1) / 2.,
+                                                      float(dimensions['Y'] - 1) / 2.)
+                        elif kwargs_geom['name'] == 'mercator':
+                            kwargs_geom['projection'] = {'reference_lon':Angle(grid_mapping.longitude_of_central_meridian, 'degrees'),
+                                                         'rotation':Angle(0., 'degrees')}
+                            if hasattr(grid_mapping, 'rotation'):
+                                kwargs_geom['projection']['rotation'] = Angle(grid_mapping.rotation, 'degrees')
+                            kwargs_geom['projection']['reference_lat'] = Angle(0., 'degrees')
+                            if grid_mapping.standard_parallel != 0.:
+                                lat_ts = grid_mapping.standard_parallel
+                                kwargs_geom['projection']['secant_lat'] = Angle(lat_ts, 'degrees')
+                            else:
+                                lat_ts = 0.
+                            fe = grid_mapping.false_easting
+                            fn = grid_mapping.false_northing
+                            # compute x_0, y_0...
+                            p = pyproj.Proj(proj='merc',
+                                            lon_0=kwargs_geom['projection']['reference_lon'].get('degrees'),
+                                            lat_ts=lat_ts,
+                                            **kwargs_geom['geoid'])
+                            dx, dy = p(kwargs_geom['projection']['reference_lon'].get('degrees'),
+                                       0.)
+                            # ... for getting center coords from false_easting, false_northing
+                            p = pyproj.Proj(proj='merc',
+                                            lon_0=kwargs_geom['projection']['reference_lon'].get('degrees'),
+                                            lat_ts=lat_ts,
+                                            x_0=-dx, y_0=-dy,
+                                            **kwargs_geom['geoid'])
+                            llc = p(-fe, -fn, inverse=True)
+                            del p
+                            grid['input_lon'] = Angle(llc[0], 'degrees')
+                            grid['input_lat'] = Angle(llc[1], 'degrees')
+                            grid['input_position'] = (float(dimensions['X'] - 1) / 2., float(dimensions['Y'] - 1) / 2.)
+                        elif kwargs_geom['name'] == 'polar_stereographic':
+                            kwargs_geom['projection'] = {'reference_lon':Angle(grid_mapping.straight_vertical_longitude_from_pole, 'degrees'),
+                                                         'rotation':Angle(0., 'degrees')}
+                            if hasattr(grid_mapping, 'rotation'):
+                                kwargs_geom['projection']['rotation'] = Angle(grid_mapping.rotation, 'degrees')
+                            kwargs_geom['projection']['reference_lat'] = Angle(grid_mapping.latitude_of_projection_origin, 'degrees')
+                            lat_ts = grid_mapping.standard_parallel
+                            if grid_mapping.standard_parallel != grid_mapping.latitude_of_projection_origin:
+                                kwargs_geom['projection']['secant_lat'] = Angle(lat_ts, 'degrees')
+                            fe = grid_mapping.false_easting
+                            fn = grid_mapping.false_northing
+                            # compute x_0, y_0...
+                            p = pyproj.Proj(proj='stere',
+                                            lon_0=kwargs_geom['projection']['reference_lon'].get('degrees'),
+                                            lat_0=kwargs_geom['projection']['reference_lat'].get('degrees'),
+                                            lat_ts=lat_ts,
+                                            **kwargs_geom['geoid'])
+                            dx, dy = p(kwargs_geom['projection']['reference_lon'].get('degrees'),
+                                       kwargs_geom['projection']['reference_lat'].get('degrees'),)
+                            # ... for getting center coords from false_easting, false_northing
+                            p = pyproj.Proj(proj='stere',
+                                            lon_0=kwargs_geom['projection']['reference_lon'].get('degrees'),
+                                            lat_0=kwargs_geom['projection']['reference_lat'].get('degrees'),
+                                            lat_ts=lat_ts,
+                                            x_0=-dx, y_0=-dy,
+                                            **kwargs_geom['geoid'])
+                            llc = p(-fe, -fn, inverse=True)
+                            del p
+                            grid['input_lon'] = Angle(llc[0], 'degrees')
+                            grid['input_lat'] = Angle(llc[1], 'degrees')
+                            grid['input_position'] = (float(dimensions['X'] - 1) / 2., float(dimensions['Y'] - 1) / 2.)
                     else:
                         # no resolution available: grid mapping is useless
                         gm = None
                 elif 'gauss' in grid_mapping.grid_mapping_name.lower():
-                    # NOTE: this is a (good) approximation actually, the true latitudes are the roots of Legendre polynoms
                     if hasattr(grid_mapping, 'latitudes'):
                         latitudes = self._variables[grid_mapping.latitudes.split(' ')[1]][:]
                     else:
-                        raise NotImplementedError('(re-)computation of Gauss latitudes (not in file metadata.')
+                        # NOTE: this is a (good) approximation actually, the true latitudes are the roots of Legendre polynoms
+                        raise NotImplementedError('(re-)computation of Gauss latitudes (not in file metadata).')
                     grid = {'latitudes':FPList([Angle(l, 'degrees') for l in latitudes]),
                             'dilatation_coef':1.}
                     if hasattr(grid_mapping, 'lon_number_by_lat'):
-                        if not isinstance(grid_mapping.lon_number_by_lat, int):
-                            kwargs_geom['name'] = 'regular_gauss'
+                        if isinstance(grid_mapping.lon_number_by_lat, unicode):
                             lon_number_by_lat = self._variables[grid_mapping.lon_number_by_lat.split(' ')[1]][:]
                         else:
+                            kwargs_geom['name'] = 'regular_gauss'
                             lon_number_by_lat = [dimensions['X'] for _ in range(dimensions['Y'])]
                         if hasattr(grid_mapping, 'pole_lon'):
                             kwargs_geom['name'] = 'rotated_reduced_gauss'
@@ -433,22 +664,37 @@ class netCDF(FileResource):
                                   'lat_number':len(latitudes),
                                   'lon_number_by_lat':FPList([int(n) for n in
                                                       lon_number_by_lat])}
-                    return_Yaxis = False
+                elif grid_mapping.grid_mapping_name == 'latitude_longitude':
+                    # try to find out longitude, latitude arrays
+                    for f in config.netCDF_usualnames_for_lonlat_grids['X']:
+                        if f in self.listfields():
+                            behaviour['X_grid'] = f
+                            break
+                    for f in config.netCDF_usualnames_for_lonlat_grids['Y']:
+                        if f in self.listfields():
+                            behaviour['Y_grid'] = f
+                            break
+                    Xgrid, Ygrid = find_grid_in_variables()
+                    grid = {'longitudes':Xgrid,
+                            'latitudes':Ygrid}
                 else:
                     raise NotImplementedError('grid_mapping.grid_mapping_name == ' + grid_mapping.grid_mapping_name)
             else:
+                if hasattr(variable, 'grid_mapping'):
+                    epylog.info('grid_mapping ignored: unknown case')
                 # grid only in variables
+                Xgrid, Ygrid = find_grid_in_variables()
                 if behaviour.get('grid_is_lonlat', False):
                     grid = {'longitudes':Xgrid,
                             'latitudes':Ygrid}
                 else:
                     # grid is not lon/lat and no other metadata available : Academic
+                    if flattened:
+                        raise NotImplementedError("flattened academic grid.")
                     kwargs_geom['name'] = 'academic'
                     grid = {'LAMzone':None,
                             'X_resolution':abs(Xgrid[0, 1] - Xgrid[0, 0]),
                             'Y_resolution':abs(Ygrid[1, 0] - Ygrid[0, 0])}
-                    #grid = {'X':Xgrid,
-                    #        'Y':Ygrid}
         elif V1D or V2D or points:
             var_corresponding_to_X_grid = behaviour.get('X_grid', False)
             if not var_corresponding_to_X_grid in self._variables.keys():
@@ -475,7 +721,6 @@ class netCDF(FileResource):
         kwargs_geom['grid'] = grid
         kwargs_geom['dimensions'] = dimensions
         kwargs_geom['vcoordinate'] = vcoordinate
-        kwargs_geom['position_on_horizontal_grid'] = 'center'
         geometry = fpx.geometry(**kwargs_geom)
 
         # 4. build field
@@ -505,49 +750,58 @@ class netCDF(FileResource):
             field_dim_num = 1 if len(field.validity) > 1 else 0
             if field.structure != 'Point':
                 field_dim_num += [int(c) for c in field.structure if c.isdigit()][0]
+                if (H2D or D3) and flattened:
+                    field_dim_num -= 1
             assert field_dim_num == len(buffdata.squeeze().shape), \
                    ' '.join(['shape of field and identified usual dimensions',
                              'do not match: use *only* to filter or',
                              '*adhoc_behaviour* to identify dimensions'])
-            if len(buffdata.shape) > 1:
-                # re-shuffle to have data indexes in order (t,z,y,x)
-                positions = []
-                shp4D = [1, 1, 1, 1]
-                if 'T_dimension' in dims_dict_e2n.keys():
-                    idx = variable.dimensions.index(dims_dict_e2n['T_dimension'])
-                    positions.append(idx)
-                    shp4D[0] = buffdata.shape[idx]
-                if  'Z_dimension' in dims_dict_e2n.keys():
-                    idx = variable.dimensions.index(dims_dict_e2n['Z_dimension'])
-                    positions.append(idx)
-                    shp4D[1] = buffdata.shape[idx]
-                if  'Y_dimension' in dims_dict_e2n.keys():
-                    idx = variable.dimensions.index(dims_dict_e2n['Y_dimension'])
-                    positions.append(idx)
-                    shp4D[2] = buffdata.shape[idx]
-                if  'X_dimension' in dims_dict_e2n.keys():
-                    idx = variable.dimensions.index(dims_dict_e2n['X_dimension'])
-                    positions.append(idx)
-                    shp4D[3] = buffdata.shape[idx]
-                elif  'N_dimension' in dims_dict_e2n.keys():
-                    idx = variable.dimensions.index(dims_dict_e2n['N_dimension'])
-                    positions.append(idx)
-                    shp4D[3] = buffdata.shape[idx]
-                for d in variable.dimensions:
-                    # whatever the order of these, they must have been filtered and dimension 1 (only)
-                    if d not in dims_dict_e2n.values():
-                        positions.append(variable.dimensions.index(d))
-                shp4D = tuple(shp4D)
-                buffdata = buffdata.transpose(*positions).squeeze()
-                if isinstance(buffdata, numpy.ma.masked_array):
-                    data = numpy.ma.zeros(shp4D)
-                else:
-                    data = numpy.empty(shp4D)
-                data[...] = buffdata.reshape(data.shape)
-                if return_Yaxis:
-                    data[...] = data[:, :, ::-1, :]
+            # re-shuffle to have data indexes in order (t,z,y,x)
+            positions = []
+            shp4D = [1, 1, 1, 1]
+            if 'T_dimension' in dims_dict_e2n.keys():
+                idx = variable.dimensions.index(dims_dict_e2n['T_dimension'])
+                positions.append(idx)
+                shp4D[0] = buffdata.shape[idx]
+            if 'Z_dimension' in dims_dict_e2n.keys():
+                idx = variable.dimensions.index(dims_dict_e2n['Z_dimension'])
+                positions.append(idx)
+                shp4D[1] = buffdata.shape[idx]
+            if 'Y_dimension' in dims_dict_e2n.keys():
+                idx = variable.dimensions.index(dims_dict_e2n['Y_dimension'])
+                positions.append(idx)
+                shp4D[2] = buffdata.shape[idx]
+            if 'X_dimension' in dims_dict_e2n.keys():
+                idx = variable.dimensions.index(dims_dict_e2n['X_dimension'])
+                positions.append(idx)
+                shp4D[3] = buffdata.shape[idx]
+            elif 'N_dimension' in dims_dict_e2n.keys():
+                idx = variable.dimensions.index(dims_dict_e2n['N_dimension'])
+                positions.append(idx)
+                shp4D[3] = buffdata.shape[idx]
+            for d in variable.dimensions:
+                # whatever the order of these, they must have been filtered and dimension 1 (only)
+                if d not in dims_dict_e2n.values():
+                    positions.append(variable.dimensions.index(d))
+            shp4D = tuple(shp4D)
+            buffdata = buffdata.transpose(*positions).squeeze()
+            if isinstance(buffdata, numpy.ma.masked_array):
+                data = numpy.ma.zeros(shp4D)
             else:
-                data = buffdata
+                data = numpy.empty(shp4D)
+            if (H2D or D3) and flattened:
+                if len(buffdata.shape) == 2:
+                    if D3:
+                        first_dimension = 'Z'
+                    else:
+                        first_dimension = 'T'
+                else:
+                    first_dimension = None
+                data = geometry.reshape_data(buffdata, first_dimension=first_dimension, d4=True)
+            else:
+                data[...] = buffdata.reshape(data.shape)
+            if behaviour.get('reverse_Yaxis'):
+                data[...] = data[:, :, ::-1, :]
             field.setdata(data)
 
         return field
@@ -634,6 +888,10 @@ class netCDF(FileResource):
         if Z_gridsize > 1:
             check_or_add_dim(Z, size=Z_gridsize)
         # horizontal
+        if self.behaviour.get('flatten_horizontal_grids', False):
+            _gpn = field.geometry.gridpoints_number
+            G = 'gridpoints_number'
+            check_or_add_dim(G, size=_gpn)
         if field.geometry.rectangular_grid:
             if field.geometry.dimensions['Y'] > 1 and field.geometry.dimensions['X'] > 1:
                 Y = self.behaviour.get('Y_dimension',
@@ -651,10 +909,6 @@ class netCDF(FileResource):
             check_or_add_dim(Y, d_in_field='lat_number')
             X = self.behaviour.get('X_dimension', 'longitude')
             check_or_add_dim(X, d_in_field='max_lon_number')
-            if self.behaviour['flatten_non_rectangular_grids']:
-                _gpn = sum(field.geometry.dimensions['lon_number_by_lat'])
-                G = 'gridpoints_number'
-                check_or_add_dim(G, size=_gpn)
         else:
             raise NotImplementedError("grid not rectangular nor a gauss one.")
 
@@ -666,9 +920,9 @@ class netCDF(FileResource):
                      if v in config.netCDF_usualnames_for_standard_dimensions['T_dimension']}.get('found', tgrid)
             tgrid = self.behaviour.get('T_grid', tgrid)
             if len(field.validity) == 1:
-                _, _status = check_or_add_variable(tgrid, int)
+                _, _status = check_or_add_variable(tgrid, float)
             else:
-                _, _status = check_or_add_variable(tgrid, int, T)
+                _, _status = check_or_add_variable(tgrid, float, T)
                 dims.append(tgrid)
             datetime0 = field.validity[0].getbasis().isoformat(sep=' ')
             datetimes = [int((dt.get() - field.validity[0].getbasis()).total_seconds()) for dt in field.validity]
@@ -731,16 +985,15 @@ class netCDF(FileResource):
         # 3.2 grid (lonlat)
         dims_lonlat = []
         (lons, lats) = field.geometry.get_lonlat_grid()
-        if self.behaviour['flatten_non_rectangular_grids'] \
-        and not field.geometry.rectangular_grid:
+        if self.behaviour.get('flatten_horizontal_grids'):
             dims_lonlat.append(G)
             dims.append(G)
             lons = stretch_array(lons)
             lats = stretch_array(lats)
-        elif 'gauss' in field.geometry.name or field.geometry.dimensions.get('Y', 0) > 1:  # both Y and X dimensions
+        elif field.geometry.dimensions.get('Y', field.geometry.dimensions.get('lat_number', 0)) > 1:  # both Y and X dimensions
             dims_lonlat.extend([Y, X])
             dims.extend([Y, X])
-        elif field.geometry.dimensions['X'] > 1:  # only X == N
+        elif field.geometry.dimensions['X'] > 1:  # only X ==> N
             dims_lonlat.append(N)
             dims.append(N)
         # else: pass (single point or profile)
@@ -752,10 +1005,10 @@ class netCDF(FileResource):
         try:
             _ = float(stretch_array(lons)[0])
         except ValueError:
-            no_lonlat = True
+            write_lonlat_grid = False
         else:
-            no_lonlat = False
-        if not no_lonlat:
+            write_lonlat_grid = self.behaviour.get('write_lonlat_grid', True)
+        if write_lonlat_grid:
             lons_var, _status = check_or_add_variable('longitude', vartype, dims_lonlat, fill_value=fill_value)
             lats_var, _status = check_or_add_variable('latitude', vartype, dims_lonlat, fill_value=fill_value)
             if _status == 'match':
@@ -764,16 +1017,31 @@ class netCDF(FileResource):
                 lons_var[...] = lons[...]
                 lats_var[...] = lats[...]
         # 3.3 meta-data
+        def set_ellipsoid(meta):
+            if 'ellps' in field.geometry.geoid:
+                self._variables[meta].ellipsoid = field.geometry.geoid['ellps']
+            elif field.geometry.geoid.get('a', False) == field.geometry.geoid.get('b', True):
+                self._variables[meta].earth_radius = field.geometry.geoid['a']
+            elif field.geometry.geoid.get('a', False) and field.geometry.geoid.get('b', False):
+                self._variables[meta].semi_major_axis = field.geometry.geoid['a']
+                self._variables[meta].semi_minor_axis = field.geometry.geoid['b']
+            elif field.geometry.geoid.get('a', False) and field.geometry.geoid.get('rf', False):
+                self._variables[meta].semi_major_axis = field.geometry.geoid['a']
+                self._variables[meta].inverse_flattening = field.geometry.geoid['rf']
+            else:
+                raise NotImplementedError('this kind of geoid:' + str(field.geometry.geoid))
         if field.geometry.dimensions.get('Y', field.geometry.dimensions.get('lat_number', 0)) > 1:
-            if all([k in field.geometry.name for k in ('reduced', 'gauss')]):
+            if 'gauss' in field.geometry.name:
                 # reduced Gauss case
                 meta = 'Gauss_grid'
                 _, _status = check_or_add_variable(meta, int)
                 if _status == 'created':
-                    self._variables[meta].grid_mapping_name = "gauss_grid"
-                    self._variables[meta].lon_number_by_lat = 'var: lon_number_by_lat'
-                    check_or_add_variable('lon_number_by_lat', int, Y)
-                    self._variables['lon_number_by_lat'][:] = field.geometry.dimensions['lon_number_by_lat']
+                    self._variables[meta].grid_mapping_name = field.geometry.name + "_grid"
+                    set_ellipsoid(meta)
+                    if 'reduced' in field.geometry.name:
+                        self._variables[meta].lon_number_by_lat = 'var: lon_number_by_lat'
+                        check_or_add_variable('lon_number_by_lat', int, Y)
+                        self._variables['lon_number_by_lat'][:] = field.geometry.dimensions['lon_number_by_lat']
                     self._variables[meta].latitudes = 'var: gauss_latitudes'
                     check_or_add_variable('gauss_latitudes', float, Y)
                     self._variables['gauss_latitudes'][:] = [l.get('degrees') for l in field.geometry.grid['latitudes']]
@@ -786,32 +1054,71 @@ class netCDF(FileResource):
                     epylog.info('assume Gauss grid parameters match.')
             elif field.geometry.projected_geometry:
                 # projections
-                if field.geometry.name == 'lambert':
-                    meta = 'Lambert_Conformal'
+                if field.geometry.name in ('lambert', 'mercator', 'polar_stereographic'):
+                    meta = 'Projection_parameters'
                     _, _status = check_or_add_variable(meta, int)
                     if _status == 'created':
-                        self._variables[meta].grid_mapping_name = 'lambert_conformal_conic'
-                        if field.geometry.grid['X_resolution'] != field.geometry.grid['Y_resolution']:
-                            raise NotImplementedError('anisotropic resolution')
-                        else:
-                            self._variables[meta].resolution = field.geometry.grid['X_resolution']
+                        self._variables[meta].grid_mapping_name = _proj_dict[field.geometry.name]
+                        set_ellipsoid(meta)
+                        if field.geometry.position_on_horizontal_grid != 'center':
+                            self._variables[meta].position_on_horizontal_grid = field.geometry.position_on_horizontal_grid
+                        self._variables[meta].x_resolution = field.geometry.grid['X_resolution']
+                        self._variables[meta].y_resolution = field.geometry.grid['Y_resolution']
                         if field.geometry.grid.get('LAMzone'):
                             _lon_cen, _lat_cen = field.geometry.ij2ll(float(field.geometry.dimensions['X'] - 1.) / 2.,
                                                                       float(field.geometry.dimensions['Y'] - 1.) / 2.)
                         else:
                             _lon_cen = field.geometry._center_lon.get('degrees')
                             _lat_cen = field.geometry._center_lat.get('degrees')
-                        self._variables[meta].longitude_of_central_meridian = _lon_cen
-                        self._variables[meta].latitude_of_projection_origin = _lat_cen
-                        if not nearlyEqual(field.geometry._center_lon.get('degrees'),
-                                           field.geometry.projection['reference_lon'].get('degrees')):
-                            epylog.warning('center_lon != reference_lon (tilting) is not "on the cards" in CF convention 1.6')
-                            self._variables[meta].standard_meridian = field.geometry.projection['reference_lon'].get('degrees')
-                        if field.geometry.secant_projection:
-                            self._variables[meta].standard_parallel = [field.geometry.projection['secant_lat1'].get('degrees'),
-                                                                                      field.geometry.projection['secant_lat2'].get('degrees')]
-                        else:
-                            self._variables[meta].standard_parallel = field.geometry.projection['reference_lat'].get('degrees')
+                        if field.geometry.name == 'lambert':
+                            if field.geometry.secant_projection:
+                                std_parallel = [field.geometry.projection['secant_lat1'].get('degrees'),
+                                                field.geometry.projection['secant_lat2'].get('degrees')]
+                                latitude_of_projection_origin = (std_parallel[0] + std_parallel[1]) / 2.
+                            else:
+                                std_parallel = field.geometry.projection['reference_lat'].get('degrees')
+                                latitude_of_projection_origin = std_parallel
+                            xc, yc = field.geometry.ll2xy(_lon_cen, _lat_cen)
+                            x0, y0 = field.geometry.ll2xy(field.geometry.projection['reference_lon'].get('degrees'),
+                                                          latitude_of_projection_origin)
+                            (dx, dy) = (xc - x0, yc - y0)
+                            if not nearlyEqual(_lon_cen,
+                                               field.geometry.projection['reference_lon'].get('degrees')):
+                                epylog.warning('center_lon != reference_lon (tilting) is not "on the cards" in CF convention 1.6')
+                            if not nearlyEqual(_lat_cen,
+                                               field.geometry.projection['reference_lat'].get('degrees')):
+                                epylog.warning('center_lat != reference_lat is not "on the cards" in CF convention 1.6')
+                            self._variables[meta].longitude_of_central_meridian = field.geometry.projection['reference_lon'].get('degrees')
+                            self._variables[meta].latitude_of_projection_origin = latitude_of_projection_origin
+                            self._variables[meta].standard_parallel = std_parallel
+                            self._variables[meta].false_easting = -dx
+                            self._variables[meta].false_northing = -dy
+                        elif field.geometry.name == 'mercator':
+                            if field.geometry.secant_projection:
+                                std_parallel = field.geometry.projection['secant_lat'].get('degrees')
+                            else:
+                                std_parallel = field.geometry.projection['reference_lat'].get('degrees')
+                            xc, yc = field.geometry.ll2xy(_lon_cen, _lat_cen)
+                            x0, y0 = field.geometry.ll2xy(field.geometry.projection['reference_lon'].get('degrees'), 0.)
+                            (dx, dy) = (xc - x0, yc - y0)
+                            self._variables[meta].longitude_of_central_meridian = field.geometry.projection['reference_lon'].get('degrees')
+                            self._variables[meta].standard_parallel = std_parallel
+                            self._variables[meta].false_easting = -dx
+                            self._variables[meta].false_northing = -dy
+                        elif field.geometry.name == 'polar_stereographic':
+                            if field.geometry.secant_projection:
+                                std_parallel = field.geometry.projection['secant_lat'].get('degrees')
+                            else:
+                                std_parallel = field.geometry.projection['reference_lat'].get('degrees')
+                            xc, yc = field.geometry.ll2xy(_lon_cen, _lat_cen)
+                            x0, y0 = field.geometry.ll2xy(field.geometry.projection['reference_lon'].get('degrees'),
+                                                          field.geometry.projection['reference_lat'].get('degrees'))
+                            (dx, dy) = (xc - x0, yc - y0)
+                            self._variables[meta].straight_vertical_longitude_from_pole = field.geometry.projection['reference_lon'].get('degrees')
+                            self._variables[meta].latitude_of_projection_origin = field.geometry.projection['reference_lat'].get('degrees')
+                            self._variables[meta].standard_parallel = std_parallel
+                            self._variables[meta].false_easting = -dx
+                            self._variables[meta].false_northing = -dy
                     else:
                         epylog.info('assume projection parameters match.')
                 else:
@@ -831,13 +1138,15 @@ class netCDF(FileResource):
             self._variables[varname].grid_mapping = meta
         if field.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
             self._variables[varname].vertical_grid = zgridname
-        if self.behaviour['flatten_non_rectangular_grids'] \
-        and not field.geometry.rectangular_grid:
-            data = stretch_array(field.getdata())
-        else:
-            data = field.getdata()
+        data = field.getdata(d4=True)
         if isinstance(data, numpy.ma.masked_array):
-            data = data.filled(fill_value)
+            if 'gauss' in field.geometry.name:
+                data = field.geometry.fill_maskedvalues(data)
+            else:
+                data = data.filled(fill_value)
+        if self.behaviour.get('flatten_horizontal_grids'):
+            data = field.geometry.horizontally_flattened(data)
+        data = data.squeeze()
         if _status == 'match':
             epylog.info('overwrite data in variable ' + varname)
         self._variables[varname][...] = data

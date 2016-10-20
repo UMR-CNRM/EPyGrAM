@@ -125,7 +125,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
         levels = numpy.array(self.vcoordinate.levels)
 
         # We add the horizontal axis
-        h_shape2D = self.get_datashape(0, horizontal_only=True, d4=True, subzone=subzone)[-2:]
+        h_shape2D = self.get_datashape(force_dimZ=1, d4=True, subzone=subzone)[-2:]
         if len(levels.shape) == 1:
             # level values constant over the horizontal domain and time
             # We add the horizontal dimension
@@ -138,7 +138,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
                 levels = levels.repeat(h_shape2D[1]).reshape(shape)
         else:
             # level values with horizontal variations
-            h_shape = self.get_datashape(0, horizontal_only=True)
+            h_shape = self.get_datashape(force_dimZ=1)
             if len(levels.shape) == 1 + len(h_shape):
                 original_has_time = False
             elif len(levels.shape) == 2 + len(h_shape):
@@ -574,13 +574,19 @@ class D3RectangularGridGeometry(D3Geometry):
             pass
         else:
             raise ValueError('*indextype*== ' + indextype)
-        a = self.reshape_data(a, 1, horizontal_only=True)
-        b = self.reshape_data(b, 1, horizontal_only=True)
+        a = self.reshape_data(a)
+        b = self.reshape_data(b)
         if subzone and self.grid.get('LAMzone') is not None:
             a = self.extract_subzone(a, subzone)
             b = self.extract_subzone(b, subzone)
 
         return (a, b)
+
+    @property
+    def gridpoints_number(self, subzone=None):
+        """Returns the number of gridpoints of the grid."""
+        shp = self.get_datashape(dimT=1, force_dimZ=1, subzone=subzone)
+        return shp[0] * shp[1]
 
     def get_lonlat_grid(self, subzone=None, position=None, d4=False, nb_validities=0):
         """
@@ -664,65 +670,117 @@ class D3RectangularGridGeometry(D3Geometry):
 
         return edata
 
-    def get_datashape(self, nb_validities,
-                      horizontal_only=False,
+    def get_datashape(self, dimT=1, force_dimZ=None,
                       d4=False,
                       subzone=None):
         """
         Returns the data shape according to the geometry.
-        - *horizontal_only*: the data doesn't have vertical coordinate
-        - *nb_validities* is the number of validities represented in data values
-        - *d4*: if True,  returned values are shaped in a 4 dimensions array
-                if False, shape of returned values is determined with respect to geometry
+        - *force_dimZ*: if supplied, force the Z dimension instead of that
+          of the vertical geometry
+        - *dimT* if supplied, is the time dimension to be added to the
+          data shape
+        - *d4*: if True,  shape is 4D
+                if False, shape has only those > 1
         - *subzone*: optional, among ('C', 'CI'), for LAM grids only, informes that
           data is resp. on the C or C+I zone off the C+I(+E) zone.
         """
 
-        if subzone == None:
+        if subzone is None:
             dimX = self.dimensions['X']
             dimY = self.dimensions['Y']
         else:
-            x1 = self.dimensions['X_CIoffset']
-            x2 = self.dimensions['X_CIoffset'] + self.dimensions['X_CIzone']
-            y1 = self.dimensions['Y_CIoffset']
-            y2 = self.dimensions['Y_CIoffset'] + self.dimensions['Y_CIzone']
-            if subzone == 'C':
-                x1 += self.dimensions['X_Iwidth']
-                x2 += -self.dimensions['X_Iwidth']
-                y1 += self.dimensions['Y_Iwidth']
-                y2 += -self.dimensions['Y_Iwidth']
-            dimX = x2 - x1
-            dimY = y2 - y1
+            assert self.grid.get('LAMzone', False), \
+                   "*subzone* cannot be requested for this geometry"
+            assert subzone in ('C', 'CI')
+            if self.grid['LAMzone'] == 'CIE':
+                if subzone == 'CI':
+                    dimX = self.dimensions['X_CIzone']
+                    dimY = self.dimensions['Y_CIzone']
+                elif subzone == 'C':
+                    dimX = self.dimensions['X_CIzone'] - 2 * self.dimensions['X_Iwidth']
+                    dimY = self.dimensions['Y_CIzone'] - 2 * self.dimensions['Y_Iwidth']
+            elif self.grid['LAMzone'] == 'CI':
+                dimX = self.dimensions['X'] - 2 * self.dimensions['X_Iwidth']
+                dimY = self.dimensions['Y'] - 2 * self.dimensions['Y_Iwidth']
 
+        if force_dimZ is not None:
+            dimZ = force_dimZ
+        else:
+            dimZ = len(self.vcoordinate.levels)
         if d4:
-            shape = [nb_validities, len(self.vcoordinate.levels), dimY, dimX]
+            shape = [dimT, dimZ, dimY, dimX]
         else:
             shape = []
-            if (not horizontal_only) and nb_validities > 1:
-                shape.append(nb_validities)
-            if (not horizontal_only) and self.datashape['k']:
-                shape.append(len(self.vcoordinate.levels))
+            if dimT > 1:
+                shape.append(dimT)
+            if dimZ > 1:
+                shape.append(dimZ)
             if self.datashape['j']:
                 shape.append(dimY)
             if self.datashape['i']:
                 shape.append(dimX)
-        return shape
 
-    def reshape_data(self, data, nb_validities, horizontal_only=False, d4=False, subzone=None):
+        return tuple(shape)
+
+    def reshape_data(self, data, first_dimension=None, d4=False,
+                     subzone=None):
         """
-        Returns a 3D data reshaped from 1D, according to geometry.
+        Returns a 2D data (horizontal dimensions) reshaped from 1D,
+        according to geometry.
 
-        - *data*: the 1D data, of dimension concording with geometry.
-        - *horizontal_only*: the input data doesn't have vertical coordinate
-        - *nb_validities* is the number of validities represented in data values
-        - *d4*: if True,  returned values are shaped in a 4 dimensions array
-                if False, shape of returned values is determined with respect to geometry
+        - *data*: the 1D data (or 3D with a T and Z dimensions,
+          or 2D with either a T/Z dimension, to be specified),
+          of dimension concording with geometry. In case data is 3D, T must be
+          first dimension and Z the second.
+        - *first_dimension*: in case data is 2D, specify what is the first
+          dimension of data among ('T', 'Z')
         - *subzone*: optional, among ('C', 'CI'), for LAM grids only, informes that
           data is resp. on the C or C+I zone off the C+I(+E) zone.
+        - *d4*: if True,  returned values are shaped in a 4 dimensions array
+                if False, shape of returned values is determined with respect to geometry
         """
 
-        shape = self.get_datashape(nb_validities, horizontal_only, d4, subzone)
-        return data.reshape(tuple(shape))
+        assert 1 <= len(data.shape) <= 3
+        shp_in = data.shape
+        nb_levels = 1
+        nb_validities = 1
+        if len(shp_in) == 2:
+            assert first_dimension in ('T', 'Z'), \
+                   "*first_dimension* must be among ('T', 'Z') if *data*.shape == 2"
+            if first_dimension == 'T':
+                nb_validities = shp_in[0]
+
+            elif first_dimension == 'Z':
+                nb_levels = shp_in[0]
+        elif len(shp_in) == 3:
+            nb_validities = shp_in[0]
+            nb_levels = shp_in[1]
+        assert nb_levels in (1, len(self.vcoordinate.levels)), \
+               "vertical dimension of data must be 1 or self.vcoordinate.levels=" \
+             + str(self.vcoordinate.levels)
+
+        if d4 or 1 not in (nb_validities, nb_levels):  # data as 4D or truly 4D
+            shp = self.get_datashape(dimT=nb_validities, force_dimZ=nb_levels,
+                                     d4=True, subzone=subzone)
+        else:
+            shp = self.get_datashape(dimT=nb_validities, force_dimZ=nb_levels,
+                                     subzone=subzone)
+
+        return data.reshape(shp)
+
+    def horizontally_flattened(self, data):
+        """
+        Returns a copy of *data* with horizontal dimensions flattened.
+        *data* must be 4D for simplicity reasons.
+        """
+
+        assert len(data.shape) == 4
+        data3D = numpy.empty(tuple(list(data.shape[:2]) + [self.gridpoints_number]))
+        for t in range(data.shape[0]):
+            for k in range(data.shape[1]):
+                data3D[t, k, :] = data[t, k, :, :].flatten()
+
+        return data3D
 
     def gimme_corners_ij(self, subzone=None):
         """
@@ -1084,9 +1142,12 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
 
         if self._getoffset(position) != (0., 0.):
             raise epygramError('We can only retrieve latitude and longitude of mass point on an unstructured grid')
-        lons = self.reshape_data(numpy.array(self.grid['longitudes']), None, horizontal_only=True)
-        lats = self.reshape_data(numpy.array(self.grid['latitudes']), None, horizontal_only=True)
-        if subzone and 'LAMzone' in self.grid.keys():
+        lons = numpy.array(self.grid['longitudes'])
+        lats = numpy.array(self.grid['latitudes'])
+        if len(lons.shape) == 1:
+            lons = self.reshape_data(lons)
+            lats = self.reshape_data(lats)
+        if subzone and self.grid.get('LAMzone', None):
             lons = self.extract_subzone(lons, subzone)
             lats = self.extract_subzone(lats, subzone)
 
@@ -3051,8 +3112,8 @@ class D3GaussGeometry(D3Geometry):
             igrid = numpy.array(igrid)
             jgrid = numpy.array(jgrid)
         if not compressed:
-            igrid = self.reshape_data(igrid, 1, horizontal_only=True)
-            jgrid = self.reshape_data(jgrid, 1, horizontal_only=True)
+            igrid = self.reshape_data(igrid)
+            jgrid = self.reshape_data(jgrid)
 
         return (igrid, jgrid)
 
@@ -3060,6 +3121,11 @@ class D3GaussGeometry(D3Geometry):
         """Deletes the buffered lonlat grid if any."""
         if hasattr(self, '_buffered_gauss_grid'):
             del self._buffered_gauss_grid
+
+    @property
+    def gridpoints_number(self, **useless):
+        """Returns the number of gridpoints of the grid."""
+        return sum(self.dimensions['lon_number_by_lat'])
 
     def get_lonlat_grid(self, position=None, d4=False, nb_validities=0, **useless):
         """
@@ -3088,8 +3154,8 @@ class D3GaussGeometry(D3Geometry):
         else:
             (igrid, jgrid) = self._allocate_colocation_grid(compressed=True, as_float=False)
             (lons, lats) = self.ij2ll(igrid, jgrid, position)
-            lons = self.reshape_data(lons, 1, horizontal_only=True)
-            lats = self.reshape_data(lats, 1, horizontal_only=True)
+            lons = self.reshape_data(lons)
+            lats = self.reshape_data(lats)
             if config.FA_buffered_gauss_grid:
                 if not hasattr(self, '_buffered_gauss_grid'):
                     self._buffered_gauss_grid = {'lons':lons, 'lats':lats}
@@ -3108,128 +3174,137 @@ class D3GaussGeometry(D3Geometry):
 
         return (lons, lats)
 
-    def get_datashape(self, nb_validities, horizontal_only=False, d4=False, **useless):
+    def get_datashape(self, force_dimZ=None, dimT=None, d4=False, **useless):
         """
         Returns the data shape according to the geometry.
-        - *horizontal_only*: the data doesn't have vertical coordinate
-        - *nb_validities* is the number of validities represented in data values
+        
+        - *force_dimZ*: if supplied, force the Z dimension instead of that
+          of the vertical geometry
+        - *dimT* if supplied, is the time dimension to be added to the
+          data shape
+        - *d4*: if True,  shape is 4D (need to specify *dimT*)
+                if False, shape is 3D if dimZ > 1 else 2D
+        """
+
+        dimY = self.dimensions['lat_number']
+        dimX = self.dimensions['max_lon_number']
+        if force_dimZ is not None:
+            dimZ = force_dimZ
+        else:
+            dimZ = len(self.vcoordinate.levels)
+        if d4:
+            assert dimT is not None, \
+                   "*dimT* must be supplied with *d4*=True"
+            shape = [dimT, dimZ, dimY, dimX]
+        else:
+            shape = []
+            if self.datashape['k'] or dimZ > 1:
+                shape.append(dimZ)
+            shape.append(dimY)
+            shape.append(dimX)
+
+        return tuple(shape)
+
+    def reshape_data(self, data, first_dimension=None, d4=False):
+        """
+        Returns a 2D data (horizontal dimensions) reshaped from 1D,
+        according to geometry.
+
+        - *data*: the 1D data (or 3D with a T and Z dimensions,
+          or 2D with either a T/Z dimension, to be specified),
+          of dimension concording with geometry. In case data is 3D, T must be
+          first dimension and Z the second.
+        - *first_dimension*: in case data is 2D, specify what is the first
+          dimension of data among ('T', 'Z')
         - *d4*: if True,  returned values are shaped in a 4 dimensions array
                 if False, shape of returned values is determined with respect to geometry
         """
 
-        if d4:
-            shape = [nb_validities, len(self.vcoordinate.levels), self.dimensions['lat_number'], self.dimensions['max_lon_number']]
+        assert 1 <= len(data.shape) <= 3
+        shp_in = data.shape
+        nb_levels = 1
+        nb_validities = 1
+        if len(shp_in) == 2:
+            assert first_dimension in ('T', 'Z'), \
+                   "*first_dimension* must be among ('T', 'Z') if *data*.shape == 2"
+            if first_dimension == 'T':
+                nb_validities = shp_in[0]
+
+            elif first_dimension == 'Z':
+                nb_levels = shp_in[0]
+        elif len(shp_in) == 3:
+            nb_validities = shp_in[0]
+            nb_levels = shp_in[1]
+        assert nb_levels in (1, len(self.vcoordinate.levels)), \
+               "vertical dimension of data must be 1 or self.vcoordinate.levels=" \
+             + str(self.vcoordinate.levels)
+
+        shp4D = self.get_datashape(dimT=nb_validities, force_dimZ=nb_levels, d4=True)
+        data4D = numpy.ma.masked_all(shp4D)
+        ind_end = 0
+        for j in range(self.dimensions['lat_number']):
+            ind_begin = ind_end
+            ind_end = ind_begin + self.dimensions['lon_number_by_lat'][j]
+            if len(shp_in) == 1:
+                buff = data[slice(ind_begin, ind_end)]
+            elif len(shp_in) == 2:
+                buff = data[:, slice(ind_begin, ind_end)]
+            elif len(shp_in) == 3:
+                buff = data[:, :, slice(ind_begin, ind_end)]
+            data4D[:, :, j, slice(0, self.dimensions['lon_number_by_lat'][j])] = buff
+        if ind_end != data.shape[-1]:
+            raise epygramError("data have a wrong length")
+
+        if d4 or len(shp_in) == 3:
+            data_out = data4D
         else:
-            shape = []
-            if (not horizontal_only) and nb_validities > 1:
-                shape.append(nb_validities)
-            if (not horizontal_only) and self.datashape['k']:
-                shape.append(len(self.vcoordinate.levels))
-            shape.append(self.dimensions['lat_number'])
-            shape.append(self.dimensions['max_lon_number'])
-        return shape
+            if len(shp_in) == 1:
+                data_out = data4D[0, 0, :, :]
+            elif len(shp_in) == 2:
+                if first_dimension == 'T':
+                    data_out = data4D[:, 0, :, :]
+                elif first_dimension == 'Z':
+                    data_out = data4D[0, :, :, :]
 
-    def reshape_data(self, data, nb_validities, horizontal_only=False, d4=False):
-        """
-        Returns a 2D data reshaped from 1D, according to geometry.
-
-        - *data*: the 1D data, of dimension concording with geometry.
-        - *horizontal_only*: the input data doesn't have vertical coordinate
-        - *nb_validities* is the number of validities represented in data values
-        - *d4*: if True,  returned values are shaped in a 4 dimensions array
-                if False, shape of returned values is determined with respect to geometry
-        """
-
-        if nb_validities not in [1, None]:
-            raise NotImplementedError("Several validities for a gaussian field is not yet implemented.")
-
-        if (not self.datashape['k']) and len(self.vcoordinate.levels) != 1:
-            raise epygramError("geometry must have only one level")
-        if self.datashape['k'] and not horizontal_only:
-            has_vert_coord = True
-            data = data.squeeze()  # TOBECHECKED: a size=1 time dimension to be squeezed
-            if len(data.shape) == 2:
-                flat = True
-            elif len(data.shape) == 3:
-                flat = False
-            else:
-                raise epygramError("data must be 2D or 3D")
-        else:
-            has_vert_coord = False
-            if len(data.shape) == 1:
-                flat = True
-            elif len(data.shape) == 2:
-                flat = False
-            else:
-                raise epygramError("data must be 2D or 3D")
-        if flat:
-            if has_vert_coord:
-                rdata = numpy.ma.masked_all((len(self.vcoordinate.levels),
-                                             self.dimensions['lat_number'],
-                                             self.dimensions['max_lon_number']))
-            else:
-                rdata = numpy.ma.masked_all((self.dimensions['lat_number'],
-                                             self.dimensions['max_lon_number']))
-            for k in range(len(self.vcoordinate.levels)):
-                ind_end = 0
-                for j in range(self.dimensions['lat_number']):
-                    ind_begin = ind_end
-                    ind_end = ind_begin + self.dimensions['lon_number_by_lat'][j]
-                    if has_vert_coord:
-                        pos_ori = (k, slice(ind_begin, ind_end))
-                        pos_new = (k, j, slice(0, self.dimensions['lon_number_by_lat'][j]))
-                    else:
-                        pos_ori = (slice(ind_begin, ind_end),)
-                        pos_new = (j, slice(0, self.dimensions['lon_number_by_lat'][j]))
-                    rdata[pos_new] = data[pos_ori]
-                if ind_end != data.shape[1 if has_vert_coord else 0]:
-                    raise epygramError("data have a wrong length")
-        else:
-            rdata = data
-
-        if d4:
-            shape = [nb_validities, len(self.vcoordinate.levels),
-                     self.dimensions['lat_number'], self.dimensions['max_lon_number']]
-        else:
-            shape = []
-            if nb_validities > 1 and not horizontal_only:
-                shape.append(nb_validities)
-            if has_vert_coord:
-                shape.append(len(self.vcoordinate.levels))
-            if self.datashape['j']:
-                shape.append(self.dimensions['lat_number'])
-            if self.datashape['i']:
-                shape.append(self.dimensions['max_lon_number'])
-
-        return rdata.reshape(tuple(shape))
+        return data_out
 
     def fill_maskedvalues(self, data, fill_value=None):
         """
-        Fill the 'real' masked values (i.e. not those linked to reduced Gauss)
-        with *fill_value*.
+        Returns a copy of *data* with 'real' masked values (i.e. not those
+        linked to reduced Gauss) filled with *fill_value*.
+        *data* must be already 4D for simplicity reasons.
         """
 
         assert isinstance(data, numpy.ma.masked_array)
+        assert len(data.shape) == 4
 
         if fill_value is None:
             fill_value = data.fill_value
-        shape = data.shape
-        if len(shape) == 2:
-            data4d = data.reshape((1, 1, shape[0], shape[1]))
-        elif len(shape) == 3:
-            data4d = data.reshape((1, shape[0], shape[1], shape[3]))
-        elif len(shape) == 4:
-            data4d = data
-        else:
-            raise epygramError('*data* with shape' + str(shape))
-        for t in range(data4d.shape[0]):
-            for k in range(data4d.shape[1]):
+        data_copy = data.copy()
+        for t in range(data_copy.shape[0]):
+            for k in range(data_copy.shape[1]):
                 for j in range(self.dimensions['lat_number']):
                     for i in range(self.dimensions['lon_number_by_lat'][j]):
-                        if data4d.mask[t, k, j, i]:
-                            data4d[t, k, j, i] = fill_value
+                        if data_copy.mask[t, k, j, i]:
+                            data_copy[t, k, j, i] = fill_value
 
-        return data4d.squeeze()
+        return data_copy
+
+    def horizontally_flattened(self, data):
+        """
+        Returns a copy of *data* with horizontal dimensions flattened and
+        compressed (cf. numpy.ma.masked_array.compressed).
+        *data* must be 4D for simplicity reasons.
+        """
+
+        assert len(data.shape) == 4
+        assert isinstance(data, numpy.ma.masked_array)
+        data3D = numpy.empty(tuple(list(data.shape[:2]) + [self.gridpoints_number]))
+        for t in range(data.shape[0]):
+            for k in range(data.shape[1]):
+                data3D[t, k, :] = data[t, k, :, :].compressed()
+
+        return data3D
 
     def make_basemap(self, gisquality='i', specificproj=None, zoom=None,
                      ax=None, **kwargs):
@@ -3540,7 +3615,7 @@ class D3GaussGeometry(D3Geometry):
         f = fpx.field(structure='H2D', geometry=self, fid={'geometry':'Map Factor'})
         (lons, lats) = self.get_lonlat_grid(position=position)
         data = self.map_factor(stretch_array(lons), stretch_array(lats))
-        data = self.reshape_data(data, 1, horizontal_only=True)
+        data = self.reshape_data(data)
         f.setdata(data)
 
         return f

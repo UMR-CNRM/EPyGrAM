@@ -1037,7 +1037,7 @@ class GRIBmessage(RecursiveObject, dict):
                     if self['iScansNegatively'] == 0 and \
                        self['jScansPositively'] == 0 and \
                        self['jPointsAreConsecutive'] == 0:
-                        data2d = geometry.reshape_data(data1d[:], 1, horizontal_only=True)
+                        data2d = geometry.reshape_data(data1d[:])
                     else:
                         raise NotImplementedError("not yet !")
             else:

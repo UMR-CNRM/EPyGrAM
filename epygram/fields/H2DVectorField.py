@@ -267,8 +267,8 @@ class H2DVectorField(Field):
             (u, v) = self.geometry.reproject_wind_on_lonlat(u, v, lon, lat,
                                                             map_factor_correction=map_factor_correction,
                                                             reverse=reverse)
-        u = self.geometry.reshape_data(u, len(self.validity))
-        v = self.geometry.reshape_data(v, len(self.validity))
+        u = self.geometry.reshape_data(u, first_dimension='T')
+        v = self.geometry.reshape_data(v, first_dimension='T')
         self.setdata([u, v])
 
     def map_factorize(self, reverse=False):

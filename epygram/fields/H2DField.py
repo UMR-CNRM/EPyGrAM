@@ -66,9 +66,12 @@ class H2DField(D3Field):
         
         Cf. getvalue_ll() doc for other arguments.
         """
-        value = self.getvalue_ll(lon, lat,
-                                 interpolation=interpolation,
-                                 external_distance=external_distance)
+
+        value = [self.getvalue_ll(lon, lat, validity=self.validity[i],
+                                  interpolation=interpolation,
+                                  external_distance=external_distance)
+                 for i in range(len(self.validity))]
+
         pt = gimme_one_point(lon, lat,
                              field_args={'validity':self.validity,
                                          'fid':self.fid},

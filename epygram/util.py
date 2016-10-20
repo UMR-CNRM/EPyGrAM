@@ -1079,7 +1079,7 @@ def set_map_up(bm, ax,
                                    meridians=meridians,
                                    ax=ax)
 
-def datetimerange(start, stop, step, stepunit='h', tzinfo=None):
+def datetimerange(start, stop=None, step=1, stepunit='h', tzinfo=None):
     """
     A generator of datetime.datetime objects ranging from *start* to *stop*
     (included) by *step*.
@@ -1090,8 +1090,9 @@ def datetimerange(start, stop, step, stepunit='h', tzinfo=None):
                   or a date/time in ISO 8601 format (cf. datetime.datetime.isoformat())
       - a tuple or list: (year, month, day[, hour[, minute[, seconde[, microsecond]]]])
       - a datetime.datetime instance
-    - *step* being a integer, which unit is specified in *stepunit*
-      (or a datetime.timedelta instance)
+      if *stop* is None, returns [datetime(start)]
+    - *step* being either an integer, which unit is specified in *stepunit*
+      or a datetime.timedelta instance
     - *stepunit* among ('D', 'h', 'm', 's', 'x')
     - *tzinfo*: time zone info, cf. datetime.datetime
     """
@@ -1134,7 +1135,9 @@ def datetimerange(start, stop, step, stepunit='h', tzinfo=None):
         else:
             raise TypeError("unknown type for *start*: " + str(type(start)))
     if not isinstance(stop, datetime.datetime):
-        if isinstance(stop, str):
+        if stop is None:
+            stop = start
+        elif isinstance(stop, str):
             stop = parse_str(stop)
         elif isinstance(stop, list) or isinstance(stop, tuple):
             stop = parse_iterable(stop)

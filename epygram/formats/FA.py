@@ -929,7 +929,7 @@ class FA(FileResource):
             field = builder(fid=fid)
         if getdata:
             if field_info['type'] == 'H2D' and not field.spectral:
-                data = geometry.reshape_data(data, 1)
+                data = geometry.reshape_data(data)
             field.setdata(data)
 
         return field
