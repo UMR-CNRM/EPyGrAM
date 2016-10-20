@@ -2142,6 +2142,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                         'polar_stereographic':'stere',
                         'space_view':'geos'}
         elif self.projtool == 'myproj':
+            raise Warning("use of 'myproj' projtool is DEPRECATED ! Should rather use 'pyproj' instead, check config.")
             from epygram import myproj
             projtool = myproj
             projdict = {'lambert':'lambert',
