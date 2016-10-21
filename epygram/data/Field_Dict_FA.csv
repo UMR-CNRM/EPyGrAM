@@ -240,11 +240,6 @@ name:C[0-9][0-9][0-9]_MTSAT_[0-9][0-9]_IM,type:H2D,typeOfFirstFixedSurface:8,dis
 
 # meta-data
 name:DATX-DES-DONNEES,type:Misc,nature:int,dimension:1
-name:LAPO,type:Misc,nature:float,dimension:0
-name:LOPO,type:Misc,nature:float,dimension:0
-name:CODIL,type:Misc,nature:float,dimension:0
-name:NLATI,type:Misc,nature:int,dimension:0
-name:NLOPA,type:Misc,nature:int,dimension:1
 name:SFX.MASDEV,type:Misc,nature:int,dimension:0
 name:SFX.BUGFIX,type:Misc,nature:int,dimension:0
 name:SFX.DIM_FULL,type:Misc,nature:int,dimension:0
@@ -427,6 +422,11 @@ name:SFX.ASPSECTORS,type:Misc,nature:int,dimension:0
 name:SFX.GWKEY,type:Misc,nature:int,dimension:0
 name:SFX.MEB_PATCH,type:Misc,nature:int,dimension:0
 name:SFX.SOLAR_PANEL,type:Misc,nature:int,dimension:0
+name:SFX.LAPO,type:Misc,nature:float,dimension:0
+name:SFX.LOPO,type:Misc,nature:float,dimension:0
+name:SFX.CODIL,type:Misc,nature:float,dimension:0
+name:SFX.NLATI,type:Misc,nature:int,dimension:0
+name:SFX.NLOPA,type:Misc,nature:int,dimension:1
 
 # Surfex
 name:X001*,type:H2D,typeOfFirstFixedSurface:1
