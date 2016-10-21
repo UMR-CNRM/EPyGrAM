@@ -338,8 +338,8 @@ class H2DField(D3Field):
             L = int((levelsnumber - 1) // 15) + 1
             tick_levels = [levels[l] for l in range(len(levels) - (L / 3 + 1)) if
                            l % L == 0] + [levels[-1]]
-            if colormap in ('radar', 'rr1h', 'rr6h', 'rr24h'):
-                (norm, levels) = util.color_scale(colormap, max_rr=M)
+            if colormap in config.colormaps_scaling.keys():
+                (norm, levels) = util.color_scale(colormap, max_val=M)
                 tick_levels = levels
             else:
                 norm = None

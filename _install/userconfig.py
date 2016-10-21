@@ -8,5 +8,5 @@
 #                ]
 #use_footprints_as_builder = True
 #usercolormaps = {'my_cmap':'/path/to/my_cmap.cmap'}
-#implemented_formats = ['FA',]
+#implemented_formats = ['netCDF', 'GRIB', 'GeoPoints', 'TIFFMF'] # to deactivate arpifs4py and so do not need its installation
 

@@ -36,6 +36,12 @@ epygram_colormaps = {'aspect':installdir + '/data/aspect.cmap',
                      'rr6h':installdir + '/data/rr24h.cmap',
                      'rr24h':installdir + '/data/rr24h.cmap',
                      }
+#: epygram colormaps scalings
+epygram_colormaps_scaling = {'radar':[0., 0.1, 1., 3., 5., 7., 10., 15., 20., 30., 50., 70., 100., 150., 300.],
+                             'rr1h':[0., 0.2, 0.5, 1, 1.5, 2., 4., 10., 25., 50., 100., 300.],
+                             'rr6h':[0., 0.2, 0.5, 1, 1.5, 2., 4., 10., 25., 50., 100., 300.],
+                             'rr24h':[0., 0.2, 1., 2., 4., 10., 25., 50., 100., 150., 200., 300., 500.]
+                             }
 
 
 
@@ -250,6 +256,10 @@ usermodules = []
 #: values the source absolute path of the colormap definition;
 #: e.g. {'aspect', '/home/mary/.epygram/aspect.cmap'}.
 usercolormaps = {}
+# usercolormaps_scaling should also remain empty here
+#: In userconfig, this should be a dict whose keys are the colormap name and
+#: values the bounds of the steps between colors, e.g. cf. epygram_colormaps_scaling
+usercolormaps_scaling = {}
 
 
 
@@ -261,6 +271,8 @@ if os.path.exists(userconfigfile):
 #: colormaps gathers epygram and user colormaps
 colormaps = copy.copy(epygram_colormaps)
 colormaps.update(usercolormaps)
+colormaps_scaling = copy.copy(epygram_colormaps_scaling)
+colormaps_scaling.update(usercolormaps_scaling)
 
 
 

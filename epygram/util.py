@@ -776,27 +776,20 @@ def stretch_array(array):
 
     return array
 
-def color_scale(cmap, max_rr=None):
+def color_scale(cmap, max_val=None):
     """
     Creates a matplotlib.colors.BoundaryNorm object tuned for radar colormaps.
+    If *max_val* is given, eventually replaces the upper bound. 
     """
 
     import matplotlib.colors as colors
-    if cmap == 'radar':
-        bounds = [0., 0.1, 1., 3., 5., 7., 10., 15., 20., 30., 50., 70., 100., 150.]
-        if max_rr <= 150.:
-            max_rr = 300.
-    elif cmap in ('rr1h', 'rr6h'):
-        bounds = [0., 0.2, 0.5, 1, 1.5, 2., 4., 10., 25., 50., 100.]
-        if max_rr <= 100.:
-            max_rr = 300.
-    elif cmap == 'rr24h':
-        bounds = [0., 0.2, 1., 2., 4., 10., 25., 50., 100., 150., 200., 300.]
-        if max_rr <= 300.:
-            max_rr = 500.
-    else:
-        raise NotImplementedError('cmap == ' + cmap)
-    bounds.append(max_rr)
+    bounds = copy.copy(config.colormaps_scaling.get(cmap, None))
+    assert bounds is not None, \
+           "unknown colormap" + cmap + "in config.epygram_colormaps_scaling"
+
+    if max_val is not None:
+        if bounds[-2] <= max_val <= bounds[-1]:
+            bounds[-1] = max_val
     norm = colors.BoundaryNorm(boundaries=bounds, ncolors=len(bounds) - 1)
 
     return (norm, bounds)
