@@ -7,24 +7,20 @@ from datetime import datetime, timedelta
 import cPickle
 import uuid
 import glob
+import copy
+import web
 
 import matplotlib
 matplotlib.use("Agg")
 from mpl_toolkits.basemap import Basemap
 
-import web
 from footprints.util import rangex
 
 import epygram
 from epygram import epylog
 import usevortex
 
-epygram.init_env()
-epylog.setLevel('INFO')
 
-# to avoid any path issues, "cd" to the web root.
-web_root = os.path.abspath(os.path.dirname(__file__))
-os.chdir(web_root)
 
 urls = (
     '/',
@@ -52,7 +48,7 @@ urls = (
     '/getCacheSize',
     'getCacheSize',
     )
-app = web.application(urls, globals())
+
 render = web.template.render('templates', base='base')
 
 #Where to store the basemap pickle
@@ -71,6 +67,8 @@ for pattern in toClean:
 cachePath = "$HOME/cache"
 #cachePath = "./static"
 
+
+
 class getCacheSize:
     """Compute (linux only!) and return size of vortex cache"""
     def POST(self):
@@ -86,13 +84,16 @@ class index:
     def GET(self):
         return render.index()
 
+
 class faplot:
     def GET(self):
         return render.faplot()
 
+
 class epyweb:
     def GET(self):
         return render.epyweb()
+
 
 class getfieldsasjson:
     """List and returns fields of selected file"""
@@ -104,44 +105,33 @@ class getfieldsasjson:
                 return json.dumps(whichFields(fichier))
             else:
                 print("File does not exist => exit")
-        except Exception, ex:
+        except Exception:
             print "Erreur getfieldsasjson"
             return "Erreur getfieldsasjson"
+
 
 def whichFields(fichier):
     """List and returns fields of selected file"""
 
     try:
-
         resource = epygram.formats.resource(fichier, 'r')
-
         listoffields = resource.listfields()
-
-      # print listoffields
-
         resource.close()
-
         return listoffields
     except ValueError:
-
         raise Exception('whichField error')
 
 
 class getFile:
-
     """Retrieved selected file(s) with usevortex"""
 
     def POST(self):
         try:
-
             reponse = {}
-
             data = web.data()
-
             vortexArgs = json.loads(data)
 
-        # Patch pour pbs unicode + utilisation de rangex
-
+            # Patch pour pbs unicode + utilisation de rangex
             if 'date' in vortexArgs:
                 vortexArgs['date'] = datex(vortexArgs['date'].encode())
             if 'term' in vortexArgs:
@@ -149,13 +139,9 @@ class getFile:
             if 'month' in vortexArgs:
                 vortexArgs['month'] = rangex(vortexArgs['month'].encode())
 
-
-        # On ajoute POUR L'INSTANT et par défaut origin=hst (pour les gridpoints)
-
+            # On ajoute POUR L'INSTANT et par défaut origin=hst (pour les gridpoints)
             vortexArgs['origin'] = 'hst'
-
-        # On enlève le mode demandé du dictionnaire d'arguments : description, existence, get
-
+            # On enlève le mode demandé du dictionnaire d'arguments : description, existence, get
             mode = vortexArgs['request_mode']
             del vortexArgs['request_mode']
 
@@ -163,164 +149,131 @@ class getFile:
             try:
                 fromid = vortexArgs['fromid']
                 del vortexArgs['fromid']
-            except:
+            except Exception:
                 fromid = "A"
 
-
-        # Test de complétude de la description
-
-            ressources = usevortex.get_resources(getmode='check', **vortexArgs)
+            # Test de complétude de la description
+            ressources = usevortex.get_resources(getmode='check',
+                                                 **vortexArgs)
             reponse['description'] = [str(ressources)]
 
-        # Si oui allons plus loin
-
+            # Si oui allons plus loin
             if (ressources and mode != 'description'):
-
-          # Chemin
-
+                # Chemin
                 ressources = usevortex.get_resources(getmode='locate',
-                        **vortexArgs)
+                                                     **vortexArgs)
                 reponse['remotepath'] = ressources  #[m for m in ressources]
-
-
                 if mode == 'existence':
-
-            # Existence physique : tableau de True False
-
+                    # Existence physique : tableau de True False
                     ressources = usevortex.get_resources(getmode='exist',
-                            **vortexArgs)
+                                                         **vortexArgs)
                     reponse['existence'] = [False not in m for m in ressources]
-
                 if mode == 'get':
-
-            # Rapatriement + nom local
-
+                    # Rapatriement + nom local
                     ressources = usevortex.get_resources(getmode='fetch',
                                                          local='data/' + "[date::ymdh]" + "_[term]_" + fromid + "_" + str(uuid.uuid4()),
-                            **vortexArgs)
+                                                         **vortexArgs)
                     reponse['localpath'] = [str(m) for m in ressources]  #str(m[0])
-
             return json.dumps(reponse)
         except ValueError:
-
             raise Exception('getFile error')
 
 
 class getminmax:
-
     """Compute and return min and max of FIRST field"""
 
     def POST(self):
         try:
-
             fichier = getAjaxArg('file')
             champ = getAjaxArgSmart('field')
             champ_v = getAjaxArg('field_v')
-            subzone = getAjaxArg('subzone')
+            subzone = getAjaxArg('subzone')  #TODO: ajouter subzone dans l'appel à stats() ?
             FF = getAjaxArg('FF')
             ope = getAjaxArg('operation')
-
             #string vs unicode problems...
             try:
-            	champ['typeOfLevel'] = champ['typeOfLevel'].encode()
-            	champ = {str(k):champ[k] for k in champ.keys()}
-            	champ_v['typeOfLevel'] = champ['typeOfLevel'].encode()
-            	champ_v = {str(k):champ[k] for k in champ_v.keys()}
-
+                champ['typeOfLevel'] = champ['typeOfLevel'].encode()
+                champ = {str(k):champ[k] for k in champ.keys()}
+                champ_v['typeOfLevel'] = champ['typeOfLevel'].encode()
+                champ_v = {str(k):champ[k] for k in champ_v.keys()}
             except:
-            	print("Erreur unicode")
+                print("Erreur unicode")
 
             resource = epygram.formats.resource(fichier, 'r')
             stats = {}
-
             field = resource.readfield(champ)
 
             if field.spectral:
                 field.sp2gp()
-
             field = CheckForOperation(ope, field)
 
             if FF:
                 field_v = resource.readfield(champ_v)
                 if field_v.spectral:
                     field_v.sp2gp()
-                vectwind = epygram.fields.make_vector_field(field,
-                        field_v)
+                vectwind = epygram.fields.make_vector_field(field, field_v)
                 FF_field = vectwind.to_module()
                 stats['min'] = FF_field.stats()['min']
                 stats['max'] = FF_field.stats()['max']
                 del field_v
                 del FF_field
             else:
-
                 stats['min'] = field.stats()['min']
                 stats['max'] = field.stats()['max']
-
             resource.close()
 
             return json.dumps(stats)
 
         except Exception, ex:
-
             print ex.__str__()
 
 
 class getdomain:
-
     """Compute and return domain caracteristics"""
 
     def POST(self):
         try:
             fichier = getAjaxArg('file')
-
             resource = epygram.formats.resource(fichier, 'r')
 
             #On prend la géométrie du 1er champ => compatibilité FA / GRIB
             firstfield = resource.readfield(resource.listfields()[0])
-
             if firstfield.geometry.rectangular_grid:
-                (llcrnrlon, llcrnrlat) = \
-                    firstfield.geometry.gimme_corners_ll()['ll']
-                (urcrnrlon, urcrnrlat) = \
-                    firstfield.geometry.gimme_corners_ll()['ur']
-                (ulcrnrlon, ulcrnrlat) = \
-                    firstfield.geometry.gimme_corners_ll()['ul']
-                (lrcrnrlon, lrcrnrlat) = \
-                    firstfield.geometry.gimme_corners_ll()['lr']
+                (llcrnrlon, llcrnrlat) = firstfield.geometry.gimme_corners_ll()['ll']
+                (urcrnrlon, urcrnrlat) = firstfield.geometry.gimme_corners_ll()['ur']
+                (ulcrnrlon, ulcrnrlat) = firstfield.geometry.gimme_corners_ll()['ul']
+                (lrcrnrlon, lrcrnrlat) = firstfield.geometry.gimme_corners_ll()['lr']
             else:
                 (llcrnrlon, llcrnrlat) = (-180, -90)
                 (urcrnrlon, urcrnrlat) = (180, 90)
 
             monzoom = {
-                'lonmin': min(llcrnrlon, ulcrnrlon),
-                'lonmax': max(lrcrnrlon, urcrnrlon),
-                'latmin': min(llcrnrlat, lrcrnrlat),
-                'latmax': max(urcrnrlat, ulcrnrlat),
-                }
+                       'lonmin': min(llcrnrlon, ulcrnrlon),
+                       'lonmax': max(lrcrnrlon, urcrnrlon),
+                       'latmin': min(llcrnrlat, lrcrnrlat),
+                       'latmax': max(urcrnrlat, ulcrnrlat),
+                       }
 
             resource.close()
             del resource
             del firstfield
 
             return json.dumps(monzoom)
-        except Exception, ex:
 
+        except Exception, ex:
             print ex.__str__()
 
 
 class myplot:
-
     """Plot of a parameter for 1 or several file(s)"""
 
     def POST(self):
         try:
             import matplotlib.pyplot as plt
-
             print 'Start MyPlot'
 
             #For unik name
             local_uuid = str(uuid.uuid4())
-
 
             files = getAjaxArgSmart('file')
             champ = getAjaxArgSmart('field')
@@ -331,16 +284,15 @@ class myplot:
                 try:
                     champ[cle]['typeOfLevel'] = val['typeOfLevel'].encode()
                     champ[cle] = {str(k):champ[cle][k] for k in val.keys()}
-                except:
+                except Exception:
                     print ("Warning unicode")
 
             for cle, val in champ_v.iteritems():
                 try:
                     champ_v[cle]['typeOfLevel'] = val['typeOfLevel'].encode()
                     champ_v[cle] = {str(k):champ_v[cle][k] for k in val.keys()}
-                except:
+                except Exception:
                     print ("Warning unicode")
-
 
             existingfigure = (None, None)  #New figure (= no overlay)
             pickle_bm = pickle_path  #Cache for matplotlib
@@ -359,19 +311,16 @@ class myplot:
                 existingbasemap = cPickle.load(open(pickle_bm, 'r'))
                 if not isinstance(existingbasemap, Basemap):
                     raise Exception('no valid Basemap in pickle.')
-            except:
+            except Exception:
                 existingbasemap = None
 
             #Attention, decuml marche bien entre échéances mais actif aussi entre dates !!
             #Pas (encore ?) pour OVERLAY et DIFF
             decumul = getAjaxArgSmart('decumul')
-
             operation = getAjaxArgSmart('operation')
-
 
             # Algo : au 1er passage on ne trace rien, juste mis en mémoire du champ
             # ensuite on trace champLu - champAvant, si champAvant n'existe pas (cas RR @0h) -> champLu only
-
             out = {}
 
             #for fichier in files:
@@ -386,118 +335,102 @@ class myplot:
                 try:
                     myplot_args["meridians"] = myplot_args["meridians"].encode()
                     myplot_args["parallels"] = myplot_args["parallels"].encode()
-                except:
+                except Exception:
                     print("Warning unicode")
 
                 for fichier in val:
+                    resource = epygram.formats.resource(fichier, 'r')
+                    print("FICHIER : " + fichier)
+                    try:
+                        field = resource.readfield(champ[cle])
+                        if field.spectral:
+                            field.sp2gp()
+                        if cle in operation:
+                            field = CheckForOperation(operation[cle], field)
+                        if decumul[cle] == True:
+                            if indiceDecumul == 0:
+                                fieldDecumul = field
+                                indiceDecumul = +1
+                                continue
+                    except Exception:  #Cas des RR @0h : param n'existe pas
+                        indiceDecumul = +1
+                        continue
 
-     	            resource = epygram.formats.resource(fichier, 'r')
-     	            print("FICHIER : " + fichier)
+                    if decumul[cle] == True:
+                            waitforme = field
+                            try:  #Cas des RR @0h : param n'erxiste pas
+                                field = field - fieldDecumul
+                            except Exception:
+                                pass
+                            fieldDecumul = waitforme
 
-    	            try:
-    	                field = resource.readfield(champ[cle])
-    	                if field.spectral:
-    	                    field.sp2gp()
+                    if existingbasemap == None or new_pickle == True:
+                        print 'Actually niou pickle !'
+                        existingbasemap = \
+                            field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
+                                subzone=myplot_args["subzone"], specificproj=myplot_args["specificproj"],
+                                zoom=monzoom)
+                        cPickle.dump(existingbasemap, open(pickle_bm, 'w'))
+                        #On réutilise le cache
+                        new_pickle = False
 
-    	                if cle in operation:
-    	                    field = CheckForOperation(operation[cle], field)
+                    myplot = MakeMyPlot(resource, field, cle, champ, champ_v, FF, vecteurs, existingbasemap, existingfigure, vectors_subsampling, myplot_args)
 
-    	                if decumul[cle] == True:
-    	                    if indiceDecumul == 0:
-    	                        fieldDecumul = field
-    	                        indiceDecumul = +1
-    	                        continue
-    	            except:  #Cas des RR @0h : param n'existe pas
-    	                indiceDecumul = +1
-    	                continue
+                    if getcode:
+                        zecode = print_code(myplot_args, existingbasemap, existingfigure)
+                        print("*** Arguments du plot ***\n" + zecode)
 
-    	            if decumul[cle] == True:
-    	                    waitforme = field
-    	                    try:  #Cas des RR @0h : param n'erxiste pas
-    	                        field = field - fieldDecumul
-    	                    except:
-    	                        pass
-    	                    fieldDecumul = waitforme
+                    # Utilisation d'un nom unique par image, dans un répertoire fixe
+                    try:
+                        myunikname = os.path.basename(fichier) + "_" + "_".join("=".join((str(k), str(v))) for k, v in champ[cle].iteritems())
+                    except:
+                        myunikname = os.path.basename(fichier) + "_" + str(champ[cle])
 
-    	            if existingbasemap == None or new_pickle == True:
-    	                print 'Actually niou pickle !'
-    	                existingbasemap = \
-    	                    field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
-    	                        subzone=myplot_args["subzone"], specificproj=myplot_args["specificproj"],
-    	                        zoom=monzoom)
-    	                cPickle.dump(existingbasemap, open(pickle_bm, 'w'))
+                    #On rajoute un petit uuid en cas de rafraichissement d'image
+                    myunikfile = image_path + myunikname + "_" + local_uuid + '.png'
+                    print("Saving figure ", myunikfile)
+                    myplot[0].savefig(myunikfile, dpi=dpi, bbox_inches='tight')
 
-    	                #On réutilise le cache
-    	                new_pickle = False
+                    #memory management
+                    resource.close()
+                    del resource
+                    del field
+                    plt.close(myplot[0])
+                    del myplot
 
-    	            myplot = MakeMyPlot(resource, field, cle, champ, champ_v, FF, vecteurs, existingbasemap, existingfigure, vectors_subsampling, myplot_args)
+                    #SLIDE IMAGE STYLE
+                    liste_tmp.append(myunikfile)
 
-    	            if getcode:
-    	                zecode = print_code(myplot_args, existingbasemap, existingfigure)
-    	                print("*** Arguments du plot ***\n" + zecode)
+                out[cle] = liste_tmp
 
-    	            # Utilisation d'un nom unique par image, dans un répertoire fixe
-    	            try:
-    	                myunikname = os.path.basename(fichier) + "_" + "_".join("=".join((str(k), str(v))) for k, v in champ[cle].iteritems())
-    	            except:
-    	                myunikname = os.path.basename(fichier) + "_" + str(champ[cle])
+            out2 = []
 
-    	            #On rajoute un petit uuid en cas de rafraichissement d'image
-    	            myunikfile = image_path + myunikname + "_" + local_uuid + '.png'
+            del existingbasemap
 
-    	            print("Saving figure ", myunikfile)
-
-    	            myplot[0].savefig(myunikfile, dpi=dpi, bbox_inches='tight')
-
-
-    	            #memory management
-    	            resource.close()
-    	            del resource
-
-    	            del field
-
-    	            plt.close(myplot[0])
-    	            del myplot
-
-    	            #SLIDE IMAGE STYLE
-    	            liste_tmp.append(myunikfile)
-
-    	        out[cle] = liste_tmp
-
-    	    out2 = []
-
-    	    del existingbasemap
-
-    	    #On alterne A et B si besoin (cas de plot_both)
-    	    if len(out) == 1:
-    	        out2 = out["A"]
-    	    else:
-    	        for idx, val in enumerate(out["A"]):
-    	            out2.append(val)
-    	            out2.append(out["B"][idx])
-
+            #On alterne A et B si besoin (cas de plot_both)
+            if len(out) == 1:
+                out2 = out["A"]
+            else:
+                for idx, val in enumerate(out["A"]):
+                    out2.append(val)
+                    out2.append(out["B"][idx])
 
             print("End Plot")
 
             return json.dumps(out2)
 
-        except:
-
+        except Exception:
             raise
             print("Erreur 3615")
 
 
 class myplot_overlay:
-
     """Plot an overlay of 2 parameters across 1 or several file(s)"""
 
     def POST(self):
         try:
             import matplotlib.pyplot as plt
-
-
             print 'Start MyPlot overlay'
-
             local_uuid = str(uuid.uuid4())
 
             files = getAjaxArgSmart('file')
@@ -530,7 +463,7 @@ class myplot_overlay:
             vecteurs = getAjaxArgSmart('vecteurs')
             vectors_subsampling = getAjaxArgSmart('vectors_subsampling')
 
-            getcode = getAjaxArgSmart('getcode')
+            getcode = getAjaxArgSmart('getcode')  #TODO: useless ?
             dpi = getAjaxArgSmart('dpi')
 
             operation = getAjaxArgSmart('operation')
@@ -539,10 +472,10 @@ class myplot_overlay:
                 existingbasemap = cPickle.load(open(pickle_bm, 'r'))
                 if not isinstance(existingbasemap, Basemap):
                     raise Exception('no valid Basemap in pickle.')
-            except:
+            except Exception:
                 existingbasemap = None
 
-            out = {}
+            out = {}  #TODO: cleanme ?
 
             #loop sur files["A"] puis concordance avec file["B"]
             liste_tmp = []
@@ -551,81 +484,74 @@ class myplot_overlay:
                 #1st layer
                 myplot_args = get_common_args("A")
                 resource = epygram.formats.resource(fichier, 'r')
-    	        field = resource.readfield(champ["A"])
+                field = resource.readfield(champ["A"])
 
-    	        if field.spectral:
-    	                field.sp2gp()
+                if field.spectral:
+                        field.sp2gp()
+                if "A" in operation:
+                    field = CheckForOperation(operation["A"], field)
 
-    	        if "A" in operation:
-    	            field = CheckForOperation(operation["A"], field)
+                if existingbasemap == None or new_pickle == True:
+                        print 'Actually niou pickle !'
+                        existingbasemap = \
+                            field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
+                                subzone=myplot_args["subzone"], specificproj=myplot_args["specificproj"],
+                                zoom=monzoom)
+                        cPickle.dump(existingbasemap, open(pickle_bm, 'w'))
+                        #On ne le calcule que pour la 1ere itération de la boucle
+                        new_pickle = False
 
-    	        if existingbasemap == None or new_pickle == True:
-    	                print 'Actually niou pickle !'
-    	                existingbasemap = \
-    	                    field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
-    	                        subzone=myplot_args["subzone"], specificproj=myplot_args["specificproj"],
-    	                        zoom=monzoom)
-    	                cPickle.dump(existingbasemap, open(pickle_bm, 'w'))
-    	                #On ne le calcule que pour la 1ere itération de la boucle
-    	                new_pickle = False
+                myplot_1 = MakeMyPlot(resource, field, "A", champ, champ_v, FF, vecteurs, existingbasemap, existingfigure, vectors_subsampling, myplot_args)
 
-    	        myplot_1 = MakeMyPlot(resource, field, "A", champ, champ_v, FF, vecteurs, existingbasemap, existingfigure, vectors_subsampling, myplot_args)
+                resource.close()
 
-    	        resource.close()
-
-    	        #2nd layer
-    	        myplot_args = get_common_args("B")
-    	        #on met la légende à gauche pour la champ B pour ne pas enpiéter sur la légende de A
-    	        myplot_args["colorbar"] = "left"
-    	        resource = epygram.formats.resource(files["B"][indice], 'r')
+                #2nd layer
+                myplot_args = get_common_args("B")
+                #on met la légende à gauche pour la champ B pour ne pas enpiéter sur la légende de A
+                myplot_args["colorbar"] = "left"
+                resource = epygram.formats.resource(files["B"][indice], 'r')
                 field = resource.readfield(champ["B"])
 
-    	        if field.spectral:
-    	                field.sp2gp()
+                if field.spectral:
+                        field.sp2gp()
+                if "B" in operation:
+                    field = CheckForOperation(operation["B"], field)
 
-    	        if "B" in operation:
-    	            field = CheckForOperation(operation["B"], field)
+                myplot = MakeMyPlot(resource, field, "B", champ, champ_v, FF, vecteurs, None, myplot_1, vectors_subsampling, myplot_args)
 
-    	        myplot = MakeMyPlot(resource, field, "B", champ, champ_v, FF, vecteurs, None, myplot_1, vectors_subsampling, myplot_args)
-
-    	        try:
-    	            myunikname = os.path.basename(fichier) + "_" + "_".join("=".join((str(k), str(v))) for k, v in champ[cle].iteritems())
-    	        except:
-    	            myunikname = str(uuid.uuid4())
+                try:
+                    myunikname = os.path.basename(fichier) + "_" + "_".join("=".join((str(k), str(v))) for k, v in champ[cle].iteritems())
+                except Exception:
+                    myunikname = str(uuid.uuid4())
 
 
-    	        #On rajoute un petit uuid en cas de rafraichissement d'image
-    	        myunikfile = image_path + myunikname + "_" + local_uuid + '.png'
-    	        myplot[0].savefig(myunikfile, dpi=dpi, bbox_inches='tight')
+                #On rajoute un petit uuid en cas de rafraichissement d'image
+                myunikfile = image_path + myunikname + "_" + local_uuid + '.png'
+                myplot[0].savefig(myunikfile, dpi=dpi, bbox_inches='tight')
 
-    	        #SLIDE IMAGE STYLE
-    	        liste_tmp.append(myunikfile)
-    	        resource.close()
-    	        plt.close(myplot[0])
-    	        del myplot
-    	        del field
+                #SLIDE IMAGE STYLE
+                liste_tmp.append(myunikfile)
+                resource.close()
+                plt.close(myplot[0])
+                del myplot
+                del field
 
             out2 = liste_tmp
             existingbasemap = None
             return json.dumps(out2)
 
-        except:
-
+        except Exception:
             raise
             print("Erreur 3614")
 
 
 class myplot_diff:
-
     """Plot of a difference between files """
-
 
     def POST(self):
         try:
             print 'Start MyPlot'
-
             import matplotlib.pyplot as plt
-
             local_uuid = str(uuid.uuid4())
 
             #Les listes de fichiers A et B doivent avoir la même dimension...
@@ -639,14 +565,14 @@ class myplot_diff:
                 try:
                     champ[cle]['typeOfLevel'] = val['typeOfLevel'].encode()
                     champ[cle] = {str(k):champ[cle][k] for k in val.keys()}
-                except:
+                except Exception:
                     print ("Warning unicode")
 
             for cle, val in champ_v.iteritems():
                 try:
                     champ_v[cle]['typeOfLevel'] = val['typeOfLevel'].encode()
                     champ_v[cle] = {str(k):champ_v[cle][k] for k in val.keys()}
-                except:
+                except Exception:
                     print ("Warning unicode")
 
             #For common arguments
@@ -659,7 +585,7 @@ class myplot_diff:
             monzoom = getAjaxArgSmart('monzoom')
             FF = getAjaxArgSmart('FF')
             vecteurs = getAjaxArgSmart('vecteurs')
-            vectors_subsampling = getAjaxArgSmart('vectors_subsampling')
+            #vectors_subsampling = getAjaxArgSmart('vectors_subsampling')
             getcode = getAjaxArgSmart('getcode')
             dpi = getAjaxArgSmart('dpi')
 
@@ -669,149 +595,125 @@ class myplot_diff:
                 existingbasemap = cPickle.load(open(pickle_bm, 'r'))
                 if not isinstance(existingbasemap, Basemap):
                     raise Exception('no valid Basemap in pickle.')
-            except:
+            except Exception:
                 existingbasemap = None
 
             out2 = []
 
             for indice, fichier in enumerate(filesA):
+                resourceA = epygram.formats.resource(fichier, 'r')
+                fieldA = resourceA.readfield(champ["A"])
+                if (filesB[indice] != fichier):
+                    resourceB = epygram.formats.resource(filesB[indice], 'r')
+                    fieldB = resourceB.readfield(champ["B"])
+                else:
+                    fieldB = resourceA.readfield(champ["B"])
+                if fieldA.spectral:
+                    fieldA.sp2gp()
+                if "A" in operation:
+                    fieldA = CheckForOperation(operation["A"], fieldA)
+                if fieldB.spectral:
+                    fieldB.sp2gp()
+                if "B" in operation:
+                    fieldB = CheckForOperation(operation["B"], fieldB)
+                field = fieldB - fieldA
 
-	            resourceA = epygram.formats.resource(fichier, 'r')
-	            fieldA = resourceA.readfield(champ["A"])
-	            if (filesB[indice] != fichier):
-	                resourceB = epygram.formats.resource(filesB[indice], 'r')
-	                fieldB = resourceB.readfield(champ["B"])
-	            else:
-	                fieldB = resourceA.readfield(champ["B"])
+                if existingbasemap == None or new_pickle == True:
+                    print 'Actually niou pickle !'
+                    existingbasemap = field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
+                        subzone=myplot_args["subzone"], specificproj=myplot_args["specificproj"], zoom=monzoom)
+                    cPickle.dump(existingbasemap, open(pickle_bm, 'w'))
+                    #On ne le calcule que pour la 1ere itération de la boucle
+                    new_pickle = False
 
-	            if fieldA.spectral:
-	                fieldA.sp2gp()
+                if (FF["A"] and FF["B"]) or (vecteurs["A"] and vecteurs["B"]):
+                    fieldA_v = resourceA.readfield(champ_v["A"])
+                    fieldB_v = resourceB.readfield(champ_v["B"])
 
-	            if "A" in operation:
-	                fieldA = CheckForOperation(operation["A"], fieldA)
+                    if fieldA_v.spectral:
+                        fieldA_v.sp2gp()
+                    if fieldB_v.spectral:
+                        fieldB_v.sp2gp()
+                    field_v = fieldB_v - fieldA_v  #TODO: cleanme ?
 
-	            if fieldB.spectral:
-	                fieldB.sp2gp()
+                    vectwindA = epygram.fields.make_vector_field(fieldA, fieldA_v)
+                    FF_fieldA = vectwindA.to_module()
 
-	            if "B" in operation:
-	                fieldB = CheckForOperation(operation["B"], fieldB)
+                    vectwindB = epygram.fields.make_vector_field(fieldB, fieldB_v)
+                    FF_fieldB = vectwindB.to_module()
 
+                    if FF["A"] and FF["B"]:
+                        FF_field = FF_fieldB - FF_fieldA
+                        myplot = FF_field.plotfield(title=str(champ["B"]) + ' - \n' + str(champ["A"]) + '\n' + str(fieldB.validity.get()) + "-" + str(fieldA.validity.get()),
+                                                    use_basemap=existingbasemap,
+                                                    **myplot_args)
+                        del FF_field
+                        del FF_fieldA
+                        del FF_fieldB
 
-	            field = fieldB - fieldA
+                        if vecteurs["A"] and vecteurs["B"]:
+                            print("no vector difference !")
+                    elif vecteurs["A"] and vecteurs["B"]:
+                        del FF_fieldA
+                        del FF_fieldB
+                        print("no vector difference !")
+                else:
+                    #La méthode générique MakMyPlot n'est pas appelable ici -> duplication légère
+                    myplot_args.pop("vectorcolor", None)
 
-	            if existingbasemap == None or new_pickle == True:
-	                print 'Actually niou pickle !'
-	                existingbasemap = field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
-	                    subzone=myplot_args["subzone"], specificproj=myplot_args["specificproj"], zoom=monzoom)
-	                cPickle.dump(existingbasemap, open(pickle_bm, 'w'))
-	                #On ne le calcule que pour la 1ere itération de la boucle
-	                new_pickle = False
+                    myplot = field.plotfield(title=str(champ["B"]) + ' - \n' + str(champ["A"]) + '\n' + str(fieldB.validity.get()) + "-" + str(fieldA.validity.get()),
+                                             use_basemap=existingbasemap,
+                                             **myplot_args)
 
-	            if (FF["A"] and FF["B"]) or (vecteurs["A"] and vecteurs["B"]):
-	                fieldA_v = resourceA.readfield(champ_v["A"])
-	                fieldB_v = resourceB.readfield(champ_v["B"])
+                if getcode:
+                    zecode = print_code(myplot_args, existingbasemap, existingfigure)
+                    print("*** Arguments du plot ***\n" + zecode)
 
-	                if fieldA_v.spectral:
-	                    fieldA_v.sp2gp()
-	                if fieldB_v.spectral:
-	                    fieldB_v.sp2gp()
+                # Utilisation d'un nom unique par image, dans un répertoire fixe
+                try:
+                    myunikname = os.path.basename(fichier) + "_" + "_".join("=".join((str(k), str(v))) for k, v in champ[cle].iteritems())
+                except Exception:
+                    myunikname = str(uuid.uuid4())
+                #On rajoute un petit uuid en cas de rafraichissement d'image
+                myunikfile = image_path + myunikname + "_" + local_uuid + '.png'
+                myplot[0].savefig(myunikfile, dpi=dpi, bbox_inches='tight')
 
-	                field_v = fieldB_v - fieldA_v
+                #SLIDE IMAGE STYLE
+                out2.append(myunikfile)
 
-	                vectwindA = epygram.fields.make_vector_field(fieldA, fieldA_v)
-	                FF_fieldA = vectwindA.to_module()
+                print("Closing figure...")
+                plt.close(myplot[0])
+                del myplot
+                del field
+                del fieldA
+                del fieldB
 
-	                vectwindB = epygram.fields.make_vector_field(fieldB, fieldB_v)
-	                FF_fieldB = vectwindB.to_module()
-
-
-	                if FF["A"] and FF["B"]:
-	                    FF_field = FF_fieldB - FF_fieldA
-	                    myplot = FF_field.plotfield(
-	                        title=str(champ["B"]) + ' - \n' + str(champ["A"]) + '\n' + str(fieldB.validity.get()) + "-" + str(fieldA.validity.get()),
-	                        use_basemap=existingbasemap,
-	                        #existingfigure=existingfigure,
-	                        **myplot_args
-	                        )
-	                    del FF_field
-	                    del FF_fieldA
-	                    del FF_fieldB
-
-	                    if vecteurs["A"] and vecteurs["B"]:
-	                        print("no vector difference !")
-	                elif vecteurs["A"] and vecteurs["B"]:
-	                    del FF_fieldA
-	                    del FF_fieldB
-	                    print("no vector difference !")
-	            else:
-
-	                        #La méthode générique MakMyPlot n'est pas appelable ici -> duplication légère
-	                        myplot_args.pop("vectorcolor", None)
-
-	                        myplot = field.plotfield(
-	                            title=str(champ["B"]) + ' - \n' + str(champ["A"]) + '\n' + str(fieldB.validity.get()) + "-" + str(fieldA.validity.get()),
-	                            use_basemap=existingbasemap,
-	                            **myplot_args
-	                            )
-
-
-
-	            if getcode:
-	                zecode = print_code(myplot_args, existingbasemap, existingfigure)
-	                print("*** Arguments du plot ***\n" + zecode)
-
-	            # Utilisation d'un nom unique par image, dans un répertoire fixe
-	            try:
-	                myunikname = os.path.basename(fichier) + "_" + "_".join("=".join((str(k), str(v))) for k, v in champ[cle].iteritems())
-	            except:
-	                myunikname = str(uuid.uuid4())
-
-    	        #On rajoute un petit uuid en cas de rafraichissement d'image
-	            myunikfile = image_path + myunikname + "_" + local_uuid + '.png'
-
-	            myplot[0].savefig(myunikfile, dpi=dpi, bbox_inches='tight')
-
-	            #SLIDE IMAGE STYLE
-	            out2.append(myunikfile)
-
-	            print("Closing figure...")
-	            plt.close(myplot[0])
-	            del myplot
-	            del field
-	            del fieldA
-	            del fieldB
-
-	            resourceA.close()
-	            try:
-	            	resourceB.close()
-	            except:
-	            	pass
+                resourceA.close()
+                try:
+                    resourceB.close()
+                except Exception:
+                    pass
 
             del existingbasemap
+
             return json.dumps(out2)
         except:
-
             raise
             print("Erreur 3615 diff")
 
 
-
 def whichMinMax(fichier, champ):
     try:
-        subzone = None
-
+        subzone = None  #TODO: init + appel à stats() ?
         resource = epygram.formats.resource(fichier, 'r')
-        stats = {}
         field = resource.readfield(champ)
+        resource.close()
         if field.spectral:
             field.sp2gp()
-
-        resource.close()
 
         return field.stats()
 
     except Exception, ex:
-
         print ex.__str__()
 
 
@@ -821,21 +723,15 @@ def getAjaxArg(sArg, sDefault=''):
     try:
         data = web.data()
         #print ('DATA :', data)
-
         dic = None
         if data:
             dic = json.loads(data)
         else:
-
             # maybe it was a GET?  check web.input()
-
             dic = dict(web.input())
-
         if dic:
-
             # print("DIC : ",dic)
             # print("DIC[1] : ",dic[sArg])
-
             if dic.has_key(sArg):
                 if dic[sArg]:
                     return dic[sArg]
@@ -861,32 +757,23 @@ def getAjaxArgSmart(sArg, sDefault=''):
         if data:
             dic = json.loads(data)
         else:
-
             # Trick for grib
             # dic = json.loads(data, separators=(',',':'))
             # maybe it was a GET?  check web.input()
-
             dic = dict(web.input())
-
         if dic:
             if dic.has_key(sArg):
                 if dic[sArg] == '':
                     return None
                 elif dic[sArg] == 'false':
-
-            # print(sArg,": None")
-
+                    # print(sArg,": None")
                     return False
                 elif dic[sArg] == 'true':
-
-            # print(sArg,": False")
-
+                    # print(sArg,": False")
                     return True
                 elif type(dic[sArg]) == type(str()) and dic[sArg][0] \
                     == '{':
-
-            # print(sArg,": True")
-
+                    # print(sArg,": True")
                     #print 'on entre'
                     return json.loads(dic[sArg])
                     #print type(dic[sArg])
@@ -904,57 +791,46 @@ def getAjaxArgSmart(sArg, sDefault=''):
 def print_code(myplot_args, existingbasemap, existingfigure):
 
     try:
-        zecode = "field.plotfield(subzone='" \
-	                            + "'," + "gisquality='" \
-	                            + unicode(myplot_args["gisquality"]) + "',specificproj=" \
-	                            + unicode(myplot_args["specificproj"]) + ','
-
-        zecode = zecode + "minmax='" + unicode(myplot_args["minmax"]) \
-	                            + "',graphicmode='" + unicode(myplot_args["graphicmode"]) \
-	                            + "',levelsnumber=" + unicode(myplot_args["levelsnumber"]) \
-	                            + ",colormap='" + unicode(myplot_args["colormap"]) \
-	                            + "',center_cmap_on_0=" \
-	                            + unicode(myplot_args["center_cmap_on_0"]) + ','
-        zecode = zecode + 'drawrivers=' \
-	                            + unicode(myplot_args["drawrivers"]) + ',meridians=' \
-	                            + unicode(myplot_args["meridians"]) + ',parallels=' \
-	                            + unicode(myplot_args["parallels"]) + ',bluemarble=' \
-	                            + unicode(myplot_args["bluemarble"]) \
-	                            + ',departments=' + unicode(myplot_args["departments"]) \
-	                            + ', '
-        zecode = zecode + 'existingfigure=' \
-	                            + unicode(existingfigure) + ',pointsize=' \
-	                            + unicode(myplot_args["pointsize"]) + ')'
-
+        zecode = ', '.join(["field.plotfield(subzone=''",
+                           "gisquality='" + unicode(myplot_args["gisquality"]) + "'",
+                           "specificproj='" + unicode(myplot_args["specificproj"]) + "'",
+                           "minmax='" + unicode(myplot_args["minmax"]) + "'",
+                           "graphicmode='" + unicode(myplot_args["graphicmode"]) + "'",
+                           "levelsnumber=" + unicode(myplot_args["levelsnumber"]),
+                           "colormap='" + unicode(myplot_args["colormap"]) + "'",
+                           "center_cmap_on_0=" + unicode(myplot_args["center_cmap_on_0"]),
+                           "drawrivers=" + unicode(myplot_args["drawrivers"]),
+                           "meridians=" + unicode(myplot_args["meridians"]),
+                           "parallels=" + unicode(myplot_args["parallels"]),
+                           "bluemarble=" + unicode(myplot_args["bluemarble"]),
+                           "departments=" + unicode(myplot_args["departments"]),
+                           "existingfigure=" + unicode(existingfigure),
+                           "pointsize=" + unicode(myplot_args["pointsize"])
+                           ])
 
         return zecode
 
     except Exception, ex:
-
         print "Error print_code !"
         print ex.__str__()
 
 
-def get_common_args(file):
+def get_common_args(fileid):
 
             myplot_args = {}
             mini = getAjaxArgSmart('min')
             maxi = getAjaxArgSmart('max')
 
-            myplot_args["minmax"] = (mini[file], maxi[file])
-
-            myplot_args["levelsnumber"] = getAjaxArgSmart('levelsnumber')[file]  # nombre/slidebar ?
-            myplot_args["colormap"] = getAjaxArg('colormap')[file]  # un menu déroulant avec des mini-images de chaque colormap ?
-            myplot_args["graphicmode"] = getAjaxArgSmart('graphicmode')[file]  # cases radiobutton [colorshades,contourlines,points]
-
-            mypointsize = getAjaxArgSmart('pointsize')[file]
+            myplot_args["minmax"] = (mini[fileid], maxi[fileid])
+            myplot_args["levelsnumber"] = getAjaxArgSmart('levelsnumber')[fileid]  # nombre/slidebar ?
+            myplot_args["colormap"] = getAjaxArg('colormap')[fileid]  # un menu déroulant avec des mini-images de chaque colormap ?
+            myplot_args["graphicmode"] = getAjaxArgSmart('graphicmode')[fileid]  # cases radiobutton [colorshades,contourlines,points]
+            mypointsize = getAjaxArgSmart('pointsize')[fileid]
             if (mypointsize != ""):
                 myplot_args["pointsize"] = mypointsize  # nombre/slidebar ?
-
-            myplot_args["contourcolor"] = getAjaxArgSmart('contourcolor')[file]
-            myplot_args["vectorcolor"] = getAjaxArgSmart('vectorcolor')[file]
-
-            myplot_args["subzone"] = getAjaxArgSmart('subzone')[file]  # cases radiobutton [C,CI,CIE]
+            myplot_args["contourcolor"] = getAjaxArgSmart('contourcolor')[fileid]
+            myplot_args["vectorcolor"] = getAjaxArgSmart('vectorcolor')[fileid]
+            myplot_args["subzone"] = getAjaxArgSmart('subzone')[fileid]  # cases radiobutton [C,CI,CIE]
             myplot_args["gisquality"] = getAjaxArgSmart('gisquality')  # pour régler la finesse des traits de côte : cases radiobutton [c,l,i,h,f]
             myplot_args["specificproj"] = getAjaxArgSmart('specificproj')  # pour utiliser une projection de la carte particulière [kav7,cyl,ortho,nsperXXXX]
             myplot_args["center_cmap_on_0"] = getAjaxArgSmart('center_cmap_on_0')  # checkbox
@@ -962,7 +838,6 @@ def get_common_args(file):
             myplot_args["meridians"] = getAjaxArgSmart('meridians')  # nombre/slidebar
             myplot_args["parallels"] = getAjaxArgSmart('parallels')
             myplot_args["bluemarble"] = getAjaxArgSmart('bluemarble')
-
             #myplot_args["minmax_in_title"] = True  # getAjaxArg('minmax_in_title') # à ignorer ?
             myplot_args["departments"] = getAjaxArgSmart('departments')  # checkbox
 
@@ -974,9 +849,7 @@ def datex(start, end=None, step=None):
     Extended date expansion : YYYYMMDDHH-YYYYMMDDHH-HH
     """
     rangevalues = list()
-
     arguments = start.split('-')
-
     start_arg = arguments[0]
 
     if len(arguments) == 1:
@@ -993,7 +866,6 @@ def datex(start, end=None, step=None):
 
     start_date = arg2date(start_arg)
     end_date = arg2date(end_arg)
-
     delta = timedelta(days=0, seconds=int(delta_arg) * 3600)
 
     d = start_date
@@ -1005,93 +877,80 @@ def datex(start, end=None, step=None):
 
 
 def arg2date(myarg):
-    """
-    """
-
     out = datetime(int(myarg[0:4]), int(myarg[4:6]), int(myarg[6:8]), int(myarg[8:10]))
-
     return out
 
 
-
 def MakeMyPlot(resource, field, cle, champ, champ_v, FF, vecteurs, existingbasemap, existingfigure, vectors_subsampling, myplot_args):
+    """Generic method for plotting (ok for plot, plot_both, overlay, but not for diff"""
 
-    	            '''Generic method for plotting (ok for plot, plot_both, overlay, but not for diff '''
-    	            import copy
+    try:
+        vectorcolor = myplot_args["vectorcolor"]
+        myplot_args.pop("vectorcolor", None)
+    except:
+        vectorcolor = "black"
 
+    print("MakeMyPlot starts ")
 
-    	            try:
-    	                vectorcolor = myplot_args["vectorcolor"]
-    	                myplot_args.pop("vectorcolor", None)
-    	            except:
-    	                vectorcolor = "black"
+    #On enleve des options en cas de tracé de vecteur
+    myplot_args_vect = copy.copy(myplot_args)
+    myplot_args_vect.pop("pointsize", None)
+    myplot_args_vect.pop("colormap", None)
+    myplot_args_vect.pop("levelsnumber", None)
+    myplot_args_vect.pop("graphicmode", None)
+    myplot_args_vect.pop("minmax", None)
+    myplot_args_vect.pop("center_cmap_on_0", None)
+    myplot_args_vect.pop("departments", None)
+    myplot_args_vect.pop("contourcolor", None)
+    myplot_args_vect.pop("colorbar", None)
 
-    	            print("MakeMyPlot starts ")
+    if FF[cle] or vecteurs[cle]:
+        field_v = resource.readfield(champ_v[cle])
+        if field_v.spectral:
+            field_v.sp2gp()
+        vectwind = epygram.fields.make_vector_field(field,
+                                                    field_v)
 
-    	            #On enleve des options en cas de tracé de vecteur
-    	            myplot_args_vect = copy.copy(myplot_args)
-    	            myplot_args_vect.pop("pointsize", None)
-    	            myplot_args_vect.pop("colormap", None)
-    	            myplot_args_vect.pop("levelsnumber", None)
-    	            myplot_args_vect.pop("graphicmode", None)
-    	            myplot_args_vect.pop("minmax", None)
-    	            myplot_args_vect.pop("center_cmap_on_0", None)
-    	            myplot_args_vect.pop("departments", None)
-    	            myplot_args_vect.pop("contourcolor", None)
-    	            myplot_args_vect.pop("colorbar", None)
+        if FF[cle]:
+            FF_field = vectwind.to_module()
+            myplot = FF_field.plotfield(title=str(champ[cle]) + '\n' + str(field.validity.get()),
+                                        use_basemap=existingbasemap,
+                                        over=existingfigure,
+                                        **myplot_args
+                                        )
+            if vecteurs[cle]:
+                myplot = vectwind.plotfield(over=myplot,
+                                            title=str(champ[cle]) + '\n' + str(field.validity.get()),
+                                            use_basemap=existingbasemap,
+                                            subsampling=vectors_subsampling[cle],
+                                            plot_module=False,
+                                            symbol_options={'color': vectorcolor},
+                                            **myplot_args_vect
+                                            )
+            del field_v
+            del vectwind
+        elif vecteurs[cle]:
+                myplot = vectwind.plotfield(title=str(champ[cle]) + '\n' + str(field.validity.get()),
+                                            use_basemap=existingbasemap,
+                                            over=existingfigure,
+                                            subsampling=vectors_subsampling[cle],
+                                            plot_module=False,
+                                            symbol_options={'color': vectorcolor},
+                                            **myplot_args_vect
+                                            )
+                del field_v
+                del vectwind
+    else:
+                myplot = field.plotfield(title=str(champ[cle]) + '\n' + str(field.validity.get()),
+                                         use_basemap=existingbasemap,
+                                         over=existingfigure,
+                                         **myplot_args
+                                         )
 
-    	            if FF[cle] or vecteurs[cle]:
-    	                field_v = resource.readfield(champ_v[cle])
-    	                if field_v.spectral:
-    	                    field_v.sp2gp()
+    return myplot
 
-    	                vectwind = epygram.fields.make_vector_field(field,
-    	                        field_v)
-
-    	                if FF[cle]:
-    	                    FF_field = vectwind.to_module()
-    	                    myplot = FF_field.plotfield(
-    	                        title=str(champ[cle]) + '\n' + str(field.validity.get()),
-    	                        use_basemap=existingbasemap,
-    	                        over=existingfigure,
-    	                        **myplot_args
-    	                        )
-    	                    if vecteurs[cle]:
-    	                        myplot = vectwind.plotfield(
-    	                            over=myplot,
-    	                            title=str(champ[cle]) + '\n' + str(field.validity.get()),
-    	                            use_basemap=existingbasemap,
-    	                            subsampling=vectors_subsampling[cle],
-    	                            plot_module=False,
-    	                            symbol_options={'color': vectorcolor},
-    	                            **myplot_args_vect
-    	                            )
-    	                    del field_v
-    	                    del vectwind
-    	                elif vecteurs[cle]:
-    	                        myplot = vectwind.plotfield(
-    	                            title=str(champ[cle]) + '\n' + str(field.validity.get()),
-    	                            use_basemap=existingbasemap,
-    	                            over=existingfigure,
-    	                            subsampling=vectors_subsampling[cle],
-    	                            plot_module=False,
-    	                            symbol_options={'color': vectorcolor},
-    	                            **myplot_args_vect
-    	                            )
-    	                        del field_v
-    	                        del vectwind
-    	            else:
-    	                        myplot = field.plotfield(
-    	                            title=str(champ[cle]) + '\n' + str(field.validity.get()),
-    	                            use_basemap=existingbasemap,
-    	                            over=existingfigure,
-    	                            **myplot_args
-    	                            )
-
-    	            return myplot
 
 def CheckForOperation(ope, field):
-
     try:
         operation_arg1 = ope[0].encode()
         print("operation ", operation_arg1)
@@ -1107,6 +966,31 @@ def CheckForOperation(ope, field):
     return field
 
 
-if __name__ == '__main__':
+def main(open_browser=False,
+         verbose=True):
+
+    epygram.init_env()
+    epylog.setLevel('WARNING')
+    if verbose:
+        epylog.setLevel('INFO')
+
+    # to avoid any path issues, "cd" to the web root.
+    web_root = os.path.abspath(os.path.dirname(__file__))
+    os.chdir(web_root)
+    app = web.application(urls, globals())
+    if open_browser:
+        def open_browser():
+            import webbrowser
+            import time
+            time.sleep(1)
+            webbrowser.open('http://' + os.getenv('HOST') + ':8080/epyweb')
+        import threading
+        t = threading.thread(target=open_browser)
+        t.start()
+
     app.run()
 
+
+
+if __name__ == '__main__':
+    main()
