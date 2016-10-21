@@ -587,16 +587,16 @@ def main(mode,
                 CIEdomain.setdata(data)
                 print "Plot domain..."
                 bm = CIEdomain.geometry.make_basemap(specificproj=('nsper', {'sat_height':5000}))
-                fig = CIEdomain.plotfield(existingbasemap=bm,
-                                          levelsnumber=6,
-                                          minmax=[-1.0, 3.0],
-                                          colorbar=False,
-                                          title='Domain: C+I+E',
-                                          meridians=None,
-                                          parallels=None,
-                                          gisquality=gisquality,
-                                          bluemarble=bluemarble,
-                                          background=background)
+                fig, ax = CIEdomain.plotfield(use_basemap=bm,
+                                              levelsnumber=6,
+                                              minmax=[-1.0, 3.0],
+                                              colorbar=False,
+                                              title='Domain: C+I+E',
+                                              meridians=None,
+                                              parallels=None,
+                                              gisquality=gisquality,
+                                              bluemarble=bluemarble,
+                                              background=background)
                 plot_lonlat_included = raw_input("Plot a lon/lat domain over model domain ? [n]: ")
                 if plot_lonlat_included in ('y', 'Y', 'yes'):
                     plot_lonlat_included = True
@@ -607,8 +607,8 @@ def main(mode,
                     print "Min/Max longitudes & latitudes of the lon/lat domain (defaults to that proposed above):"
                     ll_boundaries = ask_lonlat(proposed)
                     ll_domain = build_lonlat_field(ll_boundaries)
-                    ll_domain.plotfield(existingfigure=fig,
-                                        existingbasemap=bm,
+                    ll_domain.plotfield(over=(fig, ax),
+                                        use_basemap=bm,
                                         graphicmode='contourlines',
                                         title='Domain: C+I+E \n Red contour: required lon/lat',
                                         levelsnumber=2,
@@ -650,16 +650,16 @@ def main(mode,
                 CIEdomain.setdata(data)
                 print "Plot domain..."
                 bm = CIEdomain.geometry.make_basemap(specificproj=('nsper', {'sat_height':5000}))
-                fig = CIEdomain.plotfield(existingbasemap=bm,
-                                          levelsnumber=6,
-                                          minmax=[-1.0, 3.0],
-                                          colorbar=False,
-                                          gisquality=gisquality,
-                                          bluemarble=bluemarble,
-                                          background=background)
+                fig, ax = CIEdomain.plotfield(use_basemap=bm,
+                                              levelsnumber=6,
+                                              minmax=[-1.0, 3.0],
+                                              colorbar=False,
+                                              gisquality=gisquality,
+                                              bluemarble=bluemarble,
+                                              background=background)
                 lldomain = build_lonlat_field(defaults, fid={'lon/lat':'included'})
-                lldomain.plotfield(existingfigure=fig,
-                                   existingbasemap=bm,
+                lldomain.plotfield(over=(fig, ax),
+                                   use_basemap=bm,
                                    graphicmode='contourlines',
                                    title='Domain: C+I+E \n Red contour: required lon/lat',
                                    levelsnumber=2,

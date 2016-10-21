@@ -1,5 +1,5 @@
 #!/bin/bash
-export FOOTPRINT_DOCSTRINGS=1
+export FOOTPRINT_DOCSTRINGS=2
 fmt="html"
 if [ "$1" != "" ]; then
   fmt=$1
