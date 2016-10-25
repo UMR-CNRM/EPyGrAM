@@ -9,19 +9,52 @@ import uuid
 import glob
 import copy
 import web
+import shutil
 
 import matplotlib
 matplotlib.use("Agg")
 from mpl_toolkits.basemap import Basemap
 
 from footprints.util import rangex
+from opinel import interrupt
 
 import epygram
 from epygram import epylog
 import usevortex
+print 'Epygram version:', epygram.__version__
 
 
 
+
+
+# Vortex cache
+location_of_vortex_cache = 'MTOOLDIR'
+vortex_cache_dir = os.getenv(location_of_vortex_cache)
+if not vortex_cache_dir:
+    location_of_vortex_cache = 'FTDIR'
+    vortex_cache_dir = os.getenv(location_of_vortex_cache)
+    if not vortex_cache_dir:
+        location_of_vortex_cache = 'WORKDIR'
+        vortex_cache_dir = os.getenv(location_of_vortex_cache)
+        if not vortex_cache_dir:
+            location_of_vortex_cache = 'TMPDIR'
+            vortex_cache_dir = os.getenv(location_of_vortex_cache)
+if location_of_vortex_cache == 'MTOOLDIR':
+    vortex_cache = os.path.join(vortex_cache_dir, 'cache')
+elif location_of_vortex_cache in ('FTDIR', 'WORKDIR', 'TMPDIR'):
+    vortex_cache = os.path.join(vortex_cache_dir, 'mtool', 'cache')
+if not vortex_cache_dir:
+    raise ValueError('no rootdir has been defined for the Vortex cache: please export $MTOOLDIR.')
+if not os.path.exists(vortex_cache):
+    os.makedirs(vortex_cache)
+
+# Epyweb workdir for tmp files (basemap pickle, resources hardlinks and figures)
+epyweb_workdir = os.path.join(vortex_cache_dir, 'epyweb')
+basemap_pickle_path = os.path.join(epyweb_workdir, 'basemap.cPickle')
+
+#############
+# Web stuff #
+#############
 urls = (
     '/',
     'index',
@@ -47,34 +80,18 @@ urls = (
     'getminmaxasjson',
     '/getCacheSize',
     'getCacheSize',
+    '/GetPNG/(.+)',
+    'GetPNG'
     )
 
 render = web.template.render('templates', base='base')
-
-#Where to store the basemap pickle
-pickle_path = './data/bm.cPickle'
-#Where to store the images
-image_path = './static/figures/'
-
-#Nettoyage des figures et des hard links
-toClean = ['./' + image_path + '*png', "./data/*"]
-for pattern in toClean:
-    filelist = glob.glob(pattern)
-    for f in filelist:
-        os.remove(f)
-
-
-cachePath = "$HOME/cache"
-#cachePath = "./static"
-
 
 
 class getCacheSize:
     """Compute (linux only!) and return size of vortex cache"""
     def POST(self):
         try:
-            cacheSize = os.popen("du -kshx " + cachePath).read()
-            #print cacheSize
+            cacheSize = os.popen("du -kshx " + vortex_cache).read()
             return json.dumps(cacheSize)
         except:
             return "Error in cache size retrieval"
@@ -171,7 +188,12 @@ class getFile:
                 if mode == 'get':
                     # Rapatriement + nom local
                     ressources = usevortex.get_resources(getmode='fetch',
-                                                         local='data/' + "[date::ymdh]" + "_[term]_" + fromid + "_" + str(uuid.uuid4()),
+                                                         local=os.path.join(epyweb_workdir,
+                                                                            '_'.join(["[date::ymdh]",
+                                                                                      "[term]",
+                                                                                      fromid,
+                                                                                      str(uuid.uuid4())
+                                                                                      ])),
                                                          **vortexArgs)
                     reponse['localpath'] = [str(m) for m in ressources]  #str(m[0])
             return json.dumps(reponse)
@@ -187,7 +209,7 @@ class getminmax:
             fichier = getAjaxArg('file')
             champ = getAjaxArgSmart('field')
             champ_v = getAjaxArg('field_v')
-            subzone = getAjaxArg('subzone')  #TODO: ajouter subzone dans l'appel à stats() ?
+            #subzone = getAjaxArg('subzone')  #TODO: ajouter subzone dans l'appel à stats() ?
             FF = getAjaxArg('FF')
             ope = getAjaxArg('operation')
             #string vs unicode problems...
@@ -295,7 +317,6 @@ class myplot:
                     print ("Warning unicode")
 
             existingfigure = (None, None)  #New figure (= no overlay)
-            pickle_bm = pickle_path  #Cache for matplotlib
             new_pickle = getAjaxArgSmart('new_pickle')
 
             monzoom = getAjaxArgSmart('monzoom')
@@ -308,7 +329,7 @@ class myplot:
             dpi = getAjaxArgSmart('dpi')
 
             try:
-                existingbasemap = cPickle.load(open(pickle_bm, 'r'))
+                existingbasemap = cPickle.load(open(basemap_pickle_path, 'r'))
                 if not isinstance(existingbasemap, Basemap):
                     raise Exception('no valid Basemap in pickle.')
             except Exception:
@@ -370,7 +391,7 @@ class myplot:
                             field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
                                 subzone=myplot_args["subzone"], specificproj=myplot_args["specificproj"],
                                 zoom=monzoom)
-                        cPickle.dump(existingbasemap, open(pickle_bm, 'w'))
+                        cPickle.dump(existingbasemap, open(basemap_pickle_path, 'w'))
                         #On réutilise le cache
                         new_pickle = False
 
@@ -387,7 +408,8 @@ class myplot:
                         myunikname = os.path.basename(fichier) + "_" + str(champ[cle])
 
                     #On rajoute un petit uuid en cas de rafraichissement d'image
-                    myunikfile = image_path + myunikname + "_" + local_uuid + '.png'
+                    myunikfile = os.path.join(epyweb_workdir,
+                                              myunikname + "_" + local_uuid + '.png')
                     print("Saving figure ", myunikfile)
                     myplot[0].savefig(myunikfile, dpi=dpi, bbox_inches='tight')
 
@@ -399,7 +421,7 @@ class myplot:
                     del myplot
 
                     #SLIDE IMAGE STYLE
-                    liste_tmp.append(myunikfile)
+                    liste_tmp.append('/GetPNG/' + os.path.basename(myunikfile))
 
                 out[cle] = liste_tmp
 
@@ -453,7 +475,6 @@ class myplot_overlay:
                     print ("Warning unicode")
 
             existingfigure = (None, None)
-            pickle_bm = pickle_path
             new_pickle = getAjaxArgSmart('new_pickle')
 
             monzoom = getAjaxArgSmart('monzoom')
@@ -463,19 +484,19 @@ class myplot_overlay:
             vecteurs = getAjaxArgSmart('vecteurs')
             vectors_subsampling = getAjaxArgSmart('vectors_subsampling')
 
-            getcode = getAjaxArgSmart('getcode')  #TODO: useless ?
+            #getcode = getAjaxArgSmart('getcode')  #TODO: useless ?
             dpi = getAjaxArgSmart('dpi')
 
             operation = getAjaxArgSmart('operation')
 
             try:
-                existingbasemap = cPickle.load(open(pickle_bm, 'r'))
+                existingbasemap = cPickle.load(open(basemap_pickle_path, 'r'))
                 if not isinstance(existingbasemap, Basemap):
                     raise Exception('no valid Basemap in pickle.')
             except Exception:
                 existingbasemap = None
 
-            out = {}  #TODO: cleanme ?
+            #out = {}  #TODO: cleanme ?
 
             #loop sur files["A"] puis concordance avec file["B"]
             liste_tmp = []
@@ -497,7 +518,7 @@ class myplot_overlay:
                             field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
                                 subzone=myplot_args["subzone"], specificproj=myplot_args["specificproj"],
                                 zoom=monzoom)
-                        cPickle.dump(existingbasemap, open(pickle_bm, 'w'))
+                        cPickle.dump(existingbasemap, open(basemap_pickle_path, 'w'))
                         #On ne le calcule que pour la 1ere itération de la boucle
                         new_pickle = False
 
@@ -526,11 +547,13 @@ class myplot_overlay:
 
 
                 #On rajoute un petit uuid en cas de rafraichissement d'image
-                myunikfile = image_path + myunikname + "_" + local_uuid + '.png'
+                myunikfile = os.path.join(epyweb_workdir,
+                                          myunikname + "_" + local_uuid + '.png')
                 myplot[0].savefig(myunikfile, dpi=dpi, bbox_inches='tight')
 
                 #SLIDE IMAGE STYLE
-                liste_tmp.append(myunikfile)
+                #liste_tmp.append(myunikfile)
+                liste_tmp.append('/GetPNG/' + os.path.basename(myunikfile))
                 resource.close()
                 plt.close(myplot[0])
                 del myplot
@@ -579,20 +602,19 @@ class myplot_diff:
             myplot_args = get_common_args("A")
 
             existingfigure = (None, None)
-            pickle_bm = pickle_path
             new_pickle = getAjaxArgSmart('new_pickle')
 
             monzoom = getAjaxArgSmart('monzoom')
             FF = getAjaxArgSmart('FF')
             vecteurs = getAjaxArgSmart('vecteurs')
-            #vectors_subsampling = getAjaxArgSmart('vectors_subsampling')
+            #vectors_subsampling = getAjaxArgSmart('vectors_subsampling') #TODO: useless ou à rajouter ?
             getcode = getAjaxArgSmart('getcode')
             dpi = getAjaxArgSmart('dpi')
 
             operation = getAjaxArgSmart('operation')
 
             try:
-                existingbasemap = cPickle.load(open(pickle_bm, 'r'))
+                existingbasemap = cPickle.load(open(basemap_pickle_path, 'r'))
                 if not isinstance(existingbasemap, Basemap):
                     raise Exception('no valid Basemap in pickle.')
             except Exception:
@@ -622,7 +644,7 @@ class myplot_diff:
                     print 'Actually niou pickle !'
                     existingbasemap = field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
                         subzone=myplot_args["subzone"], specificproj=myplot_args["specificproj"], zoom=monzoom)
-                    cPickle.dump(existingbasemap, open(pickle_bm, 'w'))
+                    cPickle.dump(existingbasemap, open(basemap_pickle_path, 'w'))
                     #On ne le calcule que pour la 1ere itération de la boucle
                     new_pickle = False
 
@@ -634,7 +656,7 @@ class myplot_diff:
                         fieldA_v.sp2gp()
                     if fieldB_v.spectral:
                         fieldB_v.sp2gp()
-                    field_v = fieldB_v - fieldA_v  #TODO: cleanme ?
+                    #field_v = fieldB_v - fieldA_v  #TODO: cleanme ?
 
                     vectwindA = epygram.fields.make_vector_field(fieldA, fieldA_v)
                     FF_fieldA = vectwindA.to_module()
@@ -675,11 +697,13 @@ class myplot_diff:
                 except Exception:
                     myunikname = str(uuid.uuid4())
                 #On rajoute un petit uuid en cas de rafraichissement d'image
-                myunikfile = image_path + myunikname + "_" + local_uuid + '.png'
+                myunikfile = os.path.join(epyweb_workdir,
+                                          myunikname + "_" + local_uuid + '.png')
                 myplot[0].savefig(myunikfile, dpi=dpi, bbox_inches='tight')
 
                 #SLIDE IMAGE STYLE
                 out2.append(myunikfile)
+                out2.append('/GetPNG/' + os.path.basename(myunikfile))
 
                 print("Closing figure...")
                 plt.close(myplot[0])
@@ -704,7 +728,7 @@ class myplot_diff:
 
 def whichMinMax(fichier, champ):
     try:
-        subzone = None  #TODO: init + appel à stats() ?
+        #subzone = None  #TODO: init + appel à stats() ?
         resource = epygram.formats.resource(fichier, 'r')
         field = resource.readfield(champ)
         resource.close()
@@ -966,30 +990,76 @@ def CheckForOperation(ope, field):
     return field
 
 
+class GetPNG(object):
+    def GET(self, png):
+        web.header('Content-type', 'image/png')
+        with open(os.path.join(epyweb_workdir, png), 'rb') as f:
+            return f.read()
+
+
+#
+
+
+def func_open_browser(url=os.getcwd(), delay=0.):
+    import webbrowser
+    import time
+    if delay > 0.:
+        time.sleep(delay)
+    webbrowser.open(url)
+
+
+def clean_workdir():
+    """Cleaning of old figures and hardlinks."""
+    shutil.rmtree(epyweb_workdir, ignore_errors=True)
+
+
+def init_workdir():
+    """Set up the working directory."""
+
+    clean_workdir()
+    if not os.path.exists(epyweb_workdir):
+        os.makedirs(epyweb_workdir)
+
+
 def main(open_browser=False,
          verbose=True):
+
+    init_workdir()
 
     epygram.init_env()
     epylog.setLevel('WARNING')
     if verbose:
         epylog.setLevel('INFO')
 
-    # to avoid any path issues, "cd" to the web root.
+    # to avoid any path issues, "cd" to the web root. #FIXME: ? needed for the templates
     web_root = os.path.abspath(os.path.dirname(__file__))
-    os.chdir(web_root)
-    app = web.application(urls, globals())
+    if os.getcwd() != web_root:
+        os.chdir(web_root)
+
+    epyweb_url = 'http://' + os.getenv('HOSTNAME') + ':8080/epyweb'
+    print "====================="
+    print '*epyweb* Interface =>', epyweb_url
+    print '*epyweb* Workdir   =>', epyweb_workdir
+    print '*vortex* Cache     =>', vortex_cache
+    print '(based on $' + location_of_vortex_cache + '=' + vortex_cache_dir + ')'
+    print '(the *vortex* cache location is accessible by priority order through:'
+    print '$MTOOLDIR, $FTDIR, $WORKDIR, $TMPDIR'
+    print "====================="
+    if location_of_vortex_cache == 'TMPDIR':
+        epylog.warning(' '.join(['the use of $TMPDIR as rootdir for the Vortex',
+                                 'cache is hazardous. You should define a',
+                                 'better rootdir using $MTOOLDIR.']))
+
     if open_browser:
-        def open_browser():
-            import webbrowser
-            import time
-            time.sleep(1)
-            webbrowser.open('http://' + os.getenv('HOST') + ':8080/epyweb')
         import threading
-        t = threading.thread(target=open_browser)
+        t = threading.Thread(target=func_open_browser, kwargs={'url':epyweb_url,
+                                                               'delay':1.})
         t.start()
-
-    app.run()
-
+    app = web.application(urls, globals())
+    try:
+        app.run()
+    finally:
+        clean_workdir()
 
 
 if __name__ == '__main__':
