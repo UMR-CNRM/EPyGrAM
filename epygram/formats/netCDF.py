@@ -364,9 +364,13 @@ class netCDF(FileResource):
                 dimensions['X'] = variable_dimensions[dims_dict_e2n['X_dimension']]
                 dimensions['Y'] = variable_dimensions[dims_dict_e2n['Y_dimension']]
             else:  # flattened
-                if behaviour.get('H1D_is_H2D_unstructured', False):
-                    dimensions['X'] = variable_dimensions[dims_dict_e2n['N_dimension']]
-                    dimensions['Y'] = 1
+                if 'X_dimension' in all_dimensions_e2n.keys() \
+                   and 'Y_dimension' in all_dimensions_e2n.keys():
+                    dimensions['X'] = len(self._dimensions[all_dimensions_e2n['X_dimension']])
+                    dimensions['Y'] = len(self._dimensions[all_dimensions_e2n['Y_dimension']])
+                elif behaviour.get('H1D_is_H2D_unstructured', False):
+                        dimensions['X'] = variable_dimensions[dims_dict_e2n['N_dimension']]
+                        dimensions['Y'] = 1
                 else:
                     assert 'X_dimension' in all_dimensions_e2n.keys(), \
                            ' '.join(["unable to find X_dimension of field:",
@@ -386,8 +390,6 @@ class netCDF(FileResource):
                                      "or complete",
                                      "config.netCDF_usualnames_for_standard_dimensions",
                                      "in $HOME/.epygram/userconfig.py"])
-                    dimensions['X'] = len(self._dimensions[all_dimensions_e2n['X_dimension']])
-                    dimensions['Y'] = len(self._dimensions[all_dimensions_e2n['Y_dimension']])
         # 3.3.2 vertical part
         if D3 or V1D or V2D:
             var_corresponding_to_Z_grid = behaviour.get('Z_grid', False)
