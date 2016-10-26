@@ -43,7 +43,5 @@ geometries.rst
 epygram/doc_sphinx/html
 epygram/doc_sphinx/build
 site/arpifs4py/*.so
-site/epyweb/data
-site/epyweb/static/figures
 playground
 versioning.txt
