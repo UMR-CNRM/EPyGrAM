@@ -153,6 +153,11 @@ class GRIBmessage(RecursiveObject, dict):
 
     def __setitem__(self, key, value):
         if value is not None:
+            if gribapi.__version__ <= '1.10.4':  #FIXME: 1.10.4 needs this; 1.14.0 does not; in between ???
+                if isinstance(value, numpy.float):
+                    value = float(value)
+                elif isinstance(value, numpy.int):
+                    value = int(value)
             gribapi.grib_set(self._gid, key, value)
         else:
             gribapi.grib_set_missing(self._gid, key)
