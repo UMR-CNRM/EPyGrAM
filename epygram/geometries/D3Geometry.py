@@ -555,7 +555,7 @@ class D3RectangularGridGeometry(D3Geometry):
           the grid resp. for the C or C+I zone off the C+I+E zone. \n
           Default is no subzone, i.e. the whole field.
         - *position*: position of lonlat grid with respect to the model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
         """
 
         Jmax = self.dimensions['Y']
@@ -597,7 +597,7 @@ class D3RectangularGridGeometry(D3Geometry):
           the grid resp. for the C or C+I zone off the C+I+E zone. \n
           Default is no subzone, i.e. the whole field.
         - *position*: position of lonlat grid with respect to the model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
         - *d4*: if True,  returned values are shaped in a 4 dimensions array
                 if False, shape of returned values is determined with respect to geometry
                 d4=True requires nb_validities > 0
@@ -848,7 +848,7 @@ class D3RectangularGridGeometry(D3Geometry):
 
         - *subzone*: for LAM grids, returns the corners of the subzone.
         - *position*: position of corners with respect to the model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
         """
 
         corners = self.gimme_corners_ij(subzone=subzone)
@@ -872,7 +872,7 @@ class D3RectangularGridGeometry(D3Geometry):
           from the border. The -0.1 default is a safety for precision errors.
         - *subzone*: considers only a subzone among ('C', 'CI') of the domain.
         - *position*: position of the grid with respect to the model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
         """
 
         (Xmin, Ymin) = self.gimme_corners_ij(subzone)['ll']
@@ -943,7 +943,7 @@ class D3RectangularGridGeometry(D3Geometry):
           - 'linear' to get the 2*2 points bordering the (*lon*, *lat*) position
           - 'cubic' to get the 4*4 points bordering the (*lon*, *lat*) position
         - *position*: position in the model cell of the lat lon position.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
         - *external_distance* can be a dict containing the target point value
           and an external field on the same grid as self, to which the distance
           is computed within the 4 horizontally nearest points; e.g. 
@@ -1128,7 +1128,7 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
           the grid resp. for the C or C+I zone off the C+I+E zone. \n
           Default is no subzone, i.e. the whole field.
         - *position*: position of lonlat grid with respect to the model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
         - *d4*: if True,  returned values are shaped in a 4 dimensions array
                 if False, shape of returned values is determined with respect to geometry
                 d4=True requires nb_validities > 0
@@ -1166,7 +1166,7 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
         (*i, j*) being the coordinates in the 2D matrix of CIE gridpoints, \n
         (*lon, lat*) being the lon/lat coordinates in degrees.
         - *position*: lat lon position to return with respect to the model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
         """
 
         (lons, lats) = self.get_lonlat_grid(position=position)
@@ -1177,7 +1177,7 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
         (*lon, lat*) being the lon/lat coordinates in degrees, \n
         (*i, j*) being the coordinates in the 2D matrix of CIE gridpoints.
         - *position*: lat lon position with respect to the model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
 
         Caution: (*i,j*) are float.
         """
@@ -1210,7 +1210,7 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
           - 'linear' to get the 2*2 points bordering the (*lon*, *lat*) position
           - 'cubic' to get the 4*4 points bordering the (*lon*, *lat*) position
         - *position*: position in the model cell of the lat lon position.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
         - *external_distance* can be a dict containing the target point value
           and an external field on the same grid as self, to which the distance
           is computed within the 4 horizontally nearest points; e.g. 
@@ -1219,7 +1219,36 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
           distance = |target_value - external_field.data|
         """
 
-        raise NotImplementedError("nearest_point for unstructured geometry must be implemented.")
+        if interpolation != 'nearest':
+            raise NotImplementedError("*interpolation* != 'nearest' for UnstructuredGeometry.")
+        if external_distance is not None:
+            raise NotImplementedError("*external_distance* != None for UnstructuredGeometry.")
+
+        (lons, lats) = self.get_lonlat_grid(position=position)
+
+        if lons.ndim == 2:
+            dist0 = (lon - lons[0, 0]) ** 2 + (lat - lats[0, 0]) ** 2
+        else:
+            dist0 = (lon - lons[0]) ** 2 + (lat - lats[0]) ** 2
+        i0 = 0
+        j0 = 0
+        if lons.ndim == 2:
+            for j in range(0, lons.shape[0]):
+                for i in range(0, lons.shape[1]):
+                    dist = (lon - lons[j, i]) ** 2 + (lat - lats[j, i]) ** 2
+                    if dist < dist0:
+                        dist0 = dist
+                        i0 = i
+                        j0 = j
+        else:
+            for k in range(lons.shape[0]):
+                dist = (lon - lons[k]) ** 2 + (lat - lats[k]) ** 2
+                if dist < dist0:
+                    dist0 = dist
+                    i0 = k
+                    j0 = 0
+
+        return (i0, j0)
 
     def resolution_ll(self, lon, lat):
         """
@@ -1334,10 +1363,18 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
             else:
                 proj = 'merc'
             (lons, lats) = self.get_lonlat_grid()
-            lonmax = lons[:, -1].max()
-            lonmin = lons[:, 0].min()
-            latmax = lats[-1, :].max()
-            latmin = lats[0, :].min()
+            if lons.ndim == 1:
+                lonmax = lons[:].max()
+                lonmin = lons[:].min()
+            else:
+                lonmax = lons[:, -1].max()
+                lonmin = lons[:, 0].min()
+            if lats.ndim == 1:
+                latmax = lats[:].max()
+                latmin = lats[:].min()
+            else:
+                latmax = lats[-1, :].max()
+                latmin = lats[0, :].min()
             b = Basemap(resolution=gisquality, projection=proj,
                         llcrnrlon=lonmin,
                         llcrnrlat=latmin,
@@ -1440,7 +1477,7 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
         (*i, j*) being the coordinates in the 2D matrix of gridpoints, \n
         (*x, y*) being the coordinates in the projection.
         - *position*: position to return with respect to model cell. Defaults
-          to position_on_grid['horizontal'].
+          to self.position_on_horizontal_grid.
 
         Note that origin of coordinates in projection is the center of the C+I domain.
         """
@@ -1459,7 +1496,7 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
         (*x, y*) being the coordinates in the projection, \n
         (*i, j*) being the coordinates in the 2D matrix of gridpoints.
         - *position*: position represented by (x,y) with respect to model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
 
         Caution: (*i,j*) are float (the nearest grid point is the nearest
         integer).
@@ -1482,7 +1519,7 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
         (*i, j*) being the coordinates in the 2D matrix of gridpoints, \n
         (*lon, lat*) being the lon/lat coordinates in degrees.
         - *position*: lat lon position to return with respect to the model cell.
-          Defaults to position_on_grid['horizontal'].        
+          Defaults to self.position_on_horizontal_grid.        
 
         !!! This routine has no sense for this geometry, it is identity.
         """
@@ -1500,7 +1537,7 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
         (*lon, lat*) being the lon/lat coordinates in degrees, \n
         (*i, j*) being the coordinates in the 2D matrix of gridpoints.
         - *position*: lat lon position with respect to the model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
 
         !!! This routine has no sense for this geometry, it is identity.
         """
@@ -1703,7 +1740,7 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
         (*i, j*) being the coordinates in the 2D matrix of gridpoints, \n
         (*x, y*) being the coordinates in the projection.
         - *position*: position to return with respect to model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
 
         Note that origin of coordinates in projection is the center of the C+I
         domain.
@@ -1734,7 +1771,7 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
         (*x, y*) being the coordinates in the projection, \n
         (*i, j*) being the coordinates in the 2D matrix of gridpoints.
         - *position*: position represented by (x,y) with respect to model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
 
         Caution: (*i,j*) are float (the nearest grid point is the nearest
         integer).
@@ -1768,7 +1805,7 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
         (*i, j*) being the coordinates in the 2D matrix of gridpoints, \n
         (*lon, lat*) being the lon/lat coordinates in degrees.
         - *position*: lat lon position to return with respect to the model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
         """
 
         return self.ij2xy(i, j, position)
@@ -1778,7 +1815,7 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
         (*lon, lat*) being the lon/lat coordinates in degrees, \n
         (*i, j*) being the coordinates in the 2D matrix of gridpoints.
         - *position*: lat lon position with respect to the model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
 
         Caution: (*i,j*) are float.
         """
@@ -2365,7 +2402,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         (*i, j*) being the coordinates in the 2D matrix of CIE gridpoints, \n
         (*x, y*) being the coordinates in the projection.
         - *position*: position to return with respect to model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
 
         Note that origin of coordinates in projection is the center of the C+I
         domain.
@@ -2400,7 +2437,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         (*x, y*) being the coordinates in the projection, \n
         (*i, j*) being the coordinates in the 2D matrix of CIE gridpoints.
         - *position*: position represented by (x,y) with respect to model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
 
         Caution: (*i,j*) are float (the nearest grid point is the nearest
         integer).
@@ -2476,7 +2513,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         (*i, j*) being the coordinates in the 2D matrix of CIE gridpoints, \n
         (*lon, lat*) being the lon/lat coordinates in degrees.
         - *position*: lat lon position to return with respect to the model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
         """
 
         return self.xy2ll(*self.ij2xy(i, j, position))
@@ -2486,7 +2523,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         (*lon, lat*) being the lon/lat coordinates in degrees, \n
         (*i, j*) being the coordinates in the 2D matrix of CIE gridpoints.
         - *position*: lat lon position with respect to the model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
 
         Caution: (*i,j*) are float.
         """
@@ -2528,7 +2565,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         """
         Returns a new field whose data is the map factor over the field.
         - *position*: grid position with respect to the model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
         """
 
         f = fpx.field(structure='H2D', geometry=self, fid={'geometry':'Map Factor'})
@@ -2827,7 +2864,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
           the grid resp. for the C or C+I zone off the C+I+E zone. \n
           Default is no subzone, i.e. the whole field.
         - *position*: position of lonlat grid with respect to the model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
         """
 
         (lons, _) = self.get_lonlat_grid(subzone=subzone, position=position)
@@ -3054,7 +3091,7 @@ class D3GaussGeometry(D3Geometry):
         (*i, j*) being the coordinates in the 2D matrix of gridpoints, \n
         (*lon, lat*) being the lon/lat coordinates in degrees.
         - *position*: lat lon position to return with respect to the model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
         """
 
         if self._getoffset(position) != (0., 0.):
@@ -3079,7 +3116,7 @@ class D3GaussGeometry(D3Geometry):
         (*lon, lat*) being the lon/lat coordinates in degrees, \n
         (*i, j*) being the coordinates in the 2D matrix of gridpoints.
         - *position*: lat lon position with respect to the model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
         """
 
         if isinstance(lon, list) or isinstance(lon, tuple):
@@ -3140,7 +3177,7 @@ class D3GaussGeometry(D3Geometry):
 
         Args:\n
         - *position*: position of lonlat grid with respect to the model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
         - *d4*: if True,  returned values are shaped in a 4 dimensions array
                 if False, shape of returned values is determined with respect to geometry
                 d4=True requires nb_validities > 0
@@ -3446,7 +3483,7 @@ class D3GaussGeometry(D3Geometry):
         - *margin*: considers the point inside if at least 'margin' points far
           from the border. The -0.1 default is a safety for precision errors.
         - *position*: position of the grid with respect to the model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
         """
 
         try:
@@ -3610,7 +3647,7 @@ class D3GaussGeometry(D3Geometry):
         """
         Returns a new field whose data is the map factor over the field.
         - *position*: grid position with respect to the model cell.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
         """
 
         f = fpx.field(structure='H2D', geometry=self, fid={'geometry':'Map Factor'})
@@ -3704,7 +3741,7 @@ class D3GaussGeometry(D3Geometry):
           - ('custom:radius', radius_length) to get the surrounding points in a
             given (square) radius in metres.
         - *position*: position in the model cell of the lat lon position.
-          Defaults to position_on_grid['horizontal'].
+          Defaults to self.position_on_horizontal_grid.
         - *external_distance* can be a dict containing the target point value
           and an external field on the same grid as self, to which the distance
           is computed within the 4 horizontally nearest points; e.g. 

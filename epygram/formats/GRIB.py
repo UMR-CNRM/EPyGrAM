@@ -531,7 +531,7 @@ class GRIBmessage(RecursiveObject, dict):
             if hasattr(field.geometry.vcoordinate, 'typeofsecondfixedsurface'):
                 self['typeOfSecondFixedSurface'] = field.geometry.vcoordinate.typeofsecondfixedsurface
             else:
-                self['typeOfSecondFixedSurface'] = 255
+                self['typeOfSecondFixedSurface'] = 255  # TODO: None instead ? (=MISSING in GRIB)
             if hasattr(field.geometry.vcoordinate, 'toplevel'):
                 self['topLevel'] = field.geometry.vcoordinate.toplevel
             else:
