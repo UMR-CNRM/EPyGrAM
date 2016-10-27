@@ -18,6 +18,7 @@ Distribution/Installation is available:
   - else, on demand (alexandre.mary@meteo.fr).
 
 - For partners of ALADIN/HIRLAM consortia: elements are available either:
+
   - on https://opensource.cnrm-game-meteo.fr/projects/epygram/files
   - on the MF archive machine **hendrix**, under /home/mary/public/
   - (soon, to be confirmed: on https://hirlam.org/trac/browser/)

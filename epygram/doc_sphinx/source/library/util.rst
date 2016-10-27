@@ -27,6 +27,15 @@ Functions
 .. autofunction:: nearlyEqualArray
 .. autofunction:: parse_str2dict
 .. autofunction:: stretch_array
+.. autofunction:: color_scale
+.. autofunction:: restrain_to_index_i_of_dim_d
+.. autofunction:: resize_to_4D
+.. autofunction:: datetimes2fieldvaliditylist
+.. autofunction:: ifNone_emptydict
+.. autofunction:: set_DateHour_axis
+.. autofunction:: set_figax
+.. autofunction:: set_map_up
+.. autofunction:: datetimerange
 
 Classes
 -------

@@ -148,7 +148,7 @@ class DDHLFA(LFA):
 
     @FileResource._openbeforedelayed
     def readfield(self, fieldname, getdata=True,
-                  footprints_builder=config.use_footprints_as_builder):
+                  footprints_proxy_as_builder=config.footprints_proxy_as_builder):
         """
         Reads a field in resource.
 
@@ -158,11 +158,11 @@ class DDHLFA(LFA):
         - Profile/surface fields are returned as a
           :class:`epygram.base.FieldSet` of 1D/Point fields, one for each
           domain.
-        - *footprints_builder*: if *True*, uses footprints.proxy to build
-          fields. Defaults to False for performance reasons.
+        - *footprints_proxy_as_builder*: if *True*, uses footprints.proxy
+          to build fields and geometry.
         """
 
-        if footprints_builder:
+        if footprints_proxy_as_builder:
             field_builder = footprints.proxy.field
             geom_builder = footprints.proxy.geometry
         else:

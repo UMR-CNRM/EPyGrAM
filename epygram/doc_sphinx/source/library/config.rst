@@ -11,6 +11,7 @@ Installation
 .. autodata:: usercustomizationdir
 .. autodata:: userconfigfile
 .. autodata:: epygram_colormaps
+.. autodata:: epygram_colormaps_scaling
 
 Parameters
 ----------
@@ -78,6 +79,7 @@ netCDF
 
 .. autodata:: netCDF_standard_dimensions
 .. autodata:: netCDF_usualnames_for_standard_dimensions
+.. autodata:: netCDF_usualnames_for_lonlat_grids
 .. autodata:: netCDF_default_behaviour
 .. autodata:: netCDF_default_compression
 .. autodata:: netCDF_replace_dot_in_variable_names
@@ -93,7 +95,7 @@ Options
 .. autodata:: mask_outside
 .. autodata:: hide_footprints_warnings
 .. autodata:: prevent_swapping_legendre
-.. autodata:: use_footprints_as_builder
+.. autodata:: footprints_proxy_as_builder
 .. autodata:: vector_symbol
 .. autodata:: default_figures_dpi
 .. autodata:: spectral_coeff_order
@@ -108,5 +110,8 @@ User colormaps
 --------------
 
 .. autodata:: usercolormaps
+.. autodata:: usercolormaps_scaling
 .. autodata:: colormaps
+.. autodata:: colormaps_scaling
+
 

@@ -12,7 +12,7 @@ First of all, import ``epygram`` ! and call the initialization function
 Then you may check your version and config (:mod:`epygram.config`) ?
 
 >>> epygram.__version__
-0.6.9
+1.1.6
 >>> epygram.showconfig()
 ######################
 ### epygram.config ###
@@ -44,8 +44,7 @@ a file-like object:
 
 >>> my_object.what(open('dump_of_my_object.txt', 'w'))
 >>> # or
->>> import sys
->>> my_object.what(sys.stdout)
+>>> my_object.what() # to stdout
 
 Customize installation
 ^^^^^^^^^^^^^^^^^^^^^^

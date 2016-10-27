@@ -733,7 +733,7 @@ class FA(FileResource):
     @FileResource._openbeforedelayed
     def readfield(self, fieldname,
                   getdata=True,
-                  footprints_builder=config.use_footprints_as_builder):
+                  footprints_proxy_as_builder=config.footprints_proxy_as_builder):
         """
         Reads one field, given its FA name, and returns a Field instance.
         Interface to Fortran routines from 'ifsaux'.
@@ -742,8 +742,8 @@ class FA(FileResource):
         - *fieldname*: FA fieldname
         - *getdata*: if *False*, only metadata are read, the field do not
           contain data.
-        - *footprints_builder*: if *True*, uses footprints.proxy to build
-          fields. Defaults to False for performance reasons.
+        - *footprints_proxy_as_builder*: if *True*, uses footprints.proxy
+          to build fields.
         """
 
         if self.openmode == 'w':
@@ -754,7 +754,7 @@ class FA(FileResource):
                                                          "not found in resource."])
         # Get field info
         field_info = inquire_field_dict(fieldname)
-        if footprints_builder:
+        if footprints_proxy_as_builder:
             builder = fpx.field
         else:
             if field_info['type'] == 'H2D':

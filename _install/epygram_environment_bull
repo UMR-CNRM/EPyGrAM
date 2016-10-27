@@ -1,7 +1,7 @@
 module load python
 
 # Python GRIB_API
-PYTHONPATH=$PYTHONPATH:~mary/public/gribapi_python
+PYTHONPATH=$PYTHONPATH:~mary/public/gribapi_python-1.15.0
 
 # Vortex & Footprints
 VORTEX_INSTALL_DIR=/home/mf/dp/marp/verolive/vortex/vortex
@@ -10,8 +10,6 @@ export PYTHONPATH=$PYTHONPATH:$VORTEX_INSTALL_DIR/src
 export PYTHONPATH=$PYTHONPATH:$VORTEX_INSTALL_DIR/site
 
 # EPyGrAM
-export GRIB_SAMPLES_PATH=$GRIB_SAMPLES_PATH:~mary/public/gribapi_samples
-
 VERSION='current' # or '1.0.0'
 EPYGRAM_INSTALL_DIR=/home/gmap/mrpe/mary/public/EPyGrAM.$VERSION
 export GRIB_SAMPLES_PATH=$GRIB_SAMPLES_PATH:$EPYGRAM_INSTALL_DIR/epygram/data

@@ -5,24 +5,23 @@ FAQ
 The Library
 -----------
 
-#. I have rather esoterical errors when I try to read a FA file...
+I have rather esoterical errors when I try to read a FA file...
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
    => the :func:`epygram.init_env` may be initialized at the beginning of your
    script(s), to be sure the :mod:`arpifs4py` library do not use MPI, or uses
    OpenMP with an initialized environment.
 
-#. There is a field in my FA file, unknown by ``epygram`` (or it seems
-   to be recognized as a MiscField); how can I manage to read it ?
+There is a field in my FA file, unknown by ``epygram`` (or it seems to be recognized as a MiscField); how can I manage to read it ?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
    => edit ``$HOME/.epygram/user_Field_Dict_FA.csv``, and add your field in the
    manner of the examples given therein.
    And warn the ``epygram`` team about it, so that it will enter next version
    default ``Field_Dict_FA.csv``.
 
-#. I have built a new format class ``FMFILE`` (or whatever else) for
-   ``epygram``, and I want it to be "fully" integrated in the package
-   locally on my platform (so that the :func:`epygram.formats.resource` can return it).
-   How can I do ?
+I have built a new format class ``FMFILE`` (or whatever else) for ``epygram``, and I want it to be "fully" integrated in the package locally on my platform (so that the :func:`epygram.formats.resource` can return it). How can I do ?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    
    => edit ``$HOME/.epygram/userconfig.py``, and:
      - add
@@ -30,7 +29,8 @@ The Library
        >>> usermodules = [{'name':'FMFILE', 'abspath':'/path/to/FMFILE.py'}]
      - copy the variable :obj:`epygram.config.implemented_formats` in it, adding ``FMFILE``
 
-#. How do ``epygram`` and ``vortex`` interconnect ?
+How do ``epygram`` and ``vortex`` interconnect ?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
    => Well ! Here is an example (having ``vortex`` installed),
    that fetches a resource on the archive and returns an ``epygram`` resource:
@@ -52,10 +52,9 @@ The Library
       
    ``vortex`` also is able to use ``epygram`` in order to handle a file's content, cf. Vortex doc.
 
-#. I want to add new features or methods to a class,
-   :class:`epygram.fields.H2DField` for instance, and be sure that my
-   modifications will not be overwritten at the next upgrade of ``epygram``...
-   
+I want to add new features or methods to a class, :class:`epygram.fields.H2DField` for instance, and be sure that my modifications will not be overwritten at the next upgrade of ``epygram``...
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  
+
    => build your class ``myH2DField`` in ``/path/to/myH2DField.py``, making it inherit from :class:`epygram.fields.H2DField`, as follows:
   
      .. code-block:: python
@@ -80,7 +79,8 @@ The Library
     
     Anyway, if your modifications may be useful to others, propose to the ``epygram`` team its integration in the next version !
     
-#. I want to add a personal colormap to be used by ``epygram``.
+I want to add a personal colormap to be used by ``epygram``.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
    => write your colormap as RGB as below
     
@@ -98,6 +98,7 @@ The Library
     >>> usercolormaps = {'mycolormap', '/path/to/mycolormap.cmap'}
     
     and the colormap is now accesible to ``epygram``. 
+
 
 **(to be continued...)**
 

@@ -745,6 +745,7 @@ def nearlyEqual(a, b, epsilon=config.epsilon):
         return diff / min((absA + absB), sys.float_info.max) < epsilon
 
 nearlyEqualArray = numpy.vectorize(nearlyEqual)
+nearlyEqualArray.__doc__ = "Vector version of nearlyEqual()."
 
 def parse_str2dict(string, try_convert=None):
     """

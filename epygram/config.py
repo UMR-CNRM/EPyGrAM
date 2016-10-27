@@ -25,16 +25,16 @@ import footprints
 installdir = __file__[:-(len(os.path.basename(__file__)) + 1)]
 home = os.getenv('HOME')
 #: User customization directory
-usercustomizationdir = home + '/.epygram'
+usercustomizationdir = os.path.join(home, '.epygram')
 #: User config (overwrites standard config)
-userconfigfile = usercustomizationdir + '/userconfig.py'
+userconfigfile = os.path.join(usercustomizationdir, 'userconfig.py')
 #: epygram Colormaps
-epygram_colormaps = {'aspect':installdir + '/data/aspect.cmap',
-                     'gaspect':installdir + '/data/gaspect.cmap',
-                     'radar':installdir + '/data/radar.cmap',
-                     'rr1h':installdir + '/data/rr1h.cmap',
-                     'rr6h':installdir + '/data/rr24h.cmap',
-                     'rr24h':installdir + '/data/rr24h.cmap',
+epygram_colormaps = {'aspect':os.path.join(installdir, 'data', 'aspect.cmap'),
+                     'gaspect':os.path.join(installdir, 'data', 'gaspect.cmap'),
+                     'radar':os.path.join(installdir, 'data', 'radar.cmap'),
+                     'rr1h':os.path.join(installdir, 'data', 'rr1h.cmap'),
+                     'rr6h':os.path.join(installdir, 'data', 'rr24h.cmap'),
+                     'rr24h':os.path.join(installdir, 'data', 'rr24h.cmap'),
                      }
 #: epygram colormaps scalings
 epygram_colormaps_scaling = {'radar':[0., 0.1, 1., 3., 5., 7., 10., 15., 20., 30., 50., 70., 100., 150., 300.],
@@ -73,10 +73,6 @@ if os.getenv('DISPLAY', '') == '' or \
    'prolix' in platform.node():
     noninteractive_backend = 'Agg'
     default_graphical_output = 'png'
-#: Vector graphical symbol
-vector_symbol = 'barbs'
-#: Default quality for figures
-default_figures_dpi = 150
 
 
 
@@ -97,8 +93,11 @@ FA_default_reference_pressure = 101325.
 #: geoid of FA files in pyproj syntax
 FA_geoid_for_pyproj = {'a':6371229., 'b':6371229.}
 #: FA field dictionaries
-FA_field_dictionaries_csv = {'default':installdir + '/data/Field_Dict_FA.csv',
-                             'user':usercustomizationdir + '/user_Field_Dict_FA.csv'}
+FA_field_dictionaries_csv = {'default':os.path.join(installdir,
+                                                    'data',
+                                                    'Field_Dict_FA.csv'),
+                             'user':os.path.join(usercustomizationdir,
+                                                 'user_Field_Dict_FA.csv')}
 #: FA (write) date & time precision: use FANDAR (minute) or FANDAX (second,
 #: cy40t1 onwards)
 FA_fandax = True
@@ -170,8 +169,11 @@ sensors_local_GRIB2 = {'MVIRI':192,
                        'IMAGER':194}
 
 #: LFI field dictionaries
-LFI_field_dictionaries_csv = {'default':installdir + '/data/Field_Dict_LFI.csv',
-                              'user':usercustomizationdir + '/Field_Dict_LFI.csv'}
+LFI_field_dictionaries_csv = {'default':os.path.join(installdir,
+                                                     'data',
+                                                     'Field_Dict_LFI.csv'),
+                              'user':os.path.join(usercustomizationdir,
+                                                  'Field_Dict_LFI.csv')}
 #: geoid of LFI files in pyproj syntax
 LFI_geoid_for_pyproj = {'a':6371229., 'b':6371229.}
 
@@ -230,8 +232,12 @@ hide_footprints_warnings = True
 #: this percentage of the available memory.
 prevent_swapping_legendre = 0.75
 #: Use footprints.proxy builder to generate a field.
-#: Defaults to False for performance reasons, but less flexible.
-use_footprints_as_builder = False
+#: True: more flexible, False: faster
+footprints_proxy_as_builder = True  #TODO: remove this, less useful since fasttrack ?
+#: Vector graphical symbol
+vector_symbol = 'barbs'
+#: Default quality for figures
+default_figures_dpi = 150
 #: ordering of spectral coefficients, with regards to arpifs spaces:
 #: 'model' or 'FA'.
 #: => 'model': read/write by wfacilo/wfaieno,
@@ -271,6 +277,7 @@ if os.path.exists(userconfigfile):
 #: colormaps gathers epygram and user colormaps
 colormaps = copy.copy(epygram_colormaps)
 colormaps.update(usercolormaps)
+#: colormaps_scaling gathers epygram and user colormaps_scaling
 colormaps_scaling = copy.copy(epygram_colormaps_scaling)
 colormaps_scaling.update(usercolormaps_scaling)
 
@@ -279,9 +286,6 @@ colormaps_scaling.update(usercolormaps_scaling)
 ### FURTHER INITIALIZATIONS ###
 if hide_footprints_warnings:
     footprints.logger.setLevel(footprints.loggers.logging.ERROR)
-# epygram workdir
-# if not os.path.exists(tempdir):
-#    os.mkdir(tempdir)
 
 # Projtool defaults
 if default_projtool == 'pyproj':
@@ -300,6 +304,6 @@ elif default_projtool == 'myproj':
     LFI_default_geoid = myproj_default_geoid
 
 # Update $GRIB_SAMPLES_PATH
-_gsp = os.getenv('GRIB_SAMPLES_PATH', '.') + ':' + GRIB_samples_path
-os.putenv('GRIB_SAMPLES_PATH', _gsp)
+_gsp = ':'.join([os.getenv('GRIB_SAMPLES_PATH', '.'), GRIB_samples_path])
+os.putenv('GRIB_SAMPLES_PATH', _gsp)  #FIXME: seems not to work on Bull: to be exported beforehand
 del _gsp

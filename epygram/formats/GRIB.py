@@ -994,21 +994,22 @@ class GRIBmessage(RecursiveObject, dict):
         for k in namespace:
             self._readattribute(k)
 
-    def asfield(self, getdata=True,
-                footprints_builder=config.use_footprints_as_builder,
+    def asfield(self,
+                getdata=True,
+                footprints_proxy_as_builder=config.footprints_proxy_as_builder,
                 get_info_as_json=['units']):
         """
         Returns an :class:`epygram.base.Field` made out from the GRIB message.
 
         - *getdata*: if *False*, only metadata are read, the field do not
           contain data.
-        - *footprints_builder*: if *True*, uses footprints.proxy to build
-          fields. Defaults to False for performance reasons.
-        - *get_info_as_json*: if not *None*, writes the keys given in
+        - *footprints_proxy_as_builder*: if **True**, uses footprints.proxy
+          to build fields.
+        - *get_info_as_json*: if not **None**, writes the keys given in
           *get_info_as_json* as json in field.comment.
         """
 
-        if footprints_builder:
+        if footprints_proxy_as_builder:
             builder = fpx.field
         else:
             builder = H2DField
@@ -1323,7 +1324,7 @@ class GRIB(FileResource):
 
     def readfield(self, handgrip,
                   getdata=True,
-                  footprints_builder=config.use_footprints_as_builder,
+                  footprints_proxy_as_builder=config.footprints_proxy_as_builder,
                   get_info_as_json=['units']):
         """
         Finds in GRIB the message that correspond to the *handgrip*,
@@ -1338,10 +1339,10 @@ class GRIB(FileResource):
         If *getdata* == **False**, the data is not read, the field consist
         in the meta-data only.
 
-        If *footprints_builder* == **True**, uses footprints.proxy to build
-        fields. True decreases performance.
+        If *footprints_proxy_as_builder* == **True**, uses footprints.proxy
+        to build fields. True decreases performance.
         
-        If *get_info_as_json* is not *None*, writes the keys given in
+        If *get_info_as_json* is not **None**, writes the keys given in
         *get_info_as_json* as json in field.comment.
         """
 
@@ -1350,7 +1351,7 @@ class GRIB(FileResource):
 
         matchingfields = self.readfields(handgrip,
                                          getdata=getdata,
-                                         footprints_builder=footprints_builder,
+                                         footprints_proxy_as_builder=footprints_proxy_as_builder,
                                          get_info_as_json=get_info_as_json)
         # filter out those unfiltered by the below GRIBAPI bug
         filtered_matchingfields = FieldSet()
@@ -1369,7 +1370,7 @@ class GRIB(FileResource):
 
     def readfields(self, handgrip,
                    getdata=True,
-                   footprints_builder=config.use_footprints_as_builder,
+                   footprints_proxy_as_builder=config.footprints_proxy_as_builder,
                    get_info_as_json=['units']):
         """
         Finds in GRIB the message(s) that correspond to the *handgrip*,
@@ -1383,10 +1384,10 @@ class GRIB(FileResource):
         If *getdata* == **False**, the data is not read, the field(s) consist
         in the meta-data only.
 
-        If *footprints_builder* == *True*, uses footprints.proxy to build
-        fields.  True decreases performance.
+        If *footprints_proxy_as_builder* == **True**, uses footprints.proxy
+        to build fields. True decreases performance.
         
-        If *get_info_as_json* is not *None*, writes the keys given in
+        If *get_info_as_json* is not **None**, writes the keys given in
         *get_info_as_json* as json in field.comment.
         """
 
@@ -1426,7 +1427,7 @@ class GRIB(FileResource):
                 break
             msg = GRIBmessage(('gribid', gid))
             matchingfields.append(msg.asfield(getdata=getdata,
-                                              footprints_builder=footprints_builder,
+                                              footprints_proxy_as_builder=footprints_proxy_as_builder,
                                               get_info_as_json=get_info_as_json))
             del msg
         gribapi.grib_index_release(idx)
