@@ -48,7 +48,12 @@ class Field(RecursiveObject, FootprintBase):
             comment=dict(
                 type=str,
                 optional=True,
-                access='rwd')
+                access='rwd'),
+            units=dict(
+                type=str,
+                optional=True,
+                access='rwd',
+                default='')
         )
     )
 

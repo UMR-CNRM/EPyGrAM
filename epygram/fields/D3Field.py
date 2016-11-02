@@ -1165,8 +1165,9 @@ class D3Field(D3CommonField):
                     indexes['x'] = None
                 dataType = "gridpoint"
             # check dimensions
-            if len(numpy.shape(data)) != dimensions:
-                raise epygramError(dataType + " data should be " + str(dimensions) + "D array.")
+            assert len(numpy.shape(data)) == dimensions \
+                   or numpy.shape(data) == (1,), \
+                   dataType + " data should be " + str(dimensions) + "D array."
             if indexes['t'] is not None:
                 assert data.shape[0] == len(self.validity), \
                        ' == '.join(['data.shape[0] should be len(self.validity)',

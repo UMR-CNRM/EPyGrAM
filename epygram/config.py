@@ -18,6 +18,8 @@ import copy
 
 import footprints
 
+from epygram import __version__
+
 
 
 ### INSTALL ###
@@ -212,6 +214,9 @@ netCDF_default_behaviour = {'reverse_Yaxis':False,
 netCDF_default_compression = 4
 #: netCDF, replace dots in variable names by...
 netCDF_replace_dot_in_variable_names = '.'
+#: netCDF default standard global attributes
+netCDF_default_global_attributes = {'Conventions':'CF-1.6',
+                                    'made_with':'epygram-' + __version__}
 
 
 

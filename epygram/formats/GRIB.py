@@ -552,6 +552,8 @@ class GRIBmessage(RecursiveObject, dict):
             self.update(ordering)
 
         # part 7 --- other options
+        if field.units not in (None, ''):
+            self['units'] = field.units
         if other_GRIB_options is not None:
             try:
                 for k, v in other_GRIB_options.items():
@@ -997,7 +999,7 @@ class GRIBmessage(RecursiveObject, dict):
     def asfield(self,
                 getdata=True,
                 footprints_proxy_as_builder=config.footprints_proxy_as_builder,
-                get_info_as_json=['units']):
+                get_info_as_json=None):
         """
         Returns an :class:`epygram.base.Field` made out from the GRIB message.
 
@@ -1018,6 +1020,10 @@ class GRIBmessage(RecursiveObject, dict):
         spectral_geometry = None
         processtype = self['generatingProcessIdentifier']
         geometry = self._read_geometry()
+        try:
+            units = self['units']
+        except gribapi.GribInternalError:
+            units = ''
         if get_info_as_json is not None:
             import json
             comment = {}
@@ -1033,7 +1039,8 @@ class GRIBmessage(RecursiveObject, dict):
                         validity=validity,
                         spectral_geometry=spectral_geometry,
                         processtype=processtype,
-                        comment=comment)
+                        comment=comment,
+                        units=units)
         if getdata:
             data1d = self['values']
             if 'gauss' in geometry.name:
@@ -1325,7 +1332,7 @@ class GRIB(FileResource):
     def readfield(self, handgrip,
                   getdata=True,
                   footprints_proxy_as_builder=config.footprints_proxy_as_builder,
-                  get_info_as_json=['units']):
+                  get_info_as_json=None):
         """
         Finds in GRIB the message that correspond to the *handgrip*,
         and returns it as a :class:`epygram.base.Field`.
@@ -1371,7 +1378,7 @@ class GRIB(FileResource):
     def readfields(self, handgrip,
                    getdata=True,
                    footprints_proxy_as_builder=config.footprints_proxy_as_builder,
-                   get_info_as_json=['units']):
+                   get_info_as_json=None):
         """
         Finds in GRIB the message(s) that correspond to the *handgrip*,
         and returns it as a :class:`epygram.base.FieldSet` of

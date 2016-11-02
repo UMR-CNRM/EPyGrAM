@@ -1017,7 +1017,9 @@ class netCDF(FileResource):
                 epylog.info('assume lons/lats match.')
             else:
                 lons_var[...] = lons[...]
+                lons_var.units = 'degrees'
                 lats_var[...] = lats[...]
+                lats_var.units = 'degrees'
         # 3.3 meta-data
         def set_ellipsoid(meta):
             if 'ellps' in field.geometry.geoid:
@@ -1152,17 +1154,28 @@ class netCDF(FileResource):
         if _status == 'match':
             epylog.info('overwrite data in variable ' + varname)
         self._variables[varname][...] = data
+        if field.units not in (None, ''):
+            self._variables[varname].units = field.units
 
         # 5. metadata
         for k, v in metadata.items():
-            self._nc.setncattr(k, v)
+            self._variables[varname].setncattr(k, v)
+
+    def set_global_attributes(self, **attributes):
+        """
+        Set standard global attributes, and optionally other ones.
+        """
+
+        attrs = config.netCDF_default_global_attributes.copy()
+        attrs.update(self._nc.ncattrs())
+        attrs.update(attributes)
+        self._nc.setncatts(attrs)
 
     def behave(self, **kwargs):
         """
         Set-up the given arguments in self.behaviour, for the purpose of
         building fields from netCDF.
         """
-
         self.behaviour.update(kwargs)
 
     def what(self, out=sys.stdout):

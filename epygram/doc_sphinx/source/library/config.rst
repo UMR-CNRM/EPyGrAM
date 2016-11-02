@@ -83,7 +83,7 @@ netCDF
 .. autodata:: netCDF_default_behaviour
 .. autodata:: netCDF_default_compression
 .. autodata:: netCDF_replace_dot_in_variable_names
-
+.. autodata:: netCDF_default_global_attributes
 
 Options
 -------

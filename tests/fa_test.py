@@ -84,8 +84,8 @@ def check_spectral(filename):
 # Monitor #
 ###########
 geom = False
-fields = False
-spectral = True
+fields = True
+spectral = False
 mapfactor = False
 #footprints.logger.setLevel('DEBUG')
 
@@ -104,7 +104,7 @@ if fields:
                      'aromesurfex_previ3', 'aromesurfex_canari', 'aromesurfex_pgd',
                      'fullpos_lonlat_glob', 'fullpos_lonlat_lam',
                      'clim_arome_2.5.fa']
-    for f in fieldsfileset[:]:
+    for f in fieldsfileset[:1]:
         check_fields(fieldsroot + f)
 
 # Spectral round-trip
