@@ -1160,6 +1160,7 @@ class netCDF(FileResource):
         # 5. metadata
         for k, v in metadata.items():
             self._variables[varname].setncattr(k, v)
+        self.set_global_attributes()
 
     def set_global_attributes(self, **attributes):
         """
