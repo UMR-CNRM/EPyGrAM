@@ -552,8 +552,6 @@ class GRIBmessage(RecursiveObject, dict):
             self.update(ordering)
 
         # part 7 --- other options
-        if field.units not in (None, ''):
-            self['units'] = field.units
         if other_GRIB_options is not None:
             try:
                 for k, v in other_GRIB_options.items():
@@ -1016,14 +1014,21 @@ class GRIBmessage(RecursiveObject, dict):
         else:
             builder = H2DField
 
-        validity = self._read_validity()
-        spectral_geometry = None
-        processtype = self['generatingProcessIdentifier']
+        field_kwargs = {}
+        field_kwargs['fid'] = self.genfid()
+        field_kwargs['validity'] = self._read_validity()
+        field_kwargs['spectral_geometry'] = None
+        field_kwargs['processtype'] = self['generatingProcessIdentifier']
         geometry = self._read_geometry()
+        field_kwargs['geometry'] = geometry
+        field_kwargs['structure'] = geometry.structure
         try:
-            units = self['units']
+            field_kwargs['units'] = self['units']
         except gribapi.GribInternalError:
-            units = ''
+            try:
+                field_kwargs['units'] = self['parameterUnits']
+            except gribapi.GribInternalError:
+                pass
         if get_info_as_json is not None:
             import json
             comment = {}
@@ -1032,15 +1037,8 @@ class GRIBmessage(RecursiveObject, dict):
                     comment[k] = self[k]
                 except gribapi.GribInternalError:
                     pass
-            comment = json.dumps(comment)
-        field = builder(structure=geometry.structure,
-                        fid=self.genfid(),
-                        geometry=geometry,
-                        validity=validity,
-                        spectral_geometry=spectral_geometry,
-                        processtype=processtype,
-                        comment=comment,
-                        units=units)
+            field_kwargs['comment'] = json.dumps(comment)
+        field = builder(**field_kwargs)
         if getdata:
             data1d = self['values']
             if 'gauss' in geometry.name:
