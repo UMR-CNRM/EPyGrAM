@@ -371,8 +371,8 @@ class netCDF(FileResource):
                     dimensions['X'] = len(self._dimensions[all_dimensions_e2n['X_dimension']])
                     dimensions['Y'] = len(self._dimensions[all_dimensions_e2n['Y_dimension']])
                 elif behaviour.get('H1D_is_H2D_unstructured', False):
-                        dimensions['X'] = variable_dimensions[dims_dict_e2n['N_dimension']]
-                        dimensions['Y'] = 1
+                    dimensions['X'] = variable_dimensions[dims_dict_e2n['N_dimension']]
+                    dimensions['Y'] = 1
                 else:
                     assert 'X_dimension' in all_dimensions_e2n.keys(), \
                            ' '.join(["unable to find X_dimension of field:",
