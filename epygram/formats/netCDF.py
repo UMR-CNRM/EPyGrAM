@@ -470,7 +470,7 @@ class netCDF(FileResource):
                         # and Y constant on a row: reconstruct 2D
                         Xgrid = numpy.ones((Y.size, X.size)) * X
                         Ygrid = (numpy.ones((Y.size, X.size)).transpose() * Y).transpose()
-                    elif behaviour.get('H1D_is_H2D_unstructured', False):			    
+                    elif behaviour.get('H1D_is_H2D_unstructured', False): 
                         # case of a H2D unstructured field
                         # case of a H2D field with flattened grid
                         if len(X) == dimensions['X'] * dimensions['Y']:
@@ -693,7 +693,7 @@ class netCDF(FileResource):
                     # grid is not lon/lat and no other metadata available : Academic
                     kwargs_geom['name'] = 'academic'
                     #if flattened:
-                        #raise NotImplementedError("flattened academic grid.")
+                    #    raise NotImplementedError("flattened academic grid.")
                     grid = {'LAMzone':None,
                             'X_resolution':abs(Xgrid[0, 1] - Xgrid[0, 0]),
                             'Y_resolution':abs(Ygrid[1, 0] - Ygrid[0, 0])}
