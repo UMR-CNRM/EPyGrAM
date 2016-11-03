@@ -10,6 +10,7 @@ import glob
 import copy
 import web
 import shutil
+import sys
 
 import matplotlib
 matplotlib.use("Agg")
@@ -1021,7 +1022,14 @@ def init_workdir():
         os.makedirs(epyweb_workdir)
 
 
+class PortApplication(web.application):
+    def run(self, port=8080, *middleware):
+        func = self.wsgifunc(*middleware)
+        return web.httpserver.runsimple(func, ('0.0.0.0', port))
+
+
 def main(open_browser=False,
+         port=8080,
          verbose=True):
 
     init_workdir()
@@ -1036,7 +1044,7 @@ def main(open_browser=False,
     if os.getcwd() != web_root:
         os.chdir(web_root)
 
-    epyweb_url = 'http://' + os.getenv('HOSTNAME') + ':8080/epyweb'
+    epyweb_url = 'http://' + os.getenv('HOSTNAME') + ':' + str(port) + '/epyweb'
     print "====================="
     print '*epyweb* Interface =>', epyweb_url
     print '*epyweb* Workdir   =>', epyweb_workdir
@@ -1044,20 +1052,22 @@ def main(open_browser=False,
     print '(based on $' + location_of_vortex_cache + '=' + vortex_cache_dir + ')'
     print '(the *vortex* cache location is accessible by priority order through:'
     print '$MTOOLDIR, $FTDIR, $WORKDIR, $TMPDIR'
-    print "====================="
     if location_of_vortex_cache == 'TMPDIR':
         epylog.warning(' '.join(['the use of $TMPDIR as rootdir for the Vortex',
                                  'cache is hazardous. You should define a',
                                  'better rootdir using $MTOOLDIR.']))
+    print "====================="
 
     if open_browser:
         import threading
         t = threading.Thread(target=func_open_browser, kwargs={'url':epyweb_url,
                                                                'delay':1.})
         t.start()
-    app = web.application(urls, globals())
+    if len(sys.argv) > 1:
+        sys.argv = sys.argv[:1]  # workaround to a bug in web.py: command-line arguments can be other than port
+    app = PortApplication(urls, globals())
     try:
-        app.run()
+        app.run(port)
     finally:
         clean_workdir()
 

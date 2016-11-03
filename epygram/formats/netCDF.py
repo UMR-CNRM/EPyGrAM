@@ -463,26 +463,26 @@ class netCDF(FileResource):
                 if len(self._variables[var_corresponding_to_X_grid].dimensions) == 1 \
                 and len(self._variables[var_corresponding_to_Y_grid].dimensions) == 1:
                     # case of a flat grid
-                    if not flattened:
-                        # case of a regular grid where X is constant on a column
-                        # and Y constant on a row: reconstruct 2D
-                        X = self._variables[var_corresponding_to_X_grid][:]
-                        Y = self._variables[var_corresponding_to_Y_grid][:]
-                        Xgrid = numpy.ones((Y.size, X.size)) * X
-                        Ygrid = (numpy.ones((Y.size, X.size)).transpose() * Y).transpose()
-                    elif behaviour.get('H1D_is_H2D_unstructured', False):
-                        # case of a H2D unstructured field
-                        X = self._variables[var_corresponding_to_X_grid][:]
-                        Y = self._variables[var_corresponding_to_Y_grid][:]
-                        Xgrid = X.reshape((1, len(X)))
-                        Ygrid = Y.reshape((1, len(Y)))
-                    else:
-                        # case of a H2D field with flattened grid
-                        if len(X) == dimensions['X'] * dimensions['Y']:
+                    X = self._variables[var_corresponding_to_X_grid][:]
+                    Y = self._variables[var_corresponding_to_Y_grid][:]
+                    if flattened:
+                        if len(X) == dimensions.get('X') * dimensions.get('Y'):
+                            # case of a H2D field with flattened grid
                             Xgrid = X.reshape((dimensions['Y'], dimensions['X']))
                             Ygrid = Y.reshape((dimensions['Y'], dimensions['X']))
+                        elif behaviour.get('H1D_is_H2D_unstructured', False):
+                            # case of a H2D unstructured field
+                            X = self._variables[var_corresponding_to_X_grid][:]
+                            Y = self._variables[var_corresponding_to_Y_grid][:]
+                            Xgrid = X.reshape((1, len(X)))
+                            Ygrid = Y.reshape((1, len(Y)))
                         else:
                             raise epygramError('unable to reconstruct 2D grid.')
+                    else:
+                        # case of a regular grid where X is constant on a column
+                        # and Y constant on a row: reconstruct 2D
+                        Xgrid = numpy.ones((Y.size, X.size)) * X
+                        Ygrid = (numpy.ones((Y.size, X.size)).transpose() * Y).transpose()
                 elif len(self._variables[var_corresponding_to_X_grid].dimensions) == 2 \
                 and len(self._variables[var_corresponding_to_Y_grid].dimensions) == 2:
                     Xgrid = self._variables[var_corresponding_to_X_grid][:, :]

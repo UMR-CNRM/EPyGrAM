@@ -14,6 +14,7 @@ import epyweb
 
 
 def main(open_browser=False,
+         port=8080,
          verbose=False):
     """
     Run the 'epyweb' local server.
@@ -21,6 +22,7 @@ def main(open_browser=False,
     """
 
     epyweb.main(open_browser=open_browser,
+                port=port,
                 verbose=verbose)
 
 # end of main() ###############################################################
@@ -38,9 +40,13 @@ if __name__ == '__main__':
                         dest='open_browser',
                         help='opens a web browser tab with epyweb interface.',
                         default=False)
+    parser.add_argument('-p',
+                        dest='port',
+                        type=int,
+                        help='port to be used, default to 8080.',
+                        default=8080)
     add_arg_to_parser(parser, runtime_options['verbose'])
     args = parser.parse_args()
-    sys.argv = sys.argv[:1]  # workaround to a bug in web.py
 
     ### 2. Initializations
     ######################
@@ -48,6 +54,7 @@ if __name__ == '__main__':
     ### 3. Main
     ###########
     main(open_browser=args.open_browser,
+         port=args.port,
          verbose=args.verbose)
 
 ###########
