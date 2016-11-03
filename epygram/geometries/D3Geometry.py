@@ -3285,11 +3285,16 @@ class D3GaussGeometry(D3Geometry):
             ind_end = ind_begin + self.dimensions['lon_number_by_lat'][j]
             if len(shp_in) == 1:
                 buff = data[slice(ind_begin, ind_end)]
+		data4D[0, 0, j, slice(0, self.dimensions['lon_number_by_lat'][j])] = buff		
             elif len(shp_in) == 2:
                 buff = data[:, slice(ind_begin, ind_end)]
+		if nb_levels>1:
+		    data4D[0, :, j, slice(0, self.dimensions['lon_number_by_lat'][j])] = buff
+	        else:
+		    data4D[:, 0, j, slice(0, self.dimensions['lon_number_by_lat'][j])] = buff		
             elif len(shp_in) == 3:
                 buff = data[:, :, slice(ind_begin, ind_end)]
-            data4D[:, :, j, slice(0, self.dimensions['lon_number_by_lat'][j])] = buff
+		data4D[:, :, j, slice(0, self.dimensions['lon_number_by_lat'][j])] = buff
         if ind_end != data.shape[-1]:
             raise epygramError("data have a wrong length")
 
