@@ -369,8 +369,8 @@ class netCDF(FileResource):
                     dimensions['X'] = len(self._dimensions[all_dimensions_e2n['X_dimension']])
                     dimensions['Y'] = len(self._dimensions[all_dimensions_e2n['Y_dimension']])
                 elif behaviour.get('H1D_is_H2D_unstructured', False):
-                        dimensions['X'] = variable_dimensions[dims_dict_e2n['N_dimension']]
-                        dimensions['Y'] = 1
+                    dimensions['X'] = variable_dimensions[dims_dict_e2n['N_dimension']]
+                    dimensions['Y'] = 1
                 else:
                     assert 'X_dimension' in all_dimensions_e2n.keys(), \
                            ' '.join(["unable to find X_dimension of field:",
@@ -463,26 +463,24 @@ class netCDF(FileResource):
                 if len(self._variables[var_corresponding_to_X_grid].dimensions) == 1 \
                 and len(self._variables[var_corresponding_to_Y_grid].dimensions) == 1:
                     # case of a flat grid
+                    X = self._variables[var_corresponding_to_X_grid][:]
+                    Y = self._variables[var_corresponding_to_Y_grid][:]		    
                     if not flattened:
                         # case of a regular grid where X is constant on a column
                         # and Y constant on a row: reconstruct 2D
-                        X = self._variables[var_corresponding_to_X_grid][:]
-                        Y = self._variables[var_corresponding_to_Y_grid][:]
                         Xgrid = numpy.ones((Y.size, X.size)) * X
                         Ygrid = (numpy.ones((Y.size, X.size)).transpose() * Y).transpose()
-                    elif behaviour.get('H1D_is_H2D_unstructured', False):
+                    elif behaviour.get('H1D_is_H2D_unstructured', False):			    
                         # case of a H2D unstructured field
-                        X = self._variables[var_corresponding_to_X_grid][:]
-                        Y = self._variables[var_corresponding_to_Y_grid][:]
-                        Xgrid = X.reshape((1, len(X)))
-                        Ygrid = Y.reshape((1, len(Y)))
-                    else:
                         # case of a H2D field with flattened grid
                         if len(X) == dimensions['X'] * dimensions['Y']:
                             Xgrid = X.reshape((dimensions['Y'], dimensions['X']))
                             Ygrid = Y.reshape((dimensions['Y'], dimensions['X']))
                         else:
                             raise epygramError('unable to reconstruct 2D grid.')
+                    else:
+		        Xgrid = X.reshape((1, len(X)))
+                        Ygrid = Y.reshape((1, len(Y)))
                 elif len(self._variables[var_corresponding_to_X_grid].dimensions) == 2 \
                 and len(self._variables[var_corresponding_to_Y_grid].dimensions) == 2:
                     Xgrid = self._variables[var_corresponding_to_X_grid][:, :]
@@ -690,10 +688,12 @@ class netCDF(FileResource):
                     grid = {'longitudes':Xgrid,
                             'latitudes':Ygrid}
                 else:
+		    print Xgrid.shape
+		    print Ygrid.shape
                     # grid is not lon/lat and no other metadata available : Academic
-                    if flattened:
-                        raise NotImplementedError("flattened academic grid.")
                     kwargs_geom['name'] = 'academic'
+                    #if flattened:
+                        #raise NotImplementedError("flattened academic grid.")
                     grid = {'LAMzone':None,
                             'X_resolution':abs(Xgrid[0, 1] - Xgrid[0, 0]),
                             'Y_resolution':abs(Ygrid[1, 0] - Ygrid[0, 0])}
