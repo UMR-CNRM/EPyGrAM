@@ -90,6 +90,8 @@ class netCDF(FileResource):
         super(netCDF, self).open(openmode=openmode)
         self._nc = netCDF4.Dataset(self.container.abspath, self.openmode)
         self.isopen = True
+        if self.openmode == 'w':
+            self.set_default_global_attributes()
 
     def close(self):
         """
@@ -691,8 +693,6 @@ class netCDF(FileResource):
                             'latitudes':Ygrid}
                 else:
                     # grid is not lon/lat and no other metadata available : Academic
-                    if flattened:
-                        raise NotImplementedError("flattened academic grid.")
                     kwargs_geom['name'] = 'academic'
                     grid = {'LAMzone':None,
                             'X_resolution':abs(Xgrid[0, 1] - Xgrid[0, 0]),
@@ -1160,17 +1160,19 @@ class netCDF(FileResource):
         # 5. metadata
         for k, v in metadata.items():
             self._variables[varname].setncattr(k, v)
-        self.set_global_attributes()
+
+    def set_default_global_attributes(self):
+        """
+        Set default global attributes (those from 
+        config.netCDF_default_global_attributes).
+        """
+        self._nc.setncatts(config.netCDF_default_global_attributes)
 
     def set_global_attributes(self, **attributes):
         """
-        Set standard global attributes, and optionally other ones.
+        Set the given global attributes.
         """
-
-        attrs = config.netCDF_default_global_attributes.copy()
-        attrs.update(self._nc.ncattrs())
-        attrs.update(attributes)
-        self._nc.setncatts(attrs)
+        self._nc.setncatts(attributes)
 
     def behave(self, **kwargs):
         """
