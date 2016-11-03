@@ -571,12 +571,11 @@ class netCDF(FileResource):
                                             lat_1=s1, lat_2=s2,
                                             x_0=-dx, y_0=-dy,
                                             **kwargs_geom['geoid'])
-                            llc = p(-fe, -fn, inverse=True)
+                            ll00 = p(-fe, -fn, inverse=True)
                             del p
-                            grid['input_lon'] = Angle(llc[0], 'degrees')
-                            grid['input_lat'] = Angle(llc[1], 'degrees')
-                            grid['input_position'] = (float(dimensions['X'] - 1) / 2.,
-                                                      float(dimensions['Y'] - 1) / 2.)
+                            grid['input_lon'] = Angle(ll00[0], 'degrees')
+                            grid['input_lat'] = Angle(ll00[1], 'degrees')
+                            grid['input_position'] = (0, 0)
                         elif kwargs_geom['name'] == 'mercator':
                             kwargs_geom['projection'] = {'reference_lon':Angle(grid_mapping.longitude_of_central_meridian, 'degrees'),
                                                          'rotation':Angle(0., 'degrees')}
@@ -603,11 +602,11 @@ class netCDF(FileResource):
                                             lat_ts=lat_ts,
                                             x_0=-dx, y_0=-dy,
                                             **kwargs_geom['geoid'])
-                            llc = p(-fe, -fn, inverse=True)
+                            ll00 = p(-fe, -fn, inverse=True)
                             del p
-                            grid['input_lon'] = Angle(llc[0], 'degrees')
-                            grid['input_lat'] = Angle(llc[1], 'degrees')
-                            grid['input_position'] = (float(dimensions['X'] - 1) / 2., float(dimensions['Y'] - 1) / 2.)
+                            grid['input_lon'] = Angle(ll00[0], 'degrees')
+                            grid['input_lat'] = Angle(ll00[1], 'degrees')
+                            grid['input_position'] = (0, 0)
                         elif kwargs_geom['name'] == 'polar_stereographic':
                             kwargs_geom['projection'] = {'reference_lon':Angle(grid_mapping.straight_vertical_longitude_from_pole, 'degrees'),
                                                          'rotation':Angle(0., 'degrees')}
@@ -634,11 +633,11 @@ class netCDF(FileResource):
                                             lat_ts=lat_ts,
                                             x_0=-dx, y_0=-dy,
                                             **kwargs_geom['geoid'])
-                            llc = p(-fe, -fn, inverse=True)
+                            ll00 = p(-fe, -fn, inverse=True)
                             del p
-                            grid['input_lon'] = Angle(llc[0], 'degrees')
-                            grid['input_lat'] = Angle(llc[1], 'degrees')
-                            grid['input_position'] = (float(dimensions['X'] - 1) / 2., float(dimensions['Y'] - 1) / 2.)
+                            grid['input_lon'] = Angle(ll00[0], 'degrees')
+                            grid['input_lat'] = Angle(ll00[1], 'degrees')
+                            grid['input_position'] = (0, 0)
                     else:
                         # no resolution available: grid mapping is useless
                         gm = None
@@ -1082,10 +1081,10 @@ class netCDF(FileResource):
                             else:
                                 std_parallel = field.geometry.projection['reference_lat'].get('degrees')
                                 latitude_of_projection_origin = std_parallel
-                            xc, yc = field.geometry.ll2xy(_lon_cen, _lat_cen)
+                            x00, y00 = field.geometry.ij2xy(0, 0)
                             x0, y0 = field.geometry.ll2xy(field.geometry.projection['reference_lon'].get('degrees'),
                                                           latitude_of_projection_origin)
-                            (dx, dy) = (xc - x0, yc - y0)
+                            (dx, dy) = (x00 - x0, y00 - y0)
                             if not nearlyEqual(_lon_cen,
                                                field.geometry.projection['reference_lon'].get('degrees')):
                                 epylog.warning('center_lon != reference_lon (tilting) is not "on the cards" in CF convention 1.6')
@@ -1102,9 +1101,9 @@ class netCDF(FileResource):
                                 std_parallel = field.geometry.projection['secant_lat'].get('degrees')
                             else:
                                 std_parallel = field.geometry.projection['reference_lat'].get('degrees')
-                            xc, yc = field.geometry.ll2xy(_lon_cen, _lat_cen)
+                            x00, y00 = field.geometry.ij2xy(0, 0)
                             x0, y0 = field.geometry.ll2xy(field.geometry.projection['reference_lon'].get('degrees'), 0.)
-                            (dx, dy) = (xc - x0, yc - y0)
+                            (dx, dy) = (x00 - x0, y00 - y0)
                             self._variables[meta].longitude_of_central_meridian = field.geometry.projection['reference_lon'].get('degrees')
                             self._variables[meta].standard_parallel = std_parallel
                             self._variables[meta].false_easting = -dx
@@ -1114,10 +1113,10 @@ class netCDF(FileResource):
                                 std_parallel = field.geometry.projection['secant_lat'].get('degrees')
                             else:
                                 std_parallel = field.geometry.projection['reference_lat'].get('degrees')
-                            xc, yc = field.geometry.ll2xy(_lon_cen, _lat_cen)
+                            x00, y00 = field.geometry.ij2xy(0, 0)
                             x0, y0 = field.geometry.ll2xy(field.geometry.projection['reference_lon'].get('degrees'),
                                                           field.geometry.projection['reference_lat'].get('degrees'))
-                            (dx, dy) = (xc - x0, yc - y0)
+                            (dx, dy) = (x00 - x0, y00 - y0)
                             self._variables[meta].straight_vertical_longitude_from_pole = field.geometry.projection['reference_lon'].get('degrees')
                             self._variables[meta].latitude_of_projection_origin = field.geometry.projection['reference_lat'].get('degrees')
                             self._variables[meta].standard_parallel = std_parallel
