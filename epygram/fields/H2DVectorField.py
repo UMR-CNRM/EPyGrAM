@@ -483,7 +483,7 @@ class H2DVectorField(Field):
                                 background=background)
         # 3. Prepare data
         (lons, lats) = self.geometry.get_lonlat_grid(subzone=subzone)
-        if self.geometry.dimensions['Y'] == 1:
+        if lons.ndim == 1:  #self.geometry.dimensions['Y'] == 1:
             lons = lons[::subsampling]
             lats = lats[::subsampling]
         else:
@@ -494,7 +494,7 @@ class H2DVectorField(Field):
                                         - config.mask_outside,
                                         config.mask_outside) for data in
                 self.getdata(subzone=subzone)]
-        if self.geometry.dimensions['Y'] == 1:
+        if data[0].ndim == 1:  # self.geometry.dimensions['Y'] == 1:
             u = data[0][::subsampling]
             v = data[1][::subsampling]
         else:
