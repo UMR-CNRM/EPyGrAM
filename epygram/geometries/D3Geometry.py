@@ -17,7 +17,8 @@ from footprints import FootprintBase, FPDict, proxy as fpx
 
 from epygram import epygramError, config
 from epygram.util import RecursiveObject, degrees_nearest_mod, Angle, \
-                         separation_line, write_formatted, stretch_array
+                         separation_line, write_formatted, stretch_array, \
+                         nearlyEqual
 from .VGeometry import VGeometry
 
 epylog = footprints.loggers.getLogger(__name__)
@@ -3085,6 +3086,12 @@ class D3GaussGeometry(D3Geometry):
         if set(self.dimensions.keys()) != set(dimensions_keys):
             raise epygramError("dimensions attribute must consist in keys: " + \
                                str(dimensions_keys))
+        if self.name == 'rotated_reduced_gauss' \
+           and nearlyEqual(self.grid['pole_lon'].get('degrees'), 0.) \
+           and nearlyEqual(self.grid['pole_lat'].get('degrees'), 90.):
+            self._attributes['name'] = 'reduced_gauss'
+            self.grid.pop('pole_lon')
+            self.grid.pop('pole_lat')
 
     def ij2ll(self, i, j, position=None):
         """
@@ -3558,7 +3565,6 @@ class D3GaussGeometry(D3Geometry):
 
         if not reverse:
             lon = degrees_nearest_mod(lon, self.grid.get('pole_lon', Angle(90., 'degrees')).get('degrees'))
-            #lon = degrees_nearest_mod(lon, 90.)
             PSLAR = numpy.sin(numpy.radians(lat))
             PSLOR = numpy.sin(numpy.radians(lon))
             PCLOR = numpy.cos(numpy.radians(lon))
