@@ -3558,6 +3558,7 @@ class D3GaussGeometry(D3Geometry):
 
         if not reverse:
             lon = degrees_nearest_mod(lon, self.grid.get('pole_lon', Angle(90., 'degrees')).get('degrees'))
+            #lon = degrees_nearest_mod(lon, 90.)
             PSLAR = numpy.sin(numpy.radians(lat))
             PSLOR = numpy.sin(numpy.radians(lon))
             PCLOR = numpy.cos(numpy.radians(lon))
