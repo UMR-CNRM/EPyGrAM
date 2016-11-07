@@ -20,7 +20,7 @@ from epygram.base import Resource
 from .FileResource import FileResource
 from .MultiValiditiesResource import MultiValiditiesResource
 from .CombineLevelsResource import CombineLevelsResource
-
+from .SubdomainResource import SubdomainResource
 
 
 def meta_resource(filenames_or_resources, openmode, rtype):
