@@ -779,14 +779,11 @@ class LFI(FileResource):
                         # Computation is not exact computing back RPK from latin1 and latin2 does not give exactly the same result 
                         latin1_field = field.geometry.projection['secant_lat1'].get('degrees')
                         latin2_field = field.geometry.projection['secant_lat2'].get('degrees')
-                        print "latin field", latin1_field, latin2_field
                         if 'latin1' not in specialValues:
                             specialValues['latin1'], specialValues['latin2'] = self._get_latin1_latin2_lambert(specialValues['LAT0'], specialValues['RPK'])
-                            print "not in specialvalues", specialValues['latin1'].get('degrees'), specialValues['latin2'].get('degrees')
                         check = numpy.all(util.nearlyEqualArray([latin1_field, latin2_field],
                                                                 [specialValues['latin1'].get('degrees'), specialValues['latin2'].get('degrees')])) or \
                                 util.nearlyEqual(value, specialValues[record])
-                        print "check new", check
                     else:
                         check = numpy.all(util.nearlyEqualArray(value, specialValues[record]))
                 elif record in ['XHAT', 'YHAT']:
