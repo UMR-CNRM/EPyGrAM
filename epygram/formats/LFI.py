@@ -581,8 +581,14 @@ class LFI(FileResource):
             field = MiscField(fid=fid, comment=comment)
             field.geometry = geometry
         if getdata:
-            if field_info['type'] in ['H2D', '3D']:
-                data = geometry.reshape_data(data, 1)
+            if field_info['type'] == 'H2D' or (field_info['type'] == '3D' and not self.true3d):
+                # Only one horizontal level
+                data = geometry.reshape_data(data)
+            elif field_info['type'] == '3D' and self.true3d:
+                # 3D data
+                data = data.reshape((len(self.geometry.vcoordinate.grid['gridlevels']) + 1,
+                                     self.geometry.dimensions['X'] * self.geometry.dimensions['Y']))
+                data = geometry.reshape_data(data, 'Z')
             field.setdata(data)
             if fieldname == 'LFI_COMPRESSED': self._compressed = data
 
