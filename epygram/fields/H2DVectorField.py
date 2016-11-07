@@ -209,8 +209,7 @@ class H2DVectorField(Field):
         Returns a :class:`epygram.H2DField` whose data is the direction of the
         Vector field, in degrees. E.g. 45° is a South-Westerly vector.
         """
-        #TOBECHECKED: not tested !
-        epylog.warning("this method has not been tested ! It may not produce expected results.")
+
         if self.spectral:
             fieldcopy = self.deepcopy()
             fieldcopy.sp2gp()
@@ -219,14 +218,18 @@ class H2DVectorField(Field):
             datagp = self.getdata()
         if isinstance(datagp[0], numpy.ma.MaskedArray):
             loc_sqrt = numpy.ma.sqrt
-            loc_arctan2 = numpy.ma.arctan2
+            loc_arccos = numpy.ma.arccos
         else:
             loc_sqrt = numpy.sqrt
-            loc_arctan2 = numpy.arctan2
+            loc_arccos = numpy.arccos
         module = loc_sqrt(datagp[0] ** 2 + datagp[1] ** 2)
-        direction = -loc_arctan2(datagp[1] / module, datagp[0] / module) + numpy.pi / 2.
-        direction *= 180. / numpy.pi + 360.
-        direction = numpy.mod(direction, 360.)
+        module_cal = numpy.where(module < 1.E-15, 1.E-15, module)
+        u_norm = -datagp[0] / module_cal
+        v_norm = -datagp[1] / module_cal
+        numpy.clip(v_norm, -1, 1, out=v_norm)
+        dd1 = loc_arccos(v_norm)
+        dd2 = 2. * numpy.pi - dd1
+        direction = numpy.degrees(numpy.where(u_norm >= 0., dd1, dd2))
         f = fpx.field(geometry=self.geometry,
                       structure=self.structure,
                       fid={'op':'H2DVectorField.compute_direction()'},
