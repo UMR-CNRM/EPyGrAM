@@ -528,12 +528,12 @@ class LFI(FileResource):
                 offset = 0
                 nature = field_info['nature'] if 'nature' in field_info else 'float'
                 if nature == 'float':
-                    data = numpy.array(data.view('float64')[offset:offset +
-                                                            self.geometry.dimensions['X'] *
+                    data = numpy.array(data.view('float64')[offset:offset + 
+                                                            self.geometry.dimensions['X'] * 
                                                             self.geometry.dimensions['Y']])
                 elif nature == 'int':
-                    data = numpy.array(data[offset:offset +
-                                       self.geometry.dimensions['X'] *
+                    data = numpy.array(data[offset:offset + 
+                                       self.geometry.dimensions['X'] * 
                                        self.geometry.dimensions['Y']])
                 else:
                     raise NotImplementedError("reading of datatype " + field_info['nature'] + " field.")
@@ -541,16 +541,16 @@ class LFI(FileResource):
                 kmax = len(self.geometry.vcoordinate.grid['gridlevels']) + 1
                 if self.true3d:
                     offset = 0
-                    data = numpy.array(data.view('float64')[offset:offset +
-                                                            self.geometry.dimensions['X'] *
-                                                            self.geometry.dimensions['Y'] *
+                    data = numpy.array(data.view('float64')[offset:offset + 
+                                                            self.geometry.dimensions['X'] * 
+                                                            self.geometry.dimensions['Y'] * 
                                                             kmax])
                 else:
                     if level not in range(kmax):
                         raise epygramError("level must be between 0 and kmax for a 3D field (level=" + str(level) + ").")
                     offset = level * self.geometry.dimensions['X'] * self.geometry.dimensions['Y']
-                    data = numpy.array(data.view('float64')[offset:offset +
-                                                            self.geometry.dimensions['X'] *
+                    data = numpy.array(data.view('float64')[offset:offset + 
+                                                            self.geometry.dimensions['X'] * 
                                                             self.geometry.dimensions['Y']])
 
         # Create field
@@ -765,7 +765,24 @@ class LFI(FileResource):
                             myFieldset.append(f)
                 if record in ['LAT0', 'LON0', 'LATOR', 'LATORI', 'LONOR', 'LONORI', 'RPK', 'BETA', 'ZHAT']:
                     #Float comparisons
-                    check = numpy.all(util.nearlyEqualArray(value, specialValues[record]))
+                    special_rpk = record == 'RPK' and \
+                                  field.geometry.secant_projection and \
+                                  field.geometry.name not in ['mercator', 'polar_stereographic']
+                    if special_rpk:
+                        # In geometries, when seant, we store latin1 and latin2 which are computed from RPK
+                        # Computation is not exact computing back RPK from latin1 and latin2 does not give exactly the same result 
+                        latin1_field = field.geometry.projection['secant_lat1'].get('degrees')
+                        latin2_field = field.geometry.projection['secant_lat2'].get('degrees')
+                        print "latin field", latin1_field, latin2_field
+                        if 'latin1' not in specialValues:
+                            specialValues['latin1'], specialValues['latin2'] = self._get_latin1_latin2_lambert(specialValues['LAT0'], specialValues['RPK'])
+                            print "not in specialvalues", specialValues['latin1'].get('degrees'), specialValues['latin2'].get('degrees')
+                        check = numpy.all(util.nearlyEqualArray([latin1_field, latin2_field],
+                                                                [specialValues['latin1'].get('degrees'), specialValues['latin2'].get('degrees')])) or \
+                                util.nearlyEqual(value, specialValues[record])
+                        print "check new", check
+                    else:
+                        check = numpy.all(util.nearlyEqualArray(value, specialValues[record]))
                 elif record in ['XHAT', 'YHAT']:
                     #We check deltaX and deltaY because XHAT and YHAT can be computed in two different ways (prep_ideal or prep_pgd)
                     check = util.nearlyEqualArray(value[1] - value[0],
@@ -773,7 +790,7 @@ class LFI(FileResource):
                 else:
                     check = numpy.all(value == specialValues[record])
                 if not check:
-                    raise epygramError("this field is not compatible with the fields already written to the file.")
+                    raise epygramError("this field is not compatible with the fields already written to the file: " + record)
         #writing
         done = []
         for iField in range(len(myFieldset)):
@@ -1163,6 +1180,18 @@ class LFI(FileResource):
 ##############
 # the LFI WAY #
 ##############
+    @staticmethod
+    def _get_latin1_latin2_lambert(lat0, rpk):
+        import scipy.optimize as op
+        def k(latin2):
+            latin1 = lat0
+            m1 = math.cos(math.radians(latin1))
+            m2 = math.cos(math.radians(latin2))
+            t1 = math.tan(math.pi / 4. - math.radians(latin1) / 2.)
+            t2 = math.tan(math.pi / 4. - math.radians(latin2) / 2.)
+            return (math.log(m1) - math.log(m2)) / (math.log(t1) - math.log(t2)) - rpk
+        return Angle(lat0, 'degrees'), Angle(op.fsolve(k, math.degrees(2 * math.asin(rpk)) - lat0)[0], 'degrees')
+
     @FileResource._openbeforedelayed
     def _read_geometry(self):
         """
@@ -1246,16 +1275,9 @@ class LFI(FileResource):
                     projection['secant_lat'] = Angle(lat0, 'degrees')
                 else:
                     #lambert: two secant latitudes
-                    def k(latin2):
-                        latin1 = lat0
-                        m1 = math.cos(math.radians(latin1))
-                        m2 = math.cos(math.radians(latin2))
-                        t1 = math.tan(math.pi / 4. - math.radians(latin1) / 2.)
-                        t2 = math.tan(math.pi / 4. - math.radians(latin2) / 2.)
-                        return (math.log(m1) - math.log(m2)) / (math.log(t1) - math.log(t2)) - rpk
-                    import scipy.optimize as op
-                    projection['secant_lat1'] = Angle(lat0, 'degrees')
-                    projection['secant_lat2'] = Angle(op.fsolve(k, math.degrees(2 * math.asin(rpk)) - lat0)[0], 'degrees')
+                    latin1, latin2 = self._get_latin1_latin2_lambert(lat0, rpk)
+                    projection['secant_lat1'] = latin1
+                    projection['secant_lat2'] = latin2
             grid = {'X_resolution':xhat[1] - xhat[0],
                     'Y_resolution':yhat[1] - yhat[0],
                     'LAMzone':'CIE',
@@ -1331,14 +1353,14 @@ class LFI(FileResource):
             dtexpTime = float(self.readfield(s('DTEXP%TIME', None)).getdata())
             kwargs['basis'] = (datetime.datetime(dtexpDate[0],
                                                  dtexpDate[1],
-                                                 dtexpDate[2]) +
+                                                 dtexpDate[2]) + 
                                datetime.timedelta(seconds=dtexpTime))
             if 'DTCUR%TDATE' in listnames:
                 dtcurDate = self.readfield(s('DTCUR%TDATE', None)).getdata()
                 dtcurTime = float(self.readfield(s('DTCUR%TIME', None)).getdata())
                 kwargs['term'] = (datetime.datetime(dtcurDate[0],
                                                     dtcurDate[1],
-                                                    dtcurDate[2]) +
+                                                    dtcurDate[2]) + 
                                   datetime.timedelta(seconds=dtcurTime) - kwargs['basis'])
         elif 'DTCUR%TDATE' in listnames:
             dtcurDate = self.readfield(s('DTCUR%TDATE', None)).getdata()
