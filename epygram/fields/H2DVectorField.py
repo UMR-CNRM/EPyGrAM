@@ -48,6 +48,23 @@ def make_vector_field(fX, fY):
     return f
 
 
+def psikhi2uv(psi, khi):
+    """
+    Compute wind (on the grid) as a H2DVectorField from streamfunction
+    **psi** and velocity potential **khi**.
+    """
+
+    (dpsidx, dpsidy) = psi.compute_xy_spderivatives()
+    (dkhidx, dkhidy) = khi.compute_xy_spderivatives()
+    u = dkhidx - dpsidy
+    v = dkhidy + dpsidx
+    u.fid = {'derivative':'u-wind'}
+    v.fid = {'derivative':'v-wind'}
+    u.validity = psi.validity
+    v.validity = psi.validity
+
+    return make_vector_field(u, v)
+
 
 class H2DVectorField(Field):
     """
