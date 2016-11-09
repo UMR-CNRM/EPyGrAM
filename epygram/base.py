@@ -100,7 +100,9 @@ class Field(RecursiveObject, FootprintBase):
         """
         Computes some basic statistics on the field, as a dict containing:
         {'min', 'max', 'mean', 'std', 'quadmean', 'nonzero'}.
-
+        
+        See each of these methods for details.
+        
         Optional arguments can be passed, depending on the inheriting class,
         passed to getdata().
         """
@@ -114,48 +116,48 @@ class Field(RecursiveObject, FootprintBase):
 
     def min(self, **kwargs):
         """Returns the minimum value of data."""
-        data = self.getdata(**kwargs)
-        return numpy.ma.masked_outside(data,
+        data = numpy.ma.masked_outside(self.getdata(**kwargs),
                                        - config.mask_outside,
-                                       config.mask_outside).min()
+                                       config.mask_outside)
+        return float(data.min())
 
     def max(self, **kwargs):
         """Returns the maximum value of data."""
-        data = self.getdata(**kwargs)
-        return numpy.ma.masked_outside(data,
+        data = numpy.ma.masked_outside(self.getdata(**kwargs),
                                        - config.mask_outside,
-                                       config.mask_outside).max()
+                                       config.mask_outside)
+        return float(data.max())
 
     def mean(self, **kwargs):
         """Returns the mean value of data."""
-        data = self.getdata(**kwargs)
-        return numpy.ma.masked_outside(data,
+        data = numpy.ma.masked_outside(self.getdata(**kwargs),
                                        - config.mask_outside,
-                                       config.mask_outside).mean()
+                                       config.mask_outside)
+        return float(data.mean())
 
     def std(self, **kwargs):
         """Returns the standard deviation of data."""
-        data = self.getdata(**kwargs)
-        return numpy.ma.masked_outside(data,
+        data = numpy.ma.masked_outside(self.getdata(**kwargs),
                                        - config.mask_outside,
-                                       config.mask_outside).std()
+                                       config.mask_outside)
+        return float(data.std())
 
     def quadmean(self, **kwargs):
         """Returns the quadratic mean of data."""
-        data = self.getdata(**kwargs)
-        return numpy.sqrt((numpy.ma.masked_outside(data,
-                                                   - config.mask_outside,
-                                                   config.mask_outside) ** 2).mean())
+        data = numpy.ma.masked_outside(self.getdata(**kwargs),
+                                       - config.mask_outside,
+                                       config.mask_outside)
+        return float(numpy.sqrt((data ** 2).mean()))
 
     def nonzero(self, **kwargs):
         """
         Returns the number of non-zero values (whose absolute
         value > config.epsilon).
         """
-        data = self.getdata(**kwargs)
-        return numpy.count_nonzero(abs(numpy.ma.masked_outside(data,
-                                                               - config.mask_outside,
-                                                               config.mask_outside)) > config.epsilon)
+        data = numpy.ma.masked_outside(self.getdata(**kwargs),
+                                       - config.mask_outside,
+                                       config.mask_outside)
+        return int(numpy.count_nonzero(abs(data) > config.epsilon))
 
 #############
 # OPERATORS #

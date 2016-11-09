@@ -616,47 +616,30 @@ class D3CommonField(Field):
 
     def min(self, subzone=None):
         """Returns the minimum value of data."""
-        data = self.getdata(subzone=subzone)
-        return numpy.ma.masked_outside(data,
-                                       - config.mask_outside,
-                                       config.mask_outside).min()
+        return super(D3CommonField, self).min(subzone=subzone)
 
     def max(self, subzone=None):
         """Returns the maximum value of data."""
-        data = self.getdata(subzone=subzone)
-        return numpy.ma.masked_outside(data,
-                                       - config.mask_outside,
-                                       config.mask_outside).max()
+        return super(D3CommonField, self).max(subzone=subzone)
 
     def mean(self, subzone=None):
         """Returns the mean value of data."""
-        data = self.getdata(subzone=subzone)
-        return numpy.ma.masked_outside(data,
-                                       - config.mask_outside,
-                                       config.mask_outside).mean()
+        return super(D3CommonField, self).mean(subzone=subzone)
 
     def std(self, subzone=None):
         """Returns the standard deviation of data."""
-        data = self.getdata(subzone=subzone)
-        return numpy.ma.masked_outside(data,
-                                       - config.mask_outside,
-                                       config.mask_outside).std()
+        return super(D3CommonField, self).std(subzone=subzone)
 
     def quadmean(self, subzone=None):
         """Returns the quadratic mean of data."""
-        data = self.getdata(subzone=subzone)
-        return numpy.sqrt(numpy.ma.masked_greater(data ** 2,
-                                                  config.mask_outside ** 2).mean())
+        return super(D3CommonField, self).quadmean(subzone=subzone)
 
     def nonzero(self, subzone=None):
         """
         Returns the number of non-zero values (whose absolute
         value > config.epsilon).
         """
-        data = self.getdata(subzone=subzone)
-        return numpy.count_nonzero(abs(numpy.ma.masked_outside(data,
-                                                               - config.mask_outside,
-                                                               config.mask_outside)) > config.epsilon)
+        return super(D3CommonField, self).nonzero(subzone=subzone)
 
     def dctspectrum(self, level_index=None, validity_index=None, subzone=None):
         """
