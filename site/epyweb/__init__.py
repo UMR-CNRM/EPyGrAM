@@ -22,9 +22,6 @@ from opinel import interrupt
 import epygram
 from epygram import epylog
 import usevortex
-print 'Epygram version:', epygram.__version__
-
-
 
 
 
@@ -998,7 +995,7 @@ class GetPNG(object):
             return f.read()
 
 
-#
+# Environment functions
 
 
 def func_open_browser(url=os.getcwd(), delay=0.):
@@ -1046,16 +1043,19 @@ def main(open_browser=False,
 
     epyweb_url = 'http://' + os.getenv('HOSTNAME') + ':' + str(port) + '/epyweb'
     print "====================="
-    print '*epyweb* Interface =>', epyweb_url
-    print '*epyweb* Workdir   =>', epyweb_workdir
-    print '*vortex* Cache     =>', vortex_cache
-    print '(based on $' + location_of_vortex_cache + '=' + vortex_cache_dir + ')'
-    print '(the *vortex* cache location is accessible by priority order through:'
-    print '$MTOOLDIR, $FTDIR, $WORKDIR, $TMPDIR'
+    print "EPYWEB is running within epygram version:", epygram.__version__
+    print "EPYWEB Interface =>", epyweb_url
+    print "EPYWEB Workdir   =>", epyweb_workdir
+    print "VORTEX Cache     =>", vortex_cache
+    print "(based on $" + location_of_vortex_cache + "=" + vortex_cache_dir + ")"
+    if location_of_vortex_cache != 'MTOOLDIR':
+        print "(the *vortex* cache location is accessible by priority order through:"
+        print "$MTOOLDIR, $FTDIR, $WORKDIR, $TMPDIR"
     if location_of_vortex_cache == 'TMPDIR':
         epylog.warning(' '.join(['the use of $TMPDIR as rootdir for the Vortex',
                                  'cache is hazardous. You should define a',
                                  'better rootdir using $MTOOLDIR.']))
+    print "To close the server: Ctrl-C"
     print "====================="
 
     if open_browser:

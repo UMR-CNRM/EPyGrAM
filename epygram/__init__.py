@@ -96,6 +96,10 @@ __version__ = '1.1.7'
 
 __license__ = 'CeCILL-C'
 
+__authors__ = ['Alexandre Mary', 'Sébastien Riette']
+
+__contributors__ = ['Stéphanie Faroux', ]
+
 
 
 class epygramError(Exception):

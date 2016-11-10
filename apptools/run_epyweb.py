@@ -5,11 +5,9 @@
 # http://www.cecill.info
 
 import argparse
-import sys
 
 import epygram
 from epygram.args_catalog import add_arg_to_parser, runtime_options
-import epyweb
 
 
 
@@ -20,6 +18,7 @@ def main(open_browser=False,
     Run the 'epyweb' local server.
     If *open_browser*, open a web browser tab with 'epyweb' interface.
     """
+    import epyweb
 
     epyweb.main(open_browser=open_browser,
                 port=port,

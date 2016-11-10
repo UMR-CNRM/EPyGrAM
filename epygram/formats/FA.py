@@ -904,8 +904,10 @@ class FA(FileResource):
                 validity = self.validity.deepcopy()
                 validity.set(statistical_process_on_duration=inquire_field_dict(fieldname).get('typeOfStatisticalProcessing', None))
             # MOCAGE surface fields: different terms can be stored in one file !
-            if self.validity.multi and fieldname[0:2] in ('SF', 'EM', 'DV') and \
-               all([c.isdigit() for c in fieldname[2:4]]):
+            if all([config.FA_allow_MOCAGE_multivalities,
+                    fieldname[0:2] in ('SF', 'EM', 'DV'),
+                    all([c.isdigit() for c in fieldname[2:4]])]
+                   ):
                 term_in_seconds = datetime.timedelta(seconds=3600 * int(fieldname[2:4]))
                 validity.set(term=term_in_seconds)
             field = builder(fid=fid,
@@ -1507,6 +1509,57 @@ class FA(FileResource):
 ##############
 # the FA WAY #
 ##############
+
+    def _get_header(self, out=sys.stdout, mode='FA'):
+        """
+        Write the "header" of the resource in **out**.
+        If **mode** == 'LFI', writes the header as the corresponding LFI
+        records.
+        If **mode**=='FA', writes the header as returned by routines
+        FACIES and FADIEX.
+        """
+
+        assert mode in ('FA', 'LFI')
+        if mode == 'LFI':
+            raise epygramError('that does not work yet ! Soon...')
+            self.close()
+            from epygram.formats import resource
+            lfi = resource(self.container.abspath, 'r', fmt='LFI')
+            _level = epylog.getEffectiveLevel()
+            epylog.setLevel('WARNING')
+            for r in ('CADRE-DIMENSIONS',
+                      'CADRE-FRANKSCHMI',
+                      'CADRE-REDPOINPOL',
+                      'CADRE-FOCOHYBRID',
+                      'CADRE-SINLATITUD',
+                      'DATE-DES-DONNEES',
+                      'DATX-DES-DONNEES'):
+                f = lfi.readfield(r)
+                out.write(r + '\n')
+                out.write(str(f) + '\n')
+                out.write('\n')
+            epylog.setLevel(_level)
+            lfi.close()
+            self.open()
+        elif mode == 'FA':
+            vars_from_facies = ('KTYPTR', 'PSLAPO', 'PCLOPO', 'PSLOPO',
+                                'PCODIL', 'KTRONC',
+                                'KNLATI', 'KNXLON', 'KNLOPA', 'KNOZPA', 'PSINLA',
+                                'KNIVER', 'PREFER', 'PAHYBR', 'PBHYBR')
+            zvars = zip(vars_from_facies,
+                        wfa.wfacies(self._FAsoftware_cst['JPXPAH'],
+                                    self._FAsoftware_cst['JPXIND'],
+                                    self._FAsoftware_cst['JPXGEO'],
+                                    self._FAsoftware_cst['JPXNIV'],
+                                    self.headername)[:-1])
+            for v in zvars:
+                out.write(v[0] + '\n')
+                out.write(str(v[1]) + '\n')
+                out.write('\n')
+
+            KDATEF = wfa.wfadiex(self._unit)
+            out.write('KDATEF\n')
+            out.write(str(KDATEF) + '\n')
 
     def _read_geometry(self):
         """

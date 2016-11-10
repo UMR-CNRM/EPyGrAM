@@ -35,22 +35,22 @@ def runbasic(func, server_address=("0.0.0.0", 8080)):
 
             # we only use path, query
             env = {'wsgi.version': (1, 0)
-                   ,'wsgi.url_scheme': 'http'
-                   ,'wsgi.input': self.rfile
-                   ,'wsgi.errors': sys.stderr
-                   ,'wsgi.multithread': 1
-                   ,'wsgi.multiprocess': 0
-                   ,'wsgi.run_once': 0
-                   ,'REQUEST_METHOD': self.command
-                   ,'REQUEST_URI': self.path
-                   ,'PATH_INFO': path
-                   ,'QUERY_STRING': query
-                   ,'CONTENT_TYPE': self.headers.get('Content-Type', '')
-                   ,'CONTENT_LENGTH': self.headers.get('Content-Length', '')
-                   ,'REMOTE_ADDR': self.client_address[0]
-                   ,'SERVER_NAME': self.server.server_address[0]
-                   ,'SERVER_PORT': str(self.server.server_address[1])
-                   ,'SERVER_PROTOCOL': self.request_version
+                   , 'wsgi.url_scheme': 'http'
+                   , 'wsgi.input': self.rfile
+                   , 'wsgi.errors': sys.stderr
+                   , 'wsgi.multithread': 1
+                   , 'wsgi.multiprocess': 0
+                   , 'wsgi.run_once': 0
+                   , 'REQUEST_METHOD': self.command
+                   , 'REQUEST_URI': self.path
+                   , 'PATH_INFO': path
+                   , 'QUERY_STRING': query
+                   , 'CONTENT_TYPE': self.headers.get('Content-Type', '')
+                   , 'CONTENT_LENGTH': self.headers.get('Content-Length', '')
+                   , 'REMOTE_ADDR': self.client_address[0]
+                   , 'SERVER_NAME': self.server.server_address[0]
+                   , 'SERVER_PORT': str(self.server.server_address[1])
+                   , 'SERVER_PROTOCOL': self.request_version
                    }
 
             for http_header, http_value in self.headers.items():
@@ -67,17 +67,17 @@ def runbasic(func, server_address=("0.0.0.0", 8080)):
                 try:
                     try:
                         for data in result:
-                            if data: 
+                            if data:
                                 self.wsgi_write_data(data)
                     finally:
-                        if hasattr(result, 'close'): 
+                        if hasattr(result, 'close'):
                             result.close()
                 except socket.error, socket_err:
                     # Catch common network errors and suppress them
                     if (socket_err.args[0] in \
-                       (errno.ECONNABORTED, errno.EPIPE)): 
+                       (errno.ECONNABORTED, errno.EPIPE)):
                         return
-                except socket.timeout, socket_timeout: 
+                except socket.timeout, socket_timeout:
                     return
             except:
                 print >> web.debug, traceback.format_exc(),
@@ -97,7 +97,7 @@ def runbasic(func, server_address=("0.0.0.0", 8080)):
             else:
                 self.run_wsgi_app()
 
-        def wsgi_start_response(self, response_status, response_headers, 
+        def wsgi_start_response(self, response_status, response_headers,
                               exc_info=None):
             if (self.wsgi_sent_headers):
                 raise Exception \
@@ -122,8 +122,8 @@ def runbasic(func, server_address=("0.0.0.0", 8080)):
 
     class WSGIServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
         def __init__(self, func, server_address):
-            BaseHTTPServer.HTTPServer.__init__(self, 
-                                               server_address, 
+            BaseHTTPServer.HTTPServer.__init__(self,
+                                               server_address,
                                                WSGIHandler)
             self.app = func
             self.serverShuttingDown = 0
@@ -131,7 +131,7 @@ def runbasic(func, server_address=("0.0.0.0", 8080)):
     print "http://%s:%d/" % server_address
     WSGIServer(func, server_address).serve_forever()
 
-# The WSGIServer instance. 
+# The WSGIServer instance.
 # Made global so that it can be stopped in embedded mode.
 server = None
 
@@ -145,13 +145,14 @@ def runsimple(func, server_address=("0.0.0.0", 8080)):
     global server
     func = StaticMiddleware(func)
     func = LogMiddleware(func)
-    
+
     server = WSGIServer(server_address, func)
 
-    if server.ssl_adapter:
-        print "https://%s:%d/" % server_address
-    else:
-        print "http://%s:%d/" % server_address
+    #am: remove those prints
+    #if server.ssl_adapter:
+    #    print "https://%s:%d/" % server_address
+    #else:
+    #    print "http://%s:%d/" % server_address
 
     try:
         server.start()
@@ -164,29 +165,29 @@ def WSGIServer(server_address, wsgi_app):
     This function can be overwritten to customize the webserver or use a different webserver.
     """
     import wsgiserver
-    
+
     # Default values of wsgiserver.ssl_adapters uses cherrypy.wsgiserver
     # prefix. Overwriting it make it work with web.wsgiserver.
     wsgiserver.ssl_adapters = {
         'builtin': 'web.wsgiserver.ssl_builtin.BuiltinSSLAdapter',
         'pyopenssl': 'web.wsgiserver.ssl_pyopenssl.pyOpenSSLAdapter',
     }
-    
+
     server = wsgiserver.CherryPyWSGIServer(server_address, wsgi_app, server_name="localhost")
-        
+
     def create_ssl_adapter(cert, key):
         # wsgiserver tries to import submodules as cherrypy.wsgiserver.foo.
-        # That doesn't work as not it is web.wsgiserver. 
+        # That doesn't work as not it is web.wsgiserver.
         # Patching sys.modules temporarily to make it work.
         import types
         cherrypy = types.ModuleType('cherrypy')
         cherrypy.wsgiserver = wsgiserver
         sys.modules['cherrypy'] = cherrypy
         sys.modules['cherrypy.wsgiserver'] = wsgiserver
-        
+
         from wsgiserver.ssl_pyopenssl import pyOpenSSLAdapter
         adapter = pyOpenSSLAdapter(cert, key)
-        
+
         # We are done with our work. Cleanup the patches.
         del sys.modules['cherrypy']
         del sys.modules['cherrypy.wsgiserver']
@@ -199,7 +200,7 @@ def WSGIServer(server_address, wsgi_app):
         getattr(server, 'ssl_private_key', None)):
         server.ssl_adapter = create_ssl_adapter(server.ssl_certificate, server.ssl_private_key)
 
-    server.nodelay = not sys.platform.startswith('java') # TCP_NODELAY isn't supported on the JVM
+    server.nodelay = not sys.platform.startswith('java')  # TCP_NODELAY isn't supported on the JVM
     return server
 
 class StaticApp(SimpleHTTPRequestHandler):
@@ -224,12 +225,12 @@ class StaticApp(SimpleHTTPRequestHandler):
         environ = self.environ
 
         self.path = environ.get('PATH_INFO', '')
-        self.client_address = environ.get('REMOTE_ADDR','-'), \
-                              environ.get('REMOTE_PORT','-')
+        self.client_address = environ.get('REMOTE_ADDR', '-'), \
+                              environ.get('REMOTE_PORT', '-')
         self.command = environ.get('REQUEST_METHOD', '-')
 
         from cStringIO import StringIO
-        self.wfile = StringIO() # for capturing error
+        self.wfile = StringIO()  # for capturing error
 
         try:
             path = self.translate_path(self.path)
@@ -241,7 +242,7 @@ class StaticApp(SimpleHTTPRequestHandler):
                 self.start_response(self.status, self.headers)
                 raise StopIteration
         except OSError:
-            pass # Probably a 404
+            pass  # Probably a 404
 
         f = self.send_head()
         self.start_response(self.status, self.headers)
@@ -263,7 +264,7 @@ class StaticMiddleware:
     def __init__(self, app, prefix='/static/'):
         self.app = app
         self.prefix = prefix
-        
+
     def __call__(self, environ, start_response):
         path = environ.get('PATH_INFO', '')
         path = self.normpath(path)
@@ -279,24 +280,24 @@ class StaticMiddleware:
             path2 += "/"
         return path2
 
-    
+
 class LogMiddleware:
     """WSGI middleware for logging the status."""
     def __init__(self, app):
         self.app = app
         self.format = '%s - - [%s] "%s %s %s" - %s'
-    
+
         from BaseHTTPServer import BaseHTTPRequestHandler
         import StringIO
         f = StringIO.StringIO()
-        
+
         class FakeSocket:
             def makefile(self, *a):
                 return f
-        
+
         # take log_date_time_string method from BaseHTTPRequestHandler
         self.log_date_time_string = BaseHTTPRequestHandler(FakeSocket(), None, None).log_date_time_string
-        
+
     def __call__(self, environ, start_response):
         def xstart_response(status, response_headers, *args):
             out = start_response(status, response_headers, *args)
@@ -304,14 +305,14 @@ class LogMiddleware:
             return out
 
         return self.app(environ, xstart_response)
-             
+
     def log(self, status, environ):
         outfile = environ.get('wsgi.errors', web.debug)
         req = environ.get('PATH_INFO', '_')
         protocol = environ.get('ACTUAL_SERVER_PROTOCOL', '-')
         method = environ.get('REQUEST_METHOD', '-')
-        host = "%s:%s" % (environ.get('REMOTE_ADDR','-'), 
-                          environ.get('REMOTE_PORT','-'))
+        host = "%s:%s" % (environ.get('REMOTE_ADDR', '-'),
+                          environ.get('REMOTE_PORT', '-'))
 
         time = self.log_date_time_string()
 

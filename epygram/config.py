@@ -106,6 +106,9 @@ FA_fandax = True
 #: To avoid re-computing lons/lats of Gauss Grids from FA each time needed:
 #: makes ARPEGE profiles and section extraction times acceptable (< 1min).
 FA_buffered_gauss_grid = True
+#: Allow MOCAGE fields to have multiple validities in file; in which case the
+#: term is decoded from the fid[2:4]
+FA_allow_MOCAGE_multivalities = False
 
 #: LFA maximum number of fields
 LFA_max_num_fields = 1000
