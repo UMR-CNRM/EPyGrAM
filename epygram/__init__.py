@@ -92,7 +92,7 @@ import footprints
 
 __all__ = []
 
-__version__ = '1.1.7'
+__version__ = '1.2.0'
 
 __license__ = 'CeCILL-C'
 
