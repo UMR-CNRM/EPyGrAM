@@ -1,3 +1,7 @@
+// Copyright (c) Météo France (2016-)
+// This software is governed by the CeCILL-C license under French law.
+// http://www.cecill.info
+
 //Descripteurs des file/fields A et B
 //Clés : vortex_path, grib_param, format, local_path
 Adesc = {}

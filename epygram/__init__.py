@@ -98,7 +98,7 @@ __license__ = 'CeCILL-C'
 
 __authors__ = ['Alexandre Mary', 'Sébastien Riette']
 
-__contributors__ = ['Stéphanie Faroux', ]
+__contributors__ = ['Stéphanie Faroux', 'Ghislain Faure']
 
 
 

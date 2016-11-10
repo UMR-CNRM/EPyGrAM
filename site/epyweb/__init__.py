@@ -1,5 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+# Copyright (c) Météo France (2016-)
+# This software is governed by the CeCILL-C license under French law.
+# http://www.cecill.info
 
 import os
 import json
@@ -23,6 +26,9 @@ import epygram
 from epygram import epylog
 import usevortex
 
+
+__authors__ = ['Ghislain Faure', ]
+__contributors__ = ['Alexandre Mary', ]
 
 
 # Vortex cache
