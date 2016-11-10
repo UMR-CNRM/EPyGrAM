@@ -904,7 +904,7 @@ class FA(FileResource):
                 validity = self.validity.deepcopy()
                 validity.set(statistical_process_on_duration=inquire_field_dict(fieldname).get('typeOfStatisticalProcessing', None))
             # MOCAGE surface fields: different terms can be stored in one file !
-            if all([config.FA_allow_MOCAGE_multivalities,
+            if all([config.FA_allow_MOCAGE_multivalidities,
                     fieldname[0:2] in ('SF', 'EM', 'DV'),
                     all([c.isdigit() for c in fieldname[2:4]])]
                    ):
