@@ -41,6 +41,7 @@ FA
 .. autodata:: FA_field_dictionaries_csv
 .. autodata:: FA_fandax
 .. autodata:: FA_buffered_gauss_grid
+.. autodata:: FA_allow_MOCAGE_multivalidities
 
 LFA
 ...

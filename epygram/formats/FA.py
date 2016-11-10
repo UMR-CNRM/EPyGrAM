@@ -1766,10 +1766,6 @@ class FA(FileResource):
         cumulativeduration = datetime.timedelta(seconds=cumulativeduration_in_seconds)
 
         self.validity = FieldValidity(basis=basis, term=term, cumulativeduration=cumulativeduration)
-        if int(KDATEF[7]) == 1:
-            self.validity.multi = True
-        else:
-            self.validity.multi = False
 
     @FileResource._openbeforedelayed
     def _set_validity(self, termunit='hours'):

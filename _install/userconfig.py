@@ -10,3 +10,5 @@
 #usercolormaps = {'my_cmap':'/path/to/my_cmap.cmap'}
 #implemented_formats = ['netCDF', 'GRIB', 'GeoPoints', 'TIFFMF'] # to deactivate arpifs4py and so do not need its installation
 
+#FA_allow_MOCAGE_multivalities = True
+#init_at_import = True
