@@ -25,15 +25,15 @@ Bdesc["graphicmode"] = "colorshades";
 var slidenumber = 0;
 
 //On force le recalcul du basemap à chaque rechargement de la page
-var new_pickle = true;
+var basemap_pickle_name = generateUUID()+"_bm.cPickle";
 
 //VORTEX SUGGESTIONS 
 var vortex_autocomplete = {} ;
 vortex_autocomplete["vapp"] = ["arome", "aladin", "arpege"] ;
-vortex_autocomplete["vconf"] = ["france", "reunion", "indien", "polynesie", "caledonie","antilles","guyane"] ;
-vortex_autocomplete["model"] = ["arome", "aladin","surfex"] ;
-vortex_autocomplete["geometry"] = ["reunionsp","indiensp", "polynesiesp", "caledoniesp","antillessp","guyanesp","NCALED0025","INDIEN0025","GUYANE0025","ANTIL0025","POLYN0025"] ;
-vortex_autocomplete["kind"] = ["historic", "gridpoint"] ;
+vortex_autocomplete["vconf"] = ["3dvarfr", "reunion", "indien", "polynesie", "caledonie",
+                                "antilles","guyane", "4dvarfr", "pearp", "pefrance", "pifrance"] ;
+vortex_autocomplete["model"] = ["arome", "aladin","surfex", "arpege"] ;
+vortex_autocomplete["kind"] = ["historic", "gridpoint", "ic"] ;
 vortex_autocomplete["cutoff"] = ["assim", "production"] ;
 vortex_autocomplete["nativefmt"]  = ["fa", "grib"] ;
 vortex_autocomplete["namespace"]  = ["oper.multi.fr", "olive.multi.fr", "vortex.multi.fr", "vortex.cache.fr"] ;
@@ -118,6 +118,22 @@ var vortex_presets_resources = {
             cutoff: "",
             term: "",
             },
+ArpegeForecastGrib: {
+            vapp: "arpege",
+            vconf: "4dvarfr",
+            model: "arpege",
+            geometry: "ATOURX01",
+            kind: "gridpoint",
+            nativefmt: "grib"
+        },
+ArpegeForecastFA: {
+            vapp: "arpege",
+            vconf: "4dvarfr",
+            model: "arpege",
+            geometry: "globalsp2",
+            kind: "historic",
+            nativefmt: ""
+        },
 AromeFranceForecastGrib: {
             vapp: "arome",
             vconf: "france",
@@ -287,7 +303,7 @@ $(document).ready(function() {
             /*
              *g
              */
-
+	getGeometries();
     var prevDiv = $("#graphicplot0") //on garde l'historique du plot précédent pour décaler les dialogues contenant les figures
 
     //Variable with the zoom spinners characteristics
@@ -556,41 +572,41 @@ $(document).ready(function() {
 
 
     //Gestion du pickle en fonction des choix de tracé :
-    //new_pickle = true quand il faut le retracer
+    //basemap_pickle_name = generateUUID()+"_bm.cPickle"; quand il faut le retracer
     //pour le zoom, on en profite pour l'activer automatiquement
     $("#gisquality").selectmenu({
         change: function() {
-            new_pickle = true;
+            basemap_pickle_name = generateUUID()+"_bm.cPickle";
         }
     });
     $("#subzone").selectmenu({
         change: function() {
-            new_pickle = true;
+            basemap_pickle_name = generateUUID()+"_bm.cPickle";
         }
     });
     $("#specificproj").selectmenu({
         change: function() {
-            new_pickle = true;
+            basemap_pickle_name = generateUUID()+"_bm.cPickle";
         }
     });
     $("#zoom_east").on("focus", function() {
-        new_pickle = true;
+        basemap_pickle_name = generateUUID()+"_bm.cPickle";
         activateZoom();
     });
     $("#zoom_north").on("focus", function() { //old : spinner({change:function(){
-        new_pickle = true;
+        basemap_pickle_name = generateUUID()+"_bm.cPickle";
         activateZoom();
     });
     $("#zoom_west").on("focus", function() {
-        new_pickle = true;
+        basemap_pickle_name = generateUUID()+"_bm.cPickle";
         activateZoom();
     });
     $("#zoom_south").on("focus", function() {
-        new_pickle = true;
+        basemap_pickle_name = generateUUID()+"_bm.cPickle";
         activateZoom();
     });
     $("#active_zoom").change(function() {
-        new_pickle = true;
+        basemap_pickle_name = generateUUID()+"_bm.cPickle";
     });
     
     
@@ -602,7 +618,7 @@ $(document).ready(function() {
                 //alert(key);
                 zoom_spinner[key].spinner("value", zoom_presets_zones[data.item.value][key]);
             }
-             new_pickle = true;
+             basemap_pickle_name = generateUUID()+"_bm.cPickle";
              activateZoom();
         }
     });
@@ -655,7 +671,7 @@ $("#getplot").click(function() {
 
             //Pour entête boite de dialogue
             //label = $("#field").val();
-            label = $("#experiment").val() ;
+            label = $("#experiment").val() + $("#suite").val() ;
 
             //Si demandé recherche des min/max
             if ($("#autoupdate").prop('checked') == true) {
@@ -699,7 +715,7 @@ $("#getplot").click(function() {
 
             args_plot["graphicmode"] = {}
             args_plot["graphicmode"]["A"] = Adesc["graphicmode"];
-            args_plot["new_pickle"] = new_pickle;
+            args_plot["basemap_pickle_name"] = basemap_pickle_name;
             
             var args_plot_json = JSON.stringify(args_plot);
             //console.log(args_plot);
@@ -732,7 +748,7 @@ $("#getplot").click(function() {
             });
 
             //Pas besoin d'un nouveau pickle sauf exceptions listées plus haut
-            new_pickle = "false";
+            //new_pickle = "false";
         }
     });
 
@@ -755,7 +771,7 @@ $("#overlay").click(function() {
 
             //Pour entête boite de dialogue
             //label = "Overlay " + $("#field").val(); 
-            label = $("#experiment_cloned").val() + " on top of " + $("#experiment").val();
+            label = $("#experiment_cloned").val()+ $("#suite_cloned").val() + " on top of " + $("#experiment").val()+ $("#suite").val();
 
             //Si demandé recherche des min/max
             if ($("#autoupdate").prop('checked') == true) {
@@ -858,7 +874,7 @@ $("#difference").click(function() {
 
             //Pour entête boite de dialogue
             //label = "Difference " + $("#field").val();
-            label = $("#experiment_cloned").val() + " - " + $("#experiment").val();
+            label = $("#experiment_cloned").val()+ $("#suite_cloned").val() + " - " + $("#experiment").val()+ $("#suite").val();
 
             //Si demandé recherche des min/max
             if ($("#autoupdate").prop('checked') == true) {
@@ -945,7 +961,7 @@ $("#getplotboth").click(function() {
             $("#getplotboth").prop("disabled", true);
 
             //Pour entête boite de dialogue
-            label = $("#experiment").val() + " (left) vs " + $("#experiment_cloned").val() + " (right)"; // + $("#field").val(); 
+            label = $("#experiment").val()+ $("#suite_cloned").val() + " (left) vs " + $("#experiment_cloned").val()+ $("#suite").val() + " (right)"; 
 
             //Si demandé recherche des min/max
             if ($("#autoupdate").prop('checked') == true) {
@@ -1738,7 +1754,26 @@ function updateCacheSize() {
             },
         });
     };
-    
+
+function getGeometries() {
+
+        $.ajax({
+            type: "POST",
+            async: true,
+            url: "/getGeometries",
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function(myAnswer) {
+                //On garde la valeur precedente en memoire
+                //previous_desc = $('#vortex_description' + suffixe + ' span').text()
+                //alert(myAnswer[1]);
+                MakeAutoComplete("#geometry", myAnswer);
+               },
+            error: function(response) {
+                console.log("Erreur !!" + response.responseText);
+            },
+        });
+    };    
 
 //Passer A ou B ["suffixe"] ?
 function CreateVortexArgs(mymode,suffixe) {
@@ -1853,6 +1888,18 @@ function SmartGribSelect(oneDesc) {
                 MakeAutoComplete("#field_v" + oneDesc["suffixe"],ListeParam);
                 MakeAutoComplete("#TypeOfLevel" + oneDesc["suffixe"],ListeTypeLevel);
                 MakeAutoComplete("#Level" + oneDesc["suffixe"],ListeLevel);
+                
+                if ($.inArray($("#field" + oneDesc["suffixe"]).val(), ListeParam) == -1)
+                      { $("#field" + oneDesc["suffixe"]).addClass("fieldnothere"); }
+                else  { $("#field" + oneDesc["suffixe"]).removeClass("fieldnothere"); }
+
+                if ($.inArray($("#TypeOfLevel" + oneDesc["suffixe"]).val(), ListeTypeLevel) == -1)
+                      { $("#TypeOfLevel" + oneDesc["suffixe"]).addClass("fieldnothere"); }
+                else  { $("#TypeOfLevel" + oneDesc["suffixe"]).removeClass("fieldnothere"); }
+
+                if ($.inArray($("#Level" + oneDesc["suffixe"]).val(), ListeLevel) == -1)
+                      { $("#Level" + oneDesc["suffixe"]).addClass("fieldnothere"); }
+                else  { $("#Level" + oneDesc["suffixe"]).removeClass("fieldnothere"); }
             }
             
     
@@ -1953,9 +2000,9 @@ function ParameterPreset(param,suffixe) {
 function VortexAutoCompleteInit(suffixe) {
         
         $.each(vortex_autocomplete, function(key, val) {
-            $("#" + key + suffixe).autocomplete({
-                source: vortex_autocomplete[key]
-            });
+            MakeAutoComplete("#" + key + suffixe,val);
+            //$("#" + key + suffixe).autocomplete({
+            //    source: vortex_autocomplete[key]
         });
 }            
 
@@ -2425,3 +2472,13 @@ function makeTabTitle(args_json,objId) {
     //alert(JSON.stringify(args_vortex_get_json,null,2))
                 
             }
+
+function generateUUID() {
+    var d = new Date().getTime();
+    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = (d + Math.random()*16)%16 | 0;
+        d = Math.floor(d/16);
+        return (c=='x' ? r : (r&0x3|0x8)).toString(16);
+    });
+    return uuid;
+};

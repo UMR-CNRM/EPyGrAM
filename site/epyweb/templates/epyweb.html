@@ -40,14 +40,15 @@ $var cssfiles:
 							<legend>Resource</legend>
 							<table>
 								<tr>
+								    <td>
+										<label for="model" id="model_label">MODEL : </label>
+										<input id="model" style="width:100px" title="MODEL" class="vortex"></input>
+									</td>
 									<td label="application">
 										<label for="vapp" id="vapp_label">VAPP : </label>
 										<input id="vapp" style="width:100px" title="VAPP" class="vortex vapp"></input>
 									</td>
-									<td>
-										<label for="model" id="model_label">MODEL : </label>
-										<input id="model" style="width:100px" title="MODEL" class="vortex"></input>
-									</td>
+									
 									<td>
 										<label for="vconf" id="vconf_label">VCONF : </label>
 										<input id="vconf" style="width:100px" title="VCONF" class="vortex"></input>
@@ -62,41 +63,36 @@ $var cssfiles:
 										<label for="kind" id="kind_label">KIND : </label>
 										<input id="kind" style="width:100px" title="KIND" class="vortex kind"></input>
 									</td>
-									<td>
-										<label for="date" id="date_label">DATE : </label>
-										<input id="date" style="width:100px" title="Date format : YYYYMMDDHH ; loop : Date1-Date2-HH" class="vortex"></input>
+									<td width="100px">
+										<label for="nativefmt" id="nativefmt_label">NATIVEFMT : </label>
+										<input id="nativefmt" style="width:100px" title="NATIVEFMT" class="vortex"></input>
 									</td>
 									<td>
 										<label for="cutoff" id="cutoff_label">CUTOFF : </label>
 										<input id="cutoff" style="width:100px" title="CUTOFF" class="vortex"></input>
+									</td>
+								</tr>
+							</table>
+							<table>
+								<tr>
+									<td>
+										<label for="date" id="date_label">DATE : </label>
+										<input id="date" style="width:215px" title="Date format : YYYYMMDDHH ; loop : Date1-Date2-HH" class="vortex"></input>
 									</td>
 									<td>
 										<label for="term" id="term_label">TERM : </label>
 										<input id="term" style="width:100px" title="Term format : HH ; loop : term1-term2-HH" class="vortex"></input>
 									</td>
 								</tr>
-								<tr>
-									<td width="100px">
-										<label for="nativefmt" id="nativefmt_label">NATIVEFMT : </label>
-										<input id="nativefmt" style="width:100px" title="NATIVEFMT" class="vortex"></input>
-									</td>
-									<td width="100px">
-										<label for="memberfmt" id="memberfmt_label">MEMBER : </label>
-										<input id="memberfmt" style="width:100px" title="MEMBER" class="vortex"></input>
-									</td>
-									<td width="100px">
-										<label for="month" id="month_label">MONTH : </label>
-										<input id="month" style="width:100px" title="MONTH" class="vortex"></input>
-									</td>
-
-								</tr>
-								<!--  <div class="ui-widget">
-            <button id="vortexdefauts_reunion" title="Aladin reunion" type="button">Aladin Reun</button>
-        </div> -->
+								
 							</table>
 							<label for="vortex_preset_resources">Presets</label>
 							<select id="vortex_preset_resources">
 								<option value="ClearAll">None</option>
+								<optgroup label="Arpege">
+									<option value="ArpegeForecastGrib">forecast (grib)</option>
+									<option value="ArpegeForecastFA">forecast (fa)</option>
+								</optgroup>
 								<optgroup label="Arome France">
 									<option value="AromeFranceForecastGrib">forecast (grib)</option>
 									<option value="AromeFranceForecastFA">forecast (fa)</option>
@@ -150,6 +146,10 @@ $var cssfiles:
 									<td width="100px">
 										<label for="genv" id="genv_label">GENV : </label>
 										<input id="genv" style="width:100px" title="GENV" class="vortex"></input>
+									</td>
+									<td width="100px">
+										<label for="member" id="member_label">MEMBER : </label>
+										<input id="member" style="width:100px" title="MEMBER" class="vortex"></input>
 									</td>
 
 

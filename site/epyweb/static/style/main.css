@@ -23,7 +23,7 @@
 
 fieldset{background:white;}
 
-.shy{background:rgba(255,0,0,0.1);}
+.shy{background:rgba(0,0,255,0.1);}
 .shywhite{background:white;}
 
 #tabs_plot{background:white;}
@@ -47,6 +47,14 @@ fieldset{background:white;}
 
 .higlight {
     background: #CEECF5;
+}
+
+.fieldnothere{
+        background-color:#ffcccc;
+}
+
+.fieldhere{
+        background-color:#ccffcc;
 }
 
 .table_large {

@@ -25,6 +25,7 @@ from opinel import interrupt
 import epygram
 from epygram import epylog
 import usevortex
+import vortex
 
 
 __authors__ = ['Ghislain Faure', ]
@@ -84,6 +85,8 @@ urls = (
     'getminmaxasjson',
     '/getCacheSize',
     'getCacheSize',
+    '/getGeometries',
+    'getGeometries',
     '/GetPNG/(.+)',
     'GetPNG'
     )
@@ -100,6 +103,10 @@ class getCacheSize:
         except:
             return "Error in cache size retrieval"
 
+class getGeometries:
+    """Return the list of existing geometries"""
+    def POST(self):
+        return json.dumps(vortex.data.geometries.keys())
 
 class index:
     def GET(self):
@@ -193,7 +200,7 @@ class getFile:
                     # Rapatriement + nom local
                     ressources = usevortex.get_resources(getmode='fetch',
                                                          local=os.path.join(epyweb_workdir,
-                                                                            '_'.join(["[date::ymdh]",
+                                                                            '.'.join(["[date::ymdh]",
                                                                                       "[term]",
                                                                                       fromid,
                                                                                       str(uuid.uuid4())
@@ -213,7 +220,7 @@ class getminmax:
             fichier = getAjaxArg('file')
             champ = getAjaxArgSmart('field')
             champ_v = getAjaxArg('field_v')
-            #subzone = getAjaxArg('subzone')  #TODO: ajouter subzone dans l'appel à stats() ?
+            subzone = getAjaxArg('subzone')  #TODO: ajouter subzone dans l'appel à stats() ?
             FF = getAjaxArg('FF')
             ope = getAjaxArg('operation')
             #string vs unicode problems...
@@ -228,6 +235,8 @@ class getminmax:
             resource = epygram.formats.resource(fichier, 'r')
             stats = {}
             field = resource.readfield(champ)
+            if not field.geometry.grid.get('LAMzone', False):
+                subzone = None
 
             if field.spectral:
                 field.sp2gp()
@@ -239,13 +248,13 @@ class getminmax:
                     field_v.sp2gp()
                 vectwind = epygram.fields.make_vector_field(field, field_v)
                 FF_field = vectwind.to_module()
-                stats['min'] = FF_field.stats()['min']
-                stats['max'] = FF_field.stats()['max']
+                stats['min'] = FF_field.min(subzone=subzone)
+                stats['max'] = FF_field.max(subzone=subzone)
                 del field_v
                 del FF_field
             else:
-                stats['min'] = field.stats()['min']
-                stats['max'] = field.stats()['max']
+                stats['min'] = field.min(subzone=subzone)
+                stats['max'] = field.max(subzone=subzone)
             resource.close()
 
             return json.dumps(stats)
@@ -321,7 +330,7 @@ class myplot:
                     print ("Warning unicode")
 
             existingfigure = (None, None)  #New figure (= no overlay)
-            new_pickle = getAjaxArgSmart('new_pickle')
+            basemap_pickle_name = getAjaxArgSmart('basemap_pickle_name')
 
             monzoom = getAjaxArgSmart('monzoom')
 
@@ -332,12 +341,12 @@ class myplot:
             getcode = getAjaxArgSmart('getcode')
             dpi = getAjaxArgSmart('dpi')
 
-            try:
-                existingbasemap = cPickle.load(open(basemap_pickle_path, 'r'))
-                if not isinstance(existingbasemap, Basemap):
-                    raise Exception('no valid Basemap in pickle.')
-            except Exception:
-                existingbasemap = None
+            existingbasemap = None
+            if os.path.exists(os.path.join(epyweb_workdir, basemap_pickle_name)):
+                _existingbasemap = cPickle.load(open(os.path.join(epyweb_workdir,
+                                                                  basemap_pickle_name), 'r'))
+                if isinstance(_existingbasemap, Basemap):
+                    existingbasemap = _existingbasemap
 
             #Attention, decuml marche bien entre échéances mais actif aussi entre dates !!
             #Pas (encore ?) pour OVERLAY et DIFF
@@ -381,23 +390,27 @@ class myplot:
                         indiceDecumul = +1
                         continue
 
-                    if decumul[cle] == True:
+                    if decumul[cle]:
                             waitforme = field
                             try:  #Cas des RR @0h : param n'erxiste pas
+                                validity = field.validity
+                                fid = field.fid
                                 field = field - fieldDecumul
+                                field.validity = validity
+                                field.fid = fid
                             except Exception:
                                 pass
                             fieldDecumul = waitforme
 
-                    if existingbasemap == None or new_pickle == True:
+                    if existingbasemap is None:
                         print 'Actually niou pickle !'
-                        existingbasemap = \
-                            field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
-                                subzone=myplot_args["subzone"], specificproj=myplot_args["specificproj"],
-                                zoom=monzoom)
-                        cPickle.dump(existingbasemap, open(basemap_pickle_path, 'w'))
+                        existingbasemap = field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
+                                                                      subzone=myplot_args["subzone"],
+                                                                      specificproj=myplot_args["specificproj"],
+                                                                      zoom=monzoom)
+                        cPickle.dump(existingbasemap, open(os.path.join(epyweb_workdir,
+                                                                        basemap_pickle_name), 'w'))
                         #On réutilise le cache
-                        new_pickle = False
 
                     myplot = MakeMyPlot(resource, field, cle, champ, champ_v, FF, vecteurs, existingbasemap, existingfigure, vectors_subsampling, myplot_args)
 
@@ -407,13 +420,13 @@ class myplot:
 
                     # Utilisation d'un nom unique par image, dans un répertoire fixe
                     try:
-                        myunikname = os.path.basename(fichier) + "_" + "_".join("=".join((str(k), str(v))) for k, v in champ[cle].iteritems())
-                    except:
-                        myunikname = os.path.basename(fichier) + "_" + str(champ[cle])
+                        myunikname = os.path.basename(fichier) + "." + ".".join("=".join((str(k), str(v))) for k, v in champ[cle].iteritems())
+                    except Exception:
+                        myunikname = os.path.basename(fichier) + "." + str(champ[cle].replace(' ', '_'))
 
                     #On rajoute un petit uuid en cas de rafraichissement d'image
                     myunikfile = os.path.join(epyweb_workdir,
-                                              myunikname + "_" + local_uuid + '.png')
+                                              myunikname + "." + local_uuid + '.png')
                     print("Saving figure ", myunikfile)
                     myplot[0].savefig(myunikfile, dpi=dpi, bbox_inches='tight')
 
@@ -479,7 +492,7 @@ class myplot_overlay:
                     print ("Warning unicode")
 
             existingfigure = (None, None)
-            new_pickle = getAjaxArgSmart('new_pickle')
+            basemap_pickle_name = getAjaxArgSmart('basemap_pickle_name')
 
             monzoom = getAjaxArgSmart('monzoom')
 
@@ -488,19 +501,16 @@ class myplot_overlay:
             vecteurs = getAjaxArgSmart('vecteurs')
             vectors_subsampling = getAjaxArgSmart('vectors_subsampling')
 
-            #getcode = getAjaxArgSmart('getcode')  #TODO: useless ?
             dpi = getAjaxArgSmart('dpi')
 
             operation = getAjaxArgSmart('operation')
 
-            try:
-                existingbasemap = cPickle.load(open(basemap_pickle_path, 'r'))
-                if not isinstance(existingbasemap, Basemap):
-                    raise Exception('no valid Basemap in pickle.')
-            except Exception:
-                existingbasemap = None
-
-            #out = {}  #TODO: cleanme ?
+            existingbasemap = None
+            if os.path.exists(os.path.join(epyweb_workdir, basemap_pickle_name)):
+                _existingbasemap = cPickle.load(open(os.path.join(epyweb_workdir,
+                                                                  basemap_pickle_name), 'r'))
+                if isinstance(_existingbasemap, Basemap):
+                    existingbasemap = _existingbasemap
 
             #loop sur files["A"] puis concordance avec file["B"]
             liste_tmp = []
@@ -516,15 +526,14 @@ class myplot_overlay:
                 if "A" in operation:
                     field = CheckForOperation(operation["A"], field)
 
-                if existingbasemap == None or new_pickle == True:
-                        print 'Actually niou pickle !'
-                        existingbasemap = \
-                            field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
-                                subzone=myplot_args["subzone"], specificproj=myplot_args["specificproj"],
-                                zoom=monzoom)
-                        cPickle.dump(existingbasemap, open(basemap_pickle_path, 'w'))
-                        #On ne le calcule que pour la 1ere itération de la boucle
-                        new_pickle = False
+                if existingbasemap is None:
+                    print 'Actually niou pickle !'
+                    existingbasemap = field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
+                                                                  subzone=myplot_args["subzone"],
+                                                                  specificproj=myplot_args["specificproj"],
+                                                                  zoom=monzoom)
+                    cPickle.dump(existingbasemap, open(basemap_pickle_path, 'w'))
+                    #On ne le calcule que pour la 1ere itération de la boucle
 
                 myplot_1 = MakeMyPlot(resource, field, "A", champ, champ_v, FF, vecteurs, existingbasemap, existingfigure, vectors_subsampling, myplot_args)
 
@@ -545,14 +554,14 @@ class myplot_overlay:
                 myplot = MakeMyPlot(resource, field, "B", champ, champ_v, FF, vecteurs, None, myplot_1, vectors_subsampling, myplot_args)
 
                 try:
-                    myunikname = os.path.basename(fichier) + "_" + "_".join("=".join((str(k), str(v))) for k, v in champ[cle].iteritems())
+                    myunikname = os.path.basename(fichier) + "." + ".".join("=".join((str(k), str(v))) for k, v in champ[cle].iteritems())
                 except Exception:
                     myunikname = str(uuid.uuid4())
 
 
                 #On rajoute un petit uuid en cas de rafraichissement d'image
                 myunikfile = os.path.join(epyweb_workdir,
-                                          myunikname + "_" + local_uuid + '.png')
+                                          myunikname + "." + local_uuid + '.png')
                 myplot[0].savefig(myunikfile, dpi=dpi, bbox_inches='tight')
 
                 #SLIDE IMAGE STYLE
@@ -606,23 +615,22 @@ class myplot_diff:
             myplot_args = get_common_args("A")
 
             existingfigure = (None, None)
-            new_pickle = getAjaxArgSmart('new_pickle')
+            basemap_pickle_name = getAjaxArgSmart('basemap_pickle_name')
 
             monzoom = getAjaxArgSmart('monzoom')
             FF = getAjaxArgSmart('FF')
             vecteurs = getAjaxArgSmart('vecteurs')
-            #vectors_subsampling = getAjaxArgSmart('vectors_subsampling') #TODO: useless ou à rajouter ?
             getcode = getAjaxArgSmart('getcode')
             dpi = getAjaxArgSmart('dpi')
 
             operation = getAjaxArgSmart('operation')
 
-            try:
-                existingbasemap = cPickle.load(open(basemap_pickle_path, 'r'))
-                if not isinstance(existingbasemap, Basemap):
-                    raise Exception('no valid Basemap in pickle.')
-            except Exception:
-                existingbasemap = None
+            existingbasemap = None
+            if os.path.exists(os.path.join(epyweb_workdir, basemap_pickle_name)):
+                _existingbasemap = cPickle.load(open(os.path.join(epyweb_workdir,
+                                                                  basemap_pickle_name), 'r'))
+                if isinstance(_existingbasemap, Basemap):
+                    existingbasemap = _existingbasemap
 
             out2 = []
 
@@ -644,13 +652,14 @@ class myplot_diff:
                     fieldB = CheckForOperation(operation["B"], fieldB)
                 field = fieldB - fieldA
 
-                if existingbasemap == None or new_pickle == True:
+                if existingbasemap is None:
                     print 'Actually niou pickle !'
                     existingbasemap = field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
-                        subzone=myplot_args["subzone"], specificproj=myplot_args["specificproj"], zoom=monzoom)
+                                                                  subzone=myplot_args["subzone"],
+                                                                  specificproj=myplot_args["specificproj"],
+                                                                  zoom=monzoom)
                     cPickle.dump(existingbasemap, open(basemap_pickle_path, 'w'))
                     #On ne le calcule que pour la 1ere itération de la boucle
-                    new_pickle = False
 
                 if (FF["A"] and FF["B"]) or (vecteurs["A"] and vecteurs["B"]):
                     fieldA_v = resourceA.readfield(champ_v["A"])
@@ -660,7 +669,6 @@ class myplot_diff:
                         fieldA_v.sp2gp()
                     if fieldB_v.spectral:
                         fieldB_v.sp2gp()
-                    #field_v = fieldB_v - fieldA_v  #TODO: cleanme ?
 
                     vectwindA = epygram.fields.make_vector_field(fieldA, fieldA_v)
                     FF_fieldA = vectwindA.to_module()
@@ -697,16 +705,15 @@ class myplot_diff:
 
                 # Utilisation d'un nom unique par image, dans un répertoire fixe
                 try:
-                    myunikname = os.path.basename(fichier) + "_" + "_".join("=".join((str(k), str(v))) for k, v in champ[cle].iteritems())
+                    myunikname = os.path.basename(fichier) + "." + ".".join("=".join((str(k), str(v))) for k, v in champ[cle].iteritems())
                 except Exception:
                     myunikname = str(uuid.uuid4())
                 #On rajoute un petit uuid en cas de rafraichissement d'image
                 myunikfile = os.path.join(epyweb_workdir,
-                                          myunikname + "_" + local_uuid + '.png')
+                                          myunikname + "." + local_uuid + '.png')
                 myplot[0].savefig(myunikfile, dpi=dpi, bbox_inches='tight')
 
                 #SLIDE IMAGE STYLE
-                out2.append(myunikfile)
                 out2.append('/GetPNG/' + os.path.basename(myunikfile))
 
                 print("Closing figure...")
@@ -728,21 +735,6 @@ class myplot_diff:
         except:
             raise
             print("Erreur 3615 diff")
-
-
-def whichMinMax(fichier, champ):
-    try:
-        #subzone = None  #TODO: init + appel à stats() ?
-        resource = epygram.formats.resource(fichier, 'r')
-        field = resource.readfield(champ)
-        resource.close()
-        if field.spectral:
-            field.sp2gp()
-
-        return field.stats()
-
-    except Exception, ex:
-        print ex.__str__()
 
 
 def getAjaxArg(sArg, sDefault=''):

@@ -459,7 +459,7 @@ def plotprofiles(profiles,
     fig, ax = util.set_figax(*over, figsize=(6., 9.))
     if logscale:
         ax.set_yscale('log')
-    if reverseY:
+    if reverseY and not ax.yaxis_inverted():
         ax.invert_yaxis()
     i = 0
     for p in profiles:

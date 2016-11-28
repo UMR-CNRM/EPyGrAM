@@ -913,7 +913,7 @@ class GRIBmessage(RecursiveObject, dict):
         cum = None
         if self['stepUnits'] == 1:
             timeunitfactor = 3600
-        if self['timeRangeIndicator'] in (0, 1, 2, 4):
+        if self['timeRangeIndicator'] in (0, 1, 2, 4, 10):
             term = self['endStep']
             term = datetime.timedelta(seconds=term * timeunitfactor)
             if self['timeRangeIndicator'] in (2, 4) or self['productDefinitionTemplateNumber'] == 8:
