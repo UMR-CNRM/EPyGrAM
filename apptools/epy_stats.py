@@ -149,8 +149,8 @@ def main(filename,
     singlemap = {'min':'min', 'max':'max', 'mean':'mean', 'std':'std', 'bias':None, 'rmsd':None, 'quadmean':'quadmean', 'nonzero':'nonzero'}
     diffmap = {'min':'min', 'max':'max', 'mean':None, 'std':None, 'bias':'mean', 'rmsd':'quadmean', 'nonzero':'nonzero'}
     suffix = "stats.out"
-    if field.geometry.grid.get('LAMzone', False):
-        suffix = '.'.join([subzone, suffix])
+    #if field.geometry.grid.get('LAMzone', False):
+    #    suffix = '.'.join([str(subzone), suffix])
     if not diffmode:
         printlist = fidlist
         printlist.sort()

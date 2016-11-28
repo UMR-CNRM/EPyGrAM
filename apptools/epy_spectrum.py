@@ -272,8 +272,8 @@ def main(filename,
     # Output
     epylog.info("save output...")
     suffix = "spectrum.out"
-    if field.geometry.grid.get('LAMzone', False):
-        suffix = '.'.join([subzone, suffix])
+    #if field.geometry.grid.get('LAMzone', False):
+    #    suffix = '.'.join([str(subzone), suffix])
     # spectra
     if not diffmode:
         spectratosave = spectra

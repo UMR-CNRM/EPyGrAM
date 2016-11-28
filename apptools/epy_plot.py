@@ -327,7 +327,8 @@ def main(filename,
             title = resource.container.basename + " - " + reference.container.basename + " : " + str(fieldseed)
         diff = field - reffield
         if bm == None:
-            bm = diff.geometry.make_basemap(subzone=subzone, specificproj=specificproj,
+            bm = diff.geometry.make_basemap(subzone=subzone,
+                                            specificproj=specificproj,
                                             zoom=zoom)
         if diffoperation is not None:
             diff.operation(**diffoperation)
@@ -355,8 +356,8 @@ def main(filename,
     if output:
         epylog.info("save plots...")
         suffix = '.'.join(['plot', output])
-        if field.geometry.grid.get('LAMzone', False):
-            suffix = '.'.join([subzone, suffix])
+        #if field.geometry.grid.get('LAMzone', False):
+        #    suffix = '.'.join([str(subzone), suffix])
         parameter = epygram.util.linearize2str(fieldseed)
         # main resource
         if not diffonly:

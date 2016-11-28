@@ -646,15 +646,15 @@ class D3RectangularGridGeometry(D3Geometry):
             selectionE.append(slice(None))
             selectionI.append(slice(None))
         if self.datashape['j']:
-            y1 = self.dimensions['Y_CIoffset']
-            y2 = self.dimensions['Y_CIoffset'] + self.dimensions['Y_CIzone']
+            y1 = self.dimensions.get('Y_CIoffset', 0)
+            y2 = self.dimensions.get('Y_CIoffset', 0) + self.dimensions['Y_CIzone']
             selectionE.append(slice(y1, y2))
             y1 = self.dimensions['Y_Iwidth']
             y2 = -self.dimensions['Y_Iwidth']
             selectionI.append(slice(y1, y2))
         if self.datashape['i']:
-            x1 = self.dimensions['X_CIoffset']
-            x2 = self.dimensions['X_CIoffset'] + self.dimensions['X_CIzone']
+            x1 = self.dimensions.get('X_CIoffset', 0)
+            x2 = self.dimensions.get('X_CIoffset', 0) + self.dimensions['X_CIzone']
             selectionE.append(slice(x1, x2))
             x1 = self.dimensions['X_Iwidth']
             x2 = -self.dimensions['X_Iwidth']
@@ -2980,7 +2980,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
             if arpifs_var_names: varname = ' (ELON0)'
             write_formatted(out, "Reference Longitude in deg" + varname,
                             projection['reference_lon'].get('degrees'))
-        if self.grid['LAMzone'] is None:
+        if self.grid.get('LAMzone', False):
             (lons, lats) = self.get_lonlat_grid()
             corners = self.gimme_corners_ll()
         else:
