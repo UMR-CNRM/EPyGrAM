@@ -2108,7 +2108,7 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
                 obj.grid.pop('input_lat', None)
                 obj.grid.pop('input_position', None)
                 obj._proj = None
-            ok = super(D3ProjectedGeometry, selfcp).__eq__(othercp)
+            ok = super(D3RegLLGeometry, selfcp).__eq__(othercp)
         else:
             ok = False
         return ok

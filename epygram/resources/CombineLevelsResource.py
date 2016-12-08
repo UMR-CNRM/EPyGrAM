@@ -14,6 +14,7 @@ import numpy
 from footprints import FPDict, proxy as fpx
 
 from epygram.base import Resource, FieldSet
+from epygram.util import fmtfid
 from epygram import epygramError
 
 
@@ -92,7 +93,9 @@ class CombineLevelsResource(Resource):
 
         # Loop over the low level resource fids
         for fid in self.resource.listfields(complete=True):
-            original_fid = fid[self.resource.format]
+            assert 'generic' in fid.keys(), \
+                   "Not able to combine levels if fields do not have 'generic' fids"
+            original_fid = fid[fmtfid(self.resource.format, fid)]
             generic_fid = fid['generic']
             level = generic_fid.pop('level', None)  # we suppress level from generic_fid
             hashable_generic_fid = tuple([(k, generic_fid[k]) for k in sorted(generic_fid.keys())])
@@ -286,7 +289,8 @@ class CombineLevelsResource(Resource):
                     kwargs_field['structure'] = kwargs_geom['structure']
                     kwargs_field['spectral_geometry'] = None
                     new_field = fpx.field(**kwargs_field)
-                    new_field.setdata(new_field.geometry.reshape_data(data, len(fields[0].validity)))
+                    #new_field.setdata(new_field.geometry.reshape_data(data, first_dimension=first_dimension))  #TODO: remove
+                    new_field.setdata(data)
                     new_field.fid[self.format] = fid
                     fieldset.append(new_field)
         return fieldset

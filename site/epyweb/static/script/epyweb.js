@@ -117,6 +117,7 @@ var vortex_presets_resources = {
             date: "",
             cutoff: "",
             term: "",
+            member: ""
             },
 ArpegeForecastGrib: {
             vapp: "arpege",
@@ -124,7 +125,8 @@ ArpegeForecastGrib: {
             model: "arpege",
             geometry: "ATOURX01",
             kind: "gridpoint",
-            nativefmt: "grib"
+            nativefmt: "grib",
+            member: ""
         },
 ArpegeForecastFA: {
             vapp: "arpege",
@@ -132,7 +134,18 @@ ArpegeForecastFA: {
             model: "arpege",
             geometry: "globalsp2",
             kind: "historic",
-            nativefmt: ""
+            nativefmt: "",
+            member: ""
+        },
+PearpGrib: {
+            vapp: "arpege",
+            vconf: "pearp",
+            model: "arpege",
+            geometry: "GLOB05",
+            kind: "gridpoint",
+            nativefmt: "grib",
+            cutoff: "production",
+            member: "1"
         },
 AromeFranceForecastGrib: {
             vapp: "arome",
@@ -140,7 +153,8 @@ AromeFranceForecastGrib: {
             model: "arome",
             geometry: "FRANGP0025",
             kind: "gridpoint",
-            nativefmt: "grib"
+            nativefmt: "grib",
+            member: ""
         },
 AromeFranceForecastFA: {
             vapp: "arome",
@@ -148,34 +162,18 @@ AromeFranceForecastFA: {
             model: "arome",
             geometry: "franmgsp",
             kind: "historic",
-            nativefmt: ""
+            nativefmt: "",
+            member: ""
         },
-AladinReunionForecastGrib: {
-            vapp: "aladin",
-            vconf: "reunion",
-            model: "aladin",
-            geometry: "MASCA025",
+PearoGrib: {
+            vapp: "arome",
+            vconf: "pefrance",
+            model: "arome",
+            geometry: "FRANGP0025",
             kind: "gridpoint",
             nativefmt: "grib",
-            date: "2016020100",
             cutoff: "production",
-            term: "0-48-24"
-        },
-AladinReunionForecastFA: {
-            vapp: "aladin",
-            vconf: "reunion",
-            model: "aladin",
-            geometry: "reunionsp",
-            kind: "historic",
-            nativefmt: ""
-        },
-AromeAntillesForecastFA: {
-            vapp: "arome",
-            vconf: "antilles",
-            model: "arome",
-            geometry: "antillessp",
-            kind: "historic",
-            nativefmt: ""
+            member: "1"
         },
 AromeAntillesForecastGrib: {
             vapp: "arome",
@@ -184,9 +182,8 @@ AromeAntillesForecastGrib: {
             geometry: "ANTIL0025",
             kind: "gridpoint",
             nativefmt: "grib",
-            date: "2016101200",
             cutoff: "production",
-            term: "12-24-6"
+            member: ""
         },
 
 AromeCaledonieForecastGrib: {
@@ -196,9 +193,8 @@ AromeCaledonieForecastGrib: {
             geometry: "NCALED0025",
             kind: "gridpoint",
             nativefmt: "grib",
-            date: "2016051200",
             cutoff: "production",
-            term: "6-12-6"
+            member: ""
         },
 AromePolynesieForecastGrib: {
             vapp: "arome",
@@ -207,9 +203,8 @@ AromePolynesieForecastGrib: {
             geometry: "POLYN0025",
             kind: "gridpoint",
             nativefmt: "grib",
-            date: "2016051200",
             cutoff: "production",
-            term: "6-12-6"
+            member: ""
         },
 AromeIndienForecastGrib: {
             vapp: "arome",
@@ -218,9 +213,8 @@ AromeIndienForecastGrib: {
             geometry: "INDIEN0025",
             kind: "gridpoint",
             nativefmt: "grib",
-            date: "2016051200",
             cutoff: "production",
-            term: "6-12-6"
+            member: ""
         },
 AromeGuyaneForecastGrib: {
             vapp: "arome",
@@ -229,9 +223,8 @@ AromeGuyaneForecastGrib: {
             geometry: "GUYANE0025",
             kind: "gridpoint",
             nativefmt: "grib",
-            date: "2016051200",
             cutoff: "production",
-            term: "6-12-6"
+            member: ""
         },
 
     
@@ -304,6 +297,7 @@ $(document).ready(function() {
              *g
              */
 	getGeometries();
+	var currentday = $.datepicker.formatDate('yymmdd', new Date());
     var prevDiv = $("#graphicplot0") //on garde l'historique du plot précédent pour décaler les dialogues contenant les figures
 
     //Variable with the zoom spinners characteristics
@@ -345,6 +339,7 @@ $(document).ready(function() {
     $('#checkdescription').prop("disabled", false);
     $("#vortex_preset_resources").val('ClearAll');
     $("#vortex_preset_providers").val('ClearAll');
+    
 
 
     ///////// O T H E R  I N I T S ///////// 
@@ -427,6 +422,7 @@ $(document).ready(function() {
     $(".initcheckfalse").prop("checked", false);
     $("#field2").prop("disabled", true);
     $("#file2").prop("disabled", true);
+    $("#date").val(currentday + "00");
 
     //Gestion dynamique du champ (field) ou des champs (U et V)
     $("#field_v").prop("disabled", false);
@@ -819,7 +815,7 @@ $("#overlay").click(function() {
             args_plot_both["graphicmode"] = {}
             args_plot_both["graphicmode"]["A"] = Adesc["graphicmode"] ;
             args_plot_both["graphicmode"]["B"] = Bdesc["graphicmode"] ;
-            args_plot_both["new_pickle"] = new_pickle;
+            args_plot_both["basemap_pickle_name"] = basemap_pickle_name;
             
             
             var args_plot_both_json = JSON.stringify(args_plot_both);
@@ -851,7 +847,7 @@ $("#overlay").click(function() {
             });
 
             //Pas besoin d'un nouveau pickle sauf exceptions listées plus haut
-            new_pickle = "false";
+            //new_pickle = "false";
         }
         
 })
@@ -908,7 +904,7 @@ $("#difference").click(function() {
 
             args_plot_diff["graphicmode"] = {}
             args_plot_diff["graphicmode"]["A"] = Adesc["graphicmode"] ;
-            args_plot_diff["new_pickle"] = new_pickle;
+            args_plot_diff["basemap_pickle_name"] = basemap_pickle_name;
             
             
             var args_plot_diff_json = JSON.stringify(args_plot_diff);
@@ -939,7 +935,7 @@ $("#difference").click(function() {
             });
 
             //Pas besoin d'un nouveau pickle sauf exceptions listées plus haut
-            new_pickle = "false";
+            //new_pickle = "false";
         }
     });
 
@@ -1009,7 +1005,7 @@ $("#getplotboth").click(function() {
             args_plot_both["graphicmode"] = {}
             args_plot_both["graphicmode"]["A"] = Adesc["graphicmode"] ;
             args_plot_both["graphicmode"]["B"] = Bdesc["graphicmode"] ;
-            args_plot_both["new_pickle"] = new_pickle;
+            args_plot_both["basemap_pickle_name"] = basemap_pickle_name;
             
             
             var args_plot_both_json = JSON.stringify(args_plot_both);
@@ -1041,7 +1037,7 @@ $("#getplotboth").click(function() {
             });
 
             //Pas besoin d'un nouveau pickle sauf exceptions listées plus haut
-            new_pickle = "false";
+            //new_pickle = "false";
         }
     });
 
@@ -2251,9 +2247,9 @@ function GetCoordinates (zoom_spinner) {
                 var args_domain_json = JSON.stringify(args_domain);
 
                 if ($("#active_zoom").is(':checked')) {
-                    new_pickle = false;
+                    //new_pickle = false;
                 } else {
-                    new_pickle = true;
+                    basemap_pickle_name = generateUUID()+"_bm.cPickle";
                     $.ajax({
                         type: "POST",
                         async: true,

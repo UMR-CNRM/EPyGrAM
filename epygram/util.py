@@ -1170,3 +1170,18 @@ def datetimerange(start, stop=None, step=1, stepunit='h', tzinfo=None):
             dt += step  # step < 0
 
     return rng
+
+def fmtfid(fmt, fid):
+    """
+    Given a resource format name **fmt** and a (full) **fid**, returns the key
+    corresponding the actual format of the field in resource.
+    (Useful for distinguishing GRIB1/2)
+    """
+    if fmt == 'GRIB':
+        if 'GRIB1' in fid.keys():
+            fmtfid = 'GRIB1'
+        else:
+            fmtfid = 'GRIB2'
+    else:
+        fmtfid = fmt
+    return fmtfid

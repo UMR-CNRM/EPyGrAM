@@ -7,13 +7,6 @@ $var cssfiles:
         <td id="cachesize">
             Cache size info : <span>? Gb (click to update)</span>
         </td>
-        <td>
-            <button id="resetall" title="Reset all buttons" type="button" class="higlight">!</button>
-        </td>
-        <td>
-            <button id="closeall" title="Close all plots" type="button" class="higlight">X</button>
-        </td>
-
     </tr>
 </table>
 
@@ -90,32 +83,23 @@ $var cssfiles:
 							<select id="vortex_preset_resources">
 								<option value="ClearAll">None</option>
 								<optgroup label="Arpege">
-									<option value="ArpegeForecastGrib">forecast (grib)</option>
-									<option value="ArpegeForecastFA">forecast (fa)</option>
+									<option value="ArpegeForecastGrib">Forecast (grib)</option>
+									<option value="ArpegeForecastFA">Forecast (historic)</option>
 								</optgroup>
 								<optgroup label="Arome France">
-									<option value="AromeFranceForecastGrib">forecast (grib)</option>
-									<option value="AromeFranceForecastFA">forecast (fa)</option>
+									<option value="AromeFranceForecastGrib">Forecast (grib)</option>
+									<option value="AromeFranceForecastFA">Forecast (historic)</option>
 								</optgroup>
-								<optgroup label="Aladin Reunion">
-									<option value="AladinReunionForecastGrib">forecast (grib)</option>
-									<option value="AladinReunionForecastFA">forecast (fa)</option>
+								<optgroup label="Ensembles">
+								    <option value="PearpGrib">Pearp (grib)</option>
+								    <option value="PearoGrib">Pearo (grib)</option>
 								</optgroup>
-								<optgroup label="Arome Antilles">
-									<option value="AromeAntillesForecastGrib">forecast (grib)</option>
-									<option value="AromeAntillesForecastFA">forecast (fa)</option>
-								</optgroup>
-								<optgroup label="Arome Caledonie">
-									<option value="AromeCaledonieForecastGrib">forecast (grib)</option>
-								</optgroup>
-								<optgroup label="Arome Polynesie">
-									<option value="AromePolynesieForecastGrib">forecast (grib)</option>
-								</optgroup>
-								<optgroup label="Arome Indien">
-									<option value="AromeIndienForecastGrib">forecast (grib)</option>
-								</optgroup>
-								<optgroup label="Arome Guyane">
-									<option value="AromeGuyaneForecastGrib">forecast (grib)</option>
+								<optgroup label="Arome OM">
+									<option value="AromeAntillesForecastGrib">Antilles (grib)</option>
+									<option value="AromeCaledonieForecastGrib">Caledonie (grib)</option>
+									<option value="AromePolynesieForecastGrib">Polynésie (grib)</option>
+									<option value="AromeIndienForecastGrib">Indien (grib)</option>
+									<option value="AromeGuyaneForecastGrib">Guyane (grib)</option>
 								</optgroup>
 							</select>
 						</fieldset>
@@ -533,8 +517,6 @@ $var cssfiles:
 		<td>
 		  <button id="cloneFileField" type="button" title="Add another file(s) ; by default, A will be cloned (and in memory)">add B</button>
 		</td>
-
-
 		</tr>
 		</table>
 	  </div>		
@@ -648,12 +630,19 @@ $var cssfiles:
 				<!-- close accordion -->
 			</fieldset>
 		</td>
+		
 	</tr>
-	<tr>
-		<td></td>
-	</tr>
+	
 </table>
 </table>
+    <tr>
+	    <td>
+            <button id="resetall" title="Reset all buttons" type="button" class="higlight">!</button>
+        </td>
+        <td>
+            <button id="closeall" title="Close all plots" type="button" class="higlight">X</button>
+        </td>
+	</tr>
 	</tr>
 		<td>
 			<div id="vortex2" style="width:40px"></div>

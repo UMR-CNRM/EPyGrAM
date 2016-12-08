@@ -304,7 +304,7 @@ def plotverticalhovmoller(profile,
         hlevels = [levels[l] for l in range(len(levels) - L / 3) if
                    l % L == 0] + [levels[-1]]
         # plot
-        if reverseY:
+        if reverseY and not ax.yaxis_inverted():
             ax.invert_yaxis()
         if logscale:
             ax.set_yscale('log')

@@ -13,6 +13,7 @@ import numpy
 from footprints import FPList, FPDict, proxy as fpx
 
 from epygram import epygramError
+from epygram.util import fmtfid
 from epygram.base import Resource, FieldSet, FieldValidityList
 
 
@@ -55,7 +56,6 @@ class MultiValiditiesResource(Resource):
             raise epygramError("All low level resources must have the same format.")
 
         self.format = "MultiValidities"
-
         self.lowLevelFormat = self.resources[0].format
 
 #    def open(self):
@@ -96,7 +96,7 @@ class MultiValiditiesResource(Resource):
                 fidlist = r.listfields(*args, **kwargs)
                 if complete:
                     for fid in fidlist:
-                        fid[self.format] = fid[self.lowLevelFormat]
+                        fid[self.format] = fid[fmtfid(r, fid)]
                 tmp.extend(fidlist)
         result = []
         for res in tmp:
@@ -301,7 +301,7 @@ class MultiValiditiesResource(Resource):
             kwargs_field['processtype'] = None
 
         kwargs_field['validity'] = fieldvaliditylist
-        kwargs_field['fid'][self.format] = kwargs_field['fid'][self.lowLevelFormat]
+        kwargs_field['fid'][self.format] = kwargs_field['fid'][fmtfid(self.lowLevelFormat, kwargs_field['fid'])]
         field = fpx.field(**kwargs_field)
         field.setdata(data)
 

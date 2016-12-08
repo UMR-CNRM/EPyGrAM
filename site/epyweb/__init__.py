@@ -14,6 +14,7 @@ import copy
 import web
 import shutil
 import sys
+import socket
 
 import matplotlib
 matplotlib.use("Agg")
@@ -106,7 +107,14 @@ class getCacheSize:
 class getGeometries:
     """Return the list of existing geometries"""
     def POST(self):
-        return json.dumps(vortex.data.geometries.keys())
+        toremove_geoms = ['assmp1', 'assmp1sp',
+                          'assmp2', 'assmp2sp',
+                          'assms1', 'assms1sp',
+                          'assms2', 'assms2sp']
+        geoms = copy.copy(vortex.data.geometries.keys())
+        for g in toremove_geoms:
+            geoms.remove(g)
+        return json.dumps(geoms)
 
 class index:
     def GET(self):
@@ -166,6 +174,11 @@ class getFile:
                 vortexArgs['term'] = rangex(vortexArgs['term'].encode())
             if 'month' in vortexArgs:
                 vortexArgs['month'] = rangex(vortexArgs['month'].encode())
+            if 'member' in vortexArgs:
+                memberstr = '_mb[member]'
+                vortexArgs['member'] = rangex(vortexArgs['member'].encode())
+            else:
+                memberstr = ''
 
             # On ajoute POUR L'INSTANT et par défaut origin=hst (pour les gridpoints)
             vortexArgs['origin'] = 'hst'
@@ -188,20 +201,21 @@ class getFile:
             # Si oui allons plus loin
             if (ressources and mode != 'description'):
                 # Chemin
-                ressources = usevortex.get_resources(getmode='locate',
+                ressources = usevortex.get_resources(getmode='exist',
                                                      **vortexArgs)
-                reponse['remotepath'] = ressources  #[m for m in ressources]
+                reponse['remotepath'] = '\n'.join([str(exist) + ':\n' + loc.replace(';', '\n') for (loc, exist) in ressources])  #[m for m in ressources]
                 if mode == 'existence':
                     # Existence physique : tableau de True False
                     ressources = usevortex.get_resources(getmode='exist',
                                                          **vortexArgs)
-                    reponse['existence'] = [False not in m for m in ressources]
+                    reponse['existence'] = all([False not in m for m in ressources])
                 if mode == 'get':
                     # Rapatriement + nom local
                     ressources = usevortex.get_resources(getmode='fetch',
                                                          local=os.path.join(epyweb_workdir,
                                                                             '.'.join(["[date::ymdh]",
                                                                                       "[term]",
+                                                                                      memberstr,
                                                                                       fromid,
                                                                                       str(uuid.uuid4())
                                                                                       ])),
@@ -1066,6 +1080,9 @@ def main(open_browser=False,
     app = PortApplication(urls, globals())
     try:
         app.run(port)
+    except socket.error:
+        print "!!! ERROR : EPYWEB is already running !!!"
+        raise
     finally:
         clean_workdir()
 

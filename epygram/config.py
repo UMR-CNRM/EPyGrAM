@@ -189,7 +189,7 @@ netCDF_standard_dimensions = ['N_dimension',  # numerotation (obs, profile, ...)
                               'Y_dimension',  # Y-axis (cartesian projection or latitude)
                               'Z_dimension']  # Z-axis (vertical)
 #: netCDF usual names for standard dimensions
-netCDF_usualnames_for_standard_dimensions = {'N_dimension':('transect', 'obs', 'profile', 'N', 'n',
+netCDF_usualnames_for_standard_dimensions = {'N_dimension':('N', 'n', 'transect', 'obs', 'profile',
                                                             'Number_of_points', 'gridpoints_number'),
                                              'T_dimension':('time', 'T', 't', 'validity', 'time_counter'),
                                              'X_dimension':('X', 'x', 'xx',

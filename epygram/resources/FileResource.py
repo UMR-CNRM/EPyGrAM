@@ -58,6 +58,10 @@ class FileResource(Resource):
            not os.path.exists(self.container.abspath):
             raise IOError(self.container.abspath + " does not exist.")
 
+        if self.openmode in ('r', 'a'):
+            assert os.access(self.container.abspath, os.R_OK), \
+                   'No reading permission for file: ' + self.container.abspath
+
         # protection against unhappy overwrites...
         if config.protect_unhappy_writes and \
            os.path.exists(self.container.abspath) and self.openmode == 'w':
@@ -67,6 +71,9 @@ class FileResource(Resource):
                                                   "(y/n) ? "])) == 'y'
             if not self._overwrite:
                 raise epygramError(self.container.abspath + " already exists.")
+        if self.openmode in ('a', 'w'):
+            assert os.access(self.container.abspath, os.W_OK), \
+                   'No writing permission for file: ' + self.container.abspath
 
     def open(self, openmode=None):
         """

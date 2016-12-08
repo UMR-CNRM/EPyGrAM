@@ -1141,7 +1141,7 @@ class GRIB(FileResource):
         """Counts the number of messages in file."""
         return gribapi.grib_count_in_file(self._file)
 
-    def listfields(self, onlykey=None, select=None):
+    def listfields(self, onlykey=None, select=None, complete=False):
         """
         Returns a list containing the GRIB identifiers of all the fields of the
         resource.
@@ -1152,6 +1152,7 @@ class GRIB(FileResource):
         Argument *select* can be specified as a dict(key=value) to restrain
         the list of fields to those that match the key:value pairs. 
         """
+
         if select is not None:
             additional_keys = [k for k in select.keys() if k not in
                                GRIBmessage.fid_keys[1] + GRIBmessage.fid_keys[2]]
@@ -1165,6 +1166,12 @@ class GRIB(FileResource):
                 fidlist = [f[onlykey] for f in fidlist]
             elif isinstance(onlykey, tuple):
                 fidlist = [{k:f[k] for k in onlykey} for f in fidlist]
+        if complete:
+            fidlist = [{'GRIB' + str(f['editionNumber']):f} for f in fidlist]
+            for f in fidlist:
+                if 'GRIB2' in f.keys():
+                    f['generic'] = f['GRIB2']
+
         return fidlist
 
     def _listfields(self, additional_keys=[]):
