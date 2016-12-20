@@ -1,5 +1,5 @@
-Fasten your processing with ``taylorism``
-=========================================
+Speed up your processing with ``taylorism``
+===========================================
 
 .. highlight:: python
 

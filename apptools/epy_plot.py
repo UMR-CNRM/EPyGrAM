@@ -136,6 +136,7 @@ def main(filename,
     if diffmode:
         reference = epygram.formats.resource(refname, openmode='r')
 
+    bm = None
     if not diffmode:
         if not computewind:
             field = resource.readfield(fieldseed)
@@ -218,8 +219,9 @@ def main(filename,
                 title = legend
             else:
                 title = str(fieldseed) + "\n" + str(U.validity.get())
-            bm = U.geometry.make_basemap(subzone=subzone, specificproj=specificproj,
-                                         zoom=zoom, gisquality=gisquality)
+            if field.geometry.name != 'academic':
+                bm = U.geometry.make_basemap(subzone=subzone, specificproj=specificproj,
+                                             zoom=zoom, gisquality=gisquality)
             fig, _ = vectwind.plotfield(subzone=subzone,
                                         use_basemap=bm,
                                         title=title,
@@ -266,8 +268,9 @@ def main(filename,
                 title = legend
             else:
                 title = resource.container.basename + " : " + str(fieldseed) + "\n" + str(field.validity.get())
-            bm = field.geometry.make_basemap(subzone=subzone, specificproj=specificproj,
-                                             gisquality=gisquality, zoom=zoom)
+            if field.geometry.name != 'academic':
+                bm = field.geometry.make_basemap(subzone=subzone, specificproj=specificproj,
+                                                 gisquality=gisquality, zoom=zoom)
             plot, _ = field.plotfield(subzone=subzone,
                                       specificproj=specificproj,
                                       title=title,
@@ -326,7 +329,7 @@ def main(filename,
         else:
             title = resource.container.basename + " - " + reference.container.basename + " : " + str(fieldseed)
         diff = field - reffield
-        if bm == None:
+        if bm is None and field.geometry.name != 'academic':
             bm = diff.geometry.make_basemap(subzone=subzone,
                                             specificproj=specificproj,
                                             zoom=zoom)

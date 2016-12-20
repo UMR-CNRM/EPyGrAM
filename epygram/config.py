@@ -27,9 +27,9 @@ from epygram import __version__
 installdir = __file__[:-(len(os.path.basename(__file__)) + 1)]
 home = os.getenv('HOME')
 #: User customization directory
-usercustomizationdir = os.path.join(home, '.epygram')
+userlocaldir = os.path.join(home, '.epygram')
 #: User config (overwrites standard config)
-userconfigfile = os.path.join(usercustomizationdir, 'userconfig.py')
+userconfigfile = os.path.join(userlocaldir, 'userconfig.py')
 #: epygram Colormaps
 epygram_colormaps = {'aspect':os.path.join(installdir, 'data', 'aspect.cmap'),
                      'gaspect':os.path.join(installdir, 'data', 'gaspect.cmap'),
@@ -98,7 +98,7 @@ FA_geoid_for_pyproj = {'a':6371229., 'b':6371229.}
 FA_field_dictionaries_csv = {'default':os.path.join(installdir,
                                                     'data',
                                                     'Field_Dict_FA.csv'),
-                             'user':os.path.join(usercustomizationdir,
+                             'user':os.path.join(userlocaldir,
                                                  'user_Field_Dict_FA.csv')}
 #: FA (write) date & time precision: use FANDAR (minute) or FANDAX (second,
 #: cy40t1 onwards)
@@ -177,7 +177,7 @@ sensors_local_GRIB2 = {'MVIRI':192,
 LFI_field_dictionaries_csv = {'default':os.path.join(installdir,
                                                      'data',
                                                      'Field_Dict_LFI.csv'),
-                              'user':os.path.join(usercustomizationdir,
+                              'user':os.path.join(userlocaldir,
                                                   'Field_Dict_LFI.csv')}
 #: geoid of LFI files in pyproj syntax
 LFI_geoid_for_pyproj = {'a':6371229., 'b':6371229.}

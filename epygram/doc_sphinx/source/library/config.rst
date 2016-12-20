@@ -8,7 +8,7 @@ Installation
 -------------
 
 .. autodata:: installdir
-.. autodata:: usercustomizationdir
+.. autodata:: userlocaldir
 .. autodata:: userconfigfile
 .. autodata:: epygram_colormaps
 .. autodata:: epygram_colormaps_scaling

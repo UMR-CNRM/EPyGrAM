@@ -9,7 +9,6 @@ import json
 from datetime import datetime, timedelta
 import cPickle
 import uuid
-import glob
 import copy
 import web
 import shutil
@@ -21,12 +20,9 @@ matplotlib.use("Agg")
 from mpl_toolkits.basemap import Basemap
 
 from footprints.util import rangex
-from opinel import interrupt
 
 import epygram
 from epygram import epylog
-import usevortex
-import vortex
 
 
 __authors__ = ['Ghislain Faure', ]
@@ -55,7 +51,7 @@ if not os.path.exists(vortex_cache):
     os.makedirs(vortex_cache)
 
 # Epyweb workdir for tmp files (basemap pickle, resources hardlinks and figures)
-epyweb_workdir = os.path.join(vortex_cache_dir, 'epyweb')
+epyweb_workdir = os.path.join(epygram.config.userlocaldir, 'epyweb')
 basemap_pickle_path = os.path.join(epyweb_workdir, 'basemap.cPickle')
 
 #############
@@ -66,8 +62,6 @@ urls = (
     'index',
     '/faplot',
     'faplot',
-    '/epyweb',
-    'epyweb',
     '/myplot',
     'myplot',
     '/myplot_overlay',
@@ -90,6 +84,7 @@ urls = (
     'getGeometries',
     '/GetPNG/(.+)',
     'GetPNG'
+    # '/epyweb', 'epyweb' are added at runtime, depending on the vortex_mode (or not)
     )
 
 render = web.template.render('templates', base='base')
@@ -107,6 +102,7 @@ class getCacheSize:
 class getGeometries:
     """Return the list of existing geometries"""
     def POST(self):
+        import vortex
         toremove_geoms = ['assmp1', 'assmp1sp',
                           'assmp2', 'assmp2sp',
                           'assms1', 'assms1sp',
@@ -158,10 +154,28 @@ def whichFields(fichier):
         raise Exception('whichField error')
 
 
+class getLocalFile:
+    """Retrieve selected file(s) from path"""
+
+    def POST(self):
+        try:
+            reponse = {}
+            data = web.data()
+            args = json.loads(data)
+            if not os.path.exists(args['file_path']):
+                raise ValueError('file does not exist')
+            reponse['localpath'] = args['file_path']
+            return reponse
+        except ValueError:
+            raise Exception('getFile error')
+            
+
+
 class getFile:
     """Retrieved selected file(s) with usevortex"""
 
     def POST(self):
+        import usevortex
         try:
             reponse = {}
             data = web.data()
@@ -1039,7 +1053,15 @@ class PortApplication(web.application):
 
 def main(open_browser=False,
          port=8080,
+         vortex_mode=True,
          verbose=True):
+    """
+    Run the 'epyweb' local server.
+    If *open_browser*, open a web browser tab with 'epyweb' interface.
+    The *port* to be used for the server can be specified.
+    If *vortex_mode*, describe and get resources using Vortex; else,
+    as a file system.
+    """
 
     init_workdir()
 
@@ -1053,20 +1075,21 @@ def main(open_browser=False,
     if os.getcwd() != web_root:
         os.chdir(web_root)
 
-    epyweb_url = 'http://' + os.getenv('HOSTNAME') + ':' + str(port) + '/epyweb'
+    epyweb_url = 'http://' + socket.gethostname() + ':' + str(port) + '/epyweb'
     print "====================="
     print "EPYWEB is running within epygram version:", epygram.__version__
     print "EPYWEB Interface =>", epyweb_url
     print "EPYWEB Workdir   =>", epyweb_workdir
-    print "VORTEX Cache     =>", vortex_cache
-    print "(based on $" + location_of_vortex_cache + "=" + vortex_cache_dir + ")"
-    if location_of_vortex_cache != 'MTOOLDIR':
-        print "(the *vortex* cache location is accessible by priority order through:"
-        print "$MTOOLDIR, $FTDIR, $WORKDIR, $TMPDIR"
-    if location_of_vortex_cache == 'TMPDIR':
-        epylog.warning(' '.join(['the use of $TMPDIR as rootdir for the Vortex',
-                                 'cache is hazardous. You should define a',
-                                 'better rootdir using $MTOOLDIR.']))
+    if vortex_mode:    
+        print "VORTEX Cache     =>", vortex_cache
+        print "(based on $" + location_of_vortex_cache + "=" + vortex_cache_dir + ")"
+        if location_of_vortex_cache != 'MTOOLDIR':
+            print "(the *vortex* cache location is accessible by priority order through:"
+            print "$MTOOLDIR, $FTDIR, $WORKDIR, $TMPDIR"
+        if location_of_vortex_cache == 'TMPDIR':
+            epylog.warning(' '.join(['the use of $TMPDIR as rootdir for the Vortex',
+                                     'cache is hazardous. You should define a',
+                                     'better rootdir using $MTOOLDIR.']))
     print "To close the server: Ctrl-C"
     print "====================="
 
@@ -1077,6 +1100,10 @@ def main(open_browser=False,
         t.start()
     if len(sys.argv) > 1:
         sys.argv = sys.argv[:1]  # workaround to a bug in web.py: command-line arguments can be other than port
+    if vortex_mode:
+        urls = tuple([e for e in urls] + ['/epyweb', 'epyweb_vortex'])
+    else:
+        urls = tuple([e for e in urls] + ['/epyweb', 'epyweb_filesystem'])
     app = PortApplication(urls, globals())
     try:
         app.run(port)

@@ -13,15 +13,20 @@ from epygram.args_catalog import add_arg_to_parser, runtime_options
 
 def main(open_browser=False,
          port=8080,
+         vortex_mode=True,
          verbose=False):
     """
     Run the 'epyweb' local server.
     If *open_browser*, open a web browser tab with 'epyweb' interface.
+    The *port* to be used for the server can be specified.
+    If *vortex_mode*, describe and get resources using Vortex; else,
+    as a file system.
     """
     import epyweb
 
     epyweb.main(open_browser=open_browser,
                 port=port,
+                vortex_mode=vortex_mode,
                 verbose=verbose)
 
 # end of main() ###############################################################
@@ -44,6 +49,11 @@ if __name__ == '__main__':
                         type=int,
                         help='port to be used, default to 8080.',
                         default=8080)
+    parser.add_argument('--no_vortex',
+                        action='store_false',
+                        dest='vortex_mode',
+                        help='run the interface without Vortex, selecting resources by their local path.',
+                        default=True)
     add_arg_to_parser(parser, runtime_options['verbose'])
     args = parser.parse_args()
 
@@ -54,6 +64,7 @@ if __name__ == '__main__':
     ###########
     main(open_browser=args.open_browser,
          port=args.port,
+         vortex_mode=args.vortex_mode,
          verbose=args.verbose)
 
 ###########

@@ -96,7 +96,7 @@ class MultiValiditiesResource(Resource):
                 fidlist = r.listfields(*args, **kwargs)
                 if complete:
                     for fid in fidlist:
-                        fid[self.format] = fid[fmtfid(r, fid)]
+                        fid[self.format] = fid[fmtfid(r.format, fid)]
                 tmp.extend(fidlist)
         result = []
         for res in tmp:

@@ -71,9 +71,20 @@ class FileResource(Resource):
                                                   "(y/n) ? "])) == 'y'
             if not self._overwrite:
                 raise epygramError(self.container.abspath + " already exists.")
-        if self.openmode in ('a', 'w'):
+        if self.openmode == 'a':
             assert os.access(self.container.abspath, os.W_OK), \
                    'No writing permission for file: ' + self.container.abspath
+        if self.openmode == 'w':
+            if os.path.exists(self.container.abspath):
+                assert os.access(self.container.abspath, os.W_OK), \
+                       'No overwriting permission for file: ' + self.container.abspath
+            else:
+                dirpath = os.path.dirname(self.container.abspath)
+                print dirpath
+                assert os.path.exists(dirpath), \
+                       'Trying to write into non-existing directory: ' + dirpath
+                assert os.access(dirpath, os.W_OK), \
+                       'No writing permission in directory: ' + dirpath
 
     def open(self, openmode=None):
         """

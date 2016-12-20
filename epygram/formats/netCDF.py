@@ -1085,12 +1085,6 @@ class netCDF(FileResource):
                             x0, y0 = field.geometry.ll2xy(field.geometry.projection['reference_lon'].get('degrees'),
                                                           latitude_of_projection_origin)
                             (dx, dy) = (x00 - x0, y00 - y0)
-                            if not nearlyEqual(_lon_cen,
-                                               field.geometry.projection['reference_lon'].get('degrees')):
-                                epylog.warning('center_lon != reference_lon (tilting) is not "on the cards" in CF convention 1.6')
-                            if not nearlyEqual(_lat_cen,
-                                               field.geometry.projection['reference_lat'].get('degrees')):
-                                epylog.warning('center_lat != reference_lat is not "on the cards" in CF convention 1.6')
                             self._variables[meta].longitude_of_central_meridian = field.geometry.projection['reference_lon'].get('degrees')
                             self._variables[meta].latitude_of_projection_origin = latitude_of_projection_origin
                             self._variables[meta].standard_parallel = std_parallel
