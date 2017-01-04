@@ -522,7 +522,7 @@ def plotprofiles(profiles,
     ax.set_ylabel(Ycoordinate)
     if ema:
         ax.grid(axis='y')
-        ax.xlim(mindata - 10, maxdata + 10)
+        ax.set_xlim(mindata - 10, maxdata + 10)
     else:
         ax.grid()
 

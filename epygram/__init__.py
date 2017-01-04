@@ -84,10 +84,6 @@ knowledge of the CeCILL-C license and that you accept its terms.
 ********************************************************************************
 """
 
-import logging
-import imp
-import importlib
-
 import footprints
 
 __all__ = []
@@ -118,7 +114,6 @@ if config.noninteractive_backend:
     except ImportError:
         pass
 
-
 ### COMPONENTS (modules) ###
 from . import util
 from . import base
@@ -136,13 +131,22 @@ from . import resources
 
 # User modules
 if len(config.usermodules) > 0:
+    import sys
     #footprints.priorities.set_before('debug', 'user')
     for m in config.usermodules:
-        imp.load_source(m['name'], m['abspath'])
+        if sys.version_info.major == 3 and sys.version_info.minor >= 4:
+            import importlib.util as imputil
+            spec = imputil.spec_from_file_location(m['name'],
+                                                   m['abspath'])
+            spec.loader.exec_module(imputil.module_from_spec(spec))
+            del spec
+        else:
+            import imp
+            imp.load_source(m['name'], m['abspath'])
 
 
 
-### OTHER TOOLS ###
+### OTHERS ###
 def showconfig():
     """
     Print current config.

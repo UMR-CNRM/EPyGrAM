@@ -13,7 +13,7 @@ import sys
 
 import footprints
 from footprints import FPDict, FPList, proxy as fpx
-from epygram import config, epygramError
+from epygram import epygramError
 from epygram.util import write_formatted, stretch_array
 from epygram.base import Field, FieldSet, FieldValidity, FieldValidityList, Resource
 from epygram.geometries import D3Geometry, SpectralGeometry
@@ -691,7 +691,7 @@ class D3CommonField(Field):
         if self.geometry.name != 'regular_lonlat':
             raise epygramError("only for regular lonlat geometries.")
         self.geometry.global_shift_center(longitude_shift)
-        n = longitude_shift / self.geometry.grid['X_resolution'].get('degrees')
+        n = int(longitude_shift / self.geometry.grid['X_resolution'].get('degrees'))
         data = self.getdata(d4=True)
         data[:, :, :, :] = numpy.concatenate((data[:, :, :, n:], data[:, :, :, 0:n]),
                                              axis=3)
@@ -1071,7 +1071,7 @@ class D3Field(D3CommonField):
             else:
                 raise epygramError("*subzone* cannot be provided for this field.")
         if not d4:
-            data = data.squeeze()  #TOBECHECKED: OK or keep Y ? In that case, need to modify geometry.get_lonlat_grid() too
+            data = data.squeeze()
 
         return data
 

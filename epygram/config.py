@@ -12,7 +12,6 @@ the user in the User config file :attr:`userconfigfile`.
 
 import os
 import sys
-import imp
 import platform
 import copy
 
@@ -279,7 +278,16 @@ usercolormaps_scaling = {}
 
 ### OVERWRITE WITH USER CONFIG ###
 if os.path.exists(userconfigfile):
-    userconfig = imp.load_source('userconfig', userconfigfile)
+    if sys.version_info.major == 3 and sys.version_info.minor >= 4:
+        import importlib.util as imputil
+        spec = imputil.spec_from_file_location('userconfig',
+                                               userconfigfile)
+        userconfig = imputil.module_from_spec(spec)
+        spec.loader.exec_module(userconfig)
+        del spec
+    else:
+        import imp
+        userconfig = imp.load_source('userconfig', userconfigfile)
     from userconfig import *
     del userconfig
 #: colormaps gathers epygram and user colormaps

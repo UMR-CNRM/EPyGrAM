@@ -4,6 +4,8 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 
+from __future__ import print_function
+
 import os
 import json
 from datetime import datetime, timedelta
@@ -57,40 +59,28 @@ basemap_pickle_path = os.path.join(epyweb_workdir, 'basemap.cPickle')
 #############
 # Web stuff #
 #############
-urls = (
-    '/',
-    'index',
-    '/faplot',
-    'faplot',
-    '/myplot',
-    'myplot',
-    '/myplot_overlay',
-    'myplot_overlay',
-    '/myplot_diff',
-    'myplot_diff',
-    '/getfieldsasjson',
-    'getfieldsasjson',
-    '/getminmax',
-    'getminmax',
-    '/getdomain',
-    'getdomain',
-    '/getFile',
-    'getFile',
-    '/getminmaxasjson',
-    'getminmaxasjson',
-    '/getCacheSize',
-    'getCacheSize',
-    '/getGeometries',
-    'getGeometries',
-    '/GetPNG/(.+)',
-    'GetPNG'
-    # '/epyweb', 'epyweb' are added at runtime, depending on the vortex_mode (or not)
-    )
+shared_urls = ('/', 'index',
+               '/faplot', 'faplot',
+               '/myplot', 'myplot',
+               '/myplot_overlay', 'myplot_overlay',
+               '/myplot_diff', 'myplot_diff',
+               '/getfieldsasjson', 'getfieldsasjson',
+               '/getminmax', 'getminmax',
+               '/getdomain', 'getdomain',
+               '/getFile', 'getFile',
+               '/getminmaxasjson', 'getminmaxasjson',
+               '/getCacheSize', 'getCacheSize',
+               '/getGeometries', 'getGeometries',
+               '/GetPNG/(.+)', 'GetPNG',
+               # '/epyweb', 'epyweb' are added at runtime, depending on the vortex_mode (or not)
+               )
 
 render = web.template.render('templates', base='base')
 
-
-class getCacheSize:
+####################
+# urls <=> classes #
+####################
+class getCacheSize(object):
     """Compute (linux only!) and return size of vortex cache"""
     def POST(self):
         try:
@@ -99,7 +89,8 @@ class getCacheSize:
         except:
             return "Error in cache size retrieval"
 
-class getGeometries:
+
+class getGeometries(object):
     """Return the list of existing geometries"""
     def POST(self):
         import vortex
@@ -112,22 +103,33 @@ class getGeometries:
             geoms.remove(g)
         return json.dumps(geoms)
 
-class index:
+
+class index(object):
     def GET(self):
         return render.index()
 
 
-class faplot:
+class faplot(object):
     def GET(self):
         return render.faplot()
 
 
-class epyweb:
+class epyweb(object):
     def GET(self):
         return render.epyweb()
 
 
-class getfieldsasjson:
+class epyweb_vortex(object):
+    def GET(self):
+        return render.epyweb_vortex()
+
+
+class epyweb_filesystem(object):
+    def GET(self):
+        return render.epyweb_filesystem()
+
+
+class getfieldsasjson(object):
     """List and returns fields of selected file"""
     def POST(self):
         try:
@@ -138,23 +140,11 @@ class getfieldsasjson:
             else:
                 print("File does not exist => exit")
         except Exception:
-            print "Erreur getfieldsasjson"
+            print("Erreur getfieldsasjson")
             return "Erreur getfieldsasjson"
 
 
-def whichFields(fichier):
-    """List and returns fields of selected file"""
-
-    try:
-        resource = epygram.formats.resource(fichier, 'r')
-        listoffields = resource.listfields()
-        resource.close()
-        return listoffields
-    except ValueError:
-        raise Exception('whichField error')
-
-
-class getLocalFile:
+class getLocalFile(object):
     """Retrieve selected file(s) from path"""
 
     def POST(self):
@@ -168,10 +158,9 @@ class getLocalFile:
             return reponse
         except ValueError:
             raise Exception('getFile error')
-            
 
 
-class getFile:
+class getFile(object):
     """Retrieved selected file(s) with usevortex"""
 
     def POST(self):
@@ -240,7 +229,7 @@ class getFile:
             raise Exception('getFile error')
 
 
-class getminmax:
+class getminmax(object):
     """Compute and return min and max of FIRST field"""
 
     def POST(self):
@@ -248,7 +237,7 @@ class getminmax:
             fichier = getAjaxArg('file')
             champ = getAjaxArgSmart('field')
             champ_v = getAjaxArg('field_v')
-            subzone = getAjaxArg('subzone')  #TODO: ajouter subzone dans l'appel à stats() ?
+            subzone = getAjaxArg('subzone')
             FF = getAjaxArg('FF')
             ope = getAjaxArg('operation')
             #string vs unicode problems...
@@ -288,10 +277,10 @@ class getminmax:
             return json.dumps(stats)
 
         except Exception, ex:
-            print ex.__str__()
+            print(ex.__str__())
 
 
-class getdomain:
+class getdomain(object):
     """Compute and return domain caracteristics"""
 
     def POST(self):
@@ -324,16 +313,16 @@ class getdomain:
             return json.dumps(monzoom)
 
         except Exception, ex:
-            print ex.__str__()
+            print(ex.__str__())
 
 
-class myplot:
+class myplot(object):
     """Plot of a parameter for 1 or several file(s)"""
 
     def POST(self):
         try:
             import matplotlib.pyplot as plt
-            print 'Start MyPlot'
+            print('Start MyPlot')
 
             #For unik name
             local_uuid = str(uuid.uuid4())
@@ -348,14 +337,14 @@ class myplot:
                     champ[cle]['typeOfLevel'] = val['typeOfLevel'].encode()
                     champ[cle] = {str(k):champ[cle][k] for k in val.keys()}
                 except Exception:
-                    print ("Warning unicode")
+                    print("Warning unicode")
 
             for cle, val in champ_v.iteritems():
                 try:
                     champ_v[cle]['typeOfLevel'] = val['typeOfLevel'].encode()
                     champ_v[cle] = {str(k):champ_v[cle][k] for k in val.keys()}
                 except Exception:
-                    print ("Warning unicode")
+                    print("Warning unicode")
 
             existingfigure = (None, None)  #New figure (= no overlay)
             basemap_pickle_name = getAjaxArgSmart('basemap_pickle_name')
@@ -431,7 +420,7 @@ class myplot:
                             fieldDecumul = waitforme
 
                     if existingbasemap is None:
-                        print 'Actually niou pickle !'
+                        print('Actually niou pickle !')
                         existingbasemap = field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
                                                                       subzone=myplot_args["subzone"],
                                                                       specificproj=myplot_args["specificproj"],
@@ -491,13 +480,13 @@ class myplot:
             print("Erreur 3615")
 
 
-class myplot_overlay:
+class myplot_overlay(object):
     """Plot an overlay of 2 parameters across 1 or several file(s)"""
 
     def POST(self):
         try:
             import matplotlib.pyplot as plt
-            print 'Start MyPlot overlay'
+            print('Start MyPlot overlay')
             local_uuid = str(uuid.uuid4())
 
             files = getAjaxArgSmart('file')
@@ -510,14 +499,14 @@ class myplot_overlay:
                     champ[cle]['typeOfLevel'] = val['typeOfLevel'].encode()
                     champ[cle] = {str(k):champ[cle][k] for k in val.keys()}
                 except:
-                    print ("Warning unicode")
+                    print("Warning unicode")
 
             for cle, val in champ_v.iteritems():
                 try:
                     champ_v[cle]['typeOfLevel'] = val['typeOfLevel'].encode()
                     champ_v[cle] = {str(k):champ_v[cle][k] for k in val.keys()}
                 except:
-                    print ("Warning unicode")
+                    print("Warning unicode")
 
             existingfigure = (None, None)
             basemap_pickle_name = getAjaxArgSmart('basemap_pickle_name')
@@ -555,7 +544,7 @@ class myplot_overlay:
                     field = CheckForOperation(operation["A"], field)
 
                 if existingbasemap is None:
-                    print 'Actually niou pickle !'
+                    print('Actually niou pickle !')
                     existingbasemap = field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
                                                                   subzone=myplot_args["subzone"],
                                                                   specificproj=myplot_args["specificproj"],
@@ -609,12 +598,12 @@ class myplot_overlay:
             print("Erreur 3614")
 
 
-class myplot_diff:
+class myplot_diff(object):
     """Plot of a difference between files """
 
     def POST(self):
         try:
-            print 'Start MyPlot'
+            print('Start MyPlot')
             import matplotlib.pyplot as plt
             local_uuid = str(uuid.uuid4())
 
@@ -630,14 +619,14 @@ class myplot_diff:
                     champ[cle]['typeOfLevel'] = val['typeOfLevel'].encode()
                     champ[cle] = {str(k):champ[cle][k] for k in val.keys()}
                 except Exception:
-                    print ("Warning unicode")
+                    print("Warning unicode")
 
             for cle, val in champ_v.iteritems():
                 try:
                     champ_v[cle]['typeOfLevel'] = val['typeOfLevel'].encode()
                     champ_v[cle] = {str(k):champ_v[cle][k] for k in val.keys()}
                 except Exception:
-                    print ("Warning unicode")
+                    print("Warning unicode")
 
             #For common arguments
             myplot_args = get_common_args("A")
@@ -681,7 +670,7 @@ class myplot_diff:
                 field = fieldB - fieldA
 
                 if existingbasemap is None:
-                    print 'Actually niou pickle !'
+                    print('Actually niou pickle !')
                     existingbasemap = field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
                                                                   subzone=myplot_args["subzone"],
                                                                   specificproj=myplot_args["specificproj"],
@@ -765,6 +754,21 @@ class myplot_diff:
             print("Erreur 3615 diff")
 
 
+
+#############
+# Functions #
+#############
+def whichFields(fichier):
+    """List and returns fields of selected file"""
+
+    try:
+        resource = epygram.formats.resource(fichier, 'r')
+        listoffields = resource.listfields()
+        resource.close()
+        return listoffields
+    except ValueError:
+        raise Exception('whichField error')
+
 def getAjaxArg(sArg, sDefault=''):
     """Picks out and returns a single value, regardless of GET or POST."""
 
@@ -790,9 +794,7 @@ def getAjaxArg(sArg, sDefault=''):
         else:
             return sDefault
     except ValueError:
-        raise Exception('getAjaxArg - no JSON arguments to decode. This method required a POST with JSON arguments.'
-                        )
-
+        raise Exception('getAjaxArg - no JSON arguments to decode. This method required a POST with JSON arguments.')
 
 def getAjaxArgSmart(sArg, sDefault=''):
     """Picks out and returns a single value, regardless of GET or POST.
@@ -814,17 +816,11 @@ def getAjaxArgSmart(sArg, sDefault=''):
                 if dic[sArg] == '':
                     return None
                 elif dic[sArg] == 'false':
-                    # print(sArg,": None")
                     return False
                 elif dic[sArg] == 'true':
-                    # print(sArg,": False")
                     return True
-                elif type(dic[sArg]) == type(str()) and dic[sArg][0] \
-                    == '{':
-                    # print(sArg,": True")
-                    #print 'on entre'
+                elif isinstance(dic[sArg], str) and dic[sArg].startswith('{'):
                     return json.loads(dic[sArg])
-                    #print type(dic[sArg])
                 else:
                     return dic[sArg]
             else:
@@ -832,12 +828,10 @@ def getAjaxArgSmart(sArg, sDefault=''):
         else:
             return sDefault
     except ValueError:
-        raise Exception('getAjaxArg - no JSON arguments to decode. This method required a POST with JSON arguments.'
-                        )
+        raise Exception('getAjaxArg - no JSON arguments to decode. This method required a POST with JSON arguments.')
 
 
 def print_code(myplot_args, existingbasemap, existingfigure):
-
     try:
         zecode = ', '.join(["field.plotfield(subzone=''",
                            "gisquality='" + unicode(myplot_args["gisquality"]) + "'",
@@ -855,13 +849,10 @@ def print_code(myplot_args, existingbasemap, existingfigure):
                            "existingfigure=" + unicode(existingfigure),
                            "pointsize=" + unicode(myplot_args["pointsize"])
                            ])
-
         return zecode
-
-    except Exception, ex:
-        print "Error print_code !"
-        print ex.__str__()
-
+    except Exception as ex:
+        print("Error print_code !")
+        print(str(ex))
 
 def get_common_args(fileid):
 
@@ -891,7 +882,6 @@ def get_common_args(fileid):
 
             return myplot_args
 
-
 def datex(start, end=None, step=None):
     """
     Extended date expansion : YYYYMMDDHH-YYYYMMDDHH-HH
@@ -910,7 +900,7 @@ def datex(start, end=None, step=None):
         end_arg = arguments[1]
         delta_arg = arguments[2]
     else:
-        print ("Uncorrect date range")
+        print("Uncorrect date range")
 
     start_date = arg2date(start_arg)
     end_date = arg2date(end_arg)
@@ -923,11 +913,9 @@ def datex(start, end=None, step=None):
 
     return (rangevalues)
 
-
 def arg2date(myarg):
     out = datetime(int(myarg[0:4]), int(myarg[4:6]), int(myarg[6:8]), int(myarg[8:10]))
     return out
-
 
 def MakeMyPlot(resource, field, cle, champ, champ_v, FF, vecteurs, existingbasemap, existingfigure, vectors_subsampling, myplot_args):
     """Generic method for plotting (ok for plot, plot_both, overlay, but not for diff"""
@@ -997,7 +985,6 @@ def MakeMyPlot(resource, field, cle, champ, champ_v, FF, vecteurs, existingbasem
 
     return myplot
 
-
 def CheckForOperation(ope, field):
     try:
         operation_arg1 = ope[0].encode()
@@ -1013,17 +1000,14 @@ def CheckForOperation(ope, field):
 
     return field
 
-
 class GetPNG(object):
     def GET(self, png):
         web.header('Content-type', 'image/png')
         with open(os.path.join(epyweb_workdir, png), 'rb') as f:
             return f.read()
 
-
 # Environment functions
-
-
+#######################
 def func_open_browser(url=os.getcwd(), delay=0.):
     import webbrowser
     import time
@@ -1031,11 +1015,9 @@ def func_open_browser(url=os.getcwd(), delay=0.):
         time.sleep(delay)
     webbrowser.open(url)
 
-
 def clean_workdir():
     """Cleaning of old figures and hardlinks."""
     shutil.rmtree(epyweb_workdir, ignore_errors=True)
-
 
 def init_workdir():
     """Set up the working directory."""
@@ -1045,12 +1027,20 @@ def init_workdir():
         os.makedirs(epyweb_workdir)
 
 
+
+###############################
+# Web server on specific port #
+###############################
 class PortApplication(web.application):
     def run(self, port=8080, *middleware):
         func = self.wsgifunc(*middleware)
         return web.httpserver.runsimple(func, ('0.0.0.0', port))
 
 
+
+########
+# main #
+########
 def main(open_browser=False,
          port=8080,
          vortex_mode=True,
@@ -1063,52 +1053,52 @@ def main(open_browser=False,
     as a file system.
     """
 
-    init_workdir()
-
     epygram.init_env()
     epylog.setLevel('WARNING')
     if verbose:
         epylog.setLevel('INFO')
 
+    if len(sys.argv) > 1:
+        sys.argv = sys.argv[:1]  # workaround to a bug in web.py: command-line arguments can be other than port
+    if vortex_mode:
+        urls = tuple([e for e in shared_urls] + ['/epyweb', 'epyweb_vortex'])
+    else:
+        urls = tuple([e for e in shared_urls] + ['/epyweb', 'epyweb_filesystem'])
+    epyweb_url = 'http://' + socket.gethostname() + ':' + str(port) + '/epyweb'
+
+    init_workdir()
     # to avoid any path issues, "cd" to the web root. #FIXME: ? needed for the templates
     web_root = os.path.abspath(os.path.dirname(__file__))
     if os.getcwd() != web_root:
         os.chdir(web_root)
 
-    epyweb_url = 'http://' + socket.gethostname() + ':' + str(port) + '/epyweb'
-    print "====================="
-    print "EPYWEB is running within epygram version:", epygram.__version__
-    print "EPYWEB Interface =>", epyweb_url
-    print "EPYWEB Workdir   =>", epyweb_workdir
-    if vortex_mode:    
-        print "VORTEX Cache     =>", vortex_cache
-        print "(based on $" + location_of_vortex_cache + "=" + vortex_cache_dir + ")"
+    print("=====================")
+    print("EPYWEB is running within epygram version:", epygram.__version__)
+    print("EPYWEB Interface =>", epyweb_url)
+    print("EPYWEB Workdir   =>", epyweb_workdir)
+    if vortex_mode:
+        print("VORTEX Cache     =>", vortex_cache)
+        print("(based on $" + location_of_vortex_cache + "=" + vortex_cache_dir + ")")
         if location_of_vortex_cache != 'MTOOLDIR':
-            print "(the *vortex* cache location is accessible by priority order through:"
-            print "$MTOOLDIR, $FTDIR, $WORKDIR, $TMPDIR"
+            print("(the *vortex* cache location is accessible by priority order through:")
+            print("$MTOOLDIR, $FTDIR, $WORKDIR, $TMPDIR")
         if location_of_vortex_cache == 'TMPDIR':
             epylog.warning(' '.join(['the use of $TMPDIR as rootdir for the Vortex',
                                      'cache is hazardous. You should define a',
                                      'better rootdir using $MTOOLDIR.']))
-    print "To close the server: Ctrl-C"
-    print "====================="
+    print("To close the server: Ctrl-C")
+    print("=====================")
 
     if open_browser:
         import threading
         t = threading.Thread(target=func_open_browser, kwargs={'url':epyweb_url,
                                                                'delay':1.})
         t.start()
-    if len(sys.argv) > 1:
-        sys.argv = sys.argv[:1]  # workaround to a bug in web.py: command-line arguments can be other than port
-    if vortex_mode:
-        urls = tuple([e for e in urls] + ['/epyweb', 'epyweb_vortex'])
-    else:
-        urls = tuple([e for e in urls] + ['/epyweb', 'epyweb_filesystem'])
     app = PortApplication(urls, globals())
     try:
         app.run(port)
     except socket.error:
-        print "!!! ERROR : EPYWEB is already running !!!"
+        print("!!! ERROR : EPYWEB is already running !!!")
         raise
     finally:
         clean_workdir()

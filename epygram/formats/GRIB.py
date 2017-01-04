@@ -1421,7 +1421,9 @@ class GRIB(FileResource):
                                    112:'sfc',
                                    #113:'sfc',
                                    #115:'115',
-                                   117:'pv', }
+                                   117:'pv',
+                                   200:'sfc',
+                                   }
                 v = type_conv_GRIB1.get(v, str(v))
             elif k == 'typeOfFirstFixedSurface' and isinstance(v, int):  # GRIB2
                 type_conv_GRIB2 = {1:'sfc',
