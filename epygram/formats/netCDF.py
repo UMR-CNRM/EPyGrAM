@@ -25,7 +25,7 @@ from footprints import proxy as fpx, FPDict, FPList
 from epygram import config, epygramError, util
 from epygram.base import FieldValidity, FieldValidityList
 from epygram.resources import FileResource
-from epygram.util import stretch_array, Angle, nearlyEqual
+from epygram.util import stretch_array, Angle
 
 epylog = footprints.loggers.getLogger(__name__)
 
@@ -807,7 +807,10 @@ class netCDF(FileResource):
 
         return field
 
-    def writefield(self, field, compression=4, metadata=None):
+    def writefield(self, field,
+                   compression=4,
+                   metadata=None,
+                   adhoc_behaviour=None):
         """
         Write a field in resource.
         Args:\n
@@ -815,11 +818,17 @@ class netCDF(FileResource):
           to 9 (high compression, slow writing). 0 is no compression.
         - *metadata*: dict, can be filled by any meta-data, that will be stored
           as attribute of the netCDF variable.
+        - *adhoc_behaviour*: to specify "on the fly" a behaviour (usual
+          dimensions or grids, ...).
         """
 
         metadata = util.ifNone_emptydict(metadata)
         vartype = 'f8'
         fill_value = -999999.9
+        adhoc_behaviour = util.ifNone_emptydict(adhoc_behaviour)
+        behaviour = self.behaviour.copy()
+        behaviour.update(adhoc_behaviour)
+        
         def check_or_add_dim(d, d_in_field=None, size=None):
             if size is None:
                 if d_in_field is None:
@@ -861,7 +870,7 @@ class netCDF(FileResource):
         T = Y = X = G = N = None
         dims = []
         # time
-        if len(field.validity) > 1:
+        if len(field.validity) > 1 or behaviour.get('force_a_T_dimension', False):
             # default
             T = config.netCDF_usualnames_for_standard_dimensions['T_dimension'][0]
             # or any existing identified time dimension
@@ -869,7 +878,7 @@ class netCDF(FileResource):
                  if (v in config.netCDF_usualnames_for_standard_dimensions['T_dimension']
                      and len(self._dimensions[v]) == len(field.validity))}.get('found', T)
             # or specified behaviour
-            T = self.behaviour.get('T_dimension', T)
+            T = behaviour.get('T_dimension', T)
             check_or_add_dim(T, size=len(field.validity))
         # vertical part
         # default
@@ -879,7 +888,7 @@ class netCDF(FileResource):
                  if (v in config.netCDF_usualnames_for_standard_dimensions['Z_dimension']
                      and len(self._dimensions[v]) == len(field.geometry.vcoordinate.levels))}.get('found', Z)
         # or specified behaviour
-        Z = self.behaviour.get('Z_dimension', Z)
+        Z = behaviour.get('Z_dimension', Z)
         if 'gridlevels' in field.geometry.vcoordinate.grid.keys():
             Z_gridsize = max(len(field.geometry.vcoordinate.grid['gridlevels']), 1)
             if field.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
@@ -889,26 +898,26 @@ class netCDF(FileResource):
         if Z_gridsize > 1:
             check_or_add_dim(Z, size=Z_gridsize)
         # horizontal
-        if self.behaviour.get('flatten_horizontal_grids', False):
+        if behaviour.get('flatten_horizontal_grids', False):
             _gpn = field.geometry.gridpoints_number
             G = 'gridpoints_number'
             check_or_add_dim(G, size=_gpn)
         if field.geometry.rectangular_grid:
             if field.geometry.dimensions['Y'] > 1 and field.geometry.dimensions['X'] > 1:
-                Y = self.behaviour.get('Y_dimension',
-                                       config.netCDF_usualnames_for_standard_dimensions['Y_dimension'][0])
+                Y = behaviour.get('Y_dimension',
+                                  config.netCDF_usualnames_for_standard_dimensions['Y_dimension'][0])
                 check_or_add_dim(Y, d_in_field='Y')
-                X = self.behaviour.get('X_dimension',
-                                       config.netCDF_usualnames_for_standard_dimensions['X_dimension'][0])
+                X = behaviour.get('X_dimension',
+                                  config.netCDF_usualnames_for_standard_dimensions['X_dimension'][0])
                 check_or_add_dim(X, d_in_field='X')
             elif field.geometry.dimensions['X'] > 1:
-                N = self.behaviour.get('N_dimension',
-                                       config.netCDF_usualnames_for_standard_dimensions['N_dimension'][0])
+                N = behaviour.get('N_dimension',
+                                  config.netCDF_usualnames_for_standard_dimensions['N_dimension'][0])
                 check_or_add_dim(N, d_in_field='X')
         elif 'gauss' in field.geometry.name:
-            Y = self.behaviour.get('Y_dimension', 'latitude')
+            Y = behaviour.get('Y_dimension', 'latitude')
             check_or_add_dim(Y, d_in_field='lat_number')
-            X = self.behaviour.get('X_dimension', 'longitude')
+            X = behaviour.get('X_dimension', 'longitude')
             check_or_add_dim(X, d_in_field='max_lon_number')
         else:
             raise NotImplementedError("grid not rectangular nor a gauss one.")
@@ -919,12 +928,12 @@ class netCDF(FileResource):
             tgrid = config.netCDF_usualnames_for_standard_dimensions['T_dimension'][0]
             tgrid = {'found':v for v in self._variables
                      if v in config.netCDF_usualnames_for_standard_dimensions['T_dimension']}.get('found', tgrid)
-            tgrid = self.behaviour.get('T_grid', tgrid)
-            if len(field.validity) == 1:
-                _, _status = check_or_add_variable(tgrid, float)
-            else:
+            tgrid = behaviour.get('T_grid', tgrid)
+            if len(field.validity) > 1 or behaviour.get('force_a_T_dimension', False):
                 _, _status = check_or_add_variable(tgrid, float, T)
                 dims.append(tgrid)
+            else:
+                _, _status = check_or_add_variable(tgrid, float)
             datetime0 = field.validity[0].getbasis().isoformat(sep=' ')
             datetimes = [int((dt.get() - field.validity[0].getbasis()).total_seconds()) for dt in field.validity]
             if _status == 'created':
@@ -942,7 +951,7 @@ class netCDF(FileResource):
             zgridname = config.netCDF_usualnames_for_standard_dimensions['Z_dimension'][0]
             zgridname = {'found':v for v in self._variables
                          if v in config.netCDF_usualnames_for_standard_dimensions['Z_dimension']}.get('found', zgridname)
-            zgridname = self.behaviour.get('Z_grid', zgridname)
+            zgridname = behaviour.get('Z_grid', zgridname)
             if field.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
                 ZP1 = Z + '+1'
                 check_or_add_dim(ZP1, size=Z_gridsize + 1)
@@ -986,7 +995,7 @@ class netCDF(FileResource):
         # 3.2 grid (lonlat)
         dims_lonlat = []
         (lons, lats) = field.geometry.get_lonlat_grid()
-        if self.behaviour.get('flatten_horizontal_grids'):
+        if behaviour.get('flatten_horizontal_grids'):
             dims_lonlat.append(G)
             dims.append(G)
             lons = stretch_array(lons)
@@ -1008,10 +1017,10 @@ class netCDF(FileResource):
         except ValueError:
             write_lonlat_grid = False
         else:
-            write_lonlat_grid = self.behaviour.get('write_lonlat_grid', True)
+            write_lonlat_grid = behaviour.get('write_lonlat_grid', True)
         if write_lonlat_grid:
-            lons_var, _status = check_or_add_variable('longitude', vartype, dims_lonlat, fill_value=fill_value)
-            lats_var, _status = check_or_add_variable('latitude', vartype, dims_lonlat, fill_value=fill_value)
+            lons_var, _status = check_or_add_variable(behaviour.get('X_grid', 'longitude'), vartype, dims_lonlat, fill_value=fill_value)
+            lats_var, _status = check_or_add_variable(behaviour.get('Y_grid', 'latitude'), vartype, dims_lonlat, fill_value=fill_value)
             if _status == 'match':
                 epylog.info('assume lons/lats match.')
             else:
@@ -1141,7 +1150,7 @@ class netCDF(FileResource):
                 data = field.geometry.fill_maskedvalues(data)
             else:
                 data = data.filled(fill_value)
-        if self.behaviour.get('flatten_horizontal_grids'):
+        if behaviour.get('flatten_horizontal_grids'):
             data = field.geometry.horizontally_flattened(data)
         data = data.squeeze()
         if _status == 'match':

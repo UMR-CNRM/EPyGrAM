@@ -80,7 +80,6 @@ class FileResource(Resource):
                        'No overwriting permission for file: ' + self.container.abspath
             else:
                 dirpath = os.path.dirname(self.container.abspath)
-                print dirpath
                 assert os.path.exists(dirpath), \
                        'Trying to write into non-existing directory: ' + dirpath
                 assert os.access(dirpath, os.W_OK), \

@@ -418,15 +418,22 @@ name:SFX.WALL_OPT,type:Misc,nature:float,dimension:1
 name:SFX.PAR_GARDEN,type:Misc,nature:float,dimension:0
 name:SFX.L_*,type:Misc,nature:float,dimension:0
 name:SFX.ASPSECTORS,type:Misc,nature:int,dimension:0
-#TOBECHECKED:
-name:SFX.GWKEY,type:Misc,nature:int,dimension:0
-name:SFX.MEB_PATCH,type:Misc,nature:int,dimension:0
-name:SFX.SOLAR_PANEL,type:Misc,nature:int,dimension:0
+name:SFX.TAU_REL_OC,type:Misc,nature:float,dimension:0
+name:SFX.LREL_CUR_OC,type:Misc,nature:bool,dimension:0
+name:SFX.LREL_TS_OC,type:Misc,nature:bool,dimension:0
+name:SFX.LFLX_NULL_OC,type:Misc,nature:bool,dimension:0
+name:SFX.LFLX_CORR_OC,type:Misc,nature:bool,dimension:0
+name:SFX.CORR_FLX_OC,type:Misc,nature:str,dimension:0
+name:SFX.LDIAPYC_OC,type:Misc,nature:bool,dimension:0
 name:SFX.LAPO,type:Misc,nature:float,dimension:0
 name:SFX.LOPO,type:Misc,nature:float,dimension:0
 name:SFX.CODIL,type:Misc,nature:float,dimension:0
 name:SFX.NLATI,type:Misc,nature:int,dimension:0
 name:SFX.NLOPA,type:Misc,nature:int,dimension:1
+#TOBECHECKED:
+name:SFX.GWKEY,type:Misc,nature:int,dimension:0
+name:SFX.MEB_PATCH,type:Misc,nature:int,dimension:0
+name:SFX.SOLAR_PANEL,type:Misc,nature:int,dimension:0
 
 # Surfex
 name:X001*,type:H2D,typeOfFirstFixedSurface:1

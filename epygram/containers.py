@@ -36,7 +36,6 @@ class File(RecursiveObject, FootprintBase):
 
         # super to footprints constructor
         super(File, self).__init__(*args, **kwargs)
-
         # initialise absolute pathname
         self._abspath = os.path.abspath(self.filename)
 
@@ -46,7 +45,6 @@ class File(RecursiveObject, FootprintBase):
         Returns the basename of the file.
         """
         import os
-
         return os.path.basename(self._abspath)
 
     @property
@@ -54,7 +52,6 @@ class File(RecursiveObject, FootprintBase):
         """
         Returns the absolute path of the file.
         """
-
         return self._abspath
 
     @property
@@ -62,5 +59,4 @@ class File(RecursiveObject, FootprintBase):
         """
         Returns the absolute path of the directory of the file.
         """
-
         return self._abspath[:-len(self.basename)]

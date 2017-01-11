@@ -42,9 +42,6 @@ class Field(RecursiveObject, FootprintBase):
             fid=dict(
                 type=FPDict,
                 access='rwx'),
-            data=dict(
-                optional=True,
-                default=None),
             comment=dict(
                 type=str,
                 optional=True,
@@ -56,24 +53,32 @@ class Field(RecursiveObject, FootprintBase):
                 default='')
         )
     )
-
+    
+    def __init__(self, *args, **kwargs):
+        """Constructor. See its footprint for arguments."""
+        super(Field, self).__init__(*args, **kwargs)
+        self._data = None
+    
     def getdata(self):
         """
         Returns the field data.
         Generic, default method for inheriting classes that do not overwrite it.
         """
-        return self.data
+        return self._data
 
     def setdata(self, data):
-        """
-        Sets or overwrites the field data as a numpy array.
-        Mainly useful because a footprints attribute cannot be a numpy array...
-        """
+        """Sets or overwrites the field data as a numpy array."""
 
         if not isinstance(data, numpy.ndarray):
             data = numpy.array(data)
-        self._attributes['data'] = data
-
+        self._data = data
+    
+    def deldata(self):
+        """Empties the data."""
+        self._data = None
+    
+    data = property(getdata, setdata, deldata, "Accessor to the field data.")
+    
     def setfid(self, fid):
         """
         Sets or overwrites the field fid given as a dict.
@@ -89,7 +94,7 @@ class Field(RecursiveObject, FootprintBase):
         """
 
         clone = self.deepcopy()
-        if fid != None:
+        if fid is not None:
             clone.setfid(fid)
         return clone
 
@@ -180,12 +185,12 @@ class Field(RecursiveObject, FootprintBase):
                 self.scalar_operation(operation, operand)
         else:
             if operation == 'normalize':
-                self.setdata((self.data - self.data.min()) / \
-                             (self.data.max() - self.data.min())
+                self.setdata((self._data - self._data.min()) / \
+                             (self._data.max() - self._data.min())
                              )
             else:
                 try:
-                    self.setdata(getattr(numpy, operation)(self.data))
+                    self.setdata(getattr(numpy, operation)(self._data))
                 except Exception:
                     raise
 
@@ -198,13 +203,13 @@ class Field(RecursiveObject, FootprintBase):
         self._check_operands(other)
 
         if operation == '+':
-            self.setdata(self.data + other.data)
+            self.setdata(self._data + other._data)
         elif operation == '*':
-            self.setdata(self.data * other.data)
+            self.setdata(self._data * other._data)
         elif operation == '-':
-            self.setdata(self.data - other.data)
+            self.setdata(self._data - other._data)
         elif operation == '/':
-            self.setdata(self.data / other.data)
+            self.setdata(self._data / other._data)
 
     def scalar_operation(self, operation, scalar):
         """
@@ -218,13 +223,13 @@ class Field(RecursiveObject, FootprintBase):
         self._check_operands(scalar)
 
         if operation == '+':
-            self.setdata(self.data + scalar)
+            self.setdata(self._data + scalar)
         elif operation == '*':
-            self.setdata(self.data * scalar)
+            self.setdata(self._data * scalar)
         elif operation == '-':
-            self.setdata(self.data - scalar)
+            self.setdata(self._data - scalar)
         elif operation == '/':
-            self.setdata(self.data / scalar)
+            self.setdata(self._data / scalar)
 
     def _check_operands(self, other):
         """
@@ -240,7 +245,7 @@ class Field(RecursiveObject, FootprintBase):
                                     (integer/float) or "
                                  + self.__class__.__name__ + ".")
         else:
-            if numpy.shape(self.data) != numpy.shape(other.data):
+            if numpy.shape(self._data) != numpy.shape(other._data):
                 raise epygramError("dimensions mismatch.")
 
     def _add(self, other, **kwargs):
@@ -254,10 +259,10 @@ class Field(RecursiveObject, FootprintBase):
 
         self._check_operands(other)
         if isinstance(other, self.__class__):
-            rhs = other.data
+            rhs = other._data
         else:
             rhs = other
-        result = self.data + rhs
+        result = self._data + rhs
         newid = {'op':'+'}
         newfield = footprints.proxy.field(fid=newid,
                                           **kwargs)
@@ -275,10 +280,10 @@ class Field(RecursiveObject, FootprintBase):
 
         self._check_operands(other)
         if isinstance(other, self.__class__):
-            rhs = other.data
+            rhs = other._data
         else:
             rhs = other
-        result = self.data * rhs
+        result = self._data * rhs
         newid = {'op':'*'}
         newfield = footprints.proxy.field(fid=newid,
                                           **kwargs)
@@ -296,10 +301,10 @@ class Field(RecursiveObject, FootprintBase):
 
         self._check_operands(other)
         if isinstance(other, self.__class__):
-            rhs = other.data
+            rhs = other._data
         else:
             rhs = other
-        result = self.data - rhs
+        result = self._data - rhs
         newid = {'op':'-'}
         newfield = footprints.proxy.field(fid=newid,
                                           **kwargs)
@@ -317,10 +322,10 @@ class Field(RecursiveObject, FootprintBase):
 
         self._check_operands(other)
         if isinstance(other, self.__class__):
-            rhs = other.data
+            rhs = other._data
         else:
             rhs = other
-        result = rhs - self.data
+        result = rhs - self._data
         newid = {'op':'-'}
         newfield = footprints.proxy.field(fid=newid,
                                           **kwargs)
@@ -338,10 +343,10 @@ class Field(RecursiveObject, FootprintBase):
 
         self._check_operands(other)
         if isinstance(other, self.__class__):
-            rhs = other.data
+            rhs = other._data
         else:
             rhs = other
-        result = self.data / rhs
+        result = self._data / rhs
         newid = {'op':'/'}
         newfield = footprints.proxy.field(fid=newid,
                                           **kwargs)
@@ -359,10 +364,10 @@ class Field(RecursiveObject, FootprintBase):
 
         self._check_operands(other)
         if isinstance(other, self.__class__):
-            rhs = other.data
+            rhs = other._data
         else:
             rhs = other
-        result = rhs / self.data
+        result = rhs / self._data
         newid = {'op':'/'}
         newfield = footprints.proxy.field(fid=newid,
                                           **kwargs)

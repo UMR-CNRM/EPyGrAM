@@ -40,7 +40,7 @@ def make_vector_field(fX, fY):
 
     f = fpx.field(fid={'op':'make_vector()'},
                   structure=fX.structure,
-                  validity=fX.validity,
+                  validity=fX.validity.copy(),
                   processtype=fX.processtype,
                   vector=True,
                   components=[fX, fY])
@@ -72,8 +72,6 @@ class H2DVectorField(Field):
 
     This is a wrapper to a list of H2DField(s), representing the components
     of a vector projected on its geometry (the grid axes).
-
-    The attribute H2DVectorField.data is a proxy to the data of the components.
     """
 
     _collector = ('field',)
@@ -93,8 +91,7 @@ class H2DVectorField(Field):
                 access='rwx',
                 default=FieldValidityList()),
             components=dict(
-                info="List of Fields that each compose a component of the \
-                      vector.",
+                info="List of Fields that each compose a component of the vector.",
                 type=FPList,
                 optional=True,
                 default=FPList([])),
@@ -178,10 +175,6 @@ class H2DVectorField(Field):
         """
         return [f.getdata(subzone=subzone, **kwargs) for f in self.components]
 
-    @property
-    def data(self):
-        return self.getdata(d4=True)  #TOBECHECKED: overload of a footprints attribute seems not to work
-
     def setdata(self, data):
         """
         Sets data to its components.
@@ -192,7 +185,14 @@ class H2DVectorField(Field):
             raise epygramError("data must have as many components as VectorField.")
         for i in range(len(self.components)):
             self.components[i].setdata(data[i])
-
+    
+    def deldata(self):
+        """Empties the data."""
+        for i in range(len(self.components)):
+            self.components[i].deldata()
+    
+    data = property(getdata, setdata, deldata, "Accessor to the field data.")
+    
     def to_module(self):
         """
         Returns a :class:`epygram.H2DField` whose data is the module of the
@@ -210,10 +210,10 @@ class H2DVectorField(Field):
         else:
             loc_sqrt = numpy.sqrt
         module = loc_sqrt(datagp[0] ** 2 + datagp[1] ** 2)
-        f = fpx.field(geometry=self.geometry,
+        f = fpx.field(geometry=self.geometry.copy(),
                       structure=self.structure,
                       fid={'op':'H2DVectorField.to_module()'},
-                      validity=self.validity,
+                      validity=self.validity.copy(),
                       processtype=self.processtype)
         f.setdata(module)
         if self.spectral:
@@ -224,7 +224,7 @@ class H2DVectorField(Field):
     def compute_direction(self):
         """
         Returns a :class:`epygram.H2DField` whose data is the direction of the
-        Vector field, in degrees. E.g. 45° is a South-Westerly vector.
+        Vector field, in degrees.
         """
 
         if self.spectral:
@@ -247,10 +247,10 @@ class H2DVectorField(Field):
         dd1 = loc_arccos(v_norm)
         dd2 = 2. * numpy.pi - dd1
         direction = numpy.degrees(numpy.where(u_norm >= 0., dd1, dd2))
-        f = fpx.field(geometry=self.geometry,
+        f = fpx.field(geometry=self.geometry.copy(),
                       structure=self.structure,
                       fid={'op':'H2DVectorField.compute_direction()'},
-                      validity=self.validity,
+                      validity=self.validity.copy(),
                       processtype=self.processtype)
         f.setdata(direction)
         if self.spectral:

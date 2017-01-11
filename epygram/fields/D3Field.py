@@ -392,7 +392,7 @@ class D3CommonField(Field):
                 for level in kwargs_vcoord['levels']:
                     if level < 1 or level > len(self.geometry.vcoordinate.grid['gridlevels']) - 1:
                         kwargs_vcoord['levels'].remove(level)
-        elif self.geometry.vcoordinate.typeoffirstfixedsurface in [100, 103, 109, 1, 106, 255]:
+        elif self.geometry.vcoordinate.typeoffirstfixedsurface in [100, 103, 109, 1, 106, 255, 160, 200]:
             kwargs_vcoord['levels'] = copy.copy(self.geometry.vcoordinate.levels)
         else:
             raise NotImplementedError("type of first surface level: " + str(self.geometry.vcoordinate.typeoffirstfixedsurface))
@@ -751,7 +751,7 @@ class D3CommonField(Field):
             self.fid['netCDF'] = self.fid[fidkey]
         else:
             assert self.fid.has_key('netCDF'), \
-                   ''.join(["must provide *variablename* or *fidkey* for"
+                   ' '.join(["must provide *variablename* or *fidkey* for"
                             "determining variable name in netCDF."])
         with resource(filename, 'w', fmt='netCDF') as r:
             r.writefield(self)
@@ -1064,7 +1064,7 @@ class D3Field(D3CommonField):
           with k the level, t the temporal dimension
         """
 
-        data = self.data
+        data = self._data
         if not self.spectral and subzone is not None:
             if self.geometry.grid.get('LAMzone') is not None:
                 data = self.geometry.extract_subzone(data, subzone)
@@ -1186,7 +1186,9 @@ class D3Field(D3CommonField):
             # reshape to 4D
             data = data.reshape(shp)
         super(D3Field, self).setdata(data)
-
+    
+    data = property(getdata, setdata, Field.deldata, "Accessor to the field data.")
+    
     def select_subzone(self, subzone):
         """
         If a LAMzone defines the field, select only the *subzone* from it.
@@ -1524,11 +1526,15 @@ class D3VirtualField(D3CommonField):
         return numpy.array(dataList)
 
     def setdata(self, data):
-        """
-        Sets field data, checking *data* to have the good shape according to geometry.
-        """
+        """setdata() not implemented on virtual fields."""
         raise epygramError("setdata cannot be implemented on virtual fields")
-
+    
+    def deldata(self):
+        """deldata() not implemented on virtual fields."""
+        raise epygramError("deldata cannot be implemented on virtual fields")
+    
+    data = property(getdata)
+    
     def getvalue_ij(self, i=None, j=None, k=None, t=None,
                     one=True):
         """

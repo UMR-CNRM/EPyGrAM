@@ -721,10 +721,16 @@ class FA(FileResource):
         spectral? and compression. Interface to ifsaux' FANION.
         """
 
-        (LDCOSP, KNGRIB, KNBITS, KSTRON, KPUILA) = wfa.wfanion(self._unit,
-                                                               fieldname[0:4],
-                                                               0,
-                                                               fieldname[4:])[1:6]
+        try:
+            (LDCOSP, KNGRIB, KNBITS, KSTRON, KPUILA) = wfa.wfanion(self._unit,
+                                                                   fieldname[0:4],
+                                                                   0,
+                                                                   fieldname[4:])[1:6]
+        except RuntimeError as e:
+            if 'arpifs4py: Error code -93 was raised' in str(e):
+                raise epygramError(fieldname+': seems like you try to read a MiscField as a H2DField...')
+            else:
+                raise e
         encoding = {'spectral':LDCOSP, 'KNGRIB':KNGRIB, 'KNBITS':KNBITS,
                     'KSTRON':KSTRON, 'KPUILA':KPUILA}
 

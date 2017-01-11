@@ -23,13 +23,11 @@ class MiscField(Field):
         """
         Returns the data type.
         """
-
-        return self.data.dtype
+        return self._data.dtype
 
     @property
     def shape(self):
         """
         Returns the data shape.
         """
-
-        return self.data.shape
+        return self._data.shape

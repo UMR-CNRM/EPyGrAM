@@ -159,7 +159,7 @@ class V2DField(D3Field):
                                        mask_outside['min'],
                                        mask_outside['max'])
         #FIXME: mask_threshold does not produce expected results
-        if self.geometry.vcoordinate.typeoffirstfixedsurface in (119, 100):
+        if self.geometry.vcoordinate.typeoffirstfixedsurface in (119, 100, 160):
             reverseY = True
         else:
             reverseY = False
