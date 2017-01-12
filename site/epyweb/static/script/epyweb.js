@@ -326,6 +326,7 @@ $(document).ready(function() {
     ///////// V O R T E X  I N I T ///////// 
     
     $( "#filenfield_tabs" ).tabs();
+    $( "#modetabs" ).tabs();
     
     //Initialisations des presets
     VortexPresetInit("");
@@ -362,6 +363,7 @@ $(document).ready(function() {
             active: false,
         });
     });
+    $(".resizable").resizable({});
 
     //Misc initialisations
     $(function() {
@@ -1162,9 +1164,26 @@ $("#getfile")
         });
         
     });
-
-
-
+$('#filesystemOK').prop("disabled", false);
+$("#filesystemOK")
+       //.button()
+       .click(function() {
+       Adesc["local_path"] = $("#filesystem_path").val().split('\n');
+       //alert(Adesc["local_path"][1]);
+       UpdateFields(Adesc,zoom_spinner);         
+        $("#getplot").prop("disabled", false);
+        $("#getplotboth").prop("disabled", false);
+        $("#overlay").prop("disabled", false);
+        $("#difference").prop("disabled", false);
+        
+        $("#accordion_vortex").accordion("option", "active", 1);
+        
+        makeTabTitleFS(Adesc["local_path"],"fileA")
+	});
+	
+	
+	
+	
     /////// C L O N E  E T  A L 
 
 $("#cloneFileField").click(function () {
@@ -1415,7 +1434,19 @@ $("#cloneFileField").click(function () {
         Param_Presets_Init("_cloned")
 
         
-        
+        $('#filesystemOK_cloned').prop("disabled", false);
+		$("#filesystemOK_cloned")
+		       //.button()
+		       .click(function() {
+		       Bdesc["local_path"] = $("#filesystem_path_cloned").val().split('\n');
+		       UpdateFields(Bdesc,zoom_spinner);         
+		        $("#getplot").prop("disabled", false);
+		        $("#getplotboth").prop("disabled", false);
+		        $("#overlay").prop("disabled", false);
+		        $("#difference").prop("disabled", false);
+		        $("#accordion_vortex_cloned").accordion("option", "active", 1);
+		        makeTabTitleFS(Bdesc["local_path"],"fileB")
+			});
         
         
         /*
@@ -2465,6 +2496,13 @@ function makeTabTitle(args_json,objId) {
     var jsonPretty = JSON.stringify(backToJsonObj, ["model","vconf","geometry","date","cutoff","term","expériment","block","suite"], 4);
     //alert(jsonPretty);
     $('#'+objId).prop('title', "Currently in memory : " + jsonPretty.replace(/\"/g,"") );
+    //alert(JSON.stringify(args_vortex_get_json,null,2))
+                
+            }
+            
+function makeTabTitleFS(fileslist,objId) {
+    
+    $('#'+objId).prop('title', "Currently in memory : " + JSON.stringify(fileslist));
     //alert(JSON.stringify(args_vortex_get_json,null,2))
                 
             }

@@ -3,32 +3,39 @@ $var jsfiles: epyweb.js
 $var cssfiles:
 
 <table>
-    <tr>
-        <td id="cachesize">
-            Cache size info : <span>? Gb (click to update)</span>
-        </td>
-    </tr>
+	<tr>
+		<td id="cachesize">
+			Cache size info : <span>? Gb (click to update)</span>
+		</td>
+	</tr>
 </table>
 
 <table>
-	<!-- tableau général pour formulaire -->
+<!-- tableau général pour formulaire -->
 	<tr>
 		<td class="ZeForm">
 			<fieldset class="important" id="fieldset">
-				<legend>File(s) 'n Field(s)</legend>
+                <legend>File(s) 'n Field(s)</legend>
 				<div id="filenfield_tabs">
-				<ul class="roottabs">
-				<li><a href="#filenfield_tab1" id="fileA" title="File(s) A (not retrieved yet!)"><span  class="filenfield_tab_list">___ A ___</a></li>
-				</ul>
-				
-	<div id="filenfield_tab1" >
-				
+                    <ul class="roottabs">
+                        <li><a href="#filenfield_tab1" id="fileA" title="File(s) A (not retrieved yet!)">
+								<span  class="filenfield_tab_list">___ A ___
+							</a>
+						</li>
+                    </ul>
+				<div id="filenfield_tab1" >
 				<div id="accordion_vortex" class="accordion vortex A">
 					<!-- 1 element accordion-->
 					<h3 class="accordion_vortex">File(s)</h3>
 					<!-- 1st and last (!) accordion part-->
-					<div>
+					<div id="modetabs">
+						  <ul>
+						    <li><a href="#accordion_vortex_content">Vortex</a></li>
+						    <li><a href="#filesystem">FileSystem</a></li>
+						  </ul>	
+					<div id="accordion_vortex_content">
 						<!-- 1st accordion part-->
+							
 						<fieldset class="option" id="vortex_resource">
 							<legend>Resource</legend>
 							<table>
@@ -206,10 +213,23 @@ $var cssfiles:
 
 					</div>
 					<!-- end 1st accordion part-->
+					<div id="filesystem" class="filesystem A">
+							<table>
+								<tr>
+
+									<td>
+										<label for="filesystem_path" style="width:500px" id="filesystem_path_label">FILE PATH : </label>
+										<textarea id="filesystem_path" style="width:500px;height:100px" title="File path (absolute or relative)" class="resizable"></textarea>
+									</td>
+								</tr>
+								<tr><td><button id="filesystemOK" title="OK" type="button" class="boutonlike">OK</button></td></tr>
+								
+							</table>
 				</div>
 				<!-- end of accordion part-->
 				
-				
+				</div>
+			</div>
 				<div id="accordion_actions" class="accordion collapse actions A accordion_actions">
 					<!-- 1 element accordion-->
 
