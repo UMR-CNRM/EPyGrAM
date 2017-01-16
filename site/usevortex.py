@@ -15,6 +15,7 @@ import ftplib
 import netrc
 import os
 
+import footprints
 from vortex import toolbox
 import common
 import olive
@@ -32,6 +33,50 @@ def set_defaults(**defaults):
                         origin='hst')
     toolbox.defaults(**defaults)
 
+def hendrix_prefetch(resource_paths, mail=None):
+    """
+    Puts a pre-fetching request on *hendrix* for the given list of
+    resources **resource_paths**.
+    
+    If **mail** is given, used for informing about the request progress.
+    
+    Uses .netrc to connect to *hendrix*.
+    """
+    # connect to archive
+    archive_name = 'hendrix'
+    try:
+        (_login, _, _passwd) = netrc.netrc().authenticators(archive_name)
+    except TypeError:
+        if netrc.netrc().authenticators(archive_name) is None:
+            raise IOError("host " + archive_name + " is unknown in .netrc")
+        else:
+            raise
+    ftp = ftplib.FTP(archive_name)
+    ftp.login(_login, _passwd)
+    # build request
+    stagedir = '/DemandeMig/ChargeEnEspaceRapide'
+    if mail is not None:
+        import re
+        assert re.match('([a-zA-Z\-]+)\.([a-zA-Z-]+)\@meteo.fr', mail), \
+               'invalid **mail** format: ' + mail
+        request = ["#MAIL=" + mail + '\n', ]
+    else:
+        request = []
+    request += [r + '\n' for r in resource_paths]
+    with open(tempfile.mkstemp(prefix='.'.join([_login, 'staging_request', '']),
+                               suffix='.MIG')[1], 'w') as f:
+        f.writelines(request)
+        staging_request = os.path.basename(f.name)
+        staging_request_fullname = f.name
+    # transfer request to archive
+    with open(staging_request_fullname, 'rb') as f:
+        ftp.cwd(stagedir)
+        ftp.storbinary('STOR ' + staging_request, f)
+    os.remove(staging_request_fullname)
+    ftp.quit()
+    # send back request identifier
+    return ['/'.join([stagedir, staging_request])]
+    
 def get_resources(getmode='epygram', uselocalcache=False, meta_rtype=None,
                   **description):
     """
@@ -98,16 +143,15 @@ def get_resources(getmode='epygram', uselocalcache=False, meta_rtype=None,
     """
     import common.util.usepygram
 
-    # alias xp = experiment
-    xp = description.pop('xp', None)
-    if xp:
-        description['experiment'] = xp
-
-    # set namespace according to status xp/oper...
     if uselocalcache:
         _domain = 'multi'
     else:
         _domain = 'archive'
+        
+    # completion of description...
+    xp = description.pop('xp', None)
+    if xp:
+        description['experiment'] = xp
     if description.get('experiment', None) and 'namespace' not in description.keys():
         description['namespace'] = '.'.join(['olive', _domain, 'fr'])
     elif description.get('suite', None) in ('oper', 'dble') and 'namespace' not in description.keys():
@@ -120,86 +164,43 @@ def get_resources(getmode='epygram', uselocalcache=False, meta_rtype=None,
         description['kind'] = 'gridpoint'
     if description.get('model', None) and not description.get('vapp', None):
         description['vapp'] = description['model']
+    if getmode == 'prestaging':
+        # force namespace archive for prestaging
+        description['namespace'] = '.'.join([description['namespace'].split('.')[0],
+                                             'archive',
+                                             'fr'])
 
-    # resolve resource description
     if getmode == 'check':
-        check_desc = {}
-        for k in description.keys():
-            if isinstance(description[k], list):
-                check_desc[k] = description[k][0]
-            else:
-                check_desc[k] = description[k]
-            resolved = toolbox.rload(**check_desc)
-    else:
-        if getmode == 'prestaging':
-            # force namespace archive for prestaging
-            description['namespace'] = '.'.join([description['namespace'].split('.')[0],
-                                                 'archive',
-                                                 'fr'])
-        resolved = toolbox.rload(**description)
-
-    # and complete reaching resource according to getmode
-    if getmode == 'locate':
-        resources = [r.locate() for r in resolved]
-    elif getmode == 'exist':
-        resources = []
-        for r in resolved:
-            try:
-                resources.append((r.locate(), bool(r.check())))
-            except Exception:
-                resources.append((r.locate(), False))
-    elif getmode in ('epygram', 'fetch'):
-        for r in resolved:
-            ok = r.get()
-            if not ok:
-                raise IOError("fetch failed: " + r.locate())
-        if getmode == 'epygram':
-            resources = [r.contents.data for r in resolved]
-        elif getmode == 'fetch':
-            resources = [r.container.abspath for r in resolved]
-    elif getmode == 'vortex':
-        resources = resolved
-    elif getmode == 'check':
-        resources = resolved[0].complete
-    elif getmode == 'prestaging':
-        # connect to archive
-        archive_name = 'hendrix'
+        # just check completion of the resource
         try:
-            (_login, _, _passwd) = netrc.netrc().authenticators(archive_name)
-        except TypeError:
-            if netrc.netrc().authenticators(archive_name) is None:
-                raise IOError("host " + archive_name + " is unknown in .netrc")
-        ftp = ftplib.FTP(archive_name)
-        ftp.login(_login, _passwd)
-        # build request
-        tmpdir = '/dev/shm'
-        stagedir = '/DemandeMig/ChargeEnEspaceRapide'
-        if 'mail' in description.keys():
-            request = ["#MAIL=" + description['mail'] + '\n', ]
-        else:
-            request = []
-        request += [r.locate().split('hendrix.meteo.fr:')[1] + '\n' for r in resolved]
-        with open(tempfile.mkstemp(prefix='.'.join([_login, 'staging_request', '']),
-                                   dir=tmpdir,
-                                   suffix='.MIG')[1], 'w') as f:
-            f.writelines(request)
-            staging_request = os.path.basename(f.name)
-            staging_request_fullname = f.name
-        # transfer request to archive
-        with open(staging_request_fullname, 'rb') as f:
-            ftp.cwd(stagedir)
-            ftp.storbinary('STOR ' + staging_request, f)
-        os.remove(staging_request_fullname)
-        ftp.quit()
-        # send back request identifier
-        resources = ['/'.join([stagedir, staging_request])]
+            toolbox.rload(**description)
+            resources = True
+        except (toolbox.VortexToolboxDescError, footprints.FootprintException):
+            resources = False
     else:
-        raise ValueError('*getmode* unknown: ' + getmode)
-
-    if meta_rtype is not None:
-        assert getmode == 'epygram', "*meta_rtype* needs getmode='epygram'"
-        import epygram
-        resources = epygram.resources.meta_resource(resources, openmode='r', rtype=meta_rtype)
+        # resolve resource description: raise an error if the description is not complete
+        resolved = toolbox.rload(**description)
+        # and complete reaching resource according to getmode
+        if getmode == 'vortex':
+            resources = resolved
+        elif getmode == 'locate':
+            resources = [r.locate() for r in resolved]
+        elif getmode == 'exist':
+            resources = [(r.locate(), bool(r.check())) for r in resolved]
+        elif getmode == 'prestaging':
+            resources = hendrix_prefetch([r.locate().split('hendrix.meteo.fr:')[1] for r in resolved],
+                                         description.get('mail', None))
+        elif getmode in ('fetch', 'epygram'):
+            ok = [r.get() for r in resolved]
+            if all(ok):
+                if getmode == 'fetch':
+                    resources = [r.container.abspath for r in resolved]
+                elif getmode == 'epygram':
+                    resources = [r.contents.data for r in resolved]
+            else:
+                raise IOError("fetch failed, at least: " + resolved[ok.index(False)].locate())
+        else:
+            raise ValueError('*getmode* unknown: ' + getmode)
 
     return resources
 

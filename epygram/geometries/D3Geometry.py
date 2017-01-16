@@ -310,7 +310,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
                                   'latitudes':[p[1] for p in transect],
                                   'LAMzone':None},
                             position_on_horizontal_grid='center' if position == None else position)
-
+    
     def _reshape_lonlat_4d(self, lons, lats, nb_validities):
         """Make lons, lats grids 4D."""
         if nb_validities < 1:
@@ -621,7 +621,7 @@ class D3RectangularGridGeometry(D3Geometry):
 
         return (lons, lats)
 
-    def extract_subzone(self, data, subzone):  #TOBECHECKED: AM:hope nothing is broken since removal of 2 arguments
+    def extract_subzone(self, data, subzone):
         """
         Extracts the subzone C or CI from a LAM field.
 
@@ -670,6 +670,28 @@ class D3RectangularGridGeometry(D3Geometry):
             edata = edata[tuple(selectionI)]
 
         return edata
+
+    def make_subarray_geometry(self,
+                               first_i, last_i,
+                               first_j, last_j):
+        """
+        Make a modified geometry consisting in a subarray of the grid, defined
+        by the indexes given as argument.
+        """
+        
+        geom_kwargs = copy.deepcopy(self._attributes)
+        geom_kwargs.pop('dimensions')
+        if 'LAMzone' in geom_kwargs['grid'].keys():
+            geom_kwargs['grid']['LAMzone'] = None
+        if 'input_position' in geom_kwargs['grid'].keys():
+            coords_00 = self.ij2ll(first_i, first_j)
+            geom_kwargs['grid']['input_position'] = (0,0)
+            geom_kwargs['grid']['input_lon'] = Angle(coords_00[0], 'degrees')
+            geom_kwargs['grid']['input_lat'] = Angle(coords_00[1], 'degrees')
+        geom_kwargs['dimensions'] = {'X':last_i - first_i, 'Y':last_j - first_j}
+        newgeom = fpx.geometry(**geom_kwargs)  # create new geometry object
+    
+        return newgeom
 
     def get_datashape(self, dimT=1, force_dimZ=None,
                       d4=False,
@@ -1100,6 +1122,10 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
 
     def _consistency_check(self):
         """Check that the geometry is consistent."""
+        grid_keys = ['latitudes', 'longitudes']
+        if set(self.grid.keys()) != set(grid_keys):
+            raise epygramError("grid attribute must consist in keys: " + \
+                               str(grid_keys))
         """grid_keys = ['LAMzone', 'latitudes', 'longitudes']
         if set(self.grid.keys()) != set(grid_keys):
             raise epygramError("grid attribute must consist in keys: " + \
@@ -1118,7 +1144,6 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
         if set(self.dimensions.keys()) != set(dimensions_keys):
             raise epygramError("dimensions attribute must consist in keys: " + \
                                str(dimensions_keys))"""
-        pass
 
     def get_lonlat_grid(self, subzone=None, position=None, d4=False, nb_validities=0):
         """

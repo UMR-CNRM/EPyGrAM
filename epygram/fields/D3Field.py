@@ -568,7 +568,27 @@ class D3CommonField(Field):
         zoom_field.setdata(data)
 
         return zoom_field
-
+    
+    def extract_subarray(self,
+                         first_i, last_i,
+                         first_j, last_j):
+        """
+        Extract a rectangular sub-array from the field, given the i,j index limits
+        of the sub-array, and return the extracted field.
+        """
+    
+        newgeom = self.geometry.make_subarray_geometry(first_i, last_i,
+                                                       first_j, last_j)
+        # select data
+        subdata = self.getdata(d4=True)[:, :, first_j:last_j, first_i:last_i]
+        # copy the field object and set the new geometry, then data
+        field_kwargs = copy.deepcopy(self._attributes)
+        field_kwargs['geometry'] = newgeom
+        newfield = fpx.field(**field_kwargs)
+        newfield.setdata(subdata)
+    
+        return newfield
+    
     def extend(self, another_field_with_time_dimension):
         """
         Extend the field with regard to time dimension with the field given as
