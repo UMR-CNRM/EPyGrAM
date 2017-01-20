@@ -223,7 +223,6 @@ class netCDF(FileResource):
                     behaviour[sg] = f
 
         # 2. time
-        validity = FieldValidity()
         def get_validity(T_varname):
             if not T_varname in self._variables.keys():
                 raise epygramError('unable to find T_grid in variables.')
@@ -236,6 +235,8 @@ class netCDF(FileResource):
             if not isinstance(basis, datetime.datetime):
                 basis = '{:0>19}'.format(str(basis).strip())
                 basis = dt_parser.parse(basis, yearfirst=True)  #FIXME: years < 1000 become > 2000
+            if isinstance(T, datetime.datetime):
+                T = [T]
             for v in T:
                 if isinstance(v, datetime.datetime):
                     fv = FieldValidity(date_time=v, basis=basis)
@@ -258,10 +259,13 @@ class netCDF(FileResource):
         elif any([t in self._variables.keys() for t in config.netCDF_usualnames_for_standard_dimensions['T_dimension']]):
             # look for a time variable
             T_varnames = [t for t in config.netCDF_usualnames_for_standard_dimensions['T_dimension'] if t in self._variables.keys()]
-            if len(T_varnames) == 1:
-                _v = get_validity(T_varnames[0])
-                if len(_v) == 1:
-                    validity = _v
+            _v = get_validity(T_varnames[0])
+            if len(_v) == 1:
+                validity = _v
+            else:
+                validity = FieldValidity()
+        else:
+            validity = FieldValidity()
         field_kwargs['validity'] = validity
 
         # 3. GEOMETRY
@@ -714,8 +718,7 @@ class netCDF(FileResource):
             else:
                 lat = self._variables[var_corresponding_to_Y_grid][:]
             grid = {'longitudes':lon,
-                    'latitudes':lat,
-                    'LAMzone':None}
+                    'latitudes':lat}
 
         # 3.4 build geometry
         vcoordinate = fpx.geometry(**kwargs_vcoord)
@@ -732,6 +735,8 @@ class netCDF(FileResource):
             if a != 'validity':
                 if isinstance(variable.getncattr(a), numpy.float32):  # pb with json and float32
                     comment.update({a:numpy.float64(variable.getncattr(a))})
+                elif isinstance(variable.getncattr(a), numpy.ndarray): # pb with json and numpy arrays
+                    comment.update({a:numpy.float64(variable.getncattr(a)).tolist()})
                 else:
                     comment.update({a:variable.getncattr(a)})
         comment = json.dumps(comment)

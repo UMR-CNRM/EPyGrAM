@@ -148,7 +148,7 @@ GRIB_default_ordering = {'iScansNegatively':0,
 #: - grid_ieee (100% // 12%)
 GRIB_default_packing = {1:{'packingType':'grid_second_order',
                            # 'complexPacking':1,
-                           'boustrophedonicOrdering':1,
+                           'boustrophedonicOrdering':0,
                            'bitsPerValue':16,
                            # 'additionalFlagPresent':1,
                            },
@@ -171,6 +171,8 @@ satellites_local_GRIB2 = {'METEOSAT7':192,
 sensors_local_GRIB2 = {'MVIRI':192,
                        'SEVIRI':193,
                        'IMAGER':194}
+# GRIB: errors while setting packing are fatal
+GRIB_packing_fatal = True
 
 #: LFI field dictionaries
 LFI_field_dictionaries_csv = {'default':os.path.join(installdir,

@@ -613,13 +613,15 @@ class GRIBmessage(RecursiveObject, dict):
                 pass  #TODO: bitmap in GRIB1 ?
         if not field.spectral:
             # is it necessary to pre-write values ? (packingType != from sample)
-            if required_packingType is None:  # unable to guess
+            # Yes it is (don't really know why...)
+            """if required_packingType is None:  # unable to guess
                 pre_write = True
             else:
                 try:
                     pre_write = required_packingType != self['packingType']
                 except gribapi.GribInternalError:
-                    pre_write = True
+                    pre_write = True"""
+            pre_write = True
             if pre_write:
                 self.set_values(values)
         self.set_packing(packing)
@@ -634,10 +636,15 @@ class GRIBmessage(RecursiveObject, dict):
         packing = copy.copy(packing)
         if packing.get('bitsPerValue') is not None and packing.get('bitsPerValue') > 24:
             packing['bitsPerValue'] = 24  #FIXME: problem with bitsPerValue = 30 at least
-        order = ['packingType', 'complexPacking', 'boustrophedonicOrdering', 'bitsPerValue']
+        order = ['packingType', 'complexPacking', 'boustrophedonicOrdering',
+                 'bitsPerValue']
         for k in order:
             if k in packing.keys():
-                self[k] = packing.pop(k)
+                try:
+                    self[k] = packing.pop(k)
+                except gribapi.GribInternalError:
+                    if config.GRIB_packing_fatal:
+                        raise
         for k, v in packing.items():  # remaining items
             self[k] = v
 
