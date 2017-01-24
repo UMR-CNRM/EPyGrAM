@@ -295,8 +295,7 @@ class D3CommonField(Field):
                                                 dimensions={'X':1, 'Y':1},
                                                 vcoordinate=vcoordinate,
                                                 grid={'longitudes':[lons[j, i]],
-                                                      'latitudes':[lats[j, i]],
-                                                      'LAMzone':None},
+                                                      'latitudes':[lats[j, i]]},
                                                 position_on_horizontal_grid='center'
                                                 )
                         pointfield = field_builder(structure='Point',
@@ -337,8 +336,7 @@ class D3CommonField(Field):
                                             dimensions={'X':1, 'Y':1},
                                             vcoordinate=vcoordinate,
                                             grid={'longitudes':[lons[j, i]],
-                                                  'latitudes':[lats[j, i]],
-                                                  'LAMzone':None},
+                                                  'latitudes':[lats[j, i]]},
                                             position_on_horizontal_grid='center'
                                             )
                     profilefield = field_builder(structure='V1D',

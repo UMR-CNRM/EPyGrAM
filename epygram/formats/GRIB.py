@@ -834,8 +834,7 @@ class GRIBmessage(RecursiveObject, dict):
                     'input_lon':Angle(self['longitudeOfFirstGridPointInDegrees'], 'degrees'),
                     'input_lat':Angle(self['latitudeOfFirstGridPointInDegrees'], 'degrees'),
                     'input_position':input_position,
-                    'LAMzone':None
-                    }
+                    'LAMzone':None}
         elif self['gridType'] in ('mercator',):
             geometryname = self['gridType']
             lat_ts = self['LaDInDegrees']
@@ -849,8 +848,7 @@ class GRIBmessage(RecursiveObject, dict):
                     'input_lon':Angle(self['longitudeOfFirstGridPointInDegrees'], 'degrees'),
                     'input_lat':Angle(self['latitudeOfFirstGridPointInDegrees'], 'degrees'),
                     'input_position':input_position,
-                    'LAMzone':None
-                    }
+                    'LAMzone':None}
         elif 'gg' in self['gridType']:
             projection = None
             #NOTE: this is a (good) approximation actually, the true latitudes are the roots of Legendre polynoms

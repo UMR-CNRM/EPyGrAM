@@ -253,8 +253,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
                             vcoordinate=vcoordinate,
                             dimensions={'X':1, 'Y':1},
                             grid={'longitudes':[lon],
-                                  'latitudes':[lat],
-                                  'LAMzone':None},
+                                  'latitudes':[lat]},
                             position_on_horizontal_grid='center'
                            )
 
@@ -307,8 +306,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
                             vcoordinate=vcoordinate,
                             dimensions={'X':len(transect), 'Y':1},
                             grid={'longitudes':[p[0] for p in transect],
-                                  'latitudes':[p[1] for p in transect],
-                                  'LAMzone':None},
+                                  'latitudes':[p[1] for p in transect]},
                             position_on_horizontal_grid='center' if position == None else position)
     
     def _reshape_lonlat_4d(self, lons, lats, nb_validities):
@@ -1126,24 +1124,6 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
         if set(self.grid.keys()) != set(grid_keys):
             raise epygramError("grid attribute must consist in keys: " + \
                                str(grid_keys))
-        """grid_keys = ['LAMzone', 'latitudes', 'longitudes']
-        if set(self.grid.keys()) != set(grid_keys):
-            raise epygramError("grid attribute must consist in keys: " + \
-                               str(grid_keys))
-        LAMzone_values = [None, 'CI', 'CIE']
-        if self.grid['LAMzone'] not in LAMzone_values:
-            raise epygramError("grid['LAMzone'] must be among " + \
-                               str(LAMzone_values))
-        dimensions_keys = ['X', 'Y']
-        if self.grid['LAMzone'] in ('CI', 'CIE'):
-            dimensions_keys.extend(['X_Iwidth', 'Y_Iwidth',
-                                    'X_Czone', 'Y_Czone',
-                                    'X_CIzone', 'Y_CIzone'])
-        if self.grid['LAMzone'] == 'CIE':
-            dimensions_keys.extend(['X_CIoffset', 'Y_CIoffset'])
-        if set(self.dimensions.keys()) != set(dimensions_keys):
-            raise epygramError("dimensions attribute must consist in keys: " + \
-                               str(dimensions_keys))"""
 
     def get_lonlat_grid(self, subzone=None, position=None, d4=False, nb_validities=0):
         """

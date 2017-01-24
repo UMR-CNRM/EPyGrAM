@@ -298,8 +298,7 @@ class GeoPoints(FileResource):
                                 dimensions={'X':len(values), 'Y':1},
                                 vcoordinate=vcoordinate,
                                 grid={'longitudes':longitudes,
-                                      'latitudes':latitudes,
-                                      'LAMzone':None},
+                                      'latitudes':latitudes},
                                 position_on_horizontal_grid='center'
                                 )
         if 'DATE' in self.columns and 'TIME' in self.columns:
