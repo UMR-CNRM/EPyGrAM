@@ -427,11 +427,11 @@ def plotprofiles(profiles,
     colors = ['red', 'blue', 'green', 'orange', 'magenta', 'darkolivegreen',
               'yellow', 'salmon', 'black']
     linestyles = ['-', '--', '-.', ':']
-
-    if not isinstance(profiles, FieldSet):
-        p = profiles.deepcopy()
-        profiles = FieldSet()
-        profiles.append(p)
+    
+    if isinstance(profiles, V1DField):
+        profiles = [profiles]
+    if isinstance(labels, str):
+        labels = [labels]
     p0 = profiles[0]
     if p0.geometry.vcoordinate.typeoffirstfixedsurface in (119, 100):
         reverseY = True
@@ -461,8 +461,7 @@ def plotprofiles(profiles,
         ax.set_yscale('log')
     if reverseY and not ax.yaxis_inverted():
         ax.invert_yaxis()
-    i = 0
-    for p in profiles:
+    for i, p in enumerate(profiles):
         if len(p.validity) != 1:
             raise epygramError("plotprofiles can handle only profiles with one validity.")
         Y = numpy.array(p.geometry.vcoordinate.levels).flatten()
@@ -497,7 +496,6 @@ def plotprofiles(profiles,
             plot_kwargs['linestyle'] = linestyles[i // len(colors)]
         ax.plot(data.flatten(), Y.flatten(), label=label,
                 **plot_kwargs)
-        i += 1
 
     # Decoration
     if reverseY:

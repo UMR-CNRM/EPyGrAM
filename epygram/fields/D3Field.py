@@ -14,7 +14,7 @@ import sys
 import footprints
 from footprints import FPDict, FPList, proxy as fpx
 from epygram import epygramError
-from epygram.util import write_formatted, stretch_array
+from epygram.util import write_formatted, stretch_array, Angle
 from epygram.base import Field, FieldSet, FieldValidity, FieldValidityList, Resource
 from epygram.geometries import D3Geometry, SpectralGeometry
 
@@ -515,29 +515,47 @@ class D3CommonField(Field):
 
         assert not self.spectral, \
                "spectral field: convert to gridpoint beforehand"
-
+            
         (lons, lats) = self.geometry.get_lonlat_grid()
-        lons = lons.flatten()
-        lats = lats.flatten()
-        zoomlons = footprints.FPList([])
-        zoomlats = footprints.FPList([])
-        flat_indexes = []
-        for i in range(len(lons)):
-            if zoom['lonmin'] <= lons[i] <= zoom['lonmax'] and \
-               zoom['latmin'] <= lats[i] <= zoom['latmax']:
-                zoomlons.append(lons[i])
-                zoomlats.append(lats[i])
-                flat_indexes.append(i)
-        assert len(zoomlons) > 0, "zoom not in domain."
-
-        zoom_geom = footprints.proxy.geometry(structure=self.geometry.structure,
-                                              name='unstructured',
-                                              grid={'longitudes':zoomlons,
-                                                    'latitudes':zoomlats},
-                                              dimensions={'X':len(zoomlons), 'Y':1},
-                                              vcoordinate=self.geometry.vcoordinate,
-                                              position_on_horizontal_grid=self.geometry.position_on_horizontal_grid,
-                                              geoid=self.geometry.geoid)
+        kwargs_zoomgeom = {'structure':self.geometry.structure,
+                           'vcoordinate':self.geometry.vcoordinate,
+                           'position_on_horizontal_grid':self.geometry.position_on_horizontal_grid,
+                           'geoid':self.geometry.geoid}
+        if self.geometry.name == 'regular_lonlat':
+            imin, jmin = self.geometry.ll2ij(zoom['lonmin'], zoom['latmin'])
+            imax, jmax = self.geometry.ll2ij(zoom['lonmax'], zoom['latmax'])
+            imin = int(numpy.ceil(imin))
+            imax = int(numpy.floor(imax))
+            jmin = int(numpy.ceil(jmin))
+            jmax = int(numpy.floor(jmax))
+            kwargs_zoomgeom['dimensions'] = {'X':imax - imin + 1,
+                                             'Y':jmax - jmin + 1}
+            lonmin, latmin = self.geometry.ij2ll(imin, jmin)
+            kwargs_zoomgeom['name'] = self.geometry.name
+            kwargs_zoomgeom['grid'] = {'input_position':(0, 0),
+                                       'input_lon':Angle(lonmin, 'degrees'),
+                                       'input_lat':Angle(latmin, 'degrees'),
+                                       'X_resolution':self.geometry.grid['X_resolution'],
+                                       'Y_resolution':self.geometry.grid['Y_resolution']}
+        else:
+            lons = lons.flatten()
+            lats = lats.flatten()
+            zoomlons = footprints.FPList([])
+            zoomlats = footprints.FPList([])
+            flat_indexes = []
+            for i in range(len(lons)):
+                if zoom['lonmin'] <= lons[i] <= zoom['lonmax'] and \
+                   zoom['latmin'] <= lats[i] <= zoom['latmax']:
+                    zoomlons.append(lons[i])
+                    zoomlats.append(lats[i])
+                    flat_indexes.append(i)
+            assert len(zoomlons) > 0, "zoom not in domain."
+            kwargs_zoomgeom['dimensions'] = {'X':len(zoomlons),
+                                             'Y':1}
+            kwargs_zoomgeom['name'] = 'unstructured'
+            kwargs_zoomgeom['grid'] = {'longitudes':zoomlons,
+                                       'latitudes':zoomlats}
+        zoom_geom = footprints.proxy.geometry(**kwargs_zoomgeom)
 
         #zoom_field = self.extract_subdomain(zoom_geom)  #TODO: ? serait plus élégant mais pb d'efficacité (2x plus lent)
         #zoom_field.fid = fid                            # car extract_subdomain fait une recherche des plus proches points
@@ -547,11 +565,14 @@ class D3CommonField(Field):
         values = self.getdata(d4=True)
         for t in range(len(self.validity)):
             for k in range(len(self.geometry.vcoordinate.levels)):
-                vals = values[t, k, :, :].flatten()
-                zoomvals = []
-                for i in flat_indexes:
-                    zoomvals.append(vals[i])
-                data[t, k, :, :] = numpy.array(zoomvals).reshape(shp[2:])
+                if self.geometry.name == 'regular_lonlat':
+                    data[t, k, :, :] = values[t, k, jmin:jmax+1, imin:imax+1]
+                else:
+                    vals = values[t, k, :, :].flatten()
+                    zoomvals = []
+                    for i in flat_indexes:
+                        zoomvals.append(vals[i])
+                    data[t, k, :, :] = numpy.array(zoomvals).reshape(shp[2:])
 
         fid = {k:v for k, v in self.fid.items()}
         for k, v in fid.items():

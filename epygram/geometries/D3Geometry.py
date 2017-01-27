@@ -18,7 +18,7 @@ from footprints import FootprintBase, FPDict, proxy as fpx
 from epygram import epygramError, config
 from epygram.util import RecursiveObject, degrees_nearest_mod, Angle, \
                          separation_line, write_formatted, stretch_array, \
-                         nearlyEqual
+                         nearlyEqual, set_figax, set_map_up
 from .VGeometry import VGeometry
 
 epylog = footprints.loggers.getLogger(__name__)
@@ -338,152 +338,64 @@ class D3Geometry(RecursiveObject, FootprintBase):
 #  including suggestions/developments by users...]
 
     def plotgeometry(self,
-                     subzone=None,
-                     title=None,
                      color='blue',
-                     gisquality='i',
-                     specificproj=None,
-                     zoom=None,
-                     existingbasemap=None,
-                     drawrivers=False,
-                     llgridstep=None,
-                     colorbar='right',
-                     departments=False,
-                     existingfigure=None,
-                     pointsize=20):
+                     borderonly=True,
+                     **kwargs):
         """
         Makes a simple plot of the geometry, with a number of options.
 
         Requires :mod:`matplotlib`
 
         Options: \n
-        - *subzone*: among ('C', 'CI'), for LAM fields only, plots the data
-          resp. on the C or C+I zone. \n
-          Default is no subzone, i.e. the whole field.
-        - *gisquality*: among ('c', 'l', 'i', 'h', 'f') -- by increasing
-          quality. Defines the quality for GIS elements (coastlines,
-          countries boundaries...).
-          Cf. 'basemap' doc for more details.
-        - *specificproj*: enables to make basemap on the specified projection,
-          among: 'kav7', 'cyl', 'ortho', ('nsper', {...}) (cf. Basemap doc). \n 
-          In 'nsper' case, the {} may contain:\n
-          - 'sat_height' = satellite height in km;
-          - 'lon' = longitude of nadir in degrees;
-          - 'lat' = latitude of nadir in degrees. \n
-        - *zoom*: specifies the lon/lat borders of the map, implying hereby
-          a 'cyl' projection.
-          Must be a dict(lonmin=, lonmax=, latmin=, latmax=).\n
-          Overwrites *specificproj*.
-        - *existingbasemap*: as making Basemap is the most time-consuming step,
-          it is possible to bring an already existing basemap object.
-          In that case, all the above options are ignored,
-          overwritten by those of the *existingbasemap*.
-        - *title*: title for the plot. Default is geometry name.
-        - *color*: name of the **matplotlib** color to use.
-        - *drawrivers*: to add rivers on map.
-        - *llgridstep*: specific step between two lon/lat gridlines, in
-          degrees. \n
-          Default depends on domain size.
-        - *departments*: if True, adds the french departments on map (instead 
-          of countries).
-        - *existingfigure*: to plot the field over an existing figure (e.g.
-          contourlines over colorshades).
-          Be aware that no check is done between the *existingfigure*  basemap
-          and either the *existingbasemap* or the one that is created from the
-          field geometry: there might be inconsistency.
-        - *pointsize*: size of points.
+        - *color*: color of the plotting. \n
+        - *borderonly*: if True, only plot the border of the grid, else the
+          whole grid. Ignored for global geometries.
+        
+        For other options, cf. :class:`epygram.fields.H2DField`. 
 
         This method uses (hence requires) 'matplotlib' and 'basemap' libraries.
         """
         import matplotlib.pyplot as plt
         plt.rc('font', family='serif')
         plt.rc('figure', figsize=config.plotsizes)
-
-        if existingfigure == None:
-            f = plt.figure()
-        else:
-            f = existingfigure
+        fig, ax = set_figax(*kwargs.get('over', (None, None)))
         if self.name == 'academic':
             raise epygramError("We cannot plot lon/lat of an academic grid.")
-        if existingbasemap == None:
-            bm = self.make_basemap(gisquality=gisquality,
-                                            subzone=subzone,
-                                            specificproj=specificproj,
-                                            zoom=zoom)
+        if kwargs.get('use_basemap') is None:
+            bm_args = {k:kwargs[k]
+                       for k in ('gisquality', 'subzone', 'specificproj', 'zoom')
+                       if k in kwargs.keys()}
+            bm = self.make_basemap(**bm_args)
         else:
-            bm = existingbasemap
-        bm.drawcoastlines()
-        if departments:
-            import json
-            with open(config.installdir + '/data/departments.json', 'r') as dp:
-                depts = json.load(dp)[1]
-            for d in range(len(depts)):
-                for part in range(len(depts[d])):
-                    dlon = depts[d][part][0]
-                    dlat = depts[d][part][1]
-                    (x, y) = bm(dlon, dlat)
-                    bm.plot(x, y, color='0.25')
-        else:
-            bm.drawcountries()
-        if drawrivers:
-            bm.drawrivers(color='blue')
-        meridians = numpy.arange(0, 360, 20)
-        parallels = numpy.arange(-90, 90, 20)
-        if self.rectangular_grid:
-            corners = self.gimme_corners_ll(subzone=subzone)
-            minlon = min([c[0] for c in (corners['ul'], corners['ll'])])
-            maxlon = max([c[0] for c in (corners['ur'], corners['lr'])])
-            maxlon = degrees_nearest_mod(maxlon, minlon)
-            minlat = min([c[1] for c in (corners['ll'], corners['lr'])])
-            maxlat = max([c[1] for c in (corners['ul'], corners['ur'])])
-            if llgridstep:
-                meridians = numpy.arange(int(minlon) - llgridstep,
-                                         maxlon + llgridstep,
-                                         llgridstep)
-                parallels = numpy.arange(int(minlat) - llgridstep,
-                                         maxlat + llgridstep,
-                                         llgridstep)
-            else:
-                if abs(maxlon - minlon) < 15.:
-                    meridians = numpy.arange(0, 360, 2)
-                elif abs(maxlon - minlon) < 25.:
-                    meridians = numpy.arange(0, 360, 5)
-                elif abs(maxlon - minlon) < 90.:
-                    meridians = numpy.arange(0, 360, 10)
-                if abs(maxlat - minlat) < 15.:
-                    parallels = numpy.arange(-90, 90, 2)
-                elif abs(maxlat - minlat) < 25.:
-                    parallels = numpy.arange(-90, 90, 5)
-                elif abs(maxlat - minlat) < 90.:
-                    parallels = numpy.arange(-90, 90, 10)
-        elif llgridstep:
-            meridians = numpy.arange(0, 360, llgridstep)
-            parallels = numpy.arange(-90, 90, llgridstep)
-        if bm.projection in ('ortho', 'nsper'):
-            bm.drawparallels(parallels, labels=[False, False, False, False])
-        else:
-            bm.drawparallels(parallels, labels=[True, False, False, False])
-        if bm.projection in ('spstere', 'npstere'):
-            bm.drawmeridians(meridians, labels=[True, False, False, True])
-        elif bm.projection in ('ortho', 'moll', 'nsper'):
-            bm.drawmeridians(meridians, labels=[False, False, False, False])
-        else:
-            bm.drawmeridians(meridians, labels=[False, False, False, True])
-        bm.drawmeridians([0], labels=[False] * 4, linewidth=1,
-                         dashes=[10, 1])
-        bm.drawparallels([0], labels=[False] * 4, linewidth=1,
-                         dashes=[10, 1])
-        (lons, lats) = self.get_lonlat_grid(subzone=subzone)
+            bm = kwargs.get('use_basemap')
+        map_args = {k:kwargs[k]
+                    for k in ('drawrivers', 'drawcoastlines', 'drawcountries', 
+                              'meridians', 'parallels',
+                              'departments', 'boundariescolor',
+                              'bluemarble', 'background')
+                    if k in kwargs.keys()}
+        set_map_up(bm, ax, **map_args)
+        (lons, lats) = self.get_lonlat_grid(subzone=kwargs.get('subzone'))
+        if borderonly and 'gauss' not in self.name:
+            lons = numpy.array(list(lons[0,:]) + list(lons[-1,:]) + \
+                               list(lons[1:-1,0]) + list(lons[1:-1,-1]))
+            lats = numpy.array(list(lats[0,:]) + list(lats[-1,:]) + \
+                               list(lats[1:-1,0]) + list(lats[1:-1,-1]))
         x, y = bm(lons, lats)
         xf = x.flatten()
         yf = y.flatten()
-        bm.scatter(xf, yf, s=pointsize, marker=',', color=color, linewidths=0)
-        if title == None:
-            f.axes[0].set_title(str(self.name))
+        bm.scatter(xf, yf,
+                   s=kwargs.get('pointsize', 20),
+                   marker=',',
+                   color=color,
+                   linewidths=0,
+                   ax=ax)
+        if kwargs.get('title') is None:
+            ax.set_title(str(self.name))
         else:
-            f.axes[0].set_title(title)
+            ax.set_title(kwargs.get('title'))
 
-        return f
+        return fig, ax
 
     def what(self, out=sys.stdout,
              vertical_geometry=True,
@@ -2723,6 +2635,8 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                             lon_0=specificproj[1].get('lon', lon0),
                             lat_0=specificproj[1].get('lat', lat0),
                             satellite_height=sat_height)
+            else:
+                raise epygramError('unknown **specificproj**: '+str(specificproj))
 
         return b
 
