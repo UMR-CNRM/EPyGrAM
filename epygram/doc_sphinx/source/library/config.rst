@@ -68,6 +68,7 @@ GRIB
 .. autodata:: GRIB_samples_path
 .. autodata:: satellites_local_GRIB2
 .. autodata:: sensors_local_GRIB2
+.. autodata:: GRIB_packing_fatal
 
 LFI
 ...

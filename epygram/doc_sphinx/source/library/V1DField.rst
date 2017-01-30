@@ -14,3 +14,4 @@ Functions
 
 .. autofunction:: plotprofiles
 .. autofunction:: plotverticalhovmoller
+.. autofunction:: plotanimation

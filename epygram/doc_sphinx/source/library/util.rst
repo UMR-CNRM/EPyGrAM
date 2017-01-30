@@ -36,6 +36,7 @@ Functions
 .. autofunction:: set_figax
 .. autofunction:: set_map_up
 .. autofunction:: datetimerange
+.. autofunction:: fmtfid
 
 Classes
 -------

@@ -137,6 +137,7 @@ def get_resources(getmode='epygram', uselocalcache=False, meta_rtype=None,
       + local='[geometry]_[term].grb',  # the local filename of the resource, once fetched.
       + nativefmt='grib'  # to fetch the gribs and not the FA post-processed files
       + cutoff='prod',  # type of cutoff
+      + origin='hst',  # origin of post-processed files: historic
       + vapp='aladin',  # type of application in operations namespace
       + vconf='reunion',  # name of config in operation namespace
       + model='aladin',  # name of the model

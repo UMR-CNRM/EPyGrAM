@@ -14,3 +14,7 @@ Fields
    PointField
    MiscField
    H2DVectorField
+
+   .. autofunction:: gimme_one_point
+   .. autofunction:: make_vector_field
+   .. autofunction:: psikhi2uv
