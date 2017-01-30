@@ -323,5 +323,5 @@ elif default_projtool == 'myproj':
 
 # Update $GRIB_SAMPLES_PATH
 _gsp = ':'.join([os.getenv('GRIB_SAMPLES_PATH', '.'), GRIB_samples_path])
-os.putenv('GRIB_SAMPLES_PATH', _gsp)  #FIXME: seems not to work on Bull: to be exported beforehand
+os.environ['GRIB_SAMPLES_PATH'] = _gsp
 del _gsp

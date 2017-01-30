@@ -16,6 +16,8 @@ Contains the interface routines to arpifs code:
 from ctypes import c_longlong, c_char_p, PyDLL, c_bool, c_double
 import os
 import numpy as np
+import subprocess
+
 import ctypesForFortran
 
 _libs4py = "libs4py.so"
@@ -101,10 +103,22 @@ INOUT = ctypesForFortran.INOUT
 
 so = PyDLL(os.path.join(os.path.dirname(os.path.realpath(__file__)),
                         _libs4py))
-
 ctypesFF = ctypesForFortran.ctypesForFortranFactory(so)
 
-
+def _complete_GRIB_samples_path_from_dynamic_gribapi():
+    import re
+    ldd_out = subprocess.check_output(['ldd', so._name])
+    libs_grib_api = {}
+    for line in ldd_out.splitlines():
+        match = re.match('\s*(libgrib_api.*) => (.*)(/lib/libgrib_api.*\.so.*)\s\(0x.*', line)
+        if match:
+            libs_grib_api[match.group(1)] = match.group(2)
+    gsp = os.getenv('GRIB_SAMPLES_PATH', '.')
+    for l in set(libs_grib_api.values()):
+        gsp = ':'.join([gsp, '/'.join([l, 'share/grib_api/samples'])])
+    os.environ['GRIB_SAMPLES_PATH'] = gsp  #FIXME: seems not to work on Bull: to be exported beforehand ?
+_complete_GRIB_samples_path_from_dynamic_gribapi()
+os.unsetenv('GRIB_DEFINITION_PATH')
 
 # sub-modules
 #############

@@ -882,6 +882,7 @@ class FA(FileResource):
                                                   field_info['nature'] + " array.")
                 data = dataOut
             elif field_info['type'] == 'H2D':
+                #FIXME: next export version
                 if config.spectral_coeff_order == 'model':
                     data = numpy.array(wfa.wfacilo(datasize,
                                                    self._unit,
