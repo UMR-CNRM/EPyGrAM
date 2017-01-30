@@ -398,6 +398,7 @@ class H2DField(D3Field):
                     yf = y.flatten()
                     zf = data.flatten()
                     tri = True
+                    #FIXME: problem of triangulation for contourlines
                 else:
                     xf = x
                     yf = y

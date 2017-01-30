@@ -127,7 +127,8 @@ def get_generic_fid(fieldname):
     """Return a generic fid from fieldname (via Field Dict)."""
 
     fid = inquire_field_dict(fieldname)
-    fid = _complete_generic_fid_from_name(fid, fieldname)
+    if fid.get('type') != 'Misc':
+        fid = _complete_generic_fid_from_name(fid, fieldname)
     fid.pop('type')
     fid.pop('name')
 

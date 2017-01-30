@@ -6,13 +6,16 @@ name:S[0-9][0-9][0-9]CLOUD_FRACTI,type:H2D,typeOfFirstFixedSurface:119,disciplin
 name:S[0-9][0-9][0-9]CLOUD_WATER,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:6,parameterNumber:6
 name:S[0-9][0-9][0-9]EDR,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:19,parameterNumber:28
 name:S[0-9][0-9][0-9]FONC.COURANT,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:2,parameterNumber:4
+name:S[0-9][0-9][0-9]GEOPOTENTIEL,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:3,parameterNumber:5
 name:S[0-9][0-9][0-9]GRAUPEL,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:32
+name:S[0-9][0-9][0-9]HUMI_RELATIV,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:1
 name:S[0-9][0-9][0-9]HUMI.SPECIFI,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:0
 name:S[0-9][0-9][0-9]ICE_CRYSTAL,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:82
 name:S[0-9][0-9][0-9]INPRRTOT3D,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:255
 name:S[0-9][0-9][0-9]LIQUID_WATER,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:83
 name:S[0-9][0-9][0-9]POT.VITESSE,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:2,parameterNumber:5
 name:S[0-9][0-9][0-9]PRESS.DEPART,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:3,parameterNumber:8
+name:S[0-9][0-9][0-9]PRESSURE,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:3,parameterNumber:0
 name:S[0-9][0-9][0-9]QL_CONV,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:255
 name:S[0-9][0-9][0-9]QR_CONV,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:255
 name:S[0-9][0-9][0-9]QI_CONV,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:255
@@ -25,12 +28,14 @@ name:S[0-9][0-9][0-9]RAYT SOL CL,type:H2D,typeOfFirstFixedSurface:119,discipline
 name:S[0-9][0-9][0-9]RAYT THER CL,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:5,parameterNumber:6
 name:S[0-9][0-9][0-9]SNOW,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:86
 name:S[0-9][0-9][0-9]SOLID_WATER,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:84
+name:S[0-9][0-9][0-9]TEMPE_POTENT,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:0,parameterNumber:2
 name:S[0-9][0-9][0-9]TEMPERATURE,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:0,parameterNumber:0
 name:S[0-9][0-9][0-9]TKE,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:19,parameterNumber:11
 name:S[0-9][0-9][0-9]UD_OMEGA,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:3,parameterNumber:255
 name:S[0-9][0-9][0-9]UD_MESH_FRAC,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:3,parameterNumber:255
 name:S[0-9][0-9][0-9]VENT_MERIDIE,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:2,parameterNumber:3
 name:S[0-9][0-9][0-9]VENT_ZONAL,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:2,parameterNumber:2
+name:S[0-9][0-9][0-9]VERT.VELOCIT,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:2,parameterNumber:9
 name:S[0-9][0-9][0-9]VERTIC.DIVER,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:2,parameterNumber:11
 name:S[0-9][0-9][0-9]VITESSE_VERT,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:2,parameterNumber:8
 name:S[0-9][0-9][0-9]WIND.U.PHYS,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:2,parameterNumber:2

@@ -210,7 +210,6 @@ class CombineLevelsResource(Resource):
                     spectral = fields[0].spectral
                     # Other metadata check: part I
                     kwargs_field = copy.deepcopy(fields[0].footprint_as_dict())
-                    kwargs_field.pop('data')
                     kwargs_field['fid'] = {'generic':fid}
                     kwargs_field['geometry'] = ref_geometry
                     for k, v in kwargs_field.iteritems():
@@ -237,7 +236,6 @@ class CombineLevelsResource(Resource):
                             raise epygramError("All resources must return fields with the same geometry.")
                         # Other metadata check: part II
                         kwargs_field = copy.deepcopy(field.footprint_as_dict())
-                        kwargs_field.pop('data')
                         kwargs_field['fid'] = {'generic':fid}
                         kwargs_field['geometry'] = geometry_field
                         for k, v in kwargs_field.iteritems():
@@ -253,7 +251,6 @@ class CombineLevelsResource(Resource):
                     shape = levels4d.shape  # shape of 4D with only one level
                     shape = tuple([shape[0], len(fields)] + list(shape[2:]))
                     levels = numpy.ndarray(shape, dtype=levels4d.dtype)
-                    # data = numpy.ndarray(shape) #TODO: remove
 
                     # Loop over the fields
                     first = True
@@ -268,7 +265,6 @@ class CombineLevelsResource(Resource):
                             else:
                                 concat = numpy.concatenate
                             data = concat((data, fields[i].getdata(d4=True)[:, 0:1, :, :]), axis=1)
-                        # data[:, i] = fields[i].getdata(d4=True)[:, 0] #TODO: remove
                         levels[:, i] = fields[i].geometry.get_levels(d4=True, nb_validities=len(fields[0].validity))[:, 0]
                     cst_horizontal = True
                     cst_time = True
@@ -289,7 +285,6 @@ class CombineLevelsResource(Resource):
                     kwargs_field['structure'] = kwargs_geom['structure']
                     kwargs_field['spectral_geometry'] = None
                     new_field = fpx.field(**kwargs_field)
-                    #new_field.setdata(new_field.geometry.reshape_data(data, first_dimension=first_dimension))  #TODO: remove
                     new_field.setdata(data)
                     new_field.fid[self.format] = fid
                     fieldset.append(new_field)
