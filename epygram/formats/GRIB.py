@@ -1314,7 +1314,7 @@ class GRIB(FileResource):
           the fields.
         """
 
-        if seed == None or isinstance(seed, dict):
+        if seed is None or isinstance(seed, dict):
             fieldslist = self.listfields(select=seed)
         elif isinstance(seed, list):
             fieldslist = []
@@ -1529,7 +1529,7 @@ class GRIB(FileResource):
                 raise epygramError("You must give a geometry or lon *and* lat")
             pointG = field3d.geometry.make_point_geometry(lon, lat)
         else:
-            if lon != None or lat != None:
+            if lon is not None or lat is not None:
                 raise epygramError("You cannot provide lon or lat when geometry is given")
             if geometry.structure != "V1D":
                 raise epygramError("geometry must be a V1D")
@@ -1593,7 +1593,7 @@ class GRIB(FileResource):
                                                            points_number=points_number,
                                                            resolution=resolution)
         else:
-            if end1 != None or end2 != None:
+            if end1 is not None or end2 is not None:
                 raise epygramError("You cannot provide end1 or end2 when geometry is given")
             if geometry.structure != "V2D":
                 raise epygramError("geometry must be a V2D")
@@ -1634,7 +1634,7 @@ class GRIB(FileResource):
           departure (Non-Hydrostatic data). Computation therefore faster.
         """
 
-        if field3d == None:
+        if field3d is None:
             field3d = fpx.field(fid={'GRIB':handgrip},
                                 structure='3D',
                                 resource=self, resource_fids=[handgrip])

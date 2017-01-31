@@ -72,7 +72,7 @@ class TIFFMF(FileResource):
             raise NotImplementedError("TIFFMF is only implmented for reading")
 
         # Reading of metadata
-        if self.geometry == None : self._read_sections()
+        if self.geometry is None : self._read_sections()
 
     def close(self):
         """
@@ -109,7 +109,7 @@ class TIFFMF(FileResource):
         else:
             fieldtypeslist = [fieldtype]
         fieldslist = []
-        if seed == None:
+        if seed is None:
             fieldslist = self.listfields()
         elif isinstance(seed, str):
             fieldslist = util.find_re_in_list(seed, self.listfields())

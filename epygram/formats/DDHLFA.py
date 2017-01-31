@@ -73,7 +73,7 @@ class DDHLFA(LFA):
         if self.openmode != 'r':
             raise NotImplementedError("openmode != 'r' for DDHLFA.")
         elif self.openmode == 'r':
-            if self.domains != None or self.validity != None:
+            if self.domains is not None or self.validity is not None:
                 epylog.warning(self.container.abspath + \
                                ": DDHLFA.__init__(): domains/validity" + \
                                " argument will be ignored with" + \
@@ -124,7 +124,7 @@ class DDHLFA(LFA):
         fieldslist = super(DDHLFA, self).find_fields_in_resource(seed=seed)
         if generic:
             raise NotImplementedError("not yet.")
-        if fieldtype != None:
+        if fieldtype is not None:
             fs = FieldSet()
             for f in fieldslist:
                 fld = self.readfield(f, getdata=False)
@@ -313,7 +313,7 @@ class DDHLFA(LFA):
                                            width=secondcolumn_width)\
                     + '\n')
         def write_formatted_fields(dest, label, value, compression=None):
-            if compression == None:
+            if compression is None:
                 dest.write('{:<{width}}'.format(label, width=20)\
                           + ':' \
                           + '{:^{width}}'.format(str(value), width=10)\

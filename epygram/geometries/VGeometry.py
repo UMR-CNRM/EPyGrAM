@@ -136,7 +136,7 @@ def hybridP2pressure(hybridP_geometry, Psurf, vertical_mean,
 
     if hybridP_geometry.grid['ABgrid_position'] != 'flux':
         raise NotImplementedError("A and B must define flux levels.")
-    if gridposition == None:
+    if gridposition is None:
         gridposition = hybridP_geometry.position_on_grid
     # compute pressures
     A = [level[1]['Ai'] for level in hybridP_geometry.grid['gridlevels']][1:]
@@ -226,7 +226,7 @@ def hybridP2altitude(hybridP_geometry, R, T, Psurf, vertical_mean,
                                         Phi_surf=Phi_surf,
                                         Ptop=config.default_Ptop)
         # and update info
-        if Phi_surf == None or \
+        if Phi_surf is None or \
            numpy.all(numpy.array(abs(Phi_surf)) < config.epsilon):
             coordinate = 103
         else:
@@ -264,7 +264,7 @@ def hybridH2altitude(hybridH_geometry, Zsurf,
 
     if hybridH_geometry.grid['ABgrid_position'] != 'flux':
         raise NotImplementedError('A and B must define flux levels')
-    if gridposition == None:
+    if gridposition is None:
         gridposition = hybridH_geometry.position_on_grid
     # compute altitudes
     A = [level[1]['Ai'] for level in hybridH_geometry.grid['gridlevels']]

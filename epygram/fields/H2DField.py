@@ -49,11 +49,11 @@ class H2DField(D3Field):
     def getlevel(self, level=None, k=None):
         """Returns self. Useless but for compatibility reasons."""
 
-        if k == None and level == None:
+        if k is None and level is None:
             raise epygramError("You must give k or level.")
-        if k != None and level != None:
+        if k is not None and level is not None:
             raise epygramError("You cannot give, at the same time, k and level")
-        if level != None:
+        if level is not None:
             if level not in self.geometry.vcoordinate.levels:
                 raise epygramError("The requested level does not exist.")
         return self
@@ -153,7 +153,7 @@ class H2DField(D3Field):
                          missing objects. *fig* is the frame of the
                          matplotlib figure, containing eventually several 
                          subplots (axes); *ax* is the matplotlib axes on 
-                         which the drawing is done. When given (!= None),
+                         which the drawing is done. When given (is not None),
                          these objects must be coherent, i.e. ax being one of
                          the fig axes.
         colorbar_over    an optional existing ax to plot the colorbar on.
@@ -192,7 +192,7 @@ class H2DField(D3Field):
         parallels        cf. meridians doc, with specific ones being
                          *parallels* == 'equator' // 'polarcircles' //
                          'tropics'
-        minmax_in_title  if True and minmax != None, adds min and max
+        minmax_in_title  if True and minmax is not None, adds min and max
                          values in title.
         departments      if True, adds the french departments on map (instead 
                          of countries).
@@ -448,7 +448,7 @@ class H2DField(D3Field):
                                       cax=cax)
                     if minmax_in_title != '':
                         cb.set_label(minmax_in_title)
-            if title == None:
+            if title is None:
                 ax.set_title("\n".join([str(self.fid[sorted(self.fid.keys())[0]]),
                                         str(self.validity.get())]))
             else:

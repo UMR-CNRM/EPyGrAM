@@ -511,7 +511,7 @@ class FieldSet(RecursiveObject, list):
         """
 
         if isinstance(attribute, str):
-            if key == None:
+            if key is None:
                 cmpfct = lambda x, y: cmp(x._attributes[attribute],
                                          y._attributes[attribute])
             else:
@@ -521,14 +521,14 @@ class FieldSet(RecursiveObject, list):
             a = attribute
             if isinstance(self[0]._attributes[a[0]], FootprintBase):
                 if len(attribute) == 2:
-                    if key == None:
+                    if key is None:
                         cmpfct = lambda x, y: cmp(x._attributes[a[0]]._attributes[a[1]],
                                                  y._attributes[a[0]]._attributes[a[1]])
                     else:
                         cmpfct = lambda x, y: cmp(x._attributes[a[0]]._attributes[a[1]][key],
                                                  y._attributes[a[0]]._attributes[a[1]][key])
                 elif len(attribute) == 3:
-                    if key == None:
+                    if key is None:
                         cmpfct = lambda x, y: cmp(x._attributes[a[0]]._attributes[a[1]].__dict__[a[2]],
                                                  y._attributes[a[0]]._attributes[a[1]].__dict__[a[2]])
                     else:
@@ -538,14 +538,14 @@ class FieldSet(RecursiveObject, list):
                     raise NotImplementedError("len(attribute) > 3.")
             else:
                 if len(attribute) == 2:
-                    if key == None:
+                    if key is None:
                         cmpfct = lambda x, y: cmp(x._attributes[a[0]].__dict__[a[1]],
                                                  y._attributes[a[0]].__dict__[a[1]])
                     else:
                         cmpfct = lambda x, y: cmp(x._attributes[a[0]].__dict__[a[1]][key],
                                                  y._attributes[a[0]].__dict__[a[1]][key])
                 elif len(attribute) == 3:
-                    if key == None:
+                    if key is None:
                         cmpfct = lambda x, y: cmp(x._attributes[a[0]].__dict__[a[1]].__dict__[a[2]],
                                                  y._attributes[a[0]].__dict__[a[1]].__dict__[a[2]])
                     else:
@@ -702,7 +702,7 @@ class Resource(RecursiveObject, FootprintBase):
         if not self._bufferedlistfields:
             fieldslist = self._listfields(**kwargs)
             self._bufferedlistfieldsoptions = copy.deepcopy(kwargs)
-            if self._bufferedlistfields != None:
+            if self._bufferedlistfields is not None:
                 self._bufferedlistfields = fieldslist  # save
         else:
             # immutable and already read
@@ -787,7 +787,7 @@ class FieldValidity(RecursiveObject):
         now...
         """
 
-        if fmt == None:
+        if fmt is None:
             out = self._date_time - self._basis
         elif fmt == 'IntHours':
             term = self._date_time - self._basis
@@ -814,7 +814,7 @@ class FieldValidity(RecursiveObject):
         now...
         """
 
-        if fmt == None:
+        if fmt is None:
             out = self._cumulativeduration
         elif fmt == 'IntHours':
             out = int(self._cumulativeduration.total_seconds() / 3600)
@@ -857,7 +857,7 @@ class FieldValidity(RecursiveObject):
         And that's all for now...
         """
 
-        if fmt == None:
+        if fmt is None:
             out = self._date_time
         elif fmt == 'IntStr':
             out = '{:0>{width}}'.format(str(self._date_time.year), width=4) \
@@ -884,7 +884,7 @@ class FieldValidity(RecursiveObject):
         And that's all for now...
         """
 
-        if fmt == None:
+        if fmt is None:
             out = self._basis
         elif fmt == 'IntStr':
             out = '{:^{width}}'.format(str(self._basis.year), width=4) \
@@ -1004,7 +1004,7 @@ class FieldValidityList(RecursiveObject, list):
             mykwargs = {}
             for k, v in kwargs.iteritems():
                 mykwargs[k] = [v] if type(v) != type(list()) else v
-                if length == None or length == 1:
+                if length is None or length == 1:
                     length = len(mykwargs[k])
                 if len(mykwargs[k]) != length:
                     raise epygramError("All the arguments must have the same length.")
@@ -1014,7 +1014,7 @@ class FieldValidityList(RecursiveObject, list):
                     mykwargs[k] = mykwargs[k] * length
 
             #We set the different objects
-            if length == None:
+            if length is None:
                 length = 1
             self.extend([FieldValidity(**{key: value[i] for (key, value) in mykwargs.iteritems()}) for i in range(length)])
         elif isinstance(length, int):
@@ -1076,7 +1076,7 @@ class FieldValidityList(RecursiveObject, list):
         mykwargs = {}
         for k, v in kwargs.iteritems():
             mykwargs[k] = [v] if type(v) != type(list()) else v
-            if length == None or length == 1:
+            if length is None or length == 1:
                 length = len(mykwargs[k])
             if len(mykwargs[k]) != length:
                 raise epygramError("All the arguments must have the same length.")

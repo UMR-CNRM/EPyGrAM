@@ -211,7 +211,7 @@ class Angle(RecursiveObject):
         If no unit is supplied, the origin unit is used.
         """
 
-        if unit == None:
+        if unit is None:
             unit = self._origin_unit  # or a default one ?
         elif unit in Angle.units:
             if not self.__dict__.has_key('_' + unit):

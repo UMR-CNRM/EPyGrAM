@@ -387,14 +387,14 @@ class GeoPoints(FileResource):
             if isinstance(field, D3Field):
                 if parameter == 'UNKNOWN':
                     open_kwargs['parameter'] = str(field.fid.get(self.format, field.fid))
-                if field.validity.get() != None:
+                if field.validity.get() is not None:
                     columns.extend(['DATE', 'TIME'])
             elif isinstance(field, FieldSet) or isinstance(field, PointField):
                 if isinstance(field, PointField):
                     field = FieldSet([field])
                 if parameter == 'UNKNOWN':
                     open_kwargs['parameter'] = str(field[0].fid.get(self.format, field[0].fid))
-                if field[0].validity.get() != None:
+                if field[0].validity.get() is not None:
                     columns.extend(['DATE', 'TIME'])
             elif isinstance(field, dict):
                 if not 'lat' in field.keys():

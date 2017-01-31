@@ -112,7 +112,7 @@ class H2DVectorField(Field):
     @property
     def spectral(self):
         """Returns True if the field is spectral."""
-        return self.spectral_geometry != None
+        return self.spectral_geometry is not None
 
     @property
     def geometry(self):
@@ -377,7 +377,7 @@ class H2DVectorField(Field):
           missing objects. *fig* is the frame of the
           matplotlib figure, containing eventually several 
           subplots (axes); *ax* is the matplotlib axes on 
-          which the drawing is done. When given (!= None),
+          which the drawing is done. When given (is not None),
           these objects must be coherent, i.e. ax being one of
           the fig axes.
         - *subzone*: among ('C', 'CI'), for LAM fields only, plots the data
@@ -524,7 +524,7 @@ class H2DVectorField(Field):
         # Calculate the orientation of the vectors
         assert components_are_projected_on in ('grid', 'lonlat')
         if components_are_projected_on == 'grid' and 'gauss' not in self.geometry.name \
-           and (specificproj == None and zoom == None):
+           and (specificproj is None and zoom is None):
             # map has same projection than components: no rotation necessary
             u_map = u
             v_map = v
@@ -566,7 +566,7 @@ class H2DVectorField(Field):
                 ax.quiverkey(q, **quiverkey)
         elif symbol == 'stream':
             bm.streamplot(xf, yf, u, v, ax=ax, linewidth=speed_width, **symbol_options)
-        if title == None:
+        if title is None:
             ax.set_title(str(self.fid) + "\n" + str(self.validity.get()))
         else:
             ax.set_title(title)

@@ -1306,11 +1306,11 @@ class D3Field(D3CommonField):
         *k* is the index of the requested level
         """
 
-        if k == None and level == None:
+        if k is None and level is None:
             raise epygramError("You must give k or level.")
-        if k != None and level != None:
+        if k is not None and level is not None:
             raise epygramError("You cannot give, at the same time, k and level")
-        if level != None:
+        if level is not None:
             if level not in self.geometry.vcoordinate.levels:
                 raise epygramError("The requested level does not exist.")
             my_k = self.geometry.vcoordinate.levels.index(level)
@@ -1652,11 +1652,11 @@ class D3VirtualField(D3CommonField):
         *k* is the index of the requested level
         """
 
-        if k == None and level == None:
+        if k is None and level is None:
             raise epygramError("You must give k or level.")
-        if k != None and level != None:
+        if k is not None and level is not None:
             raise epygramError("You cannot give, at the same time, k and level")
-        if level != None:
+        if level is not None:
             if level not in self.geometry.vcoordinate.levels:
                 raise epygramError("The requested level does not exist.")
             my_k = self.geometry.vcoordinate.levels.index(level)

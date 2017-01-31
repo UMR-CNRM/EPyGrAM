@@ -50,7 +50,7 @@ class PointField(D3Field):
           missing objects. *fig* is the frame of the
           matplotlib figure, containing eventually several 
           subplots (axes); *ax* is the matplotlib axes on 
-          which the drawing is done. When given (!= None),
+          which the drawing is done. When given (is not None),
           these objects must be coherent, i.e. ax being one of
           the fig axes.
         - *title*: of the plot.

@@ -77,7 +77,7 @@ class V2DField(D3Field):
           missing objects. *fig* is the frame of the
           matplotlib figure, containing eventually several 
           subplots (axes); *ax* is the matplotlib axes on 
-          which the drawing is done. When given (!= None),
+          which the drawing is done. When given (is not None),
           these objects must be coherent, i.e. ax being one of
           the fig axes.
         - *colorbar_over*: an optional existing ax to plot the colorbar on.
@@ -98,7 +98,7 @@ class V2DField(D3Field):
           Defaults to 'vertical'.
         - *zoom*: a dict containing optional limits to zoom on the plot. \n
           Syntax: e.g. {'ymax':500, ...}.
-        - *minmax_in_title*: if True and minmax != None, adds min and max
+        - *minmax_in_title*: if True and minmax is not None, adds min and max
           values in title
         - *contourcolor*: color or colormap to be used for 'contourlines'
           graphicmode. It can be either a legal html color name, or a colormap
@@ -166,7 +166,7 @@ class V2DField(D3Field):
         # min/max
         m = data.min()
         M = data.max()
-        if minmax != None:
+        if minmax is not None:
             if minmax_in_title:
                 minmax_in_title = '(min: ' + \
                                   '{: .{precision}{type}}'.format(m, type='E', precision=3) + \
@@ -243,7 +243,7 @@ class V2DField(D3Field):
         elif x_is == 'lat':
             ax.set_xlabel(u'Latitude (\u00B0).')
         ax.set_ylabel(Ycoordinate)
-        if zoom != None:
+        if zoom is not None:
             ykw = {}
             xkw = {}
             for pair in (('bottom', 'ymin'), ('top', 'ymax')):

@@ -96,7 +96,7 @@ class V1DField(D3Field):
         if mode == 'profile':
             if colorbar != 'vertical': useless_args.append('colorbar')
             if graphicmode != 'colorshades': useless_args.append('graphicmode')
-            if minmax != None: useless_args.append('minmax')
+            if minmax is not None: useless_args.append('minmax')
             if levelsnumber != 21: useless_args.append('levelsnumber')
             if center_cmap_on_0 != False: useless_args.append('center_cmap_on_0')
             if colormap != 'jet': useless_args.append('colormap')
@@ -120,7 +120,7 @@ class V1DField(D3Field):
                                 ema=ema,
                                 zoom=zoom)
         elif mode == 'hovmoller':
-            if labels != None: useless_args.append('labels')
+            if labels is not None: useless_args.append('labels')
             if unit != 'SI': useless_args.append('unit')
             if ema != False: useless_args.append('ema')
             if linecolor != 'black':useless_args.append('linecolor')
@@ -146,10 +146,10 @@ class V1DField(D3Field):
                   contourlabel=contourlabel,
                   datefmt=datefmt)
         elif mode == 'animation':
-            if labels != None: useless_args.append('labels')
+            if labels is not None: useless_args.append('labels')
             if colorbar != 'vertical': useless_args.append('colorbar')
             if graphicmode != 'colorshades': useless_args.append('graphicmode')
-            if minmax != None: useless_args.append('minmax')
+            if minmax is not None: useless_args.append('minmax')
             if levelsnumber != 21: useless_args.append('levelsnumber')
             if center_cmap_on_0 != False: useless_args.append('center_cmap_on_0')
             if colormap != 'jet': useless_args.append('colormap')
@@ -206,7 +206,7 @@ def plotverticalhovmoller(profile,
           missing objects. *fig* is the frame of the
           matplotlib figure, containing eventually several 
           subplots (axes); *ax* is the matplotlib axes on 
-          which the drawing is done. When given (!= None),
+          which the drawing is done. When given (is not None),
           these objects must be coherent, i.e. ax being one of
           the fig axes.
         - *fidkey* = type of fid for entitling the plot with *fid[fidkey]*,
@@ -227,7 +227,7 @@ def plotverticalhovmoller(profile,
         - *levelsnumber*: number of levels for contours and colorbar.
         - *center_cmap_on_0*: aligns the colormap center on the value 0.
         - *colormap*: name of the **matplotlib** colormap to use.
-        - *minmax_in_title*: if True and minmax != None, adds min and max
+        - *minmax_in_title*: if True and minmax is not None, adds min and max
           values in title
         - *contourcolor*: color or colormap to be used for 'contourlines'
           graphicmode. It can be either a legal html color name, or a colormap
@@ -280,7 +280,7 @@ def plotverticalhovmoller(profile,
         # min/max
         m = data.min()
         M = data.max()
-        if minmax != None:
+        if minmax is not None:
             if minmax_in_title:
                 minmax_in_title = '(min: ' + \
                                   '{: .{precision}{type}}'.format(m, type='E', precision=3) + \
@@ -338,7 +338,7 @@ def plotverticalhovmoller(profile,
         bottom = max(surf) if reverseY else min(surf)
         ax.fill_between(x[-1, :], surf, numpy.ones(len(surf)) * bottom,
                         color='k')
-        if Ycoordinate == None:
+        if Ycoordinate is None:
             if profile.geometry.vcoordinate.typeoffirstfixedsurface == 119:
                 Ycoordinate = 'Level \nHybrid-Pressure \ncoordinate'
             elif profile.geometry.vcoordinate.typeoffirstfixedsurface == 100:
@@ -355,7 +355,7 @@ def plotverticalhovmoller(profile,
                 Ycoordinate = 'unknown \ncoordinate'
         ax.set_xlabel(xaxis_label)
         ax.set_ylabel(Ycoordinate)
-        if zoom != None:
+        if zoom is not None:
             ykw = {}
             xkw = {}
             for pair in (('bottom', 'ymin'), ('top', 'ymax')):
@@ -405,7 +405,7 @@ def plotprofiles(profiles,
       missing objects. *fig* is the frame of the
       matplotlib figure, containing eventually several 
       subplots (axes); *ax* is the matplotlib axes on 
-      which the drawing is done. When given (!= None),
+      which the drawing is done. When given (is not None),
       these objects must be coherent, e.g. ax being one of
       the fig axes.
     - *labels* = a list of labels for the profiles (same length and same order).
@@ -439,7 +439,7 @@ def plotprofiles(profiles,
         reverseY = False
     if p0.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
         Y = p0.geometry.vcoordinate.levels
-    if Ycoordinate == None:
+    if Ycoordinate is None:
         if p0.geometry.vcoordinate.typeoffirstfixedsurface == 119:
             Ycoordinate = 'Level \nHybrid-Pressure \ncoordinate'
         elif p0.geometry.vcoordinate.typeoffirstfixedsurface == 100:
@@ -465,10 +465,10 @@ def plotprofiles(profiles,
         if len(p.validity) != 1:
             raise epygramError("plotprofiles can handle only profiles with one validity.")
         Y = numpy.array(p.geometry.vcoordinate.levels).flatten()
-        if labels != None:
+        if labels is not None:
             label = labels[i]
         else:
-            if fidkey != None:
+            if fidkey is not None:
                 label = p.fid.get(fidkey, p.fid)
             else:
                 label = str(p.fid)
@@ -511,7 +511,7 @@ def plotprofiles(profiles,
             ax.set_xlim(left=zoom['xmin'])
         if 'xmax' in zoom.keys():
             ax.set_xlim(right=zoom['xmax'])
-    if title != None:
+    if title is not None:
         ax.set_title(title)
     legend = ax.legend(loc='upper right', shadow=True)
     for label in legend.get_texts():

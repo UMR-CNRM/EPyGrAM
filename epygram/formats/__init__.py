@@ -74,12 +74,12 @@ def resource(filename, openmode, fmt=None, **kwargs):
 
     if openmode in ('r', 'a'):
         assert os.path.exists(filename), 'File not found: ' + filename
-    if fmt == None and openmode in ('r', 'a'):
+    if fmt is None and openmode in ('r', 'a'):
         fmt = guess(filename)
         if fmt == 'unknown':
             raise epygramError("unable to guess format of resource at: " + \
                                filename)
-    elif fmt == None and openmode == 'w':
+    elif fmt is None and openmode == 'w':
         raise epygramError("must specify 'fmt' argument with\
                             'openmode' == 'w'.")
 

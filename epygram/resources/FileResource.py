@@ -92,7 +92,7 @@ class FileResource(Resource):
         the one specified at initialization.
         """
 
-        if openmode != None:
+        if openmode is not None:
             self._attributes['openmode'] = openmode
 
 

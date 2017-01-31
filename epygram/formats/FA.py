@@ -57,7 +57,7 @@ def inquire_field_dict(fieldname):
             matching_field = fd
             break
 
-    if matching_field == None:
+    if matching_field is None:
         epylog.info("field '" + fieldname + "' is not referenced in" + \
                     " Field_Dict_FA. Assume its type being a MiscField.")
         matching_field = {'name':fieldname, 'type':'Misc',
@@ -155,7 +155,7 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
 
     assert isinstance(geometry, D3Geometry), \
            "geometry must be a D3Geometry (or heirs) instance."
-    if spectral_geometry != None and\
+    if spectral_geometry is not None and\
        not isinstance(spectral_geometry, SpectralGeometry):
         raise epygramError("spectral_geometry must be a SpectralGeometry" + \
                            " instance.")
@@ -459,9 +459,9 @@ class FA(FileResource):
 
         if self.openmode in ('r', 'a'):
             # FA already exists, including geometry and validity
-            if self.openmode in ('r', 'a') and self.headername == None:
+            if self.openmode in ('r', 'a') and self.headername is None:
                 self._attributes['headername'] = _gen_headername()
-            if geometry != None or validity != None:
+            if geometry is not None or validity is not None:
                 epylog.warning(self.container.abspath + ": FA.open():" + \
                                " geometry/validity argument will be ignored" + \
                                " with this openmode ('r','a').")
@@ -479,21 +479,21 @@ class FA(FileResource):
             self._read_geometry()
             self._read_validity()
             if self.openmode == 'a':
-                if self.default_compression == None:
+                if self.default_compression is None:
                     self._attributes['default_compression'] = self._getrunningcompression()
                 self._setrunningcompression(**self.default_compression)
         elif self.openmode == 'w':
-            if geometry != None:
+            if geometry is not None:
                 if not isinstance(geometry, D3Geometry):
                     raise epygramError("geometry must be a D3Geometry (or heirs) instance.")
                 self._attributes['headername'] = _create_header_from_geometry(geometry, spectral_geometry)
-            if validity != None:
+            if validity is not None:
                 if (not isinstance(validity, FieldValidity)) and (not isinstance(validity, FieldValidityList)):
                     raise epygramError("validity must be a FieldValidity or FieldValidityList instance.")
                 if isinstance(validity, FieldValidityList) and len(validity) != 1:
                     raise epygramError("FA can hold only one validity.")
                 self._attributes['validity'] = validity
-            if self.headername != None and self.validity != None:
+            if self.headername is not None and self.validity is not None:
                 # new FA, with an already existing header and validity
                 # set geometry from existing header
                 self._read_geometry()
@@ -514,10 +514,10 @@ class FA(FileResource):
                 self._set_validity()
                 # set CDIDEN
                 wfa.wfautif(self._unit, self.cdiden)
-                if self.default_compression == None:
+                if self.default_compression is None:
                     self._attributes['default_compression'] = config.FA_default_compression
                 self._setrunningcompression(**self.default_compression)
-            elif self.headername == None or self.validity == None:
+            elif self.headername is None or self.validity is None:
                 # a header need to be created prior to opening:
                 # header definition (then opening) will be done from the
                 # geometry taken in the first field to be written in resource
@@ -563,7 +563,7 @@ class FA(FileResource):
         else:
             fieldtypeslist = [fieldtype]
         fieldslist = []
-        if seed == None:
+        if seed is None:
             tmplist = self.listfields()
             for f in tmplist:
                 if fieldtypeslist == [] or\
@@ -990,7 +990,7 @@ class FA(FileResource):
                 # being a D3Geometry (or heirs), validity being a FieldValidity.
                 raise epygramError("cannot write a this kind of field on a" + \
                                    " non-open FA.")
-            if self.validity == None:
+            if self.validity is None:
                 if len(field.validity) != 1:
                     raise epygramError("FA can hold only one validity.")
                 self._attributes['validity'] = field.validity
@@ -1045,7 +1045,7 @@ class FA(FileResource):
             assert diffmax < 1e-10 or not field.geometry.vcoordinate.grid, \
                    "vertical geometry mismatch between field and file."
 
-            if field.spectral_geometry != None and\
+            if field.spectral_geometry is not None and\
                field.spectral_geometry != self.spectral_geometry:
                 # compatibility check
                 raise epygramError("spectral geometry incompatibility:" + \
@@ -1112,11 +1112,11 @@ class FA(FileResource):
             for f in range(len(fieldset)):
                 if isinstance(fieldset[f], H2DField):
                     fieldset.insert(0, fieldset.pop(f))
-                    if compression != None:
+                    if compression is not None:
                         compression.insert(0, compression.pop(f))
                     break
 
-        if compression != None:
+        if compression is not None:
             # loop separated from the above one,
             # because fieldset is there-above modified
             for f in range(len(fieldset)):
@@ -1179,10 +1179,10 @@ class FA(FileResource):
         if geometry is None:
             if None in [lon, lat]:
                 raise epygramError("You must give a geometry or lon *and* lat")
-            if self.geometry == None: self._read_geometry()
+            if self.geometry is None: self._read_geometry()
             pointG = self.geometry.make_point_geometry(lon, lat)
         else:
-            if lon != None or lat != None:
+            if lon is not None or lat is not None:
                 raise epygramError("You cannot provide lon or lat when geometry is given")
             if geometry.structure != "V1D":
                 raise epygramError("geometry must be a V1D")
@@ -1242,12 +1242,12 @@ class FA(FileResource):
         if geometry is None:
             if None in [end1, end2]:
                 raise epygramError("You must give a geometry or end1 *and* end2")
-            if self.geometry == None: self._read_geometry()
+            if self.geometry is None: self._read_geometry()
             sectionG = self.geometry.make_section_geometry(end1, end2,
                                                            points_number=points_number,
                                                            resolution=resolution)
         else:
-            if end1 != None or end2 != None:
+            if end1 is not None or end2 is not None:
                 raise epygramError("You cannot provide end1 or end2 when geometry is given")
             if geometry.structure != "V2D":
                 raise epygramError("geometry must be a V2D")
@@ -1446,7 +1446,7 @@ class FA(FileResource):
         if len(self.listfields()) == 0:
             raise epygramError('empty Resource.')
         firstfield = self.readfield(first_H2DField, getdata=False)
-        if not firstfield.spectral and self.spectral_geometry != None:
+        if not firstfield.spectral and self.spectral_geometry is not None:
             firstfield._attributes['spectral_geometry'] = self.spectral_geometry
 
         listoffields = self.listfields()

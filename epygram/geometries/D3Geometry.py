@@ -178,7 +178,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
             pos = position
         else:
             pos = self.position_on_horizontal_grid
-        if pos == '__unknown__' or pos == None:
+        if pos == '__unknown__' or pos is None:
             raise epygramError("position_on_horizontal_grid must be" + \
                                " defined.")
 
@@ -276,20 +276,20 @@ class D3Geometry(RecursiveObject, FootprintBase):
         """
         if position not in [None, 'center']:
             raise epygramError("position can only be None or 'center' for non-projected geometries.")
-        if resolution != None and points_number != None:
+        if resolution is not None and points_number is not None:
             raise epygramError("only one of resolution and " + \
                                " points_number can be given.")
 
         distance = self.distance(end1, end2)
-        if resolution == None and points_number == None:
+        if resolution is None and points_number is None:
             resolution = 0.5 * (self.resolution_ll(*end1) + \
                                 self.resolution_ll(*end2))
             if resolution > distance:
                 raise epygramError("'ends' are too near: pure" + \
                                    " interpolation between two gridpoints.")
-        elif points_number != None and points_number < 2:
+        elif points_number is not None and points_number < 2:
             raise epygramError("'points_number' must be at least 2.")
-        if resolution != None:
+        if resolution is not None:
             points_number = int(numpy.rint(distance / resolution)) + 1
         if points_number >= 3:
             transect = self.linspace(end1, end2, points_number)
@@ -307,7 +307,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
                             dimensions={'X':len(transect), 'Y':1},
                             grid={'longitudes':[p[0] for p in transect],
                                   'latitudes':[p[1] for p in transect]},
-                            position_on_horizontal_grid='center' if position == None else position)
+                            position_on_horizontal_grid='center' if position is None else position)
     
     def _reshape_lonlat_4d(self, lons, lats, nb_validities):
         """Make lons, lats grids 4D."""
@@ -726,7 +726,7 @@ class D3RectangularGridGeometry(D3Geometry):
         - *subzone*: for LAM fields, returns the corners of the subzone.
         """
 
-        if not 'LAMzone' in self.grid.keys() or self.grid['LAMzone'] == None:
+        if not 'LAMzone' in self.grid.keys() or self.grid['LAMzone'] is None:
             ll = (0, 0)
             lr = (self.dimensions['X'] - 1, 0)
             ul = (0, self.dimensions['Y'] - 1)
@@ -908,7 +908,7 @@ class D3RectangularGridGeometry(D3Geometry):
                 distance = None
                 for p in points:
                     dist = abs(external_distance['external_field'].getvalue_ij(*p, one=True) - external_distance['target_value'])
-                    if distance == None or dist < distance:
+                    if distance is None or dist < distance:
                         points = [p]
                         distance = dist
         elif interpolation == 'nearest' and not external_distance:
@@ -1140,7 +1140,7 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
         if interpolation != 'nearest':
             raise NotImplementedError("*interpolation* != 'nearest' for UnstructuredGeometry.")
         if external_distance is not None:
-            raise NotImplementedError("*external_distance* != None for UnstructuredGeometry.")
+            raise NotImplementedError("*external_distance* is not None for UnstructuredGeometry.")
 
         (lons, lats) = self.get_lonlat_grid(position=position)
 
@@ -1188,7 +1188,7 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
             for ip in range(lons.shape[1]):
                 if (ip, jp) != (i, j):
                     dist = self.distance((lons[j, i], lats[j, i]), (lons[jp, ip], lats[jp, ip]))
-                    if result == None or dist < result:
+                    if result is None or dist < result:
                         result = dist
         if result is None:
             raise epygramError("Resolution cannot be computed on one point grid.")
@@ -2729,21 +2729,21 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
           field. If None, defaults to the horizontal resolution of the field.
         - *position* defines the position of data in the grid (defaults to 'center')
         """
-        if resolution != None and points_number != None:
+        if resolution is not None and points_number is not None:
             raise epygramError("only one of resolution and " + \
                                " points_number can be given.")
 
         (x1, y1) = self.ll2xy(*end1)
         (x2, y2) = self.ll2xy(*end2)
         distance = numpy.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
-        if resolution == None and points_number == None:
+        if resolution is None and points_number is None:
             resolution = 0.5 * (self.resolution_ll(*end1) + \
                                 self.resolution_ll(*end2))
             points_number = int(numpy.rint(distance / resolution)) + 1
             if resolution > distance:
                 raise epygramError("'ends' are too near: pure" + \
                                    " interpolation between two gridpoints.")
-        if points_number != None:
+        if points_number is not None:
             if points_number < 2:
                 raise epygramError("'points_number' must be at least 2.")
             resolution = distance / (points_number - 1)
@@ -2769,7 +2769,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                            dimensions=FPDict(dimensions),
                            projection=FPDict(projection),
                            geoid=self.geoid,
-                           position_on_horizontal_grid='center' if position == None else position,
+                           position_on_horizontal_grid='center' if position is None else position,
                            vcoordinate=vcoordinate
                           )
 
@@ -2917,7 +2917,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         if arpifs_var_names: varname = ' (EDELY)'
         write_formatted(out, "Resolution in Y, in metres" + varname,
                         grid['Y_resolution'])
-        if self.grid['LAMzone'] == None:
+        if self.grid['LAMzone'] is None:
             dimX = dimensions['X']
             dimY = dimensions['Y']
         else:
@@ -3707,7 +3707,7 @@ class D3GaussGeometry(D3Geometry):
             nearest = None
             for n in range(0, len(latitudes)):
                 dist = latrs - latitudes[n]
-                if distmin == None or abs(dist) < abs(distmin):
+                if distmin is None or abs(dist) < abs(distmin):
                     distmin = dist
                     nearest = n
             if num == 2:
@@ -3788,7 +3788,7 @@ class D3GaussGeometry(D3Geometry):
             for latnum in nearest_lats(latrs, 3):
                 point = nearest_lons(lonrs, latnum, 1)
                 dist = self.distance((lon, lat), self.ij2ll(*point))
-                if distance == None or dist < distance:
+                if distance is None or dist < distance:
                     nearpoint = point
                     distance = dist
             return nearpoint
@@ -3858,7 +3858,7 @@ class D3GaussGeometry(D3Geometry):
                 distance = None
                 for p in points:
                     dist = abs(external_distance['external_field'].getvalue_ij(*p, one=True) - external_distance['target_value'])
-                    if distance == None or dist < distance:
+                    if distance is None or dist < distance:
                         nearpoint = p
                         distance = dist
                 points = [nearpoint]

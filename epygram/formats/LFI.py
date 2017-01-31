@@ -80,7 +80,7 @@ def inquire_field_dict(fieldname):
             matching_field = fd
             break
 
-    if matching_field == None:
+    if matching_field is None:
         epylog.info("field '" + fieldname + "' is not referenced in Field_Dict_LFI. Assume its type being a MiscField.")
         matching_field = {'name':fieldname, 'type':'Misc', 'nature':'float', 'dimension':'1'}
 
@@ -261,7 +261,7 @@ class LFI(FileResource):
         fid = inquire_field_dict(fieldname)
         fid = _complete_generic_fid_from_fid(fid, fieldidentifier)
         if fid['type'] == '3D':
-            if self.geometry == None: self._read_geometry()
+            if self.geometry is None: self._read_geometry()
             fid['typeOfFirstFixedSurface'] = self.geometry.vcoordinate.typeoffirstfixedsurface
         fid.pop('type')
         fid.pop('name')
@@ -299,7 +299,7 @@ class LFI(FileResource):
             for f in tmplist:
                 if fieldtypeslist == [] or inquire_field_dict(f if self.true3d else f[0])['type'] in fieldtypeslist:
                     fieldslist.append(f)
-        if seed == None:
+        if seed is None:
             tmplist = self.listfields()
             fill_fieldslist(tmplist)
         elif (isinstance(seed, tuple) and not self.true3d) or \
@@ -350,7 +350,7 @@ class LFI(FileResource):
                 if self.true3d:
                     fieldslist.append(fieldname)
                 else:
-                    if self.geometry == None: self._read_geometry()
+                    if self.geometry is None: self._read_geometry()
                     kmax = len(self.geometry.vcoordinate.grid['gridlevels']) + 1
                     for level in range(kmax): fieldslist.append((fieldname, level))
             elif field_info['type'] == 'H2D':
@@ -447,8 +447,8 @@ class LFI(FileResource):
             fieldname, level = fieldidentifier
         field_info = inquire_field_dict(fieldname)
         if field_info['type'] in ['H2D', '3D']:
-            if self.geometry == None: self._read_geometry()
-            if self.validity == None: self._read_validity()
+            if self.geometry is None: self._read_geometry()
+            if self.validity is None: self._read_validity()
 
             # Make geometry object
             kwargs_geom = dict(structure=field_info['type'] if self.true3d else 'H2D',
@@ -461,7 +461,7 @@ class LFI(FileResource):
             if self.geometry.projected_geometry:
                 kwargs_geom['projection'] = self.geometry.projection
 
-            if self.geometry.vcoordinate != None:
+            if self.geometry.vcoordinate is not None:
                 # vertical geometry
                 kwargs_vcoord = {'structure': 'V',
                                  'typeoffirstfixedsurface': self.geometry.vcoordinate.typeoffirstfixedsurface,
@@ -490,7 +490,7 @@ class LFI(FileResource):
         for i in rawData[2:comment_length + 2]: comment += chr(i)
         data = rawData[comment_length + 2:]
         if getdata:
-            if self._compressed == None and fieldname != 'LFI_COMPRESSED':
+            if self._compressed is None and fieldname != 'LFI_COMPRESSED':
                 self._read_compression()
             if self._compressed:
                 (lengthAfter, compressionType) = wlfi.wget_compheader(len(data), data, lengthToRead)
@@ -707,7 +707,7 @@ class LFI(FileResource):
             if field_info['type'] == '3D': has3D = True
             if field_info['type'] == 'H2D' and name != 'ZS' and not '.DATIM' in name: has2D = True
         if has2D or has3D:
-            if self._compressed == None: self._read_compression()
+            if self._compressed is None: self._read_compression()
             specialValues['LFI_COMPRESSED'] = self._compressed
         if has3D:
             if ('SLEVE', None) in writtenfields: specialValues['SLEVE'] = self.readfield(('SLEVE', None))
@@ -734,7 +734,7 @@ class LFI(FileResource):
                     raise epygramError("the level of a 2D field must be an integer")
                 fieldsMTO.append(field)
             else:
-                if (not self.true3d) and fid[1] != None:
+                if (not self.true3d) and fid[1] is not None:
                     raise epygramError("the level of a non 2D field must be None")
             if fid in appendedfields:
                 raise epygramError("a same field cannot be written twice in a LFI.")
@@ -810,21 +810,21 @@ class LFI(FileResource):
                             if myFieldset[i].fid[self.format] == (field.fid[self.format][0], level):
                                 f = myFieldset[i]
                                 num = i
-                        if f == None: raise epygramError("All levels of a 3D field must be written at once.")
+                        if f is None: raise epygramError("All levels of a 3D field must be written at once.")
                         if not isinstance(f, H2DField): raise epygramError("All fields composing a 3D field must be H2DField")
-                        if comment == None:
+                        if comment is None:
                             comment = f.comment
                         elif comment != f.comment:
                             raise epygramError("All fields composing a same 3D field must have the same comment.")
                         (h, v) = f.geometry.position_on_horizontal_grid, f.geometry.vcoordinate.position_on_grid
                         for key, value in gridIndicatorDict.iteritems():
                             if value == (h, v): mygridIndicator = key
-                        if gridIndicator == None:
+                        if gridIndicator is None:
                             gridIndicator = mygridIndicator
                         elif gridIndicator != mygridIndicator:
                             raise epygramError("All fields composing a same 3D field must have the same position on grid.")
                         done.append(num)
-                        if dataInt == None:
+                        if dataInt is None:
                             dataInt = numpy.ndarray(field.getdata().size * (len(field.geometry.vcoordinate.grid['gridlevels']) + 1), dtype='int64')
                         dataInt[level * field.getdata().size:(level + 1) * field.getdata().size] = numpy.ma.copy(f.getdata()).view('int64').flatten()
                 else:
@@ -918,10 +918,10 @@ class LFI(FileResource):
         if geometry is None:
             if None in [lon, lat]:
                 raise epygramError("You must give a geometry or lon *and* lat")
-            if self.geometry == None: self._read_geometry()
+            if self.geometry is None: self._read_geometry()
             pointG = self.geometry.make_point_geometry(lon, lat)
         else:
-            if lon != None or lat != None:
+            if lon is not None or lat is not None:
                 raise epygramError("You cannot provide lon or lat when geometry is given")
             if geometry.structure != "V1D":
                 raise epygramError("geometry must be a V1D")
@@ -974,12 +974,12 @@ class LFI(FileResource):
         if geometry is None:
             if None in [end1, end2]:
                 raise epygramError("You must give a geometry or end1 *and* end2")
-            if self.geometry == None: self._read_geometry()
+            if self.geometry is None: self._read_geometry()
             sectionG = self.geometry.make_section_geometry(end1, end2,
                                                            points_number=points_number,
                                                            resolution=resolution)
         else:
-            if end1 != None or end2 != None:
+            if end1 is not None or end2 is not None:
                 raise epygramError("You cannot provide end1 or end2 when geometry is given")
             if geometry.structure != "V2D":
                 raise epygramError("geometry must be a V2D")
@@ -1118,7 +1118,7 @@ class LFI(FileResource):
                     + '{:>{width}}'.format(str(value), width=secondcolumn_width) \
                     + '\n')
         def write_formatted_fields(dest, label, gridIndicator=None, comment=None):
-            if gridIndicator == None and comment == None:
+            if gridIndicator is None and comment is None:
                 dest.write('{:<{width}}'.format(label, width=20) \
                         + '\n')
             else:
@@ -1380,7 +1380,7 @@ class LFI(FileResource):
         """
         Reads the compression.
         """
-        if self._compressed == None:
+        if self._compressed is None:
             if 'LFI_COMPRESSED' in self._listLFInames():
                 self._compressed = self.readfield('LFI_COMPRESSED' if self.true3d else ('LFI_COMPRESSED', None)).getdata()
             else:
@@ -1392,7 +1392,7 @@ class LFI(FileResource):
         and the validty of this field.
         """
         specialFields = dict()
-        if self._compressed == None: self._read_compression()
+        if self._compressed is None: self._read_compression()
         specialFields['LFI_COMPRESSED'] = self._compressed
         g = field.geometry
         field_info = inquire_field_dict(field.fid[self.format] if self.true3d else field.fid[self.format][0])
@@ -1465,11 +1465,11 @@ class LFI(FileResource):
             if len(field.validity) != 1:
                 raise epygramError("LFI can hold only one validity.")
             basis = field.validity.getbasis()
-            if basis != None:
+            if basis is not None:
                 specialFields['DTEXP%TDATE'] = numpy.array([basis.year, basis.month, basis.day], dtype=numpy.int64)
                 specialFields['DTEXP%TIME'] = float(basis.hour * 3600 + basis.minute * 60 + basis.second)
                 validity = field.validity.get()
-                if validity != None:
+                if validity is not None:
                     specialFields['DTCUR%TDATE'] = numpy.array([validity.year, validity.month, validity.day], dtype=numpy.int64)
                     specialFields['DTCUR%TIME'] = float(validity.hour * 3600 + validity.minute * 60 + validity.second)
         return specialFields

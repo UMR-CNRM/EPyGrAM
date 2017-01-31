@@ -269,9 +269,9 @@ def pressure2altitude(R, T, vertical_mean,
     """
 
     # get full pressures
-    if pi == None:
+    if pi is None:
         pi = flux2masspressures(pi_tilde, vertical_mean)
-    elif pi_tilde == None:
+    elif pi_tilde is None:
         pi_tilde = mass2fluxpressures(pi, vertical_mean)
     else:
         if not isinstance(pi, numpy.ndarray):
@@ -286,14 +286,14 @@ def pressure2altitude(R, T, vertical_mean,
         R = numpy.array(R)
     if not isinstance(T, numpy.ndarray):
         T = numpy.array(T)
-    if Phi_surf == None:
+    if Phi_surf is None:
         myPhi_surf = numpy.zeros(T[0].shape)
     else:
         if not isinstance(Phi_surf, numpy.ndarray):
             myPhi_surf = numpy.array(Phi_surf)
         else:
             myPhi_surf = Phi_surf
-    if Pdep == None:
+    if Pdep is None:
         myPdep = numpy.zeros(R.shape)
     else:
         if not isinstance(Pdep, numpy.ndarray):

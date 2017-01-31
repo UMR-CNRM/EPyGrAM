@@ -96,7 +96,7 @@ class LFA(FileResource):
           resource.
         """
 
-        if seed == None:
+        if seed is None:
             fieldslist = self.listfields()
         elif isinstance(seed, str):
             fieldslist = util.find_re_in_list(seed, self.listfields())

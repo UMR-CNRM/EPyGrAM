@@ -177,7 +177,7 @@ class Spectrum(RecursiveObject):
     def __add__(self, other):
         (othermean2, othername, otherval) = self._check_operands(other)
         mean2 = None if None in (self.mean2, othermean2) else self.mean2 + othermean2
-        name = None if (self.name == othername == None) else str(self.name) + '+' + str(othername)
+        name = None if (self.name is othername is None) else str(self.name) + '+' + str(othername)
         return Spectrum(self.variances + otherval,
                         name=name,
                         resolution=self.resolution,
@@ -185,7 +185,7 @@ class Spectrum(RecursiveObject):
     def __sub__(self, other):
         (othermean2, othername, otherval) = self._check_operands(other)
         mean2 = None if None in (self.mean2, othermean2) else self.mean2 - othermean2
-        name = None if (self.name == othername == None) else str(self.name) + '+' + str(othername)
+        name = None if (self.name is othername is None) else str(self.name) + '+' + str(othername)
         return Spectrum(self.variances - otherval,
                         name=name,
                         resolution=self.resolution,
@@ -193,7 +193,7 @@ class Spectrum(RecursiveObject):
     def __mul__(self, other):
         (othermean2, othername, otherval) = self._check_operands(other)
         mean2 = None if None in (self.mean2, othermean2) else self.mean2 * othermean2
-        name = None if (self.name == othername == None) else str(self.name) + '+' + str(othername)
+        name = None if (self.name is othername is None) else str(self.name) + '+' + str(othername)
         return Spectrum(self.variances * otherval,
                         name=name,
                         resolution=self.resolution,
@@ -201,7 +201,7 @@ class Spectrum(RecursiveObject):
     def __div__(self, other):
         (othermean2, othername, otherval) = self._check_operands(other)
         mean2 = None if None in (self.mean2, othermean2) else self.mean2 / othermean2
-        name = None if (self.name == othername == None) else str(self.name) + '+' + str(othername)
+        name = None if (self.name is othername is None) else str(self.name) + '+' + str(othername)
         return Spectrum(self.variances / otherval,
                         name=name,
                         resolution=self.resolution,
@@ -239,13 +239,13 @@ def dctspectrum(x, log=None, verbose=False):
     import scipy.fftpack as tfm
 
     # compute transform
-    if log != None and verbose:
+    if log is not None and verbose:
         log.info("dctspectrum: compute DCT transform...")
     norm = 'ortho'  # None
     y = tfm.dct(tfm.dct(x, norm=norm, axis=0), norm=norm, axis=1)
 
     # compute spectrum
-    if log != None and verbose:
+    if log is not None and verbose:
         log.info("dctspectrum: compute variance spectrum...")
     N, M = y.shape
     N2 = N ** 2
@@ -289,7 +289,7 @@ def plotspectra(spectra,
       missing objects. *fig* is the frame of the
       matplotlib figure, containing eventually several 
       subplots (axes); *ax* is the matplotlib axes on 
-      which the drawing is done. When given (!= None),
+      which the drawing is done. When given (is not None),
       these objects must be coherent, i.e. ax being one of
       the fig axes.
     - spectra = a Spectrum instance or a list of.
@@ -315,7 +315,7 @@ def plotspectra(spectra,
     window['ymax'] = max([max(s.variances) for s in spectra]) * 10
     window['xmax'] = max([max(s.wavelengths) for s in spectra]) * 1.5
     window['xmin'] = min([min(s.wavelengths) for s in spectra]) * 0.8
-    if zoom != None:
+    if zoom is not None:
         for k, v in zoom.items():
             window[k] = v
     x1 = window['xmax']
@@ -327,7 +327,7 @@ def plotspectra(spectra,
     linestyles = ['-', '--', '-.', ':']
 
     # axes
-    if title != None : ax.set_title(title)
+    if title is not None : ax.set_title(title)
     ax.set_yscale('log')
     ax.set_ylim(window['ymin'], window['ymax'])
     ax.set_xscale('log')

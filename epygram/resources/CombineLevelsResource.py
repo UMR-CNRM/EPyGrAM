@@ -70,7 +70,7 @@ class CombineLevelsResource(Resource):
           the fields (for mimetism with other formats).
         """
 
-        if seed == None or isinstance(seed, dict):
+        if seed is None or isinstance(seed, dict):
             fieldslist = self.listfields(select=seed)
         elif isinstance(seed, list):
             fieldslist = []
@@ -106,7 +106,7 @@ class CombineLevelsResource(Resource):
 
         # For fields present on only one layer, we put again the level in the generic fid
         for k, v in result.iteritems():
-            if len(v['original_fids']) == 1 and v['original_fids'][0][1] != None:
+            if len(v['original_fids']) == 1 and v['original_fids'][0][1] is not None:
                 v['generic']['level'] = v['original_fids'][0][1]
 
         return result
@@ -174,11 +174,11 @@ class CombineLevelsResource(Resource):
             found = None
             for k, v in cont.iteritems():
                 if fid == v['generic']:
-                    if found != None:
+                    if found is not None:
                         raise epygramError("Internal error...")
                     else:
                         found = k
-            if found == None:
+            if found is None:
                 raise epygramError("Internal error....")
             if not 'parameterNumber' in fid or fid['parameterNumber'] == 255:
                 # We do not join levels when parameterNumber is not known
