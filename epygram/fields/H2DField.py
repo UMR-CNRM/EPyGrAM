@@ -555,7 +555,8 @@ class H2DField(D3Field):
             exponential decay weighting
           - 'gaussian': modifies the surrounding points with an isotrop
             gaussian weighting. Its standard deviation *sigma* must then
-            be passed as argument, in meters.
+            be passed as argument, in meters. Weightingassumed to be 0. from
+            3*sigma.
         *increment*: if True, the final value of the point is
           original_field.value + point.value
         """
@@ -581,7 +582,7 @@ class H2DField(D3Field):
                 lon = p.geometry.grid['longitudes'][0]
                 lat = p.geometry.grid['latitudes'][0]
                 zero_radius = 3.*sigma
-                selection_points_ij = self.geometry.nearest_points(lon, lat, interpolation=('custom:radius', zero_radius))
+                selection_points_ij = self.geometry.nearest_points(lon, lat, interpolation=('square:radius', zero_radius))
                 selection_points_ll = self.geometry.ij2ll([sp[0] for sp in selection_points_ij], [sp[1] for sp in selection_points_ij])
                 selection_points_ll = [(selection_points_ll[0][k], selection_points_ll[1][k]) for k in range(len(selection_points_ll[0]))]
                 for sp in selection_points_ll:
@@ -595,7 +596,7 @@ class H2DField(D3Field):
                             local_alpha = alpha * numpy.exp(-distance ** 2 / (2 * sigma ** 2))
                             self._data[:, :, j, i] = local_alpha * p.getdata() + (1. - local_alpha) * self._data[:, :, j, i]
             else:
-                raise NotImplementedError("not yet.")
+                raise NotImplementedError("morphing: " + morphing + " :not yet.")
 
     def _check_operands(self, other):
         """

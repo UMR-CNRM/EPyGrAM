@@ -19,7 +19,6 @@ from epygram.base import Field, FieldSet, FieldValidity, FieldValidityList, Reso
 from epygram.geometries import D3Geometry, SpectralGeometry
 
 
-
 class D3CommonField(Field):
     """
     3-Dimensions common field class.
@@ -67,15 +66,15 @@ class D3CommonField(Field):
         of the neighboring gridpoint (only for *interpolation == 'nearest'*).
 
         *lon* and *lat* may be longer than 1.
-        If *one* is False and len(lon) is 1, returns [value] instead of value.  
-        
+        If *one* is False and len(lon) is 1, returns [value] instead of value.
+
         *external_distance* can be a dict containing the target point value
         and an external field on the same grid as self, to which the distance
-        is computed within the 4 horizontally nearest points; e.g. 
+        is computed within the 4 horizontally nearest points; e.g.
         {'target_value':4810, 'external_field':an_H2DField_with_same_geometry}.
         If so, the nearest point is selected with
         distance = |target_value - external_field.data|
-        
+
         Warning: for interpolation on Gauss geometries, requires the
         :mod:`pyproj` module.
         """
@@ -85,7 +84,7 @@ class D3CommonField(Field):
         else:
             myvalidity = validity
         if self.spectral:
-            raise epygramError("field must be gridpoint to get value of a" + \
+            raise epygramError("field must be gridpoint to get value of a" +
                                " lon/lat point.")
         if len(self.validity) > 1 and myvalidity is None:
             raise epygramError("*validity* is mandatory when there are several validities")
@@ -140,7 +139,7 @@ class D3CommonField(Field):
             raise epygramError("lon and lat must have the same length and the same length as level and validity")
 
         if interpolation == 'nearest':
-            (ri, rj) = self.geometry.nearest_points(lon, lat, 'nearest',
+            (ri, rj) = self.geometry.nearest_points(lon, lat, {'n':'1'},
                                                     external_distance=external_distance)
             value = self.getvalue_ij(ri, rj, my_k, my_t, one=one)
             if neighborinfo:
@@ -164,7 +163,9 @@ class D3CommonField(Field):
                     latn = my_lat.item()
                     my_kn = my_k.item()
                     my_tn = my_t.item()
-                interp_points.append(self.geometry.nearest_points(lonn, latn, interpolation))
+                interp_points.append(self.geometry.nearest_points(lonn, latn,
+                                                                  {'linear':{'n':'2*2'},
+                                                                   'cubic':{'n':'2*2'}}[interpolation]))
             # depack
             all_i = []
             all_j = []
@@ -182,8 +183,7 @@ class D3CommonField(Field):
                 loc_lons = [all_lonslats[0].pop(0) for _ in range(len(interp_points[n]))]
                 loc_lats = [all_lonslats[1].pop(0) for _ in range(len(interp_points[n]))]
                 if self.geometry.name == 'academic' and \
-                   (self.geometry.dimensions['X'] == 1 or \
-                    self.geometry.dimensions['Y'] == 1):
+                   1 in (self.geometry.dimensions['X'], self.geometry.dimensions['Y'] == 1):
                     if self.geometry.dimensions['X'] == 1:
                         f = interp1d(loc_lats, loc_values, kind=interpolation)
                         value = f(latn)
@@ -227,11 +227,11 @@ class D3CommonField(Field):
         dates4d = numpy.array(dates4d).reshape(data4d.shape).flatten(order=order)
         times4d = numpy.array(times4d).reshape(data4d.shape).flatten(order=order)
         result = dict(values=data4d.flatten(order=order),
-                    latitudes=lats4d.flatten(order=order),
-                    longitudes=lons4d.flatten(order=order),
-                    levels=levels4d.flatten(order=order),
-                    dates=dates4d.flatten(order=order),
-                    times=times4d.flatten(order=order))
+                      latitudes=lats4d.flatten(order=order),
+                      longitudes=lons4d.flatten(order=order),
+                      levels=levels4d.flatten(order=order),
+                      dates=dates4d.flatten(order=order),
+                      times=times4d.flatten(order=order))
         return result
 
     def as_dicts(self, subzone=None):
@@ -352,7 +352,7 @@ class D3CommonField(Field):
                           exclude_extralevels=True):
         """
         Extracts a subdomain from a field, given a new geometry.
-    
+
         Args: \n
         - *geometry* defines the geometry on which extract data
         - *interpolation* defines the interpolation function used to compute
@@ -363,7 +363,7 @@ class D3CommonField(Field):
           - if 'cubic', computes profile with horizontal cubic interpolation.
         - *external_distance* can be a dict containing the target point value
           and an external field on the same grid as self, to which the distance
-          is computed within the 4 horizontally nearest points; e.g. 
+          is computed within the 4 horizontally nearest points; e.g.
           {'target_value':4810, 'external_field':an_H2DField_with_same_geometry}.
           If so, the nearest point is selected with
           distance = |target_value - external_field.data|
@@ -372,13 +372,15 @@ class D3CommonField(Field):
         """
 
         # build subdomain fid
-        subdomainfid = {key:(FPDict(value) if type(value) == type(dict()) else value) for (key, value) in self.fid.iteritems()}
+        subdomainfid = {key:(FPDict(value)
+                             if type(value) == type(dict())
+                             else value)
+                        for (key, value) in self.fid.items()}
 
         # build vertical geometry
         kwargs_vcoord = {'structure':'V',
                          'typeoffirstfixedsurface': self.geometry.vcoordinate.typeoffirstfixedsurface,
-                         'position_on_grid': self.geometry.vcoordinate.position_on_grid,
-                        }
+                         'position_on_grid': self.geometry.vcoordinate.position_on_grid}
         if self.geometry.vcoordinate.typeoffirstfixedsurface == 119:
             kwargs_vcoord['grid'] = copy.copy(self.geometry.vcoordinate.grid)
             kwargs_vcoord['levels'] = copy.copy(self.geometry.vcoordinate.levels)
@@ -413,8 +415,7 @@ class D3CommonField(Field):
                        'grid': dict(geometry.grid),  # do not remove dict(), it is usefull for unstructured grid
                        'dimensions': copy.copy(geometry.dimensions),
                        'vcoordinate': vcoordinate,
-                       'position_on_horizontal_grid': 'center'
-                      }
+                       'position_on_horizontal_grid': 'center'}
         if geometry.projected_geometry:
             kwargs_geom['projection'] = copy.copy(geometry.projection)
             kwargs_geom['projtool'] = geometry.projtool
@@ -430,17 +431,17 @@ class D3CommonField(Field):
             lats = stretch_array(lats)
         for (lon, lat) in numpy.nditer([lons, lats]):
             if not self.geometry.point_is_inside_domain_ll(lon, lat):
-                raise ValueError("point (" + str(lon) + ", " + \
+                raise ValueError("point (" + str(lon) + ", " +
                                  str(lat) + ") is out of field domain.")
         comment = None
         if interpolation == 'nearest':
             if lons.size == 1:
                 true_loc = self.geometry.ij2ll(*self.geometry.nearest_points(lons, lats,
-                                                                             'nearest',
+                                                                             {'n':'1'},
                                                                              external_distance=external_distance))
                 distance = self.geometry.distance((float(lons), float(lats)),
-                                                   (float(true_loc[0]),
-                                                    float(true_loc[1])))
+                                                  (float(true_loc[0]),
+                                                   float(true_loc[1])))
                 az = self.geometry.azimuth((float(lons), float(lats)),
                                            (float(true_loc[0]),
                                             float(true_loc[1])))
@@ -483,7 +484,6 @@ class D3CommonField(Field):
         else:
             raise NotImplementedError(interpolation + "interpolation.")
 
-
         # Values
         shp = newgeometry.get_datashape(dimT=len(self.validity), d4=True)
         data = numpy.ndarray(shp)
@@ -515,7 +515,7 @@ class D3CommonField(Field):
 
         assert not self.spectral, \
                "spectral field: convert to gridpoint beforehand"
-            
+
         (lons, lats) = self.geometry.get_lonlat_grid()
         kwargs_zoomgeom = {'structure':self.geometry.structure,
                            'vcoordinate':self.geometry.vcoordinate,
@@ -557,16 +557,17 @@ class D3CommonField(Field):
                                        'latitudes':zoomlats}
         zoom_geom = footprints.proxy.geometry(**kwargs_zoomgeom)
 
-        #zoom_field = self.extract_subdomain(zoom_geom)  #TODO: ? serait plus élégant mais pb d'efficacité (2x plus lent)
-        #zoom_field.fid = fid                            # car extract_subdomain fait une recherche des plus proches points
-
+        # Serait plus élégant mais pb d'efficacité (2x plus lent)
+        # car extract_subdomain fait une recherche des plus proches points:
+        # zoom_field = self.extract_subdomain(zoom_geom)
+        # zoom_field.fid = fid
         shp = zoom_geom.get_datashape(dimT=len(self.validity), d4=True)
         data = numpy.empty(shp)
         values = self.getdata(d4=True)
         for t in range(len(self.validity)):
             for k in range(len(self.geometry.vcoordinate.levels)):
                 if self.geometry.name == 'regular_lonlat':
-                    data[t, k, :, :] = values[t, k, jmin:jmax+1, imin:imax+1]
+                    data[t, k, :, :] = values[t, k, jmin:jmax + 1, imin:imax + 1]
                 else:
                     vals = values[t, k, :, :].flatten()
                     zoomvals = []
@@ -587,7 +588,7 @@ class D3CommonField(Field):
         zoom_field.setdata(data)
 
         return zoom_field
-    
+
     def extract_subarray(self,
                          first_i, last_i,
                          first_j, last_j):
@@ -595,7 +596,7 @@ class D3CommonField(Field):
         Extract a rectangular sub-array from the field, given the i,j index limits
         of the sub-array, and return the extracted field.
         """
-    
+
         newgeom = self.geometry.make_subarray_geometry(first_i, last_i,
                                                        first_j, last_j)
         # select data
@@ -605,14 +606,14 @@ class D3CommonField(Field):
         field_kwargs['geometry'] = newgeom
         newfield = fpx.field(**field_kwargs)
         newfield.setdata(subdata)
-    
+
         return newfield
-    
+
     def extend(self, another_field_with_time_dimension):
         """
         Extend the field with regard to time dimension with the field given as
         argument.
-        
+
         Be careful no check is done for consistency between the two fields
         geometry (except that dimensions match) nor their validities.
         """
@@ -789,9 +790,9 @@ class D3CommonField(Field):
         elif fidkey is not None:
             self.fid['netCDF'] = self.fid[fidkey]
         else:
-            assert self.fid.has_key('netCDF'), \
-                   ' '.join(["must provide *variablename* or *fidkey* for"
-                            "determining variable name in netCDF."])
+            assert 'netCDF' in self.fid, \
+                   ' '.join(["must provide *variablename* or *fidkey* for",
+                             "determining variable name in netCDF."])
         with resource(filename, 'w', fmt='netCDF') as r:
             r.writefield(self)
         if _fid is not None:
@@ -920,6 +921,7 @@ class D3CommonField(Field):
                               validity=FieldValidityList(length=len(self.validity)))
         return newfield
 
+
 class D3Field(D3CommonField):
     """
     3-Dimensions field class.
@@ -929,7 +931,7 @@ class D3Field(D3CommonField):
 
     The natural being of a field is gridpoint, so that:
     a field always has a gridpoint geometry, but it has a spectral geometry only
-    in case it is spectral. 
+    in case it is spectral.
     """
 
     _collector = ('field',)
@@ -1041,8 +1043,8 @@ class D3Field(D3CommonField):
 
     def compute_xy_spderivatives(self):
         """
-        Compute the derivatives of field in spectral space, then come back in 
-        gridpoint space
+        Compute the derivatives of field in spectral space, then come back in
+        gridpoint space.
         Returns the two derivative fields.
 
         The spectral transform and derivatives subroutines are actually included
@@ -1122,7 +1124,7 @@ class D3Field(D3CommonField):
         (t,z,y,x), or (t,z,n) if spectral (2D spectral coefficients must be 1D
         with ad hoc ordering, n being the total number of spectral
         coefficients).
-        
+
         *data* may be 4D (3D if spectral) even if the field is not, as long as
         the above dimensions ordering is respected.
         """
@@ -1225,9 +1227,9 @@ class D3Field(D3CommonField):
             # reshape to 4D
             data = data.reshape(shp)
         super(D3Field, self).setdata(data)
-    
+
     data = property(getdata, setdata, Field.deldata, "Accessor to the field data.")
-    
+
     def select_subzone(self, subzone):
         """
         If a LAMzone defines the field, select only the *subzone* from it.
@@ -1248,7 +1250,7 @@ class D3Field(D3CommonField):
         *k* is the index of the level (not a value in Pa or m...)
         *t* is the index of the temporal dimension (not a validity object)
         *k* and *t* can be scalar even if *i* and *j* are arrays.
-        
+
         If *one* is False, returns [value] instead of value.
         """
 
@@ -1329,8 +1331,7 @@ class D3Field(D3CommonField):
         kwargs_vcoord = {'structure': 'V',
                          'typeoffirstfixedsurface': self.geometry.vcoordinate.typeoffirstfixedsurface,
                          'position_on_grid': self.geometry.vcoordinate.position_on_grid,
-                         'levels':[level]
-                        }
+                         'levels':[level]}
         if self.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
             kwargs_vcoord['grid'] = copy.copy(self.geometry.vcoordinate.grid)
         newvcoordinate = fpx.geometry(**kwargs_vcoord)
@@ -1339,8 +1340,7 @@ class D3Field(D3CommonField):
                        'grid': dict(self.geometry.grid),
                        'dimensions': copy.copy(self.geometry.dimensions),
                        'vcoordinate': newvcoordinate,
-                       'position_on_horizontal_grid': self.geometry.position_on_horizontal_grid
-                      }
+                       'position_on_horizontal_grid': self.geometry.position_on_horizontal_grid}
         if self.geometry.projected_geometry:
             kwargs_geom['projection'] = copy.copy(self.geometry.projection)
             kwargs_geom['projtool'] = self.geometry.projtool
@@ -1364,7 +1364,7 @@ class D3Field(D3CommonField):
         """
         Returns the field restrained to one of its temporal validity as a new
         field.
-        
+
         *index_or_validity* can be either a :class:`epygram.base.FieldValidity`
         instance or the index of the requested validity in the field's
         FieldValidityList.
@@ -1387,10 +1387,11 @@ class D3Field(D3CommonField):
 
         return newfield
 
+
 class D3VirtualField(D3CommonField):
     """
     3-Dimensions Virtual field class.
-    
+
     Data is taken from other fields, either:
     - a given *fieldset*
     - a *resource* in which are stored fields defined by *resource_fids*.
@@ -1508,11 +1509,9 @@ class D3VirtualField(D3CommonField):
         return self._processtype
 
 
-
 ##############
 # ABOUT DATA #
 ##############
-
     def sp2gp(self):
         """
         Transforms the spectral field into gridpoint, according to its spectral
@@ -1567,13 +1566,13 @@ class D3VirtualField(D3CommonField):
     def setdata(self, data):
         """setdata() not implemented on virtual fields."""
         raise epygramError("setdata cannot be implemented on virtual fields")
-    
+
     def deldata(self):
         """deldata() not implemented on virtual fields."""
         raise epygramError("deldata cannot be implemented on virtual fields")
-    
+
     data = property(getdata)
-    
+
     def getvalue_ij(self, i=None, j=None, k=None, t=None,
                     one=True):
         """
@@ -1582,7 +1581,7 @@ class D3VirtualField(D3CommonField):
         *k* is the index of the level (not a value in Pa or m...)
         *t* is the index of the temporal dimension (not a validity object)
         *k* and *t* can be scalar even if *i* and *j* are arrays.
-        
+
         If *one* is False, returns [value] instead of value.
         """
 
@@ -1674,7 +1673,6 @@ class D3VirtualField(D3CommonField):
                 raise epygramError("operation not known")
 
         return result
-
 
 
 footprints.collectors.get(tag='fields').fasttrack = ('structure',)
