@@ -190,8 +190,6 @@ class V2DField(D3Field):
         hlevels = [levels[l] for l in range(len(levels) - L / 3) if
                    l % L == 0] + [levels[-1]]
         # plot
-        if reverseY and not ax.yaxis_inverted():
-            ax.invert_yaxis()
         if logscale:
             ax.set_yscale('log')
         ax.grid()
@@ -217,6 +215,8 @@ class V2DField(D3Field):
                             linewidths=contourwidth)
             if contourlabel:
                 ax.clabel(pf, colors=contourcolor)
+        if reverseY and not ax.yaxis_inverted():
+            ax.invert_yaxis()
         # decoration
         surf = z[-1, :]
         bottom = max(surf) if reverseY else min(surf)

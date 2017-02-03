@@ -459,8 +459,6 @@ def plotprofiles(profiles,
     fig, ax = util.set_figax(*over, figsize=(6., 9.))
     if logscale:
         ax.set_yscale('log')
-    if reverseY and not ax.yaxis_inverted():
-        ax.invert_yaxis()
     for i, p in enumerate(profiles):
         if len(p.validity) != 1:
             raise epygramError("plotprofiles can handle only profiles with one validity.")
@@ -496,6 +494,8 @@ def plotprofiles(profiles,
             plot_kwargs['linestyle'] = linestyles[i // len(colors)]
         ax.plot(data.flatten(), Y.flatten(), label=label,
                 **plot_kwargs)
+    if reverseY and not ax.yaxis_inverted():
+        ax.invert_yaxis()
 
     # Decoration
     if reverseY:

@@ -12,7 +12,8 @@ import sys
 from epygram import epygramError
 from epygram.util import separation_line, write_formatted
 from .D3Geometry import D3Geometry, D3RectangularGridGeometry, \
-                        D3UnstructuredGeometry, D3ProjectedGeometry
+                        D3UnstructuredGeometry, D3ProjectedGeometry, \
+                        D3AcademicGeometry
 
 
 
@@ -105,6 +106,20 @@ class V2DUnstructuredGeometry(V2DRectangularGridGeometry, D3UnstructuredGeometry
                 values=set(['V2D'])),  #inheritance priority problem
             name=dict(
                 values=set(['unstructured']))
+        )
+    )
+
+
+class V2DAcademicGeometry(D3AcademicGeometry, V2DRectangularGridGeometry):
+    """Handles the geometry for a Projected Horizontal 2-Dimensions Field."""
+
+    _collector = ('geometry',)
+    _footprint = dict(
+        attr=dict(
+            structure=dict(
+                values=set(['V2D'])),  #inheritance priority problem
+            name=dict(
+                values=set(['academic']))
         )
     )
 

@@ -417,7 +417,9 @@ class D3CommonField(Field):
                       }
         if geometry.projected_geometry:
             kwargs_geom['projection'] = copy.copy(geometry.projection)
-            kwargs_geom['projtool'] = geometry.projtool
+            if geometry.name != 'academic':
+                print geometry.name
+                kwargs_geom['projtool'] = geometry.projtool
             kwargs_geom['geoid'] = geometry.geoid
         if geometry.position_on_horizontal_grid not in [None, '__unknown__', kwargs_geom['position_on_horizontal_grid']]:
             raise epygramError("extract_subdomain cannot deal with position_on_horizontal_grid other than 'center'")
