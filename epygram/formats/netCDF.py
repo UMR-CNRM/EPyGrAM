@@ -7,7 +7,7 @@
 Contains classes for netCDF4 resource.
 """
 
-__all__ = ['netCDF']
+from __future__ import print_function, absolute_import, unicode_literals, division
 
 import copy
 import json
@@ -27,6 +27,8 @@ from epygram.base import FieldValidity, FieldValidityList
 from epygram.resources import FileResource
 from epygram.util import stretch_array, Angle
 
+__all__ = ['netCDF']
+
 epylog = footprints.loggers.getLogger(__name__)
 
 
@@ -41,7 +43,6 @@ _proj_dict = {'lambert':'lambert_conformal_conic',
               'mercator':'mercator',
               'polar_stereographic':'polar_stereographic'}
 _proj_dict_inv = {v:k for k, v in _proj_dict.items()}
-
 
 
 class netCDF(FileResource):
@@ -131,8 +132,8 @@ class netCDF(FileResource):
             for s in seed:
                 fieldslist += util.find_re_in_list(s, self.listfields())
         if fieldslist == []:
-            raise epygramError("no field matching '" + seed + \
-                               "' was found in resource " + \
+            raise epygramError("no field matching '" + seed +
+                               "' was found in resource " +
                                self.container.abspath)
         if generic:
             raise NotImplementedError("not yet.")
@@ -147,7 +148,7 @@ class netCDF(FileResource):
     def ncinfo_field(self, fid):
         """
         Get info about the field (dimensions and meta-data of the netCDF variable).
-        
+
         Args: \n
         - *fid*: netCDF field identifier
         """
@@ -161,7 +162,6 @@ class netCDF(FileResource):
         return {'dimensions':dimensions,
                 'metadata':metadata}
 
-
     @FileResource._openbeforedelayed
     def readfield(self, fid,
                   getdata=True,
@@ -169,7 +169,7 @@ class netCDF(FileResource):
                   adhoc_behaviour=None):
         """
         Reads one field, given its netCDF name, and returns a Field instance.
-        
+
         Args: \n
         - *fid*: netCDF field identifier
         - *getdata*: if *False*, only metadata are read, the field do not
@@ -203,7 +203,7 @@ class netCDF(FileResource):
             for sd in config.netCDF_standard_dimensions:
                 # if behaviour is not explicitly given,
                 # try to find out who is "d" among the standard dimensions
-                if not sd in behaviour.keys() and d in config.netCDF_usualnames_for_standard_dimensions[sd]:
+                if sd not in behaviour.keys() and d in config.netCDF_usualnames_for_standard_dimensions[sd]:
                     behaviour[sd] = d
         dims_dict_n2e = {}
         for d in variable_dimensions.keys():
@@ -218,13 +218,13 @@ class netCDF(FileResource):
                 sg = sd.replace('dimension', 'grid')
                 # if behaviour is not explicitly given,
                 # try to find out who is "f" among the standard grids
-                if not sg in behaviour.keys() and f in config.netCDF_usualnames_for_standard_dimensions[sd] \
-                or f == behaviour.get(sd):
+                if sg not in behaviour.keys() and f in config.netCDF_usualnames_for_standard_dimensions[sd] or \
+                   f == behaviour.get(sd):
                     behaviour[sg] = f
 
         # 2. time
         def get_validity(T_varname):
-            if not T_varname in self._variables.keys():
+            if T_varname not in self._variables.keys():
                 raise epygramError('unable to find T_grid in variables.')
             T = self._variables[T_varname][:]
             time_unit = self._variables[T_varname].units
@@ -234,7 +234,7 @@ class netCDF(FileResource):
             basis = netCDF4.num2date(0, time_unit)
             if not isinstance(basis, datetime.datetime):
                 basis = '{:0>19}'.format(str(basis).strip())
-                basis = dt_parser.parse(basis, yearfirst=True)  #FIXME: years < 1000 become > 2000
+                basis = dt_parser.parse(basis, yearfirst=True)  # FIXME: years < 1000 become > 2000
             if isinstance(T, datetime.datetime):
                 T = [T]
             for v in T:
@@ -246,7 +246,7 @@ class netCDF(FileResource):
                         fv = FieldValidity()
                     else:
                         v = '{:0>19}'.format(str(v).strip())
-                        v = dt_parser.parse(v, yearfirst=True)  #FIXME: years < 1000 become > 2000
+                        v = dt_parser.parse(v, yearfirst=True)  # FIXME: years < 1000 become > 2000
                         fv = FieldValidity(date_time=v, basis=basis)
                 validity.append(fv)
             return validity
@@ -286,7 +286,7 @@ class netCDF(FileResource):
                               if variable_dimensions[k] != 1]
         H2D = set(squeezed_variables) == set(['X_dimension',
                                               'Y_dimension']) \
-              or (set(squeezed_variables) == set(['N_dimension']) \
+              or (set(squeezed_variables) == set(['N_dimension'])
                   and all([d in all_dimensions_e2n for d in ['X_dimension',  # flattened grids
                                                              'Y_dimension']])) \
               or (set(squeezed_variables) == set(['N_dimension']) \
@@ -295,7 +295,7 @@ class netCDF(FileResource):
                                              'Y_dimension',
                                              'Z_dimension']) \
              or (set(squeezed_variables) == set(['N_dimension',
-                                                 'Z_dimension']) \
+                                                 'Z_dimension'])
                  and all([d in all_dimensions_e2n for d in ['X_dimension',  # flattened grids
                                                             'Y_dimension']])) \
              or (set(squeezed_variables) == set(['N_dimension',
@@ -332,7 +332,7 @@ class netCDF(FileResource):
                 structure = 'V2D'
             elif H1D:
                 structure = 'H1D'
-                raise NotImplementedError('H1D: not yet.')  #TODO:
+                raise NotImplementedError('H1D: not yet.')  # TODO:
             elif V1D:
                 structure = 'V1D'
             elif points:
@@ -399,8 +399,8 @@ class netCDF(FileResource):
         # 3.3.2 vertical part
         if D3 or V1D or V2D:
             var_corresponding_to_Z_grid = behaviour.get('Z_grid', False)
-            #assert var_corresponding_to_Z_grid in self._variables.keys(), \
-            #       'unable to find Z_grid in variables.'
+            # assert var_corresponding_to_Z_grid in self._variables.keys(), \
+            #        'unable to find Z_grid in variables.'
             levels = None
             if var_corresponding_to_Z_grid in self._variables.keys():
                 if hasattr(self._variables[var_corresponding_to_Z_grid], 'standard_name') \
@@ -440,7 +440,7 @@ class netCDF(FileResource):
         if H2D or D3:
             def find_grid_in_variables():
                 var_corresponding_to_X_grid = behaviour.get('X_grid', False)
-                if not var_corresponding_to_X_grid in self._variables.keys():
+                if var_corresponding_to_X_grid not in self._variables.keys():
                     epylog.error(" ".join(["unable to find X_grid in variables.",
                                            "Please specify with readfield()",
                                            "argument",
@@ -449,7 +449,7 @@ class netCDF(FileResource):
                                            "my_resource.behave(X_grid='name_of_the_variable')"]))
                     raise epygramError('unable to find X_grid in variables.')
                 var_corresponding_to_Y_grid = behaviour.get('Y_grid', False)
-                if not var_corresponding_to_Y_grid in self._variables.keys():
+                if var_corresponding_to_Y_grid not in self._variables.keys():
                     epylog.error(" ".join(["unable to find Y_grid in variables.",
                                            "Please specify with readfield()",
                                            "argument",
@@ -458,16 +458,16 @@ class netCDF(FileResource):
                                            "my_resource.behave(Y_grid='name_of_the_variable')"]))
                     raise epygramError('unable to find Y_grid in variables.')
                 else:
-                    if hasattr(self._variables[var_corresponding_to_Y_grid], 'standard_name') \
-                    and self._variables[var_corresponding_to_Y_grid].standard_name == 'projection_y_coordinate' \
-                    and self._variables[var_corresponding_to_X_grid].standard_name == 'projection_x_coordinate':
+                    if hasattr(self._variables[var_corresponding_to_Y_grid], 'standard_name') and \
+                       self._variables[var_corresponding_to_Y_grid].standard_name == 'projection_y_coordinate' and \
+                       self._variables[var_corresponding_to_X_grid].standard_name == 'projection_x_coordinate':
                         behaviour['grid_is_lonlat'] = False
-                    elif 'lat' in var_corresponding_to_Y_grid.lower() \
-                    and 'lon' in var_corresponding_to_X_grid.lower() \
-                    and 'grid_is_lonlat' not in behaviour.keys():
+                    elif 'lat' in var_corresponding_to_Y_grid.lower() and \
+                         'lon' in var_corresponding_to_X_grid.lower() and \
+                         'grid_is_lonlat' not in behaviour.keys():
                         behaviour['grid_is_lonlat'] = True
-                if len(self._variables[var_corresponding_to_X_grid].dimensions) == 1 \
-                and len(self._variables[var_corresponding_to_Y_grid].dimensions) == 1:
+                if len(self._variables[var_corresponding_to_X_grid].dimensions) == 1 and \
+                   len(self._variables[var_corresponding_to_Y_grid].dimensions) == 1:
                     # case of a flat grid
                     X = self._variables[var_corresponding_to_X_grid][:]
                     Y = self._variables[var_corresponding_to_Y_grid][:]
@@ -489,8 +489,8 @@ class netCDF(FileResource):
                         # and Y constant on a row: reconstruct 2D
                         Xgrid = numpy.ones((Y.size, X.size)) * X
                         Ygrid = (numpy.ones((Y.size, X.size)).transpose() * Y).transpose()
-                elif len(self._variables[var_corresponding_to_X_grid].dimensions) == 2 \
-                and len(self._variables[var_corresponding_to_Y_grid].dimensions) == 2:
+                elif len(self._variables[var_corresponding_to_X_grid].dimensions) == 2 and \
+                     len(self._variables[var_corresponding_to_Y_grid].dimensions) == 2:
                     Xgrid = self._variables[var_corresponding_to_X_grid][:, :]
                     Ygrid = self._variables[var_corresponding_to_Y_grid][:, :]
                 if Ygrid[0, 0] > Ygrid[-1, 0] and not behaviour.get('reverse_Ygrid'):
@@ -505,8 +505,8 @@ class netCDF(FileResource):
                (self._variables[variable.grid_mapping].grid_mapping_name in ('lambert_conformal_conic',
                                                                              'mercator',
                                                                              'polar_stereographic',
-                                                                             'latitude_longitude') \
-                or 'gauss' in self._variables[variable.grid_mapping].grid_mapping_name.lower()):
+                                                                             'latitude_longitude') or
+                'gauss' in self._variables[variable.grid_mapping].grid_mapping_name.lower()):
                 # geometry described as "grid_mapping" meta-data
                 gm = variable.grid_mapping
                 grid_mapping = self._variables[gm]
@@ -526,8 +526,8 @@ class netCDF(FileResource):
                 if hasattr(grid_mapping, 'position_on_horizontal_grid'):
                     kwargs_geom['position_on_horizontal_grid'] = grid_mapping.position_on_horizontal_grid
                 if grid_mapping.grid_mapping_name in ('lambert_conformal_conic', 'mercator', 'polar_stereographic'):
-                    if (hasattr(self._variables[variable.grid_mapping], 'x_resolution') \
-                    or not behaviour.get('grid_is_lonlat', False)):
+                    if (hasattr(self._variables[variable.grid_mapping], 'x_resolution') or
+                        not behaviour.get('grid_is_lonlat', False)):
                         # if resolution is either in grid_mapping attributes or in the grid itself
                         kwargs_geom['name'] = _proj_dict_inv[grid_mapping.grid_mapping_name]
                         if hasattr(grid_mapping, 'x_resolution'):
@@ -540,8 +540,7 @@ class netCDF(FileResource):
                             else:
                                 Xresolution = abs(Xgrid[0, 0] - Xgrid[0, 1])
                                 Yresolution = abs(Ygrid[0, 0] - Ygrid[1, 0])
-                        grid = {
-                                'X_resolution':Xresolution,
+                        grid = {'X_resolution':Xresolution,
                                 'Y_resolution':Yresolution,
                                 'LAMzone':None}
                         import pyproj
@@ -670,7 +669,7 @@ class netCDF(FileResource):
                     dimensions = {'max_lon_number':int(max(lon_number_by_lat)),
                                   'lat_number':len(latitudes),
                                   'lon_number_by_lat':FPList([int(n) for n in
-                                                      lon_number_by_lat])}
+                                                              lon_number_by_lat])}
                 elif grid_mapping.grid_mapping_name == 'latitude_longitude':
                     # try to find out longitude, latitude arrays
                     for f in config.netCDF_usualnames_for_lonlat_grids['X']:
@@ -702,7 +701,7 @@ class netCDF(FileResource):
                             'Y_resolution':abs(Ygrid[1, 0] - Ygrid[0, 0])}
         elif V1D or V2D or points:
             var_corresponding_to_X_grid = behaviour.get('X_grid', False)
-            if not var_corresponding_to_X_grid in self._variables.keys():
+            if var_corresponding_to_X_grid not in self._variables.keys():
                 if points or V1D:
                     lon = ['_']
                 else:
@@ -710,7 +709,7 @@ class netCDF(FileResource):
             else:
                 lon = self._variables[var_corresponding_to_X_grid][:]
             var_corresponding_to_Y_grid = behaviour.get('Y_grid', False)
-            if not var_corresponding_to_Y_grid in self._variables.keys():
+            if var_corresponding_to_Y_grid not in self._variables.keys():
                 if points or V1D:
                     lat = ['_']
                 else:
@@ -735,7 +734,7 @@ class netCDF(FileResource):
             if a != 'validity':
                 if isinstance(variable.getncattr(a), numpy.float32):  # pb with json and float32
                     comment.update({a:numpy.float64(variable.getncattr(a))})
-                elif isinstance(variable.getncattr(a), numpy.ndarray): # pb with json and numpy arrays
+                elif isinstance(variable.getncattr(a), numpy.ndarray):  # pb with json and numpy arrays
                     comment.update({a:numpy.float64(variable.getncattr(a)).tolist()})
                 else:
                     comment.update({a:variable.getncattr(a)})
@@ -833,7 +832,7 @@ class netCDF(FileResource):
         adhoc_behaviour = util.ifNone_emptydict(adhoc_behaviour)
         behaviour = self.behaviour.copy()
         behaviour.update(adhoc_behaviour)
-        
+
         def check_or_add_dim(d, d_in_field=None, size=None):
             if size is None:
                 if d_in_field is None:
@@ -868,7 +867,7 @@ class netCDF(FileResource):
                 status = 'match'
             return var, status
 
-        assert field.fid.has_key('netCDF')
+        assert 'netCDF' in field.fid
         assert not field.spectral
 
         # 1. dimensions
@@ -880,8 +879,8 @@ class netCDF(FileResource):
             T = config.netCDF_usualnames_for_standard_dimensions['T_dimension'][0]
             # or any existing identified time dimension
             T = {'found':v for v in self._dimensions
-                 if (v in config.netCDF_usualnames_for_standard_dimensions['T_dimension']
-                     and len(self._dimensions[v]) == len(field.validity))}.get('found', T)
+                 if (v in config.netCDF_usualnames_for_standard_dimensions['T_dimension'] and
+                     len(self._dimensions[v]) == len(field.validity))}.get('found', T)
             # or specified behaviour
             T = behaviour.get('T_dimension', T)
             check_or_add_dim(T, size=len(field.validity))
@@ -890,8 +889,8 @@ class netCDF(FileResource):
         Z = config.netCDF_usualnames_for_standard_dimensions['Z_dimension'][0]
         # or any existing identified time dimension
         Z = {'found':v for v in self._dimensions
-                 if (v in config.netCDF_usualnames_for_standard_dimensions['Z_dimension']
-                     and len(self._dimensions[v]) == len(field.geometry.vcoordinate.levels))}.get('found', Z)
+                 if (v in config.netCDF_usualnames_for_standard_dimensions['Z_dimension'] and
+                     len(self._dimensions[v]) == len(field.geometry.vcoordinate.levels))}.get('found', Z)
         # or specified behaviour
         Z = behaviour.get('Z_dimension', Z)
         if 'gridlevels' in field.geometry.vcoordinate.grid.keys():
@@ -928,7 +927,7 @@ class netCDF(FileResource):
             raise NotImplementedError("grid not rectangular nor a gauss one.")
 
         # 2. validity
-        #TODO: deal with unlimited time dimension ?
+        # TODO: deal with unlimited time dimension ?
         if field.validity[0] != FieldValidity():
             tgrid = config.netCDF_usualnames_for_standard_dimensions['T_dimension'][0]
             tgrid = {'found':v for v in self._variables
@@ -1170,15 +1169,13 @@ class netCDF(FileResource):
 
     def set_default_global_attributes(self):
         """
-        Set default global attributes (those from 
+        Set default global attributes (those from
         config.netCDF_default_global_attributes).
         """
         self._nc.setncatts(config.netCDF_default_global_attributes)
 
     def set_global_attributes(self, **attributes):
-        """
-        Set the given global attributes.
-        """
+        """Set the given global attributes."""
         self._nc.setncatts(attributes)
 
     def behave(self, **kwargs):
@@ -1197,14 +1194,14 @@ class netCDF(FileResource):
             ncdump outputs dimensions, variables and their attribute information.
             The information is similar to that of NCAR's ncdump utility.
             ncdump requires a valid instance of Dataset.
-        
+
             Parameters
             ----------
             nc : netCDF4.Dataset
                 A netCDF4 dateset object
             verb : Boolean
                 whether or not nc_attrs, nc_dims, and nc_vars are printed
-        
+
             Returns
             -------
             nc_attrs : list
@@ -1225,7 +1222,7 @@ class netCDF(FileResource):
             def print_ncattr(key):
                 """
                 Prints the NetCDF file attributes for a given key
-        
+
                 Parameters
                 ----------
                 key : unicode
@@ -1234,7 +1231,7 @@ class netCDF(FileResource):
                 try:
                     outwrite("\t\ttype:", repr(nc.variables[key].dtype))
                     for ncattr in nc.variables[key].ncattrs():
-                        outwrite('\t\t%s:' % ncattr, \
+                        outwrite('\t\t%s:' % ncattr,
                                  repr(nc.variables[key].getncattr(ncattr)))
                 except KeyError:
                     outwrite("\t\tWARNING: %s does not contain variable attributes" % key)
@@ -1274,4 +1271,3 @@ class netCDF(FileResource):
     @FileResource._openbeforedelayed
     def _variables(self):
         return self._nc.variables
-

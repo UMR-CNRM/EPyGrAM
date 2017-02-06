@@ -4,6 +4,8 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import argparse
 
 import epygram
@@ -15,7 +17,6 @@ from epygram.args_catalog import add_arg_to_parser, \
                                  misc_options, output_options, \
                                  runtime_options, graphical_options, \
                                  extraction_options
-
 
 
 def main(filename,
@@ -59,7 +60,7 @@ def main(filename,
         resolution: resolution of the transect.
         Yconvert: among ('pressure', 'height', 'altitude'),
                   to convert the vertical coordinate.
-                  For height/altitude, implies the read of T and q 
+                  For height/altitude, implies the read of T and q
                   profiles and optionally pressure departure, hydrometeors.
         interpolation: kind of interpolation from grid to coordinates, among
                        ('nearest', 'linear', 'cubic').
@@ -103,7 +104,7 @@ def main(filename,
     if resource.format not in ('GRIB', 'FA', 'LFI'):
         epylog.warning(" ".join(["tool NOT TESTED with format",
                                  resource.format, "!"]))
-    diffmode = refname != None
+    diffmode = refname is not None
     if diffmode:
         reference = epygram.formats.resource(refname, openmode='r')
     section = resource.extractsection(fieldseed,
@@ -165,7 +166,7 @@ def main(filename,
                                               title=legend,
                                               x_is=section_abscissa,
                                               mask_threshold=mask_threshold)
-        if legend == None:
+        if legend is None:
             legend = resource.container.basename + " - " + \
                      reference.container.basename + " : " + \
                      str(section.fid.get(resource.format, section.fid))
@@ -206,15 +207,13 @@ def main(filename,
         if diffmode:
             if not outputfilename:
                 outputfile = resource.container.absdir + '.'.join(['diff',
-                                                                 '-'.join([resource.container.basename,
-                                                                           reference.container.basename]),
-                                                                 suffix])
+                                                                   '-'.join([resource.container.basename,
+                                                                             reference.container.basename]),
+                                                                   suffix])
             else:
                 outputfile = '.'.join([outputfilename, output])
             diffplot.savefig(outputfile, bbox_inches='tight', dpi=figures_dpi)
-
 # end of main() ###############################################################
-
 
 
 if __name__ == '__main__':
@@ -276,7 +275,7 @@ if __name__ == '__main__':
         epylog.setLevel('INFO')
 
     # 2.1 options
-    if args.Drefname != None:
+    if args.Drefname is not None:
         refname = args.Drefname
         diffonly = True
     else:
@@ -286,33 +285,33 @@ if __name__ == '__main__':
     starting_point = tuple([float(i) for i in starting_point])
     ending_point = args.ending_point.split(',')
     ending_point = tuple([float(i) for i in ending_point])
-    if args.zoom != None:
+    if args.zoom is not None:
         zoom = epygram.util.parse_str2dict(args.zoom, float)
     else:
         zoom = None
-    if args.minmax != None:
+    if args.minmax is not None:
         minmax = args.minmax.split(',')
     else:
         minmax = args.minmax
-    if args.diffminmax != None:
+    if args.diffminmax is not None:
         diffminmax = args.diffminmax.split(',')
     else:
         diffminmax = args.diffminmax
-    if args.operation != None:
+    if args.operation is not None:
         _operation = args.operation.split(',')
         operation = {'operation':_operation.pop(0).strip()}
         if len(_operation) > 0:
             operation['operand'] = float(_operation.pop(0).strip())
     else:
         operation = None
-    if args.diffoperation != None:
+    if args.diffoperation is not None:
         _diffoperation = args.diffoperation.split(',')
         diffoperation = {'operation':_diffoperation.pop(0).strip()}
         if len(_diffoperation) > 0:
             diffoperation['operand'] = float(_diffoperation.pop(0).strip())
     else:
         diffoperation = None
-    #FIXME: problem in plot with mask_threshold
+    # FIXME: problem in plot with mask_threshold
     if args.mask_threshold is not None:
         mask_threshold = epygram.util.parse_str2dict(args.mask_threshold, float)
     else:

@@ -4,6 +4,8 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import numpy
 import argparse
 import copy
@@ -18,7 +20,6 @@ from epygram.args_catalog import add_arg_to_parser, \
                                  misc_options, output_options, \
                                  runtime_options, graphical_options
 import matplotlib.pyplot as plt
-
 
 
 def main(filename,
@@ -52,13 +53,12 @@ def main(filename,
         legend: legend of plot.
         superposeplots: if True, superpose fields spectra on one plot.
         slopes: list of dict(exp=x where x is exposant of a A*k**-x slope
-                             offset=A where A is logscale offset in a A*k**-x 
+                             offset=A where A is logscale offset in a A*k**-x
                                       slope; an offset=1 is fitted to intercept
                                       the first spectra at wavenumber = 2.
                              label=(optional label) appearing 'k = label' in
                                                     legend)
         zoom: a dict(xmin=,xmax=,ymin=,ymax=) to restrain the plot.
-        
         interpolation: kind of interpolation from grid to coordinates, among
                        ('nearest', 'linear', 'cubic').
         unit: scientifical unit of plot.
@@ -98,7 +98,7 @@ def main(filename,
                                         mean2=variances[0]))
             if not noplot:
                 # plot
-                if legend != None:
+                if legend is not None:
                     title = legend
                 else:
                     title = resource.container.basename
@@ -165,7 +165,7 @@ def main(filename,
                                         mean2=variances[0]))
             if not noplot:
                 # plot
-                if legend != None:
+                if legend is not None:
                     title = legend
                 else:
                     title = resource.container.basename
@@ -256,7 +256,7 @@ def main(filename,
                 if f in intersectionfidlist:
                     spectratoplot.append(copy.copy(diffspectra[-1]))
                     spectratoplot[-1].name = 'diff'
-                if legend != None:
+                if legend is not None:
                     title = legend
                 else:
                     title = str(f)
@@ -272,8 +272,6 @@ def main(filename,
     # Output
     epylog.info("save output...")
     suffix = "spectrum.out"
-    #if field.geometry.grid.get('LAMzone', False):
-    #    suffix = '.'.join([str(subzone), suffix])
     # spectra
     if not diffmode:
         spectratosave = spectra
@@ -302,7 +300,6 @@ def main(filename,
                                      suffix,
                                      output])
             spectraplots[p].savefig(filename, dpi=figures_dpi)
-
 
 
 if __name__ == '__main__':
@@ -359,7 +356,7 @@ if __name__ == '__main__':
     for s in args.kindofslopes.split(','):
         s = s.split()
         if len(s) > 0:
-            #exp
+            # exp
             exp = s[0].strip()
             try:
                 exp = float(exp)
@@ -385,10 +382,12 @@ if __name__ == '__main__':
                     except Exception:
                         raise ValueError("slope offset has to be numeric or in scientific notation (1.1e-2), received " + offset)
             # label
-            try: label = s[2].strip()
-            except Exception: label = str(exp)
+            try:
+                label = s[2].strip()
+            except Exception:
+                label = str(exp)
             slopes.append({'exp':exp, 'offset':offset, 'label':label})
-    if args.zoom != None:
+    if args.zoom is not None:
         zoom = epygram.util.parse_str2dict(args.zoom, float)
     else:
         zoom = None

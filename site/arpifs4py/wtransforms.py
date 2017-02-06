@@ -7,11 +7,12 @@
 Wrappers for trans/etrans library.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 from ctypes import c_longlong, c_bool, c_double
 import numpy as np
 
 from . import ctypesFF, IN, OUT, treatReturnCode, addReturnCode
-
 
 
 @treatReturnCode
@@ -20,7 +21,7 @@ from . import ctypesFF, IN, OUT, treatReturnCode, addReturnCode
 def w_etrans_inq(*args):
     """
     Simplified wrapper to ETRANS_INQ.
-    
+
     Args:\n
     1,2) KSIZEI, KSIZEJ: size of grid-point field (with extension zone)
     3,4) KPHYSICALSIZEI, KPHYSICALSIZEJ: size of physical part of grid-point field
@@ -28,7 +29,7 @@ def w_etrans_inq(*args):
     7) KNUMMAXRESOL: maximum number of troncatures handled
     8) PDELATX: resolution along x axis
     9) PDELATY: resolution along y axis
-    
+
     Returns:\n
     1) KGPTOT: number of gridpoints
     2) KSPEC: number of spectral coefficients
@@ -45,6 +46,7 @@ def w_etrans_inq(*args):
             (c_longlong(), OUT),
             (c_longlong(), OUT)]
 
+
 @treatReturnCode
 @ctypesFF
 @addReturnCode
@@ -58,7 +60,7 @@ def w_trans_inq(*args):
     3) KSLOEN: Size of KLOEN
     4) KLOEN: number of points on each latitude row
     5) KNUMMAXRESOL: maximum number of troncatures handled
-    
+
     Returns:\n
     1) KGPTOT: number of gridpoints
     2) KSPEC: number of spectral coefficients
@@ -72,6 +74,7 @@ def w_trans_inq(*args):
             (c_longlong(), OUT),
             (c_longlong(), OUT),
             (np.ndarray((args[0],), dtype=np.int64), OUT)]
+
 
 @treatReturnCode
 @ctypesFF
@@ -91,7 +94,7 @@ def w_spec2gpt_lam(*args):
     11) PDELTAX: resolution along x axis
     12) PDELTAY: resolution along y axis
     13) PSPEC: spectral coefficient array
-    
+
     Returns:\n
     1) PGPT: grid-point field
     2) PGPTM: N-S derivative if LGRADIENT
@@ -114,6 +117,7 @@ def w_spec2gpt_lam(*args):
             (np.ndarray((args[0] * args[1],), dtype=np.float64), OUT),
             (np.ndarray((args[0] * args[1],), dtype=np.float64), OUT)]
 
+
 @treatReturnCode
 @ctypesFF
 @addReturnCode
@@ -131,7 +135,7 @@ def w_gpt2spec_lam(*args):
     10) PDELTAY: resolution along y axis
     11) LREORDER: reorder spectral coefficients or not
     12) PGPT: grid-point field
-    
+
     Returns:\n
     1) PSPEC: spectral coefficient array
     """
@@ -148,6 +152,7 @@ def w_gpt2spec_lam(*args):
            (c_bool(args[10]), IN),
            (args[11], IN),
            (np.ndarray((args[0],), dtype=np.float64), OUT)]
+
 
 @treatReturnCode
 @ctypesFF
@@ -167,7 +172,7 @@ def w_spec2gpt_gauss(*args):
     8) LGRADIENT: compute derivatives
     9) LREORDER: reorder spectral coefficients or not
     10) PSPEC: spectral coefficient array
-    
+
     Returns:\n
     1) PGPT: grid-point field
     2) PGPTM: N-S derivative if LGRADIENT
@@ -187,13 +192,14 @@ def w_spec2gpt_gauss(*args):
             (np.ndarray((args[3],), dtype=np.float64), OUT),
             (np.ndarray((args[3],), dtype=np.float64), OUT)]
 
+
 @treatReturnCode
 @ctypesFF
 @addReturnCode
 def w_gpt2spec_gauss(*args):
     """
     Transform grid-point values into spectral coefficients.
-    
+
     Args:\n
     1) KSPEC: size of spectral coefficients array
     2) KSIZEJ: Number of latitudes
@@ -204,7 +210,7 @@ def w_gpt2spec_gauss(*args):
     7) KSIZE: Size of PGPT
     8) LREORDER: reorder spectral coefficients or not
     9) PGPT: grid-point field
-    
+
     Returns:\n
     1) PSPEC: spectral coefficient array
     """
@@ -219,6 +225,7 @@ def w_gpt2spec_gauss(*args):
             (args[8], IN),
             (np.ndarray((args[0],), dtype=np.float64), OUT)]
 
+
 @ctypesFF
 def w_spec2gpt_fft1d(*args):
     """
@@ -230,7 +237,7 @@ def w_spec2gpt_fft1d(*args):
     2) KTRUNC: troncature
     3) PSPEC: spectral coefficient array
     4) KSIZEG: size of grid-point field (with extension zone)
-    
+
     Returns:\n
     1) PGPT: grid-point field
     """

@@ -7,7 +7,7 @@
 Contains the class for DDH-in-LFA format.
 """
 
-__all__ = ['DDHLFA']
+from __future__ import print_function, absolute_import, unicode_literals, division
 
 import math
 import numpy
@@ -16,6 +16,7 @@ import sys
 
 import footprints
 from footprints import FPDict, FPList
+
 from arpifs4py import wlfa
 
 from epygram import config, epygramError
@@ -27,8 +28,9 @@ from epygram.fields import V1DField, PointField, MiscField
 from epygram.resources import FileResource
 from epygram import profiles
 
-epylog = footprints.loggers.getLogger(__name__)
+__all__ = ['DDHLFA']
 
+epylog = footprints.loggers.getLogger(__name__)
 
 
 class DDHLFA(LFA):
@@ -74,9 +76,9 @@ class DDHLFA(LFA):
             raise NotImplementedError("openmode != 'r' for DDHLFA.")
         elif self.openmode == 'r':
             if self.domains is not None or self.validity is not None:
-                epylog.warning(self.container.abspath + \
-                               ": DDHLFA.__init__(): domains/validity" + \
-                               " argument will be ignored with" + \
+                epylog.warning(self.container.abspath +
+                               ": DDHLFA.__init__(): domains/validity" +
+                               " argument will be ignored with" +
                                " this openmode ('r').")
         if not self.fmtdelayedopen:
             self.open()
@@ -222,19 +224,19 @@ class DDHLFA(LFA):
             else:
                 # profile fields
                 if not getdata:
-                    fieldlevels = wlfa.wlfacas(self._unit, fieldname)[1]\
-                                  / self.domains['number']
+                    fieldlevels = wlfa.wlfacas(self._unit, fieldname)[1] / \
+                                  self.domains['number']
                 else:
-                    fieldlevels = len(field_from_LFA.getdata())\
-                                  / self.domains['number']
+                    fieldlevels = len(field_from_LFA.getdata()) / \
+                                  self.domains['number']
                 if fieldlevels == self.levels['VT']:
                     position_on_grid = 'mass'
-                    #gridposition = 'mass'
-                    #gridsize = self.levels['VT']
+                    # gridposition = 'mass'
+                    # gridsize = self.levels['VT']
                 elif fieldlevels == self.levels['F']:
                     position_on_grid = 'flux'
-                    #gridposition = 'flux'
-                    #gridsize = self.levels['F']
+                    # gridposition = 'flux'
+                    # gridsize = self.levels['F']
                 for d in range(self.domains['number']):
                     domain = self.domains['geometry'][d]
                     if fieldlevels == self.levels['VT']:
@@ -254,8 +256,8 @@ class DDHLFA(LFA):
                                                  structure='V',
                                                  typeoffirstfixedsurface=100,
                                                  levels=FPList(pressure_vertical_grid / 100.),
-                                                 #grid={'gridposition':gridposition,
-                                                 #      'gridlevels':pressure_vertical_grid},
+                                                 # grid={'gridposition':gridposition,
+                                                 #       'gridlevels':pressure_vertical_grid},
                                                  position_on_grid=position_on_grid),
                                              dimensions={'X':1, 'Y':1})
                     if getdata:
@@ -284,7 +286,7 @@ class DDHLFA(LFA):
     def what(self, out=sys.stdout, sortfields=False, **kwargs):
         """
         Writes in file a summary of the contents of the DDHLFA.
-        
+
         Args: \n
         - *out*: the output open file-like object (duck-typing: *out*.write()
           only is needed).
@@ -292,7 +294,7 @@ class DDHLFA(LFA):
         """
         firstcolumn_width = 50
         secondcolumn_width = 16
-        sepline = '{:-^{width}}'.format('', width=firstcolumn_width + \
+        sepline = '{:-^{width}}'.format('', width=firstcolumn_width +
                                             secondcolumn_width + 1) + '\n'
 
         domains = self.domains
@@ -301,30 +303,30 @@ class DDHLFA(LFA):
         validity = self.validity
 
         def write_formatted(dest, label, value):
-            dest.write('{:<{width}}'.format(label, width=firstcolumn_width)\
-                    + ':' \
-                    + '{:>{width}}'.format(str(value),
-                                           width=secondcolumn_width)\
-                    + '\n')
+            dest.write('{:<{width}}'.format(label, width=firstcolumn_width) +
+                       ':' +
+                       '{:>{width}}'.format(str(value),
+                                            width=secondcolumn_width) +
+                       '\n')
         def write_formatted_col(dest, label, value):
-            dest.write('{:>{width}}'.format(label, width=firstcolumn_width)\
-                    + ':' \
-                    + '{:>{width}}'.format(str(value),
-                                           width=secondcolumn_width)\
-                    + '\n')
+            dest.write('{:>{width}}'.format(label, width=firstcolumn_width) +
+                       ':' +
+                       '{:>{width}}'.format(str(value),
+                                            width=secondcolumn_width) +
+                       '\n')
         def write_formatted_fields(dest, label, value, compression=None):
             if compression is None:
-                dest.write('{:<{width}}'.format(label, width=20)\
-                          + ':' \
-                          + '{:^{width}}'.format(str(value), width=10)\
-                          + '\n')
+                dest.write('{:<{width}}'.format(label, width=20) +
+                           ':' +
+                           '{:^{width}}'.format(str(value), width=10) +
+                           '\n')
             else:
-                line = '{:<{width}}'.format(label, width=20) \
-                     + ':' \
-                     + '{:^{width}}'.format(str(value), width=10) \
-                     + ':' \
-                     + compression \
-                     + '\n'
+                line = '{:<{width}}'.format(label, width=20) + \
+                       ':' + \
+                       '{:^{width}}'.format(str(value), width=10) + \
+                       ':' + \
+                       compression + \
+                       '\n'
                 dest.write(line)
 
         # Write out
@@ -348,7 +350,7 @@ class DDHLFA(LFA):
         out.write("###############\n")
         out.write("### DOMAINS ###\n")
         out.write("###############\n")
-        out.write("Domain(s): " + str(domains['number']) + " " + \
+        out.write("Domain(s): " + str(domains['number']) + " " +
                   domains['geometry'][0]['type'] + "\n")
         for d in range(domains['number']):
             geom = domains['geometry'][d]
@@ -402,7 +404,7 @@ class DDHLFA(LFA):
         if sortfields:
             out.write("Documentation:\n")
             out.write("-------------\n")
-            docfields = [f for f in listoffields if \
+            docfields = [f for f in listoffields if
                          f in ('INDICE EXPERIENCE', 'DATE', 'DOCFICHIER',
                                'ECHEANCE') or f[0:4] == 'DOCD']
             for f in docfields:
@@ -503,7 +505,7 @@ class DDHLFA(LFA):
                 geom['band'] = DOCD_data[1]
                 geom['bands_number'] = DOCD_data[2]
             else:
-                raise ValueError('unknown value: ' + str(DOCD_data[10]) + \
+                raise ValueError('unknown value: ' + str(DOCD_data[10]) +
                                  ' for DOCD' + '{:0>{width}}'.format(str(d),
                                                                      width=3))
             # vertical grid
@@ -543,7 +545,7 @@ class DDHLFA(LFA):
         hour = DATE_data[3]
         minute = DATE_data[4]
         processtype = DATE_data[8]
-        if   processtype == 0:
+        if processtype == 0:
             self.processtype = 'analysis'
         elif processtype == 1:
             self.processtype = 'initialization'

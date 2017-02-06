@@ -4,6 +4,8 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import argparse
 import numpy
 import math
@@ -35,11 +37,10 @@ vkw = {'structure': 'V',
 vgeom = footprints.proxy.geometry(**vkw)
 
 
-
 def nearest_greater_FFTcompliant_int(guess):
     """
     Returns the first integer *n* greater than *guess* that satisfies
-    n = 2^(1+i) x 3^j x 5^k, with (i,j,k) being positive integers. 
+    n = 2^(1+i) x 3^j x 5^k, with (i,j,k) being positive integers.
     """
 
     # these are defined for dimensions up to 10000 points at least
@@ -59,13 +60,12 @@ def nearest_greater_FFTcompliant_int(guess):
     return result
 
 
-
 def ask_and_build_geometry(defaults,
                            maximize_CI_in_E=False):
     """
     Ask the user for geometry params,
     then builds a proposal geometry.
-    
+
     Args:
         defaults: a dict() containing default values.
         maximize_CI_in_E: boolean deciding to force the E-zone to be at its
@@ -90,7 +90,8 @@ def ask_and_build_geometry(defaults,
             center_lon = defaults['center_lon']
         else:
             raise ValueError("Invalid longitude.")
-    try: center_lat = float(raw_input("Center of domain / latitude in degrees [" + str(defaults['center_lat']) + "]: "))
+    try:
+        center_lat = float(raw_input("Center of domain / latitude in degrees [" + str(defaults['center_lat']) + "]: "))
     except ValueError:
         if defaults['center_lat'] != '':
             center_lat = defaults['center_lat']
@@ -138,7 +139,7 @@ def ask_and_build_geometry(defaults,
                   'Y_CIoffset':0,
                   'X_Iwidth':Iwidth,
                   'Y_Iwidth':Iwidth
-                      }
+                  }
     # coordinates
     projection = {'reference_lon':epygram.util.Angle(center_lon + tilting, 'degrees'),
                   'reference_lat':epygram.util.Angle(center_lat, 'degrees'),
@@ -224,13 +225,12 @@ def ask_and_build_geometry(defaults,
     return geometry, defaults
 
 
-
 def ask_lonlat_and_build_geometry(defaults,
                                   maximize_CI_in_E=False):
     """
     Ask the user for lonlat-included geometry params,
     then builds a proposal geometry.
-    
+
     Args:
         defaults: a dict() containing default values.
         maximize_CI_in_E: boolean deciding to force the E-zone to be at its
@@ -363,9 +363,9 @@ def ask_lonlat_and_build_geometry(defaults,
                           (lonmin, latmax), (lonmin, latmin),
                           (lonmax, (latmin + latmax) / 2.), (lonmin, (latmin + latmax) / 2.),
                           ((lonmin + lonmax) / 2., latmax), ((lonmin + lonmax) / 2., latmin)]
-        xlonlat_included = all([1.0 + dimensions['X_Iwidth'] < geometry.ll2ij(*c)[0] < dimensions['X_Czone'] - 1.0 \
+        xlonlat_included = all([1.0 + dimensions['X_Iwidth'] < geometry.ll2ij(*c)[0] < dimensions['X_Czone'] - 1.0
                                 for c in points_to_test])
-        ylonlat_included = all([1.0 + dimensions['Y_Iwidth'] < geometry.ll2ij(*c)[1] < dimensions['Y_Czone'] - 1.0 \
+        ylonlat_included = all([1.0 + dimensions['Y_Iwidth'] < geometry.ll2ij(*c)[1] < dimensions['Y_Czone'] - 1.0
                                 for c in points_to_test])
         lonlat_included = xlonlat_included and ylonlat_included
         if not lonlat_included:
@@ -373,8 +373,8 @@ def ask_lonlat_and_build_geometry(defaults,
                 Xpoints_CI = Xpoints_CIE - Ezone_minimum_width + 1
             if not ylonlat_included:
                 Ypoints_CI = Ypoints_CIE - Ezone_minimum_width + 1
-            if Xpoints_CI > maxdims_security_barrier \
-            or Ypoints_CI > maxdims_security_barrier:
+            if Xpoints_CI > maxdims_security_barrier or \
+               Ypoints_CI > maxdims_security_barrier:
                 raise epygram.epygramError("Domain is too large, > " + str(maxdims_security_barrier) + " points.")
 
     print "--------------------------------------------------"
@@ -388,11 +388,10 @@ def ask_lonlat_and_build_geometry(defaults,
     return geometry, defaults
 
 
-
 def show_geometry(geometry):
     """
     Returns a summary of geometry as a character string.
-    
+
     Args:
         geometry: a H2DGeometry instance
     """
@@ -424,26 +423,26 @@ def show_geometry(geometry):
     Ezone_Ywidth = geometry.dimensions['Y'] - geometry.dimensions['Y_CIzone']
     if Ezone_Xwidth == Ezone_minimum_width:
         disp += "X:            " + '{:^{width}}'.format(str(geometry.dimensions['X_CIzone']), width=10) + \
-              '{:^{width}}'.format(str(geometry.dimensions['X']), width=10) + \
-              '{:^{width}}'.format(str(Ezone_Xwidth), width=10) + \
-              ' (optimal)' + '\n'
+                '{:^{width}}'.format(str(geometry.dimensions['X']), width=10) + \
+                '{:^{width}}'.format(str(Ezone_Xwidth), width=10) + \
+                ' (optimal)' + '\n'
     else:
         disp += "X:            " + '{:^{width}}'.format(str(geometry.dimensions['X_CIzone']), width=10) + \
-              '{:^{width}}'.format(str(geometry.dimensions['X']), width=10) + \
-              '{:^{width}}'.format(str(Ezone_Xwidth), width=10) + \
-              '/ ' + str(Ezone_minimum_width) + ' (optimal) => advised C+I zonal (X) dimension =' + \
-              '{:^{width}}'.format(str(geometry.dimensions['X'] - Ezone_minimum_width), width=10) + '\n'
+                '{:^{width}}'.format(str(geometry.dimensions['X']), width=10) + \
+                '{:^{width}}'.format(str(Ezone_Xwidth), width=10) + \
+                '/ ' + str(Ezone_minimum_width) + ' (optimal) => advised C+I zonal (X) dimension =' + \
+                '{:^{width}}'.format(str(geometry.dimensions['X'] - Ezone_minimum_width), width=10) + '\n'
     if Ezone_Ywidth == Ezone_minimum_width:
         disp += "Y:            " + '{:^{width}}'.format(str(geometry.dimensions['Y_CIzone']), width=10) + \
-              '{:^{width}}'.format(str(geometry.dimensions['Y']), width=10) + \
-              '{:^{width}}'.format(str(Ezone_Ywidth), width=10) + \
-              ' (optimal)' + '\n'
+                '{:^{width}}'.format(str(geometry.dimensions['Y']), width=10) + \
+                '{:^{width}}'.format(str(Ezone_Ywidth), width=10) + \
+                ' (optimal)' + '\n'
     else:
         disp += "Y:            " + '{:^{width}}'.format(str(geometry.dimensions['Y_CIzone']), width=10) + \
-              '{:^{width}}'.format(str(geometry.dimensions['Y']), width=10) + \
-              '{:^{width}}'.format(str(Ezone_Ywidth), width=10) + \
-              '/ ' + str(Ezone_minimum_width) + ' (optimal) => advised C+I meridian (Y) dimension =' + \
-              '{:^{width}}'.format(str(geometry.dimensions['Y'] - Ezone_minimum_width), width=10) + '\n'
+                '{:^{width}}'.format(str(geometry.dimensions['Y']), width=10) + \
+                '{:^{width}}'.format(str(Ezone_Ywidth), width=10) + \
+                '/ ' + str(Ezone_minimum_width) + ' (optimal) => advised C+I meridian (Y) dimension =' + \
+                '{:^{width}}'.format(str(geometry.dimensions['Y'] - Ezone_minimum_width), width=10) + '\n'
     disp += "I zone width: " + str(geometry.dimensions['X_Iwidth']) + '\n'
     if geometry.projection['reference_lon'].get('degrees') - geometry.getcenter()[0].get('degrees') <= epygram.config.epsilon:
         disp += "---" + '\n'
@@ -460,6 +459,7 @@ def show_geometry(geometry):
 
     return disp
 
+
 def compute_lonlat_included(geometry):
     """Computes a lon/lat domain included in the C zone of the model domain."""
 
@@ -470,6 +470,7 @@ def compute_lonlat_included(geometry):
     latmin = max(latgrid[1, :])
 
     return {'lonmin':lonmin, 'lonmax':lonmax, 'latmin':latmin, 'latmax':latmax}
+
 
 def ask_lonlat(defaults):
     """Ask a lon/lat geometry."""
@@ -505,6 +506,7 @@ def ask_lonlat(defaults):
 
     return {'lonmin':lonmin, 'lonmax':lonmax, 'latmin':latmin, 'latmax':latmax}
 
+
 def build_lonlat_field(ll_boundaries, fid={'lon/lat':'template'}):
     """
     Build a lonlat field empty except on the border, given lon/lat boundaries.
@@ -534,9 +536,7 @@ def build_lonlat_field(ll_boundaries, fid={'lon/lat':'template'}):
     return lldomain
 
 
-
-### MAIN #######################################################################
-
+# MAIN #######################################################################
 def main(mode,
          no_display=False,
          maximize_CI_in_E=False,
@@ -767,9 +767,7 @@ def main(mode,
     write_namelist(out, namelist_name, blocks)
 
     out.close()
-
 # end of main() ###############################################################
-
 
 
 if __name__ == '__main__':

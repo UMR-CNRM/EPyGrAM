@@ -3,7 +3,9 @@
 # Copyright (c) Météo France (2016-)
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
-from __future__ import print_function
+
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import json
 import datetime
 import copy
@@ -11,7 +13,7 @@ import copy
 import matplotlib
 matplotlib.use("Agg")
 
-import web
+from . import web
 
 import epygram
 
@@ -30,6 +32,7 @@ def whichFields(fichier):
     except ValueError:
         raise Exception('whichField error')
 
+
 def getAjaxArg(sArg, sDefault=''):
     """Picks out and returns a single value, regardless of GET or POST."""
 
@@ -42,7 +45,7 @@ def getAjaxArg(sArg, sDefault=''):
             # maybe it was a GET?  check web.input() #TOBECHECKED: Ghis
             dic = dict(web.input())
         if dic:
-            if dic.has_key(sArg):
+            if sArg in dic:
                 if dic[sArg]:
                     return dic[sArg]
                 else:
@@ -54,10 +57,11 @@ def getAjaxArg(sArg, sDefault=''):
     except ValueError:
         raise Exception('getAjaxArg - no JSON arguments to decode. This method required a POST with JSON arguments.')
 
+
 def getAjaxArgSmart(sArg, sDefault=''):
     """
     Picks out and returns a single value, regardless of GET or POST.
-    Convert "" to None and true / false strings to True False, and string with starting { to dict 
+    Convert "" to None and true / false strings to True False, and string with starting { to dict
     USELESS when correct use of Javascript is done !!!!!!!!!!!!!!!!!!!!!!
     """
 
@@ -72,7 +76,7 @@ def getAjaxArgSmart(sArg, sDefault=''):
             # maybe it was a GET?  check web.input()
             dic = dict(web.input())
         if dic:
-            if dic.has_key(sArg):
+            if sArg in dic:
                 if dic[sArg] == '':
                     return None
                 elif dic[sArg] == 'false':
@@ -89,6 +93,7 @@ def getAjaxArgSmart(sArg, sDefault=''):
             return sDefault
     except ValueError:
         raise Exception('getAjaxArg - no JSON arguments to decode. This method required a POST with JSON arguments.')
+
 
 def print_code(myplot_args, existingbasemap, existingfigure):
     try:
@@ -113,6 +118,7 @@ def print_code(myplot_args, existingbasemap, existingfigure):
         print("Error print_code !")
         print(str(ex))
 
+
 def get_common_args(fileid):
     myplot_args = {}
     mini = getAjaxArgSmart('min')
@@ -122,7 +128,7 @@ def get_common_args(fileid):
     myplot_args["minmax"] = (mini[fileid], maxi[fileid])
     myplot_args["levelsnumber"] = getAjaxArgSmart('levelsnumber')[fileid]  # nombre/slidebar ?
     myplot_args["colormap"] = getAjaxArg('colormap')[fileid]  # un menu déroulant avec des mini-images de chaque colormap ?
-    myplot_args["graphicmode"] = getAjaxArgSmart('graphicmode')[fileid]  # cases radiobutton [colorshades,contourlines,points]    
+    myplot_args["graphicmode"] = getAjaxArgSmart('graphicmode')[fileid]  # cases radiobutton [colorshades,contourlines,points]
     if (mypointsize != ""):
         myplot_args["pointsize"] = mypointsize  # nombre/slidebar ?
     myplot_args["contourcolor"] = getAjaxArgSmart('contourcolor')[fileid]
@@ -135,10 +141,11 @@ def get_common_args(fileid):
     myplot_args["meridians"] = getAjaxArgSmart('meridians')  # nombre/slidebar
     myplot_args["parallels"] = getAjaxArgSmart('parallels')
     myplot_args["bluemarble"] = getAjaxArgSmart('bluemarble')
-    #myplot_args["minmax_in_title"] = True  # getAjaxArg('minmax_in_title') #TOBECHECKED: Ghis
+    # myplot_args["minmax_in_title"] = True  # getAjaxArg('minmax_in_title') # TOBECHECKED: Ghis
     myplot_args["departments"] = getAjaxArgSmart('departments')  # checkbox
 
     return myplot_args
+
 
 def datex(start, end=None, step=None):
     """
@@ -171,12 +178,14 @@ def datex(start, end=None, step=None):
 
     return (rangevalues)
 
+
 def arg2date(myarg):
     out = datetime.datetime(int(myarg[0:4]),
                             int(myarg[4:6]),
                             int(myarg[6:8]),
                             int(myarg[8:10]))
     return out
+
 
 def make_my_plot(resource, field, cle, champ, champ_v, FF, vecteurs,
                  use_basemap, over, vectors_subsampling,
@@ -193,7 +202,7 @@ def make_my_plot(resource, field, cle, champ, champ_v, FF, vecteurs,
 
     print("MakeMyPlot starts ")
 
-    #On enleve des options en cas de tracé de vecteur
+    # On enleve des options en cas de tracé de vecteur
     myplot_args_vect = copy.copy(myplot_args)
     myplot_args_vect.pop("pointsize", None)
     myplot_args_vect.pop("colormap", None)
@@ -245,6 +254,7 @@ def make_my_plot(resource, field, cle, champ, champ_v, FF, vecteurs,
 
     return myplot
 
+
 def check_for_operation(ope, field):
     try:
         operation_arg1 = ope[0].encode()
@@ -272,10 +282,12 @@ def func_open_browser(url, delay=0.):
         time.sleep(delay)
     webbrowser.open(url)
 
+
 def clean_workdir(wkdir):
     """Cleaning of old figures and hardlinks."""
     import shutil
     shutil.rmtree(wkdir, ignore_errors=True)
+
 
 def init_workdir(wkdir):
     """Set up the working directory."""

@@ -7,6 +7,8 @@
 Contains the class that handle a Vertical 2D field.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import numpy
 
 import footprints
@@ -16,7 +18,6 @@ from epygram import config, util, epygramError
 from epygram.geometries import V2DGeometry
 
 epylog = footprints.loggers.getLogger(__name__)
-
 
 
 class V2DField(D3Field):
@@ -39,16 +40,12 @@ class V2DField(D3Field):
         )
     )
 
-
-
-
 ###################
 # PRE-APPLICATIVE #
 ###################
 # (but useful and rather standard) !
 # [so that, subject to continuation through updated versions,
 #  including suggestions/developments by users...]
-
     def plotfield(self,
                   over=(None, None),
                   colorbar='vertical',
@@ -75,8 +72,8 @@ class V2DField(D3Field):
         - *over* = any existing figure and/or ax to be used for the
           plot, given as a tuple (fig, ax), with None for
           missing objects. *fig* is the frame of the
-          matplotlib figure, containing eventually several 
-          subplots (axes); *ax* is the matplotlib axes on 
+          matplotlib figure, containing eventually several
+          subplots (axes); *ax* is the matplotlib axes on
           which the drawing is done. When given (is not None),
           these objects must be coherent, i.e. ax being one of
           the fig axes.
@@ -158,7 +155,7 @@ class V2DField(D3Field):
         data = numpy.ma.masked_outside(self.getdata(),
                                        mask_outside['min'],
                                        mask_outside['max'])
-        #FIXME: mask_threshold does not produce expected results
+        # FIXME: mask_threshold does not produce expected results
         if self.geometry.vcoordinate.typeoffirstfixedsurface in (119, 100, 160):
             reverseY = True
         else:
@@ -172,10 +169,14 @@ class V2DField(D3Field):
                                   '{: .{precision}{type}}'.format(m, type='E', precision=3) + \
                                   ' // max: ' + \
                                   '{: .{precision}{type}}'.format(M, type='E', precision=3) + ')'
-            try: m = float(minmax[0])
-            except Exception: m = data.min()
-            try: M = float(minmax[1])
-            except Exception: M = data.max()
+            try:
+                m = float(minmax[0])
+            except Exception:
+                m = data.min()
+            try:
+                M = float(minmax[1])
+            except Exception:
+                M = data.max()
         else:
             minmax_in_title = ''
         if abs(m - M) > config.epsilon:
@@ -277,15 +278,15 @@ class V2DField(D3Field):
         """
         Plot the field with animation with regards to time dimension.
         Returns a :class:`matplotlib.animation.FuncAnimation`.
-        
+
         In addition to those specified below, all :meth:`plotfield` method
         arguments can be provided.
-        
+
         Args:\n
         - *title* = title for the plot. '__auto__' (default) will print
           the current validity of the time frame.
         - *repeat*: to repeat animation
-        - *interval*: number of milliseconds between two validities 
+        - *interval*: number of milliseconds between two validities
         """
 
         import matplotlib.animation as animation

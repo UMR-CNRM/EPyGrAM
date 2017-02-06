@@ -13,20 +13,20 @@ Contains the interface routines to arpifs code:
 - spectral transforms
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 from ctypes import c_longlong, c_char_p, PyDLL, c_bool, c_double
 import os
 import numpy as np
 import subprocess
 
-import ctypesForFortran
+from . import ctypesForFortran
 
 _libs4py = "libs4py.so"
 
 
-
 # helpers
 #########
-
 def addReturnCode(func):
     def wrapper(*args):
         """
@@ -36,6 +36,7 @@ def addReturnCode(func):
         return [(c_longlong(), OUT)] + func(*args)
     wrapper.__name__ = func.__name__
     return wrapper
+
 
 def treatReturnCode(func):
     def wrapper(*args):
@@ -60,6 +61,7 @@ def treatReturnCode(func):
         return result
     return wrapper
 
+
 def treatReturnCode_LFA(func):
     def wrapper(*args):
         """
@@ -81,8 +83,8 @@ def treatReturnCode_LFA(func):
         if nout == 1:
             result = (result,)
         if result[0] != 0:
-            raise RuntimeError("Error code " + str(result[0]) + \
-                               " was raised : " + \
+            raise RuntimeError("Error code " + str(result[0]) +
+                               " was raised : " +
                                LFA_errors[str(result[0])])
         result = result[1:]
         if len(result) == 1:
@@ -91,7 +93,6 @@ def treatReturnCode_LFA(func):
             result = None
         return result
     return wrapper
-
 
 
 # common parameters and objects
@@ -105,6 +106,7 @@ so = PyDLL(os.path.join(os.path.dirname(os.path.realpath(__file__)),
                         _libs4py))
 ctypesFF = ctypesForFortran.ctypesForFortranFactory(so)
 
+
 def _complete_GRIB_samples_path_from_dynamic_gribapi():
     import re
     ldd_out = subprocess.check_output(['ldd', so._name])
@@ -116,7 +118,7 @@ def _complete_GRIB_samples_path_from_dynamic_gribapi():
     gsp = os.getenv('GRIB_SAMPLES_PATH', '.')
     for l in set(libs_grib_api.values()):
         gsp = ':'.join([gsp, '/'.join([l, 'share/grib_api/samples'])])
-    os.environ['GRIB_SAMPLES_PATH'] = gsp  #FIXME: seems not to work on Bull: to be exported beforehand ?
+    os.environ['GRIB_SAMPLES_PATH'] = gsp  # FIXME: seems not to work on Bull: to be exported beforehand ?
 _complete_GRIB_samples_path_from_dynamic_gribapi()
 os.unsetenv('GRIB_DEFINITION_PATH')
 

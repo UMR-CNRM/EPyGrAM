@@ -7,6 +7,8 @@
 Contains the classes for 3D geometries of fields.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import numpy
 import math
 import copy
@@ -258,7 +260,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
                             grid={'longitudes':[lon],
                                   'latitudes':[lat]},
                             position_on_horizontal_grid='center'
-                           )
+                            )
 
     def make_section_geometry(self, end1, end2,
                               points_number=None,

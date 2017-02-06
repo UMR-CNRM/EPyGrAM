@@ -7,13 +7,14 @@
 Contains the class to for Point (0D == 1 value) fields.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 from footprints import proxy as fpx
 
 from .D3Field import D3Field
 from epygram import config, epygramError
 from epygram.geometries import PointGeometry, VGeometry
 from epygram.util import ifNone_emptydict, set_DateHour_axis, set_figax
-
 
 
 class PointField(D3Field):
@@ -43,13 +44,13 @@ class PointField(D3Field):
                   legend_kwargs=None):
         """
         Plot a PointField if only it has a time dimension.
-        
+
         Args:
         - *over* = any existing figure and/or ax to be used for the
           plot, given as a tuple (fig, ax), with None for
           missing objects. *fig* is the frame of the
-          matplotlib figure, containing eventually several 
-          subplots (axes); *ax* is the matplotlib axes on 
+          matplotlib figure, containing eventually several
+          subplots (axes); *ax* is the matplotlib axes on
           which the drawing is done. When given (is not None),
           these objects must be coherent, i.e. ax being one of
           the fig axes.
@@ -58,7 +59,7 @@ class PointField(D3Field):
         - *unit*: unit for Y axis
         - *datefmt*: date format to use, e.g. "%Y-%m-%d %H:%M:%S %Z"
         - *showgrid*: True/False to show grid or not
-        - *plot_kwargs*: arguments to be passed to matplotlib.axes.Axes.plot() 
+        - *plot_kwargs*: arguments to be passed to matplotlib.axes.Axes.plot()
         - *legend_kwargs*: arguments to be passed to matplotlib.axes.Axes.legend()
         """
 
@@ -111,13 +112,14 @@ class PointField(D3Field):
 
         return fig, ax
 
+
 def gimme_one_point(longitude, latitude,
                     field_args=None,
                     geometry_args=None,
                     vertical_geometry_args=None):
     """
     Builds an empty PointField at given (longitude, latitude).
-    
+
     Arguments *field_args*, *geometry_args*, *vertical_geometry_args*
     can be provided as dictionaries containing kwargs for the corresponding
     objects.

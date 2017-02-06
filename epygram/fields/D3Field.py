@@ -7,6 +7,8 @@
 Contains the class that handle a Horizontal 2D field.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import copy
 import numpy
 import sys
@@ -373,7 +375,7 @@ class D3CommonField(Field):
 
         # build subdomain fid
         subdomainfid = {key:(FPDict(value)
-                             if type(value) == type(dict())
+                             if isinstance(value, dict)
                              else value)
                         for (key, value) in self.fid.items()}
 
@@ -540,8 +542,8 @@ class D3CommonField(Field):
         else:
             lons = lons.flatten()
             lats = lats.flatten()
-            zoomlons = footprints.FPList([])
-            zoomlats = footprints.FPList([])
+            zoomlons = FPList([])
+            zoomlats = FPList([])
             flat_indexes = []
             for i in range(len(lons)):
                 if zoom['lonmin'] <= lons[i] <= zoom['lonmax'] and \
@@ -555,7 +557,7 @@ class D3CommonField(Field):
             kwargs_zoomgeom['name'] = 'unstructured'
             kwargs_zoomgeom['grid'] = {'longitudes':zoomlons,
                                        'latitudes':zoomlats}
-        zoom_geom = footprints.proxy.geometry(**kwargs_zoomgeom)
+        zoom_geom = fpx.geometry(**kwargs_zoomgeom)
 
         # Serait plus élégant mais pb d'efficacité (2x plus lent)
         # car extract_subdomain fait une recherche des plus proches points:
@@ -578,8 +580,8 @@ class D3CommonField(Field):
         fid = {k:v for k, v in self.fid.items()}
         for k, v in fid.items():
             if isinstance(v, dict):
-                fid[k] = footprints.FPDict(v)
-        zoom_field = footprints.proxy.field(fid=fid,
+                fid[k] = FPDict(v)
+        zoom_field = fpx.field(fid=fid,
                                             structure=self.structure,
                                             geometry=zoom_geom,
                                             validity=self.validity,
@@ -1198,30 +1200,30 @@ class D3Field(D3CommonField):
                                     str(len(self.validity))])
             if self.geometry.datashape['k']:
                 assert data.shape[indexes['z']] == len(self.geometry.vcoordinate.levels), \
-                       ' == '.join(['data.shape[' + str(indexes['z']) + \
+                       ' == '.join(['data.shape[' + str(indexes['z']) +
                                     '] should be len(self.geometry.vcoordinate.levels)',
                                     str(len(self.geometry.vcoordinate.levels))])
             if not self.spectral:
                 if 'gauss' in self.geometry.name:
                     if self.geometry.datashape['j']:
                         assert data.shape[indexes['y']] == self.geometry.dimensions['lat_number'], \
-                               ' == '.join(['data.shape[' + str(indexes['y']) + \
+                               ' == '.join(['data.shape[' + str(indexes['y']) +
                                             "] should be self.geometry.dimensions['lat_number']",
                                             str(self.geometry.dimensions['lat_number'])])
                     if self.geometry.datashape['i']:
                         assert data.shape[indexes['x']] == self.geometry.dimensions['max_lon_number'], \
-                               ' == '.join(['data.shape[' + str(indexes['x']) + \
+                               ' == '.join(['data.shape[' + str(indexes['x']) +
                                             "] should be self.geometry.dimensions['max_lon_number']",
                                             str(self.geometry.dimensions['max_lon_number'])])
                 else:
                     if self.geometry.datashape['j']:
                         assert data.shape[indexes['y']] == self.geometry.dimensions['Y'], \
-                               ' == '.join(['data.shape[' + str(indexes['y']) + \
+                               ' == '.join(['data.shape[' + str(indexes['y']) +
                                             "] should be self.geometry.dimensions['Y']",
                                             str(self.geometry.dimensions['Y'])])
                     if self.geometry.datashape['i']:
                         assert data.shape[indexes['x']] == self.geometry.dimensions['X'], \
-                               ' == '.join(['data.shape[' + str(indexes['x']) + \
+                               ' == '.join(['data.shape[' + str(indexes['x']) +
                                             "] should be self.geometry.dimensions['X']",
                                             str(self.geometry.dimensions['X'])])
             # reshape to 4D

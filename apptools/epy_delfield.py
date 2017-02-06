@@ -4,6 +4,8 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import argparse
 
 import epygram
@@ -12,7 +14,6 @@ from epygram.util import printstatus
 from epygram.args_catalog import add_arg_to_parser, \
                                  files_management, fields_management, \
                                  runtime_options
-
 
 
 def main(filename, fieldseed,
@@ -39,7 +40,7 @@ def main(filename, fieldseed,
 
     if in_place:
         if not (hasattr(source, "delfield") and callable(getattr(source, "delfield"))):
-            raise epygramError('unable to remove messages from this format' + \
+            raise epygramError('unable to remove messages from this format' +
                                ' resource "in place".')
         if reverse:
             for f in source.listfields():
@@ -107,9 +108,7 @@ def main(filename, fieldseed,
                            'other_GRIB_options':options
                            }
             output.writefield(field, **options)
-
 # end of main() ###############################################################
-
 
 
 if __name__ == '__main__':
@@ -148,9 +147,9 @@ if __name__ == '__main__':
         progressmode = None
 
     # 2.2 list of fields to be processed
-    if args.field != None:
+    if args.field is not None:
         fieldseed = args.field
-    elif args.listoffields != None:
+    elif args.listoffields is not None:
         listfile = epygram.containers.File(filename=args.listoffields)
         with open(listfile.abspath, 'r') as l:
             fieldseed = l.readlines()

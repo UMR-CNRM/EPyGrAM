@@ -4,6 +4,8 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import argparse
 
 import epygram
@@ -14,7 +16,6 @@ from epygram.args_catalog import add_arg_to_parser, \
                                  runtime_options, graphical_options
 
 import matplotlib.pyplot as plt
-
 
 
 def main(filename,
@@ -100,7 +101,7 @@ def main(filename,
                                  - None: no one is plot
                                  - *meridian* == 'greenwich' // 'datechange' // 'greenwich+datechange'
                                    *parallel* == 'equator' // 'polarcircles' // 'tropics' or any
-                                   combination (+) will plot only these. 
+                                   combination (+) will plot only these.
         french_depts: draws french departments instead of countries boundaries.
         drawrivers: draw rivers.
         vectors_subsampling: subsampling ratio of vectors plots.
@@ -132,7 +133,7 @@ def main(filename,
             raise epygramError('use ddhlfa_plot.py tool for DDHLFA files.')
         epylog.warning(" ".join(["tool NOT TESTED with format",
                                  resource.format, "!"]))
-    diffmode = refname != None
+    diffmode = refname is not None
     if diffmode:
         reference = epygram.formats.resource(refname, openmode='r')
 
@@ -160,8 +161,8 @@ def main(filename,
                     composefield.operation(composition['preset'])
                 field.operation(composition['operation'], operand=composefield)
             if pressure_unit_hpa and \
-               (field.fid['generic'].get('discipline') == 0 and \
-                field.fid['generic'].get('parameterCategory') == 3 and \
+               (field.fid['generic'].get('discipline') == 0 and
+                field.fid['generic'].get('parameterCategory') == 3 and
                 field.fid['generic'].get('parameterNumber') in (0, 1, 2, 8, 11, 25)):
                 field.operation('/', 100.)
             if legend is not None:
@@ -200,12 +201,12 @@ def main(filename,
                 subzone = None
             if U.spectral:
                 U.sp2gp()
-            if operation != None:
+            if operation is not None:
                 U.operation(**operation)
             V = resource.readfield(Vfid)
             if V.spectral:
                 V.sp2gp()
-            if operation != None:
+            if operation is not None:
                 V.operation(**operation)
             if global_shift_center is not None:
                 U.global_shift_center(global_shift_center)
@@ -215,7 +216,7 @@ def main(filename,
                 map_factor_correction = False
             else:
                 map_factor_correction = True
-            if legend != None:
+            if legend is not None:
                 title = legend
             else:
                 title = str(fieldseed) + "\n" + str(U.validity.get())
@@ -238,10 +239,10 @@ def main(filename,
                                                                  graphicmode=graphicmode,
                                                                  levelsnumber=levelsnumber,
                                                                  colormap=colormap,
-                                                                 #departments=french_depts,
+                                                                 # departments=french_depts,
                                                                  pointsize=pointsize,
-                                                                 #bluemarble=bluemarble,
-                                                                 #background=background,
+                                                                 # bluemarble=bluemarble,
+                                                                 # background=background,
                                                                  mask_threshold=mask_threshold),
                                         components_are_projected_on=wind_components_are_projected_on,
                                         map_factor_correction=map_factor_correction)
@@ -259,12 +260,12 @@ def main(filename,
         if global_shift_center is not None:
             field.global_shift_center(global_shift_center)
         if pressure_unit_hpa and \
-           (field.fid['generic'].get('discipline') == 0 and \
-            field.fid['generic'].get('parameterCategory') == 3 and \
+           (field.fid['generic'].get('discipline') == 0 and
+            field.fid['generic'].get('parameterCategory') == 3 and
             field.fid['generic'].get('parameterNumber') in (0, 1, 2, 8, 11, 25)):
             field.operation('/', 100.)
         if not diffonly:
-            if legend != None:
+            if legend is not None:
                 title = legend
             else:
                 title = resource.container.basename + " : " + str(fieldseed) + "\n" + str(field.validity.get())
@@ -298,12 +299,12 @@ def main(filename,
         if global_shift_center is not None:
             field.global_shift_center(global_shift_center)
         if pressure_unit_hpa and \
-           (reffield.fid['generic'].get('discipline') == 0 and \
-            reffield.fid['generic'].get('parameterCategory') == 3 and \
+           (reffield.fid['generic'].get('discipline') == 0 and
+            reffield.fid['generic'].get('parameterCategory') == 3 and
             reffield.fid['generic'].get('parameterNumber') in (0, 1, 2, 8, 11, 25)):
             reffield.operation('/', 100.)
         if not diffonly:
-            if legend != None:
+            if legend is not None:
                 title = legend
             else:
                 title = reference.container.basename + " : " + str(fieldseed) + "\n" + str(reffield.validity.get())
@@ -324,7 +325,7 @@ def main(filename,
                                             bluemarble=bluemarble,
                                             background=background,
                                             mask_threshold=mask_threshold)
-        if legend != None:
+        if legend is not None:
             title = legend
         else:
             title = resource.container.basename + " - " + reference.container.basename + " : " + str(fieldseed)
@@ -359,8 +360,6 @@ def main(filename,
     if output:
         epylog.info("save plots...")
         suffix = '.'.join(['plot', output])
-        #if field.geometry.grid.get('LAMzone', False):
-        #    suffix = '.'.join([str(subzone), suffix])
         parameter = epygram.util.linearize2str(fieldseed)
         # main resource
         if not diffonly:
@@ -388,9 +387,7 @@ def main(filename,
             else:
                 outputfile = '.'.join([outputfilename, output])
             diffplot.savefig(outputfile, bbox_inches='tight', dpi=figures_dpi)
-
 # end of main() ###############################################################
-
 
 
 if __name__ == '__main__':
@@ -460,12 +457,12 @@ if __name__ == '__main__':
     else:
         refname = args.refname
         diffonly = False
-    diffmode = refname != None
+    diffmode = refname is not None
     if args.zone in ('C', 'CI'):
         subzone = args.zone
     elif args.zone == 'CIE':
         subzone = None
-    if args.minmax != None:
+    if args.minmax is not None:
         minmax = args.minmax.split(',')
     else:
         minmax = None

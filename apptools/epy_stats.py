@@ -4,6 +4,8 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import argparse
 import sys
 
@@ -16,7 +18,6 @@ from epygram.args_catalog import add_arg_to_parser, \
                                  files_management, fields_management, \
                                  misc_options, runtime_options, \
                                  output_options
-
 
 
 def main(filename,
@@ -58,7 +59,7 @@ def main(filename,
     if resource.format not in ('GRIB', 'FA', 'LFI', 'TIFFMF'):
         epylog.warning(" ".join(["tool NOT TESTED with format",
                                  resource.format, "!"]))
-    diffmode = refname != None
+    diffmode = refname is not None
     if diffmode:
         reference = epygram.formats.resource(refname, openmode='r')
 
@@ -83,8 +84,8 @@ def main(filename,
             if operation is not None:
                 field.operation(**operation)
             if pressure_unit_hpa and \
-               (field.fid['generic'].get('discipline') == 0 and \
-                field.fid['generic'].get('parameterCategory') == 3 and \
+               (field.fid['generic'].get('discipline') == 0 and
+                field.fid['generic'].get('parameterCategory') == 3 and
                 field.fid['generic'].get('parameterNumber') in (0, 1, 2, 8, 11, 25)):
                 field.scalar_operation('/', 100.)
             stats[f] = field.stats(subzone=subzone)
@@ -117,8 +118,8 @@ def main(filename,
                 if operation is not None:
                     field.operation(**operation)
                 if pressure_unit_hpa and \
-                   (field.fid['generic'].get('discipline') == 0 and \
-                    field.fid['generic'].get('parameterCategory') == 3 and \
+                   (field.fid['generic'].get('discipline') == 0 and
+                    field.fid['generic'].get('parameterCategory') == 3 and
                     field.fid['generic'].get('parameterNumber') in (0, 1, 2, 8, 11, 25)):
                     field.scalar_operation('/', 100.)
                 stats[f] = field.stats(subzone=subzone)
@@ -131,8 +132,8 @@ def main(filename,
                 if operation is not None:
                     reffield.operation(**operation)
                 if pressure_unit_hpa and \
-                   (reffield.fid['generic'].get('discipline') == 0 and \
-                    reffield.fid['generic'].get('parameterCategory') == 3 and \
+                   (reffield.fid['generic'].get('discipline') == 0 and
+                    reffield.fid['generic'].get('parameterCategory') == 3 and
                     reffield.fid['generic'].get('parameterNumber') in (0, 1, 2, 8, 11, 25)):
                     reffield.scalar_operation('/', 100.)
                 refstats[f] = reffield.stats(subzone=subzone)
@@ -149,8 +150,6 @@ def main(filename,
     singlemap = {'min':'min', 'max':'max', 'mean':'mean', 'std':'std', 'bias':None, 'rmsd':None, 'quadmean':'quadmean', 'nonzero':'nonzero'}
     diffmap = {'min':'min', 'max':'max', 'mean':None, 'std':None, 'bias':'mean', 'rmsd':'quadmean', 'nonzero':'nonzero'}
     suffix = "stats.out"
-    #if field.geometry.grid.get('LAMzone', False):
-    #    suffix = '.'.join([str(subzone), suffix])
     if not diffmode:
         printlist = fidlist
         printlist.sort()
@@ -243,9 +242,7 @@ def main(filename,
                 output.append([head] + ['-' for k in diff_params])
             write_formatted_table(out, output, precision=precision)
     out.close()
-
 # end of main() ###############################################################
-
 
 
 if __name__ == '__main__':
@@ -286,7 +283,7 @@ if __name__ == '__main__':
         epylog.setLevel('INFO')
 
     # 2.1 options
-    if args.Drefname != None:
+    if args.Drefname is not None:
         refname = args.Drefname
         diffonly = True
     else:
@@ -302,14 +299,14 @@ if __name__ == '__main__':
         progressmode = 'percentage'
     else:
         progressmode = None
-    if args.operation != None:
+    if args.operation is not None:
         _operation = args.operation.split(',')
         operation = {'operation':_operation.pop(0).strip()}
         if len(_operation) > 0:
             operation['operand'] = float(_operation.pop(0).strip())
     else:
         operation = None
-    if args.diffoperation != None:
+    if args.diffoperation is not None:
         _diffoperation = args.diffoperation.split(',')
         diffoperation = {'operation':_diffoperation.pop(0).strip()}
         if len(_diffoperation) > 0:
@@ -318,9 +315,9 @@ if __name__ == '__main__':
         diffoperation = None
 
     # 2.2 list of fields to be processed
-    if args.field != None:
+    if args.field is not None:
         fieldseed = args.field
-    elif args.listoffields != None:
+    elif args.listoffields is not None:
         listfile = epygram.containers.File(filename=args.listoffields)
         with open(listfile.abspath, 'r') as l:
             fieldseed = l.readlines()

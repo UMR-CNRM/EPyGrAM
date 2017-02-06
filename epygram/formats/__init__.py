@@ -14,6 +14,9 @@ Module contains:
   - some catalogs of GRIB numbers
   - ...
 """
+
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import importlib
 import copy
 import os
@@ -34,11 +37,9 @@ for f in _formats_in_loading_order:
         importlib.import_module('.' + f, __name__)
 
 
-
-#################
-### UTILITIES ###
-#################
-
+#############
+# UTILITIES #
+#############
 def guess(filename):
     """
     Returns the name of the format of the resource located at a given
@@ -49,7 +50,8 @@ def guess(filename):
     _guess_last_formats = ['FA', 'LFI', ]  # because they might not be very clean at catching exceptions
     for glf in _guess_last_formats:
         if glf in formats_in_guess_order:
-            formats_in_guess_order = [f for f in formats_in_guess_order if f != glf] + [glf]
+            formats_in_guess_order = [f for f in formats_in_guess_order
+                                      if f != glf] + [glf]
     for f in formats_in_guess_order:
         try:
             r = fpx.dataformat(filename=filename, openmode='r', format=f)
@@ -60,6 +62,7 @@ def guess(filename):
             fmt = 'unknown'
 
     return fmt
+
 
 def resource(filename, openmode, fmt=None, **kwargs):
     """
@@ -77,7 +80,7 @@ def resource(filename, openmode, fmt=None, **kwargs):
     if fmt is None and openmode in ('r', 'a'):
         fmt = guess(filename)
         if fmt == 'unknown':
-            raise epygramError("unable to guess format of resource at: " + \
+            raise epygramError("unable to guess format of resource at: " +
                                filename)
     elif fmt is None and openmode == 'w':
         raise epygramError("must specify 'fmt' argument with\
@@ -86,21 +89,23 @@ def resource(filename, openmode, fmt=None, **kwargs):
     return fpx.dataformat(filename=filename, openmode=openmode, format=fmt,
                           **kwargs)
 
+
 def fid_converter(initial_fid, initial_fmt, target_fmt,
                   grib_short_fid=False):
     """
     Creates and returns the fid in format *target_fmt* from an *initial_fid* in
     *initial_fmt*.
-    
+
     *grib_short_fid* condense GRIB fid in string.
     """
 
     if initial_fmt == 'generic' and target_fmt == 'GRIB2':
         target_fid = copy.copy(initial_fid)
     elif initial_fmt == 'GRIB' and target_fmt in ('netCDF', 'GeoPoints'):
-        #FUTURE: this is very basic !
+        # TODO: ? this is very basic !
         if grib_short_fid:
-            target_fid = '-'.join([str(initial_fid[k]) for k in sorted(initial_fid.keys())])
+            target_fid = '-'.join([str(initial_fid[k])
+                                   for k in sorted(initial_fid.keys())])
         else:
             target_fid = str(initial_fid).replace(' ', '').replace("'", "").replace("{", "_")
     else:

@@ -7,13 +7,14 @@
 Contains the classes for Horizontal 2D geometries of fields.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import sys
 
 from epygram import epygramError
 from epygram.util import separation_line, write_formatted
 from .D3Geometry import D3Geometry, D3RectangularGridGeometry, \
                         D3UnstructuredGeometry, D3ProjectedGeometry
-
 
 
 class V2DGeometry(D3Geometry):
@@ -30,8 +31,7 @@ class V2DGeometry(D3Geometry):
                 values=set(['V2D'])),
         )
     )
-    
-    
+
     def _consistency_check(self):
         """Check that the geometry is consistent."""
         if self.dimensions['Y'] != 1:
@@ -57,7 +57,7 @@ class V2DGeometry(D3Geometry):
         out.write("\n")
 
         self.vcoordinate.what(out)
-    
+
     def _what_grid(self, out):
         """
         Writes in file a summary of the grid of the field.
@@ -88,7 +88,7 @@ class V2DRectangularGridGeometry(V2DGeometry, D3RectangularGridGeometry):
     _footprint = dict(
         attr=dict(
             structure=dict(
-                values=set(['V2D'])),  #inheritance priority problem
+                values=set(['V2D'])),  # inheritance priority problem
             name=dict(
                 values=set(['lambert', 'mercator', 'polar_stereographic', 'space_view', 'unstructured']))
         )
@@ -102,7 +102,7 @@ class V2DUnstructuredGeometry(V2DRectangularGridGeometry, D3UnstructuredGeometry
     _footprint = dict(
         attr=dict(
             structure=dict(
-                values=set(['V2D'])),  #inheritance priority problem
+                values=set(['V2D'])),  # inheritance priority problem
             name=dict(
                 values=set(['unstructured']))
         )
@@ -116,7 +116,7 @@ class V2DProjectedGeometry(V2DRectangularGridGeometry, D3ProjectedGeometry):
     _footprint = dict(
         attr=dict(
             structure=dict(
-                values=set(['V2D'])),  #inheritance priority problem
+                values=set(['V2D'])),  # inheritance priority problem
             name=dict(
                 values=set(['lambert', 'mercator', 'polar_stereographic', 'space_view']))
         )

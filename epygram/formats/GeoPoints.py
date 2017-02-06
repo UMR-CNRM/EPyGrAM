@@ -7,7 +7,7 @@
 Contains the class for GeoPoints format.
 """
 
-__all__ = ['GeoPoints']
+from __future__ import print_function, absolute_import, unicode_literals, division
 
 import datetime
 import numpy
@@ -22,8 +22,9 @@ from epygram.resources import FileResource
 from epygram.geometries import H2DUnstructuredGeometry, PointGeometry, VGeometry
 from epygram.fields import H2DField, PointField, D3Field
 
-epylog = footprints.loggers.getLogger(__name__)
+__all__ = ['GeoPoints']
 
+epylog = footprints.loggers.getLogger(__name__)
 
 
 class GeoPoints(FileResource):
@@ -51,12 +52,12 @@ class GeoPoints(FileResource):
                 default='GeoPoints'),
             parameter=dict(
                 optional=True,
-                info="The name of the parameter whose data is in the" + \
+                info="The name of the parameter whose data is in the" +
                      " *value* field."),
             columns=dict(
                 type=FPList,
                 optional=True,
-                info="The columns of the geopoints, i.e. the set of" + \
+                info="The columns of the geopoints, i.e. the set of" +
                      " keys describing each point."),
             other_attributes=dict(
                 type=FPDict,
@@ -158,8 +159,8 @@ class GeoPoints(FileResource):
                 self._file.write('#DATA\n')
                 self.isopen = True
             else:
-                epylog.debug("cannot open GeoPoints in 'w' mode without" + \
-                             " attributes *parameter* and *columns* set." + \
+                epylog.debug("cannot open GeoPoints in 'w' mode without" +
+                             " attributes *parameter* and *columns* set." +
                              " Not open yet.")
 
     def close(self):
@@ -181,7 +182,7 @@ class GeoPoints(FileResource):
     def _listfields(self, complete=False):
         """
         Actual listfields() method for GeoPoints.
-        
+
         Args: \n
         - *complete*: if True method returns a list of {'GeoPoints':GeoPoints_fid, 'generic':generic_fid}
                       if False method return a list of GeoPoints_fid
@@ -229,11 +230,11 @@ class GeoPoints(FileResource):
         - *footprints_builder*: if *True*, uses footprints.proxy to build
           fields. Defaults to False for performance reasons.
         - *as_points*: if *True*, returns a collection of points instead
-          of a single field. 
+          of a single field.
         """
 
         if self.openmode in ('w', 'a'):
-            raise epygramError("cannot read fields in resource if with" + \
+            raise epygramError("cannot read fields in resource if with" +
                                " openmode == 'w' or 'a'.")
         elif not self.isopen:
             self.open()
@@ -241,15 +242,15 @@ class GeoPoints(FileResource):
         if parameter not in ['*', self.parameter]:
             raise epygramError("This file does not contain the requested parameter.")
 
-        #Rewind
+        # Rewind
         self._file.close()
         self._file = open(self.container.abspath, self.openmode)
         for _ in range(self.headerlength):
             self._file.readline()
 
-        specialValues_list = {'DATE':[], 'TIME':[], 'LEVEL':[]}  #To contain the date, time and date values
-        specialValues_cst = {'DATE':True, 'TIME':True, 'LEVEL':True}  #To know if date, time and level are constant or not
-        specialValues_prev = {}  #Previous values of date, time and leve to detect changes in values
+        specialValues_list = {'DATE':[], 'TIME':[], 'LEVEL':[]}  # To contain the date, time and date values
+        specialValues_cst = {'DATE':True, 'TIME':True, 'LEVEL':True}  # To know if date, time and level are constant or not
+        specialValues_prev = {}  # Previous values of date, time and leve to detect changes in values
         values = []
         latitudes = []
         longitudes = []
@@ -257,8 +258,8 @@ class GeoPoints(FileResource):
         for line in iter(self._file):
             pointvals = line.split()
             point = dict(zip(self.columns, pointvals))
-            #We store date, time and levels as a list of one value if parameter is constant
-            #or as a multi-values list if the parameter varies
+            # We store date, time and levels as a list of one value if parameter is constant
+            # or as a multi-values list if the parameter varies
             for item in ['DATE', 'TIME', 'LEVEL']:
                 if item in self.columns:
                     if nb == 0:
@@ -397,11 +398,11 @@ class GeoPoints(FileResource):
                 if field[0].validity.get() is not None:
                     columns.extend(['DATE', 'TIME'])
             elif isinstance(field, dict):
-                if not 'lat' in field.keys():
+                if 'lat' not in field.keys():
                     raise epygramError("'lat' must be in field.keys().")
-                if not 'lon' in field.keys():
+                if 'lon' not in field.keys():
                     raise epygramError("'lon' must be in field.keys().")
-                if not 'value' in field.keys():
+                if 'value' not in field.keys():
                     raise epygramError("'value' must be in field.keys().")
                 for i in field.keys():
                     if i.upper() not in ('LAT', 'LON', 'VALUE'):
@@ -433,15 +434,15 @@ class GeoPoints(FileResource):
                     date = int(date[0:8])
             writebuffer = {'LON':lons, 'LAT':lats, 'VALUE':values}
             if 'LEVEL' in self.columns:
-                #level = field.geometry.vcoordinate.get('level', 0)
+                # level = field.geometry.vcoordinate.get('level', 0)
                 writebuffer['LEVEL'] = levels
             for i in self.columns:
                 if i == 'DATE':
                     writebuffer[i] = [date] * len(values)
                 elif i == 'TIME':
                     writebuffer[i] = [hour] * len(values)
-#                elif i == 'LEVEL':
-#                    writebuffer[i] = [level] * len(values)
+                # elif i == 'LEVEL':
+                #     writebuffer[i] = [level] * len(values)
                 # others to be implemented here
         elif isinstance(field, FieldSet) or isinstance(field, PointField):
             if isinstance(field, PointField):
@@ -449,7 +450,7 @@ class GeoPoints(FileResource):
             writebuffer = {'LON':[], 'LAT':[], 'VALUE':[], 'DATE':[], 'TIME':[]}
             for pt in field:
                 if not isinstance(pt, PointField):
-                    raise NotImplementedError("write a FieldSet of fields" + \
+                    raise NotImplementedError("write a FieldSet of fields" +
                                               " that are not PointField.")
                 writebuffer['LON'].append(pt.geometry.hlocation['lon'].get('degrees'))
                 writebuffer['LAT'].append(pt.geometry.hlocation['lat'].get('degrees'))
@@ -474,8 +475,8 @@ class GeoPoints(FileResource):
         for pt in range(len(writebuffer['VALUE'])):
             pointstr = ' {: .{precision}{type}} '.format(writebuffer['LAT'][pt],
                                                          type='F',
-                                                         precision=llprecision)\
-                     + ' {: .{precision}{type}} '.format(writebuffer['LON'][pt],
+                                                         precision=llprecision) + \
+                       ' {: .{precision}{type}} '.format(writebuffer['LON'][pt],
                                                          type='F',
                                                          precision=llprecision)
             for i in substruct:
@@ -488,14 +489,13 @@ class GeoPoints(FileResource):
                 pointstr += x
             self._file.write(pointstr + "\n")
 
-        if self.empty: self.empty = False
-
+        if self.empty:
+            self.empty = False
 
 
 ###########
 # pre-app #
 ###########
-
     @FileResource._openbeforedelayed
     def what(self, out=sys.stdout, **kwargs):
         """

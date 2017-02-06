@@ -84,6 +84,8 @@ knowledge of the CeCILL-C license and that you accept its terms.
 ********************************************************************************
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import footprints
 
 __all__ = []
@@ -154,9 +156,9 @@ def showconfig():
     cfg = copy.copy(config.__dict__)
 
     header = "### " + cfg['__name__'] + " ###"
-    print "#" * len(header)
-    print header
-    print "#" * len(header)
+    print("#" * len(header))
+    print(header)
+    print("#" * len(header))
 
     toberemoved = ['os', 'sys', 'imp', 'platform', 'footprints', 'copy',
                    '__name__', '__doc__', '__package__', '__file__',
@@ -165,7 +167,7 @@ def showconfig():
     for p in toberemoved:
         cfg.pop(p, None)
     for k in sorted(cfg.keys()):
-        print '- ' + k + ' = ' + str(cfg[k])
+        print('- ' + k + ' = ' + str(cfg[k]))
 
 
 def init_env(omp_num_threads=1, no_mpi=True, unlimited_stack=True, lfi_C=True):

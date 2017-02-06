@@ -7,14 +7,17 @@
 Contains the class that handle a Vertical 1D field.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import datetime
 import numpy
 
+import footprints
+
 from .D3Field import D3Field
 from epygram import epygramError, config, util
-from epygram.base import FieldSet
 from epygram.geometries import V1DGeometry
-import footprints
+
 epylog = footprints.loggers.getLogger(__name__)
 
 
@@ -74,7 +77,7 @@ class V1DField(D3Field):
         """
         Makes a simple (profile) plot of the field.
         Help on arguments can be found in actual plot functions docstrings.
-        
+
         Args: \n
         - *force_mode* = *False* (default) to plot an hovmoller plot
                          if several validities are available,
@@ -84,7 +87,7 @@ class V1DField(D3Field):
                          *animation* to force an animation plot
         """
 
-        if force_mode != False:
+        if force_mode is not False:
             mode = force_mode
         else:
             if len(self.validity) == 1:
@@ -94,21 +97,36 @@ class V1DField(D3Field):
 
         useless_args = []
         if mode == 'profile':
-            if colorbar != 'vertical': useless_args.append('colorbar')
-            if graphicmode != 'colorshades': useless_args.append('graphicmode')
-            if minmax is not None: useless_args.append('minmax')
-            if levelsnumber != 21: useless_args.append('levelsnumber')
-            if center_cmap_on_0 != False: useless_args.append('center_cmap_on_0')
-            if colormap != 'jet': useless_args.append('colormap')
-            if minmax_in_title != True: useless_args.append('minmax_in_title')
-            if contourcolor != 'k': useless_args.append('contourcolor')
-            if contourwidth != 1: useless_args.append('contourwidth')
-            if contourlabel != True: useless_args.append('contourlabel')
-            if datefmt != "%Y%m%d %H:%M:%S %Z": useless_args.append('datefmt')
-            if linecolor != 'black': useless_args.append('linecolor')
-            if linestyle != '-': useless_args.append('linestyle')
-            if repeat != False: useless_args.append('repeat')
-            if interval != 1000: useless_args.append('interval')
+            if colorbar != 'vertical':
+                useless_args.append('colorbar')
+            if graphicmode != 'colorshades':
+                useless_args.append('graphicmode')
+            if minmax is not None:
+                useless_args.append('minmax')
+            if levelsnumber != 21:
+                useless_args.append('levelsnumber')
+            if center_cmap_on_0 is not False:
+                useless_args.append('center_cmap_on_0')
+            if colormap != 'jet':
+                useless_args.append('colormap')
+            if minmax_in_title is not True:
+                useless_args.append('minmax_in_title')
+            if contourcolor != 'k':
+                useless_args.append('contourcolor')
+            if contourwidth != 1:
+                useless_args.append('contourwidth')
+            if contourlabel is not True:
+                useless_args.append('contourlabel')
+            if datefmt != "%Y%m%d %H:%M:%S %Z":
+                useless_args.append('datefmt')
+            if linecolor != 'black':
+                useless_args.append('linecolor')
+            if linestyle != '-':
+                useless_args.append('linestyle')
+            if repeat is not False:
+                useless_args.append('repeat')
+            if interval != 1000:
+                useless_args.append('interval')
             return plotprofiles(self,
                                 over=over,
                                 labels=labels,
@@ -120,13 +138,20 @@ class V1DField(D3Field):
                                 ema=ema,
                                 zoom=zoom)
         elif mode == 'hovmoller':
-            if labels is not None: useless_args.append('labels')
-            if unit != 'SI': useless_args.append('unit')
-            if ema != False: useless_args.append('ema')
-            if linecolor != 'black':useless_args.append('linecolor')
-            if linestyle != '-':useless_args.append('linestyle')
-            if repeat != False: useless_args.append('repeat')
-            if interval != 1000: useless_args.append('interval')
+            if labels is not None:
+                useless_args.append('labels')
+            if unit != 'SI':
+                useless_args.append('unit')
+            if ema is not False:
+                useless_args.append('ema')
+            if linecolor != 'black':
+                useless_args.append('linecolor')
+            if linestyle != '-':
+                useless_args.append('linestyle')
+            if repeat is not False:
+                useless_args.append('repeat')
+            if interval != 1000:
+                useless_args.append('interval')
             return plotverticalhovmoller(self,
                                          over=over,
                                          fidkey=fidkey,
@@ -134,30 +159,42 @@ class V1DField(D3Field):
                                          title=title,
                                          logscale=logscale,
                                          zoom=zoom,
-                  colorbar=colorbar,
-                  graphicmode=graphicmode,
-                  minmax=minmax,
-                  levelsnumber=levelsnumber,
-                  center_cmap_on_0=center_cmap_on_0,
-                  colormap=colormap,
-                  minmax_in_title=minmax_in_title,
-                  contourcolor=contourcolor,
-                  contourwidth=contourwidth,
-                  contourlabel=contourlabel,
-                  datefmt=datefmt)
+                                         colorbar=colorbar,
+                                         graphicmode=graphicmode,
+                                         minmax=minmax,
+                                         levelsnumber=levelsnumber,
+                                         center_cmap_on_0=center_cmap_on_0,
+                                         colormap=colormap,
+                                         minmax_in_title=minmax_in_title,
+                                         contourcolor=contourcolor,
+                                         contourwidth=contourwidth,
+                                         contourlabel=contourlabel,
+                                         datefmt=datefmt)
         elif mode == 'animation':
-            if labels is not None: useless_args.append('labels')
-            if colorbar != 'vertical': useless_args.append('colorbar')
-            if graphicmode != 'colorshades': useless_args.append('graphicmode')
-            if minmax is not None: useless_args.append('minmax')
-            if levelsnumber != 21: useless_args.append('levelsnumber')
-            if center_cmap_on_0 != False: useless_args.append('center_cmap_on_0')
-            if colormap != 'jet': useless_args.append('colormap')
-            if minmax_in_title != True: useless_args.append('minmax_in_title')
-            if contourcolor != 'k': useless_args.append('contourcolor')
-            if contourwidth != 1: useless_args.append('contourwidth')
-            if contourlabel != True: useless_args.append('contourlabel')
-            if datefmt != "%Y%m%d %H:%M:%S %Z": useless_args.append('datefmt')
+            if labels is not None:
+                useless_args.append('labels')
+            if colorbar != 'vertical':
+                useless_args.append('colorbar')
+            if graphicmode != 'colorshades':
+                useless_args.append('graphicmode')
+            if minmax is not None:
+                useless_args.append('minmax')
+            if levelsnumber != 21:
+                useless_args.append('levelsnumber')
+            if center_cmap_on_0 is not False:
+                useless_args.append('center_cmap_on_0')
+            if colormap != 'jet':
+                useless_args.append('colormap')
+            if minmax_in_title is not True:
+                useless_args.append('minmax_in_title')
+            if contourcolor != 'k':
+                useless_args.append('contourcolor')
+            if contourwidth != 1:
+                useless_args.append('contourwidth')
+            if contourlabel is not True:
+                useless_args.append('contourlabel')
+            if datefmt != "%Y%m%d %H:%M:%S %Z":
+                useless_args.append('datefmt')
             return plotanimation(self,
                                  over=over,
                                  fidkey=fidkey,
@@ -173,10 +210,10 @@ class V1DField(D3Field):
         if len(useless_args) != 0:
             epylog.warning("Some arguments to plotfield are useless and will not be used: " + str(useless_args))
 
-#################
-### FUNCTIONS ###
-#################
 
+#############
+# FUNCTIONS #
+#############
 def plotverticalhovmoller(profile,
                           over=(None, None),
                           fidkey=None,
@@ -204,8 +241,8 @@ def plotverticalhovmoller(profile,
         - *over* = any existing figure and/or ax to be used for the
           plot, given as a tuple (fig, ax), with None for
           missing objects. *fig* is the frame of the
-          matplotlib figure, containing eventually several 
-          subplots (axes); *ax* is the matplotlib axes on 
+          matplotlib figure, containing eventually several
+          subplots (axes); *ax* is the matplotlib axes on
           which the drawing is done. When given (is not None),
           these objects must be coherent, i.e. ax being one of
           the fig axes.
@@ -286,10 +323,14 @@ def plotverticalhovmoller(profile,
                                   '{: .{precision}{type}}'.format(m, type='E', precision=3) + \
                                   ' // max: ' + \
                                   '{: .{precision}{type}}'.format(M, type='E', precision=3) + ')'
-            try: m = float(minmax[0])
-            except Exception: m = data.min()
-            try: M = float(minmax[1])
-            except Exception: M = data.max()
+            try:
+                m = float(minmax[0])
+            except Exception:
+                m = data.min()
+            try:
+                M = float(minmax[1])
+            except Exception:
+                M = data.max()
         else:
             minmax_in_title = ''
         if abs(m - M) > config.epsilon:
@@ -380,6 +421,7 @@ def plotverticalhovmoller(profile,
 
         return (fig, ax)
 
+
 def plotprofiles(profiles,
                  over=(None, None),
                  labels=None,
@@ -403,8 +445,8 @@ def plotprofiles(profiles,
     - *over* = any existing figure and/or ax to be used for the
       plot, given as a tuple (fig, ax), with None for
       missing objects. *fig* is the frame of the
-      matplotlib figure, containing eventually several 
-      subplots (axes); *ax* is the matplotlib axes on 
+      matplotlib figure, containing eventually several
+      subplots (axes); *ax* is the matplotlib axes on
       which the drawing is done. When given (is not None),
       these objects must be coherent, e.g. ax being one of
       the fig axes.
@@ -427,7 +469,7 @@ def plotprofiles(profiles,
     colors = ['red', 'blue', 'green', 'orange', 'magenta', 'darkolivegreen',
               'yellow', 'salmon', 'black']
     linestyles = ['-', '--', '-.', ':']
-    
+
     if isinstance(profiles, V1DField):
         profiles = [profiles]
     if isinstance(labels, str):
@@ -526,6 +568,7 @@ def plotprofiles(profiles,
 
     return (fig, ax)
 
+
 def plotanimation(profile,
                   title='__auto__',
                   repeat=False,
@@ -541,7 +584,7 @@ def plotanimation(profile,
       the current validity of the time frame.
     - *repeat*: to repeat animation
     - *interval*: number of milliseconds between two validities
-    
+
     Other kwargs passed to plotprofiles().
     """
     import matplotlib.animation as animation
@@ -569,9 +612,9 @@ def plotanimation(profile,
         epylog.warning("'ema' option not fully tested in animation: min/max may not be optimised.")
     zoom = kwargs.get('zoom')
     zoom = util.ifNone_emptydict(zoom)
-    if not 'xmax' in zoom.keys():
+    if 'xmax' not in zoom.keys():
         zoom.update(xmax=maxdata)
-    if not 'xmin' in zoom.keys():
+    if 'xmin' not in zoom.keys():
         zoom.update(xmin=mindata)
     kwargs['zoom'] = zoom
 

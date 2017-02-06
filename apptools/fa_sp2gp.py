@@ -4,6 +4,8 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import argparse
 
 import epygram
@@ -11,7 +13,6 @@ from epygram import epylog
 from epygram.args_catalog import add_arg_to_parser, files_management, \
                                  fields_management, runtime_options
 from epygram.util import printstatus
-
 
 
 def main(filename,
@@ -62,9 +63,7 @@ def main(filename,
             if fieldcompression.get('KNBPDG') == 0:
                 fieldcompression['KNGRIB'] = 0
         output.writefield(field, fieldcompression)
-
 # end of main() ###############################################################
-
 
 
 if __name__ == '__main__':

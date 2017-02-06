@@ -7,7 +7,7 @@
 Contains the class to handle TIFFMF format.
 """
 
-__all__ = ['TIFFMF']
+from __future__ import print_function, absolute_import, unicode_literals, division
 
 import datetime
 import numpy
@@ -23,10 +23,9 @@ from epygram.base import FieldSet, FieldValidity, Field
 from epygram.resources import FileResource
 from epygram.fields import H2DField
 
-
+__all__ = ['TIFFMF']
 
 epylog = footprints.loggers.getLogger(__name__)
-
 
 
 class TIFFMF(FileResource):
@@ -65,14 +64,17 @@ class TIFFMF(FileResource):
         # Opening
         if self.openmode in ('r'):
             self.tiff = pyexttiff.TiffFile(self.container.abspath, [(34974,)], method=2)
-            try: self.tiff.IFDs[0].get_value(34974)
-            except: raise epygramError('Tiff file is not a tiffmf file')
+            try:
+                self.tiff.IFDs[0].get_value(34974)
+            except:
+                raise epygramError('Tiff file is not a tiffmf file')
             self.isopen = True
         else:
             raise NotImplementedError("TIFFMF is only implmented for reading")
 
         # Reading of metadata
-        if self.geometry is None : self._read_sections()
+        if self.geometry is None:
+            self._read_sections()
 
     def close(self):
         """
@@ -85,19 +87,16 @@ class TIFFMF(FileResource):
             self.tiff.close()
             del self.tiff
 
-
-
 ################
 # ABOUT FIELDS #
 ################
-
     def find_fields_in_resource(self, seed=None, fieldtype=[], generic=False):
         """
         Returns a list of the fields from resource whose identifier match the given seed.
-        
+
         Args: \n
         - *seed*: might be a tuple of regular expressions, a list of regular expressions tuples or *None*.
-                  If *None* (default), returns the list of all fields in resource. 
+                  If *None* (default), returns the list of all fields in resource.
         - *fieldtype*: optional, among ('H2D', 'Misc') or a list of these strings.
           If provided, filters out the fields not of the given types.
         - *generic*: if True, returns a list of tuples (fieldname, generic fid) of
@@ -117,8 +116,8 @@ class TIFFMF(FileResource):
             fieldslist = []
             for s in seed:
                 fieldslist += util.find_re_in_list(s, self.listfields())
-        if fieldtypeslist != [] and not 'H2D' in fieldtypeslist:
-            #Only H2D fields are stored in TIFFMF format
+        if fieldtypeslist != [] and 'H2D' not in fieldtypeslist:
+            # Only H2D fields are stored in TIFFMF format
             fieldslist = []
         if fieldslist == []:
             raise epygramError("no field matching '" + str(seed) + "' was found in resource " + self.container.abspath)
@@ -150,7 +149,6 @@ class TIFFMF(FileResource):
         else:
             return fieldslist
 
-
     def sortfields(self):
         """
         Returns a sorted list of fields with regards to their name,
@@ -171,7 +169,7 @@ class TIFFMF(FileResource):
         """
         Reads one field, given its identifier, and returns a Field instance.
         Interface to Fortran routines from 'ifsaux'.
-        
+
         Args: \n
         - *fieldidentifier*: name.
         - *getdata*: optional, if *False*, only metadata are read, the field do not contain data.
@@ -204,7 +202,7 @@ class TIFFMF(FileResource):
     def readfields(self, requestedfields=None, getdata=True):
         """
         Returns a :class:`epygram.base.FieldSet` containing requested fields read in the resource.
-        
+
         Args: \n
         - *requestedfields*: might be \n
           - an expressions with regular expressions (e.g. '*CMS*')
@@ -223,7 +221,7 @@ class TIFFMF(FileResource):
     def writefield(self, field):
         """
         Write a field in the resource.
-        
+
         Args: \n
         - *field*: a :class:`epygram.base.Field` instance or :class:`epygram.H2DField`.
         """
@@ -236,7 +234,7 @@ class TIFFMF(FileResource):
     def writefields(self, fieldset):
         """
         Write the fields of the *fieldset* in the resource.
-        
+
         Args: \n
         - *fieldset*: must be a :class:`epygram.base.FieldSet` instance.
         """
@@ -251,7 +249,6 @@ class TIFFMF(FileResource):
 ###########
 # pre-app #
 ###########
-
     @FileResource._openbeforedelayed
     def what(self, out=sys.stdout,
              details=False,
@@ -259,7 +256,7 @@ class TIFFMF(FileResource):
              **kwargs):
         """
         Writes in file a summary of the contents of the TIFFMF.
-        
+
         Args: \n
         - *out*: the output open file-like object (duck-typing: *out*.write()
           only is needed).
@@ -323,8 +320,6 @@ class TIFFMF(FileResource):
                 done.append(f)
         out.write(sepline)
 
-
-
 ##############
 # the TIFFMF WAY #
 ##############
@@ -356,8 +351,9 @@ class TIFFMF(FileResource):
                          'levels': (255,)}
         vcoordinate = fpx.geometry(**kwargs_vcoord)
         if projection == 1:
-            #Polar streographic
-            if dataRepresenationType != 5: raise epygramError("Projection does not match.")
+            # Polar streographic
+            if dataRepresenationType != 5:
+                raise epygramError("Projection does not match.")
             (Nx, Ny, La1, Lo1, res, LoV, Dx, Dy, pole, scan) = bodySection2
             if typeImage == 7 and \
                subTypeImage == 13 and \
@@ -366,12 +362,12 @@ class TIFFMF(FileResource):
                (Nx, Ny) == (8192, 6144) and \
                (La1, Lo1, Dx, Dy) == (43759, -76033, 1093, 1093) and \
                LoV == 180000:
-                #If tiffmf file is modified to put LoV=0. in the section 2,
-                #R2 is no more able to put the image at the good location.
+                # If tiffmf file is modified to put LoV=0. in the section 2,
+                # R2 is no more able to put the image at the good location.
                 #
-                #So, it seems there is an error somewhere in this module, so we need to
-                #reset LoV to 0. to have the good coordinates.
-                #This must be corrected
+                # So, it seems there is an error somewhere in this module, so we need to
+                # reset LoV to 0. to have the good coordinates.
+                # This must be corrected
                 epylog.warning("LoV reset to 0. for this file.")
                 LoV = 0
             else:
@@ -391,7 +387,7 @@ class TIFFMF(FileResource):
                     'input_lon':Angle(float(Lo1) / 1000., 'degrees'),
                     'input_lat':Angle(float(La1) / 1000., 'degrees'),
                     'input_position':(0, Ny),
-                   }
+                    }
             if scan != 0:
                 raise NotImplementedError("Polar stereographic projection with scan != 0 is not implemented.")
             projection = {'reference_lon':Angle(float(LoV) / 1000., 'degrees'),
@@ -407,15 +403,15 @@ class TIFFMF(FileResource):
                                geoid=FPDict(config.default_geoid),
                                position_on_horizontal_grid='center',
                                vcoordinate=vcoordinate
-                              )
+                               )
             self.geometry = fpx.geometry(**kwargs_geom)
         elif projection == 3:
-            #Mercator
+            # Mercator
             if dataRepresenationType != 1: raise epygramError("Projection does not match.")
             (Ni, Nj, La1, Lo1, res, La2, Lo2, Latin, scan, Di, Dj) = bodySection2
             raise NotImplementedError("This projection is not implemented (mercator) but could easily be done.")
         elif projection == 11:
-            #Space view
+            # Space view
             if dataRepresenationType != 90: raise epygramError("Projection does not match.")
             (Nx, Ny, Lap, Lop, res, dx, dy, Xp, Yp, scan, ort, nr, Xo, Yo) = bodySection2
             Lap = Angle(int(Lap) / 1000., 'degrees')
@@ -433,7 +429,7 @@ class TIFFMF(FileResource):
                     'input_lon':Lop, 'input_lat':Lap,
                     'input_position':(int(Xp) - int(Xo),
                                       int(Yo) - int(Yp) + Ny - 1)
-                   }
+                    }
             if scan != 0:
                 raise NotImplementedError("Space view projection with scan != 0 is not implemented.")
             if ort != 0.:
@@ -450,10 +446,10 @@ class TIFFMF(FileResource):
                                projection=FPDict(projection),
                                position_on_horizontal_grid='center',
                                vcoordinate=vcoordinate
-                              )
+                               )
             self.geometry = fpx.geometry(**kwargs_geom)
         elif projection == 15:
-            #Cylindric ?
+            # Cylindric ?
             raise NotImplementedError("Cylindric projection is not implemented")
             (Ni, Nj, La1, Lo1, res, La2, Lo2, Di, Dj, scan) = bodySection2
         else:
@@ -467,5 +463,6 @@ class TIFFMF(FileResource):
         date = datetime.datetime(date[:2].view(dtype=self.tiff.dtypes.uint16),
                                  date[2], date[3], date[4], date[5])
         date2 = datetime.datetime(year + 100 * (century - 1), month, day, hour, minute)
-        if date != date2: raise epygramError("The two dates encoded in the tiff file must be the same.")
+        if date != date2:
+            raise epygramError("The two dates encoded in the tiff file must be the same.")
         self.validity = FieldValidity(basis=date, term=datetime.timedelta(hours=0))

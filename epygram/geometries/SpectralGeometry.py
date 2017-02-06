@@ -7,13 +7,14 @@
 Contains the class that handles spectral parameters and spectral transforms.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import numpy
 
 from footprints import FootprintBase, FPDict
 
 from epygram import config, epygramError
 from epygram.util import RecursiveObject
-
 
 
 class SpectralGeometry(RecursiveObject, FootprintBase):
@@ -144,7 +145,7 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
                 spdata = numpy.zeros(SPdatasize)
                 spdata[0] = data[0]
             else:
-                raise NotImplementedError("direct transform for 1D fourier" + \
+                raise NotImplementedError("direct transform for 1D fourier" +
                                           " transform.")
         else:
             raise epygramError("unknown spectral space:" + self.space + ".")
@@ -158,7 +159,7 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
         spectral space (assumed this spectral geometry is that of *data*) and
         return it in gridpoint space, defined by its dimensions contained in
         *gpdims*.
-        
+
         Returns: (dz/dx, dz/dy)
 
         Input and output data are both 1D.

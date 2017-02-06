@@ -9,6 +9,8 @@ Contains proxies to reach resources using Vortex.
 Of course, this module need to have a proper Vortex installation !
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import uuid
 import tempfile
 import ftplib
@@ -19,6 +21,7 @@ import footprints
 from vortex import toolbox
 import common
 import olive
+
 
 def set_defaults(**defaults):
     """
@@ -33,13 +36,14 @@ def set_defaults(**defaults):
                         origin='hst')
     toolbox.defaults(**defaults)
 
+
 def hendrix_prefetch(resource_paths, mail=None):
     """
     Puts a pre-fetching request on *hendrix* for the given list of
     resources **resource_paths**.
-    
+
     If **mail** is given, used for informing about the request progress.
-    
+
     Uses .netrc to connect to *hendrix*.
     """
     # connect to archive
@@ -76,12 +80,13 @@ def hendrix_prefetch(resource_paths, mail=None):
     ftp.quit()
     # send back request identifier
     return ['/'.join([stagedir, staging_request])]
-    
+
+
 def get_resources(getmode='epygram', uselocalcache=False, meta_rtype=None,
                   **description):
     """
     Get resources, given their description.
-    
+
     *getmode*: 'epygram' return the epygram resources
                'locate' return the physical resolved location of the resource
                'exist' return the physical resolved location of the resource and its existence
@@ -98,10 +103,10 @@ def get_resources(getmode='epygram', uselocalcache=False, meta_rtype=None,
                   documentation.
 
     Examples:
-    
+
     - for the analysis of AROME-france from experiment 864G on 2015/08/15/00,
       description will look like:
-      
+
       + experiment='864G',  # the experiment id
       + model='arome',
       + block='analysis',  # the OLIVE block
@@ -109,11 +114,11 @@ def get_resources(getmode='epygram', uselocalcache=False, meta_rtype=None,
       + date='2015081500',  # the initial date and time
       + geometry='franmgsp',  # the name of the model domain
       + local='analysis_[experiment]',  # the local filename of the resource, once fetched.
-        
+
     - for the model state at term 18h of ALADIN-reunion oper, production
       cutoff, on 2015/08/15/00,
       description will look like:
-      
+
       + suite='oper',  # the suite // 'dble' = e-suite
       + kind='historic',  # model state
       + date='2015081500',  # the initial date and time
@@ -124,11 +129,11 @@ def get_resources(getmode='epygram', uselocalcache=False, meta_rtype=None,
       + vapp='aladin',  # type of application in operations namespace
       + vconf='reunion',  # name of config in operation namespace
       + model='aladin',  # name of the model
-        
+
     - for the GRIB post-processed output on MASCA025 BDAP domain at terms
       22->24h of ALADIN-reunion oper, production cutoff, on 2015/08/15/00,
       description will look like:
-      
+
       + suite='oper',  # the suite // 'dble' = e-suite
       + kind='gridpoint',  # model state
       + date='2015081500',  # the initial date and time
@@ -148,7 +153,7 @@ def get_resources(getmode='epygram', uselocalcache=False, meta_rtype=None,
         _domain = 'multi'
     else:
         _domain = 'archive'
-        
+
     # completion of description...
     xp = description.pop('xp', None)
     if xp:
@@ -205,15 +210,13 @@ def get_resources(getmode='epygram', uselocalcache=False, meta_rtype=None,
 
     return resources
 
-#################
-### SHORTCUTS ###
-#################
-# AROME
 
+#############
+# SHORTCUTS #
+#############
+# AROME
 def get_gribfc_arome_oper(date, term, geometry='FRANGP0025', **others):
-    """
-    Proxy for AROME oper GRIBs.
-    """
+    """Proxy for AROME oper GRIBs."""
 
     _others = dict(suite='oper',
                    model='arome',
@@ -227,10 +230,9 @@ def get_gribfc_arome_oper(date, term, geometry='FRANGP0025', **others):
     return get_resources(date=date, term=term, geometry=geometry,
                          **_others)
 
+
 def get_histfc_arome_oper(date, term, **others):
-    """
-    Proxy for AROME oper historic FAs.
-    """
+    """Proxy for AROME oper historic FAs."""
 
     _others = dict(suite='oper',
                    model='arome',
@@ -243,11 +245,9 @@ def get_histfc_arome_oper(date, term, **others):
     _others.update(others)
     return get_resources(date=date, term=term, **_others)
 
-def get_gribfc_arome_xp(xp, date, term, geometry='FRANGP0025',
-                        **others):
-    """
-    Proxy for AROME experiment GRIBs.
-    """
+
+def get_gribfc_arome_xp(xp, date, term, geometry='FRANGP0025', **others):
+    """Proxy for AROME experiment GRIBs."""
 
     _others = dict(model='arome',
                    cutoff='prod',
@@ -261,10 +261,9 @@ def get_gribfc_arome_xp(xp, date, term, geometry='FRANGP0025',
     return get_resources(experiment=xp, date=date, term=term, geometry=geometry,
                          **_others)
 
+
 def get_histfc_arome_xp(xp, date, term, **others):
-    """
-    Proxy for AROME experiment historic FAs.
-    """
+    """Proxy for AROME experiment historic FAs."""
 
     _others = dict(model='arome',
                    cutoff='prod',
@@ -278,12 +277,10 @@ def get_histfc_arome_xp(xp, date, term, **others):
     return get_resources(experiment=xp, date=date, term=term,
                          **_others)
 
-# ARPEGE ######################################################################
 
+# ARPEGE ######################################################################
 def get_gribfc_arpege_oper(date, term, geometry='FRANX01', **others):
-    """
-    Proxy for ARPEGE oper GRIBs.
-    """
+    """Proxy for ARPEGE oper GRIBs."""
 
     _others = dict(suite='oper',
                    model='arpege',
@@ -297,10 +294,9 @@ def get_gribfc_arpege_oper(date, term, geometry='FRANX01', **others):
     return get_resources(date=date, term=term, geometry=geometry,
                          **_others)
 
+
 def get_histfc_arpege_oper(date, term, **others):
-    """
-    Proxy for ARPEGE oper historic FAs.
-    """
+    """Proxy for ARPEGE oper historic FAs."""
 
     _others = dict(suite='oper',
                    model='arpege',
@@ -314,10 +310,9 @@ def get_histfc_arpege_oper(date, term, **others):
     return get_resources(date=date, term=term,
                          **_others)
 
+
 def get_gribfc_arpege_xp(xp, date, term, geometry='FRANX01', **others):
-    """
-    Proxy for ARPEGE experiment GRIBs.
-    """
+    """Proxy for ARPEGE experiment GRIBs."""
 
     _others = dict(model='arpege',
                    cutoff='prod',
@@ -331,10 +326,9 @@ def get_gribfc_arpege_xp(xp, date, term, geometry='FRANX01', **others):
     return get_resources(experiment=xp, date=date, term=term, geometry=geometry,
                          **_others)
 
+
 def get_histfc_arpege_xp(xp, date, term, **others):
-    """
-    Proxy for ARPEGE experiment historic FAs.
-    """
+    """Proxy for ARPEGE experiment historic FAs."""
 
     _others = dict(model='arpege',
                    cutoff='prod',

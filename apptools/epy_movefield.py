@@ -4,6 +4,8 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import argparse
 
 import epygram
@@ -12,7 +14,6 @@ from epygram.util import printstatus
 from epygram.args_catalog import add_arg_to_parser, \
                                  files_management, fields_management, \
                                  runtime_options
-
 
 
 def main(filename, refname, fieldseed,
@@ -105,8 +106,8 @@ def main(filename, refname, fieldseed,
                 printstatus(n, numfields)
                 n += 1
             if source.format == 'GRIB' and f in target.listfields():
-                raise epygramError('field ' + str(f) + ' is already in' + \
-                                   ' target resource: unable to modify GRIB' + \
+                raise epygramError('field ' + str(f) + ' is already in' +
+                                   ' target resource: unable to modify GRIB' +
                                    ' messages "in place".')
             treat_one_field(f, source, target, operation=operation)
     else:
@@ -139,9 +140,7 @@ def main(filename, refname, fieldseed,
                 treat_one_field(f, target, newtarget)  # copy (untouched)
         for f in to_add_fields:
             treat_one_field(f, source, newtarget)  # add
-
 # end of main() ###############################################################
-
 
 
 if __name__ == '__main__':
@@ -186,9 +185,9 @@ if __name__ == '__main__':
         progressmode = None
 
     # 2.2 list of fields to be processed
-    if args.field != None:
+    if args.field is not None:
         fieldseed = args.field
-    elif args.listoffields != None:
+    elif args.listoffields is not None:
         listfile = epygram.containers.File(filename=args.listoffields)
         with open(listfile.abspath, 'r') as l:
             fieldseed = l.readlines()

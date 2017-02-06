@@ -7,6 +7,8 @@
 Contains some base classes of *epygram*.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import numpy
 import datetime
 import copy
@@ -16,11 +18,9 @@ import footprints
 from footprints import FootprintBase, FPDict
 
 from epygram import epygramError, config
-from epygram.util import RecursiveObject, separation_line, \
-                         write_formatted
+from epygram.util import RecursiveObject, separation_line, write_formatted
 
 epylog = footprints.loggers.getLogger(__name__)
-
 
 
 class Field(RecursiveObject, FootprintBase):
@@ -29,7 +29,7 @@ class Field(RecursiveObject, FootprintBase):
     a data.
 
     The field identifier *fid* identifies a field with a set of keys.
-    Each key (named after the format name) idetifies the field for a given format.
+    Each key (named after the format name) identifies the field for a given format.
     A specific key 'generic' is a GRIB2-like description.
     E.g. *{'FA':'SURFTEMPERATURE',
            'generic':{'typeOfFirstFixedSurface':1, 'discipline':2, 'parameterCategory':3, 'parameterNumber':18}}*.
@@ -53,12 +53,12 @@ class Field(RecursiveObject, FootprintBase):
                 default='')
         )
     )
-    
+
     def __init__(self, *args, **kwargs):
         """Constructor. See its footprint for arguments."""
         super(Field, self).__init__(*args, **kwargs)
         self._data = None
-    
+
     def getdata(self):
         """
         Returns the field data.
@@ -72,25 +72,25 @@ class Field(RecursiveObject, FootprintBase):
         if not isinstance(data, numpy.ndarray):
             data = numpy.array(data)
         self._data = data
-    
+
     def deldata(self):
         """Empties the data."""
         self._data = None
-    
+
     data = property(getdata, setdata, deldata, "Accessor to the field data.")
-    
+
     def setfid(self, fid):
         """
         Sets or overwrites the field fid given as a dict.
         """
 
         if not isinstance(fid, dict):
-            raise epygramError("*fid* must be a dict.")
+            raise epygramError("**fid** must be a dict.")
         self._attributes['fid'] = fid
 
     def clone(self, fid=None):
         """
-        Returns a cloned field, optionally with a new *fid* given as a dict.
+        Returns a cloned field, optionally with a new **fid** given as a dict.
         """
 
         clone = self.deepcopy()
@@ -105,9 +105,9 @@ class Field(RecursiveObject, FootprintBase):
         """
         Computes some basic statistics on the field, as a dict containing:
         {'min', 'max', 'mean', 'std', 'quadmean', 'nonzero'}.
-        
+
         See each of these methods for details.
-        
+
         Optional arguments can be passed, depending on the inheriting class,
         passed to getdata().
         """
@@ -171,7 +171,7 @@ class Field(RecursiveObject, FootprintBase):
     def operation(self, operation, operand=None):
         """
         Makes the requested operation on the field.
-        
+
         Implemented *operation* :
         '+', '-', '*', '/',
         'normalize', 'ceil', 'exp', 'log'... and you can try with every other
@@ -185,7 +185,7 @@ class Field(RecursiveObject, FootprintBase):
                 self.scalar_operation(operation, operand)
         else:
             if operation == 'normalize':
-                self.setdata((self._data - self._data.min()) / \
+                self.setdata((self._data - self._data.min()) /
                              (self._data.max() - self._data.min())
                              )
             else:
@@ -214,9 +214,9 @@ class Field(RecursiveObject, FootprintBase):
     def scalar_operation(self, operation, scalar):
         """
         Makes a scalar operation on field:
-        
+
         *operation* being one of ('+', '-', '*', '/')
-        
+
         *scalar* being a float or int.
         """
 
@@ -240,10 +240,10 @@ class Field(RecursiveObject, FootprintBase):
             try:
                 other = float(other)
             except Exception:
-                raise ValueError("operations on " + self.__class__.__name__
-                                 + " must involve either scalars \
-                                    (integer/float) or "
-                                 + self.__class__.__name__ + ".")
+                raise ValueError("operations on " + self.__class__.__name__ +
+                                 " must involve either scalars " +
+                                 "(integer/float) or " +
+                                 self.__class__.__name__ + ".")
         else:
             if numpy.shape(self._data) != numpy.shape(other._data):
                 raise epygramError("dimensions mismatch.")
@@ -386,8 +386,11 @@ class Field(RecursiveObject, FootprintBase):
 
     def __div__(self, other):
         return self._div(other)
+
     __radd__ = __add__
+
     __rmul__ = __mul__
+
     def __rsub__(self, other):
         return self._rsub(other)
 
@@ -400,7 +403,7 @@ class FieldSet(RecursiveObject, list):
     Handles a set of Fields, in the manner of Python's builtin list,
     with some extra features, especially ensuring its components all are Fields.
 
-    Constructor optional argument *fields* has to be either a :class:`Field`
+    Constructor optional argument **fields** has to be either a :class:`Field`
     or an iterable of.
     """
 
@@ -419,10 +422,10 @@ class FieldSet(RecursiveObject, list):
             try:
                 for item in fields:
                     if not isinstance(item, Field):
-                        raise epygramError("A FieldSet can only be made out" + \
+                        raise epygramError("A FieldSet can only be made out" +
                                            " of Field instances.")
             except TypeError:
-                raise epygramError("'fields' argument must be either a" + \
+                raise epygramError("'fields' argument must be either a" +
                                    " Field instance or an iterable of fields.")
             except Exception:
                 raise
@@ -453,7 +456,7 @@ class FieldSet(RecursiveObject, list):
     def index(self, fid):
         """
         Returns the index of the first field of the FieldSet whose fid 
-        matches *fid*, *fid* being a dict.
+        matches **fid**, **fid** being a dict.
         """
 
         if not isinstance(fid, dict):
@@ -468,7 +471,7 @@ class FieldSet(RecursiveObject, list):
 
     def extend(self, fieldset):
         """
-        Checks that *fieldset* is a :class:`FieldSet` instance before extending
+        Checks that **fieldset** is a :class:`FieldSet` instance before extending
         with it.
         """
 
@@ -478,7 +481,8 @@ class FieldSet(RecursiveObject, list):
 
     def insert(self, position, field):
         """
-        Checks that *field* is a :class:`Field` instance before inserting it.
+        Checks that **field** is a :class:`Field` instance before inserting it
+        at the **position**.
         """
 
         if not isinstance(field, Field):
@@ -487,8 +491,8 @@ class FieldSet(RecursiveObject, list):
 
     def remove(self, fid):
         """
-        Removes from the FieldSet the first field whose fid matches *fid*,
-        *fid* being a dict.
+        Removes from the FieldSet the first field whose fid matches **fid**,
+        **fid** being a dict.
         """
 
         try:
@@ -502,7 +506,7 @@ class FieldSet(RecursiveObject, list):
         Sorts the fields of the FieldSet by the increasing criterion.
 
         If attribute is a string, sorting will be done according to
-        *field.attribute[key]* or *field.attribute* (if *key==None*).
+        *field.attribute[key]* or *field.attribute* (if **key** is **None**).
 
         If attribute is a list *[a1, a2...]*, sorting will be done according to
         *field.a1.a2[key]* or *field.a1.a2* (if *key==None*).
@@ -513,44 +517,44 @@ class FieldSet(RecursiveObject, list):
         if isinstance(attribute, str):
             if key is None:
                 cmpfct = lambda x, y: cmp(x._attributes[attribute],
-                                         y._attributes[attribute])
+                                          y._attributes[attribute])
             else:
                 cmpfct = lambda x, y: cmp(x._attributes[attribute][key],
-                                         y._attributes[attribute][key])
+                                          y._attributes[attribute][key])
         elif isinstance(attribute, list):
             a = attribute
             if isinstance(self[0]._attributes[a[0]], FootprintBase):
                 if len(attribute) == 2:
                     if key is None:
                         cmpfct = lambda x, y: cmp(x._attributes[a[0]]._attributes[a[1]],
-                                                 y._attributes[a[0]]._attributes[a[1]])
+                                                  y._attributes[a[0]]._attributes[a[1]])
                     else:
                         cmpfct = lambda x, y: cmp(x._attributes[a[0]]._attributes[a[1]][key],
-                                                 y._attributes[a[0]]._attributes[a[1]][key])
+                                                  y._attributes[a[0]]._attributes[a[1]][key])
                 elif len(attribute) == 3:
                     if key is None:
                         cmpfct = lambda x, y: cmp(x._attributes[a[0]]._attributes[a[1]].__dict__[a[2]],
-                                                 y._attributes[a[0]]._attributes[a[1]].__dict__[a[2]])
+                                                  y._attributes[a[0]]._attributes[a[1]].__dict__[a[2]])
                     else:
                         cmpfct = lambda x, y: cmp(x._attributes[a[0]]._attributes[a[1]].__dict__[a[2]][key],
-                                                 y._attributes[a[0]]._attributes[a[1]].__dict__[a[2]][key])
+                                                  y._attributes[a[0]]._attributes[a[1]].__dict__[a[2]][key])
                 else:
                     raise NotImplementedError("len(attribute) > 3.")
             else:
                 if len(attribute) == 2:
                     if key is None:
                         cmpfct = lambda x, y: cmp(x._attributes[a[0]].__dict__[a[1]],
-                                                 y._attributes[a[0]].__dict__[a[1]])
+                                                  y._attributes[a[0]].__dict__[a[1]])
                     else:
                         cmpfct = lambda x, y: cmp(x._attributes[a[0]].__dict__[a[1]][key],
-                                                 y._attributes[a[0]].__dict__[a[1]][key])
+                                                  y._attributes[a[0]].__dict__[a[1]][key])
                 elif len(attribute) == 3:
                     if key is None:
                         cmpfct = lambda x, y: cmp(x._attributes[a[0]].__dict__[a[1]].__dict__[a[2]],
-                                                 y._attributes[a[0]].__dict__[a[1]].__dict__[a[2]])
+                                                  y._attributes[a[0]].__dict__[a[1]].__dict__[a[2]])
                     else:
                         cmpfct = lambda x, y: cmp(x._attributes[a[0]].__dict__[a[1]].__dict__[a[2]][key],
-                                                 y._attributes[a[0]].__dict__[a[1]].__dict__[a[2]][key])
+                                                  y._attributes[a[0]].__dict__[a[1]].__dict__[a[2]][key])
                 else:
                     raise NotImplementedError("len(attribute) > 3.")
 
@@ -595,7 +599,6 @@ class FieldSet(RecursiveObject, list):
         raise NotImplementedError("not yet...")
 
 
-
 class Resource(RecursiveObject, FootprintBase):
     """Generic abstract class implementing a Resource."""
 
@@ -633,7 +636,7 @@ class Resource(RecursiveObject, FootprintBase):
             self.close()
         except Exception as e:
             epylog.warning(
-                "Exception catched in epygram.base.Resource.__del__(): " + \
+                "Exception catched in epygram.base.Resource.__del__(): " +
                 str(e))
 
     def __len__(self):
@@ -677,7 +680,7 @@ class Resource(RecursiveObject, FootprintBase):
         """
 
         if not isinstance(fieldset, FieldSet):
-            raise epygramError("'fieldset' argument must be a FieldSet " + \
+            raise epygramError("'fieldset' argument must be a FieldSet " +
                                "instance.")
         for field in fieldset:
             self.writefield(field)
@@ -729,7 +732,6 @@ class Resource(RecursiveObject, FootprintBase):
                 found.append(f)
 
         return found
-
 
 
 class FieldValidity(RecursiveObject):
@@ -796,7 +798,7 @@ class FieldValidity(RecursiveObject):
             term = self._date_time - self._basis
             out = int(term.total_seconds())
         else:
-            raise NotImplementedError("fmt=" + fmt + " option for " + \
+            raise NotImplementedError("fmt=" + fmt + " option for " +
                                       self.__class__.__name__ + ".term().")
 
         return out
@@ -821,8 +823,8 @@ class FieldValidity(RecursiveObject):
         elif fmt == 'IntSeconds':
             out = int(self._cumulativeduration.total_seconds())
         else:
-            raise NotImplementedError("fmt=" + fmt + " option for " + \
-                                      self.__class__.__name__ + \
+            raise NotImplementedError("fmt=" + fmt + " option for " +
+                                      self.__class__.__name__ +
                                       ".cumulativeduration().")
 
         return out
@@ -831,7 +833,7 @@ class FieldValidity(RecursiveObject):
         """
         If the field describes a cumulative process over a cumulativeduration,
         returns the kind of statistical process that runs over the duration.
-        
+
         If *asGRIB2code*, returned as a GRIB2 code (cf. GRIB2 table 4.10).
         """
         from .formats import grib_utilities
@@ -867,7 +869,7 @@ class FieldValidity(RecursiveObject):
                 + '{:0>{width}}'.format(str(self._date_time.minute), width=2) \
                 + '{:0>{width}}'.format(str(self._date_time.second), width=2)
         else:
-            raise NotImplementedError("fmt=" + fmt + " option for " + \
+            raise NotImplementedError("fmt=" + fmt + " option for " +
                                       self.__class__.__name__ + ".get().")
 
         return out
@@ -894,7 +896,7 @@ class FieldValidity(RecursiveObject):
                 + '{:0>{width}}'.format(str(self._basis.minute), width=2) \
                 + '{:0>{width}}'.format(str(self._basis.second), width=2)
         else:
-            raise NotImplementedError("fmt=" + fmt + " option for " + \
+            raise NotImplementedError("fmt=" + fmt + " option for " +
                                       self.__class__.__name__ + ".getbasis().")
 
         return out
@@ -919,30 +921,30 @@ class FieldValidity(RecursiveObject):
         if isinstance(date_time, datetime.datetime):
             self._date_time = date_time
         elif date_time is not None:
-            raise epygramError("argument 'date_time' must be of type" + \
+            raise epygramError("argument 'date_time' must be of type" +
                                " datetime.datetime")
         if isinstance(basis, datetime.datetime):
             self._basis = basis
         elif basis is not None:
-            raise epygramError("argument 'basis' must be of type" + \
+            raise epygramError("argument 'basis' must be of type" +
                                " datetime.datetime")
         if term is not None and not isinstance(term, datetime.timedelta):
-            raise epygramError("argument 'term' must be of type" + \
+            raise epygramError("argument 'term' must be of type" +
                                " datetime.timedelta")
         if cumulativeduration is not None and\
            not isinstance(cumulativeduration, datetime.timedelta):
-            raise epygramError("argument 'cumulativeduration' must be of" + \
+            raise epygramError("argument 'cumulativeduration' must be of" +
                                " type datetime.timedelta")
 
         if isinstance(term, datetime.timedelta):
             if date_time is not None and basis is not None and term is not None \
                and date_time - basis != term:
-                raise epygramError("inconsistency between 'term', 'basis'" + \
+                raise epygramError("inconsistency between 'term', 'basis'" +
                                    " and 'date_time' arguments.")
 
             if self._date_time is None:
                 if self._basis is None:
-                    raise epygramError("cannot set 'term' without 'basis'" + \
+                    raise epygramError("cannot set 'term' without 'basis'" +
                                        " nor 'date_time'.")
                 else:
                     self._date_time = self._basis + term
@@ -954,7 +956,8 @@ class FieldValidity(RecursiveObject):
 
         if cumulativeduration is not None:
             self._cumulativeduration = cumulativeduration
-        if self._cumulativeduration is not None and  statistical_process_on_duration is not None:
+        if self._cumulativeduration is not None and \
+           statistical_process_on_duration is not None:
             self._statistical_process_on_duration = statistical_process_on_duration
 
 
@@ -966,12 +969,12 @@ class FieldValidityList(RecursiveObject, list):
     def __init__(self, validity_instance=None, length=1, **kwargs):
         """
         Constructor.
-        
+
         - *validity_instance*, if given is an instance of FieldValidity
         - *length*, to build a series of validities from either the
         *validity_instance* or from an uninitialized one.
         - other kwargs: same as :class:`FieldValidity` constructor.
-        
+
         """
 
         super(list, self).__init__([])
@@ -995,15 +998,15 @@ class FieldValidityList(RecursiveObject, list):
             else:
                 failed = True
             if failed:
-                raise epygramError("FieldValidityList must be built from" \
-                                 + " FieldValidity, from FieldValidityList" \
-                                 + " instances or from a list of FieldValidity.")
+                raise epygramError("FieldValidityList must be built from" +
+                                   " FieldValidity, from FieldValidityList" +
+                                   " instances or from a list of FieldValidity.")
         elif kwargs != {}:
-            #Check that all lengths are equal
+            # Check that all lengths are equal
             length = None
             mykwargs = {}
             for k, v in kwargs.iteritems():
-                mykwargs[k] = [v] if type(v) != type(list()) else v
+                mykwargs[k] = [v] if not isinstance(v, list) else v
                 if length is None or length == 1:
                     length = len(mykwargs[k])
                 if len(mykwargs[k]) != length:
@@ -1013,7 +1016,7 @@ class FieldValidityList(RecursiveObject, list):
                 if len(v) == 1:
                     mykwargs[k] = mykwargs[k] * length
 
-            #We set the different objects
+            # We set the different objects
             if length is None:
                 length = 1
             self.extend([FieldValidity(**{key: value[i] for (key, value) in mykwargs.iteritems()}) for i in range(length)])
@@ -1071,11 +1074,11 @@ class FieldValidityList(RecursiveObject, list):
     def set(self, **kwargs):
         """Sets validity objects"""
 
-        #Check that all lengths are equal
+        # Check that all lengths are equal
         length = None
         mykwargs = {}
         for k, v in kwargs.iteritems():
-            mykwargs[k] = [v] if type(v) != type(list()) else v
+            mykwargs[k] = [v] if not isinstance(v, list) else v
             if length is None or length == 1:
                 length = len(mykwargs[k])
             if len(mykwargs[k]) != length:
@@ -1088,7 +1091,7 @@ class FieldValidityList(RecursiveObject, list):
             if len(v) == 1:
                 mykwargs[k] = mykwargs[k] * length
 
-        #We set the different objects
+        # We set the different objects
         for i in range(length):
             self[i].set(**{key: value[i] for (key, value) in mykwargs.iteritems()})
 

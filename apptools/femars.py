@@ -4,6 +4,8 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import argparse
 import time
 import os
@@ -20,17 +22,16 @@ from epygram.args_catalog import add_arg_to_parser, \
                                  output_options
 
 
-
 FA2GRIB1_dict = {'TEMPERATURE':{'table2Version':128, 'indicatorOfParameter':130, },
-                 #'TEMPERATURE':{'table2Version':1, 'indicatorOfParameter':11, },
+                 # 'TEMPERATURE':{'table2Version':1, 'indicatorOfParameter':11, },
                  'HUMI.SPECIFI':{'table2Version':128, 'indicatorOfParameter':133, },
-                 #'HUMI.SPECIFI':{'table2Version':1, 'indicatorOfParameter':51, },
+                 # 'HUMI.SPECIFI':{'table2Version':1, 'indicatorOfParameter':51, },
                  'VOR':{'table2Version':128, 'indicatorOfParameter':138, },
-                 #'VOR':{'table2Version':1, 'indicatorOfParameter':43, },
+                 # 'VOR':{'table2Version':1, 'indicatorOfParameter':43, },
                  'DIV':{'table2Version':128, 'indicatorOfParameter':155, },
-                 #'DIV':{'table2Version':1, 'indicatorOfParameter':44, },
+                 # 'DIV':{'table2Version':1, 'indicatorOfParameter':44, },
                  'SURFPRESSION':{'table2Version':128, 'indicatorOfParameter':152, },
-                 #'SURFPRESSION':{'table2Version':128, 'indicatorOfParameter':152, },
+                 # 'SURFPRESSION':{'table2Version':128, 'indicatorOfParameter':152, },
                  }
 
 default_fieldseed = ['S[0-9][0-9][0-9]TEMPERATURE',
@@ -38,7 +39,6 @@ default_fieldseed = ['S[0-9][0-9][0-9]TEMPERATURE',
                      'SURFPRESSION',
                      'S[0-9][0-9][0-9]WIND.*.PHYS']
 default_GRIB_options = {'centre':85}
-
 
 
 class Femarser(taylorism.Worker):
@@ -79,6 +79,7 @@ class Femarser(taylorism.Worker):
                              progressmode=self.progressmode)
 
         return done
+
 
 def femars_2files(fileA, fileB,
                   fieldseed=default_fieldseed,
@@ -142,7 +143,7 @@ def femars_2files(fileA, fileB,
 
     # U/V => vor/div particular case
     for f in windfields:
-        if 'gauss' in resourceA.geometry.name:  #TODO:
+        if 'gauss' in resourceA.geometry.name:  # TODO:
             raise NotImplementedError('Gauss geometries and wind treatment in femars: not yet !')
         if progressmode == 'verbose':
             epylog.info(str(f))
@@ -180,6 +181,7 @@ def femars_2files(fileA, fileB,
                      'computed and written to spectral GRIB in',
                      str(time.time() - t0), 's.'])
 
+
 def femars_ensemble(filenames,
                     fieldseed=default_fieldseed,
                     other_GRIB_options=default_GRIB_options,
@@ -189,14 +191,14 @@ def femars_ensemble(filenames,
     Computes field differences for a series of files, file to file,
     for the fields listed in *fieldseed*, transforms to spectral space if
     necessary, and writes the result into a GRIB file.
-    
+
     Mandatory arguments:
     - *filenames*: list of names of the files to be processed 
-    
+
     Optional arguments:
     - *fieldseed*: seed used to generate list of fields to be processed.
     - *other_GRIB_options*: to specify other GRIB options (key/value pairs).
-    
+
     Technical named (optional) arguments:
     - *threads_number*: parallelisation of files processing
     - *progressmode*: among ('verbose', 'percentage', None)
@@ -214,7 +216,7 @@ def femars_ensemble(filenames,
         common_instructions['fieldseed'] = footprints.FPList([fieldseed])
     individual_instructions = {'fileA':filenames_,
                                'fileB':filenames}
-    #TODO: clean this
+    # TODO: clean this
     temp_hack = True
     if temp_hack:
         fileouts = ['P' + filenames[i][7:10] + 'P' + filenames_[i][7:10] + '_gribdiff_1' for i in range(len(filenames))]
@@ -227,6 +229,7 @@ def femars_ensemble(filenames,
                          scheduler=taylorism.schedulers.MaxThreadsScheduler(threads_number),
                          verbose=(progressmode == 'verbose'))
 
+
 def femars_avg(filenames,
                fieldseed=default_fieldseed,
                other_GRIB_options=default_GRIB_options,
@@ -236,14 +239,14 @@ def femars_avg(filenames,
     Computes field differences to the average field for a series of files,
     for the fields listed in *fieldseed*, transforms to spectral space if
     necessary, and writes the result into a GRIB file.
-    
+
     Mandatory arguments:
     - *filenames*: list of names of the files to be processed 
-    
+
     Optional arguments:
     - *fieldseed*: seed used to generate list of fields to be processed.
     - *other_GRIB_options*: to specify other GRIB options (key/value pairs).
-    
+
     Technical named (optional) arguments:
     - *threads_number*: parallelisation of files processing
     - *progressmode*: among ('verbose', 'percentage', None)
@@ -286,7 +289,7 @@ def femars_avg(filenames,
         common_instructions['fieldseed'] = footprints.FPList([fieldseed])
     individual_instructions = {'fileA':filenames}
 
-    #TODO: clean this
+    # TODO: clean this
     temp_hack = True
     if temp_hack:
         fileouts = ['P' + 'avg' + 'P' + filenames[i][7:10] + '_gribstd' for i in range(len(filenames))]
@@ -303,9 +306,7 @@ def femars_avg(filenames,
     for f in os.listdir(tmpdir):
         os.remove('/'.join([tmpdir, f]))
     os.rmdir(tmpdir)
-
 # end of main() ###############################################################
-
 
 
 if __name__ == '__main__':
@@ -325,7 +326,7 @@ if __name__ == '__main__':
     add_arg_to_parser(parser, runtime_options['threads_number'])
     status = parser.add_mutually_exclusive_group()
     add_arg_to_parser(status, runtime_options['verbose'])
-    #add_arg_to_parser(status, runtime_options['percentage'])
+    # add_arg_to_parser(status, runtime_options['percentage'])
 
     args = parser.parse_args()
 
@@ -348,9 +349,9 @@ if __name__ == '__main__':
         other_GRIB_options = default_GRIB_options
 
     # 2.2 list of fields to be processed
-    if args.field != None:
+    if args.field is not None:
         fieldseed = args.field
-    elif args.listoffields != None:
+    elif args.listoffields is not None:
         listfile = epygram.containers.File(filename=args.listoffields)
         with open(listfile.abspath, 'r') as l:
             fieldseed = l.readlines()

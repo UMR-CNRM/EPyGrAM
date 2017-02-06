@@ -7,11 +7,12 @@
 Wrappers for LFA library.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 from ctypes import c_longlong, c_char_p, c_bool
 import numpy as np
 
 from . import ctypesFF, IN, OUT, treatReturnCode_LFA, addReturnCode
-
 
 
 @treatReturnCode_LFA
@@ -20,7 +21,7 @@ from . import ctypesFF, IN, OUT, treatReturnCode_LFA, addReturnCode
 def wlfaouv(*args):
     """
     Open a LFA file.
-    
+
     Input:
         cdnomf      file name.
         cdtypo      opening type: 'R' READ, 'W' WRITE, 'A' APPEND, 'S' SCRATCH.
@@ -31,21 +32,23 @@ def wlfaouv(*args):
            (c_char_p(args[1]), IN),
            (c_longlong(), OUT)]
 
+
 @ctypesFF
 def wlfafer(*args):
     """
     Close a LFA file.
-    
+
     Input:
         kul        logical unit of LFA file.
     """
     return[(c_longlong(args[0]), IN)]
 
+
 @ctypesFF
 def wlfaecrr(*args):
     """
     Write real data on LFA file.
-    
+
     Input:
         kul              logical unit of LFA file.
         cdna             name of article to write.
@@ -56,6 +59,7 @@ def wlfaecrr(*args):
            (c_char_p(args[1].encode("utf-8")), IN),
            (args[2], IN),
            (c_longlong(args[3]), IN)]
+
 
 @ctypesFF
 def wlfaecri(*args):
@@ -73,6 +77,7 @@ def wlfaecri(*args):
            (args[2], IN),
            (c_longlong(args[3]), IN)]
 
+
 @ctypesFF
 def wlfaecrc(*args):
     """
@@ -88,6 +93,7 @@ def wlfaecrc(*args):
            (c_char_p(args[1].encode("utf-8")), IN),
            (args[2], IN),
            (c_longlong(args[3]), IN)]
+
 
 @treatReturnCode_LFA
 @ctypesFF
@@ -110,6 +116,7 @@ def wlfaleci(*args):
            (np.ndarray((args[2],), dtype=np.int64), OUT),
            (c_longlong(), OUT)]
 
+
 @treatReturnCode_LFA
 @ctypesFF
 @addReturnCode
@@ -131,6 +138,7 @@ def wlfalecr(*args):
            (np.ndarray((args[2],), dtype=np.float64), OUT),
            (c_longlong(), OUT)]
 
+
 @treatReturnCode_LFA
 @ctypesFF
 @addReturnCode
@@ -145,7 +153,7 @@ def wlfalecc(*args):
         klenc            max length of strings in clcar
     Output:
         kreturncode      error code
-        clcar            array of elements read. 
+        clcar            array of elements read.
         klong            number of character elements read.
     """
     return[(c_longlong(args[0]), IN),
@@ -154,6 +162,7 @@ def wlfalecc(*args):
            (c_longlong(args[3]), IN),
            (np.ndarray((args[2],), dtype=np.dtype((np.str, args[3]))), OUT),
            (c_longlong(), OUT)]
+
 
 @treatReturnCode_LFA
 @ctypesFF
@@ -171,8 +180,9 @@ def wlfacas(*args):
     """
     return[(c_longlong(args[0]), IN),
            (c_char_p(args[1].encode("utf-8")), IN),
-           (c_char_p(" "*2), OUT),
+           (c_char_p(" " * 2), OUT),
            (c_longlong(), OUT)]
+
 
 @ctypesFF
 def wlfalaft(*args):
@@ -193,6 +203,7 @@ def wlfalaft(*args):
            (c_longlong(args[2]), IN),
            (c_longlong(), OUT),
            (np.ndarray((args[1],), dtype=np.dtype((np.str, args[2]))), OUT)]
+
 
 @treatReturnCode_LFA
 @ctypesFF

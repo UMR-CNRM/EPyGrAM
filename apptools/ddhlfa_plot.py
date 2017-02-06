@@ -4,6 +4,8 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import argparse
 
 import epygram
@@ -14,7 +16,6 @@ from epygram.args_catalog import add_arg_to_parser, files_management, \
 from epygram.fields.V1DField import plotprofiles
 
 import matplotlib.pyplot as plt
-
 
 
 def main(filename,
@@ -36,7 +37,7 @@ def main(filename,
         logscale: if True, sets vertical logscale.
     """
 
-    diffmode = refname != None
+    diffmode = refname is not None
     resource = epygram.formats.resource(filename, openmode='r', fmt='DDHLFA')
     if diffmode:
         reference = epygram.formats.resource(refname, openmode='r', fmt='DDHLFA')
@@ -48,7 +49,7 @@ def main(filename,
             epylog.info(f)
             fields = resource.readfield(f)
             fields = epygram.base.FieldSet([fields[i - 1] for i in domains])
-            if legend != None:
+            if legend is not None:
                 title = legend
             else:
                 title = f + "\n" + str(fields[0].validity.get())
@@ -72,7 +73,7 @@ def main(filename,
             reffields = epygram.base.FieldSet([reffields[i - 1] for i in domains])
             plots[f] = {}
             for d in range(len(domains)):
-                if legend != None:
+                if legend is not None:
                     title = legend
                 else:
                     title = f + ' on domain ' + str(domains[d]) + "\n" + str(fields[d].validity.get())
@@ -85,13 +86,10 @@ def main(filename,
                                                          title=title,
                                                          logscale=logscale)
                 plt.show()
-
 # end of main() ###############################################################
 
 
-
 if __name__ == '__main__':
-
     ### 1. Parse arguments
     ######################
     epygramstr = 'EPyGrAM'
@@ -128,9 +126,9 @@ if __name__ == '__main__':
         domains = [int(i) for i in domains]
 
     # 2.2 list of fields to be processed
-    if args.field != None:
+    if args.field is not None:
         fieldseed = args.field
-    elif args.listoffields != None:
+    elif args.listoffields is not None:
         listfile = epygram.containers.File(filename=args.listoffields)
         with open(listfile.abspath, 'r') as l:
             fieldseed = l.readlines()

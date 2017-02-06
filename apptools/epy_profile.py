@@ -4,6 +4,8 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import argparse
 import numpy
 
@@ -17,7 +19,6 @@ from epygram.args_catalog import add_arg_to_parser, \
 from epygram.fields.V1DField import plotprofiles
 
 import matplotlib.pyplot as plt
-
 
 
 def main(filename,
@@ -64,7 +65,7 @@ def main(filename,
         zoom: a dict(ymin, ymax) to restrain the plot.
         Yconvert: among ('pressure', 'height', 'altitude'),
                   to convert the vertical coordinate.
-                  For height/altitude, implies the read of T and q 
+                  For height/altitude, implies the read of T and q
                   profiles and optionally pressure departure, hydrometeors.
         cheap_height: if True, do not take hydrometeors nor pressure departure
                       into account for computing height from pressure.
@@ -75,7 +76,7 @@ def main(filename,
         external_distance: can be a dict containing the target point value
                            and an additional field fid, to which field the distance
                            for computing nearest point
-                           is computed within the 4 horizontally nearest points; e.g. 
+                           is computed within the 4 horizontally nearest points; e.g.
                            {'target_value':4810, 'external_field':an_additional_fid}.
                            If so, the nearest point is selected with
                            distance = |target_value - external_field.data|
@@ -87,7 +88,7 @@ def main(filename,
         epylog.warning(" ".join(["tool NOT TESTED with format",
                                  resource.format, "!"]))
     nosave = False
-    diffmode = refname != None
+    diffmode = refname is not None
     if diffmode:
         reference = epygram.formats.resource(refname, openmode='r')
 
@@ -128,7 +129,7 @@ def main(filename,
         if not noplot:
             if emagramlike and profile.geometry.vcoordinate.typeoffirstfixedsurface != 100:
                 emagramlike = False
-            if legend != None:
+            if legend is not None:
                 title = legend
             else:
                 title = profile.comment + '\n' + str(profile.validity.get())
@@ -167,12 +168,12 @@ def main(filename,
             epygram.epylog.warning('profiles vertical grids differ (surface pressure ?): cannot compute difference.')
             same_Z = False
             nosave = True
-            #raise epygram.epygramError("unable to compute profiles difference because of vertical grids differ: \
-            #                            surely, because surface pressure differ.")
+            # raise epygram.epygramError("unable to compute profiles difference because of vertical grids differ: \
+            #                             surely, because surface pressure differ.")
         if not noplot:
             if emagramlike and profile.geometry.vcoordinate.typeoffirstfixedsurface != 100:
                 emagramlike = False
-            if legend != None:
+            if legend is not None:
                 title = legend
             else:
                 title = str(profile.fid.get(resource.format, profile.fid)) + '\n' + profile.comment
@@ -252,9 +253,7 @@ def main(filename,
                                      parameter, position, suffix])
 
         plot.savefig(filename, bbox_inches='tight', dpi=figures_dpi)
-
 # end of main() ###############################################################
-
 
 
 if __name__ == '__main__':
@@ -302,7 +301,7 @@ if __name__ == '__main__':
         epylog.setLevel('INFO')
 
     # 2.1 options
-    if args.Drefname != None:
+    if args.Drefname is not None:
         refname = args.Drefname
         diffonly = True
     else:
@@ -310,21 +309,21 @@ if __name__ == '__main__':
         diffonly = False
     coordinates = args.coordinates.split(',')
     coordinates = tuple([float(i) for i in coordinates])
-    if args.zoom != None:
+    if args.zoom is not None:
         zoom = dict()
         for limit in args.zoom.split(','):
             l, v = limit.split('=')
             zoom[l.strip()] = float(v)
     else:
         zoom = None
-    if args.operation != None:
+    if args.operation is not None:
         _operation = args.operation.split(',')
         operation = {'operation':_operation.pop(0).strip()}
         if len(_operation) > 0:
             operation['operand'] = float(_operation.pop(0).strip())
     else:
         operation = None
-    if args.diffoperation != None:
+    if args.diffoperation is not None:
         _diffoperation = args.diffoperation.split(',')
         diffoperation = {'operation':_diffoperation.pop(0).strip()}
         if len(_diffoperation) > 0:

@@ -4,8 +4,10 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 """
-Some useful utilities... 
+Some useful utilities...
 """
+
+from __future__ import print_function, absolute_import, unicode_literals, division
 
 import os
 import math
@@ -18,7 +20,6 @@ from contextlib import contextmanager
 from footprints import FootprintBase
 
 from epygram import config, epygramError
-
 
 
 class RecursiveObject(object):
@@ -144,7 +145,6 @@ class RecursiveObject(object):
         return copy.deepcopy(self)
 
 
-
 class Angle(RecursiveObject):
     """
     This class handles an angle.
@@ -214,7 +214,7 @@ class Angle(RecursiveObject):
         if unit is None:
             unit = self._origin_unit  # or a default one ?
         elif unit in Angle.units:
-            if not self.__dict__.has_key('_' + unit):
+            if not '_' + unit in self.__dict__:
                 self._compute(unit)
         else:
             raise ValueError("this angle unit is not implemented: " + str(unit))
@@ -237,8 +237,8 @@ class Angle(RecursiveObject):
             elif self._origin_unit == Angle.dms:
                 self.__dict__['_' + unit] = self._origin_value[0] + self._origin_value[1] / 60. + self._origin_value[2] / 3600.
             else:
-                raise NotImplementedError("conversion from this unit (" + \
-                                          self._origin_unit + \
+                raise NotImplementedError("conversion from this unit (" +
+                                          self._origin_unit +
                                           ") is not coded.")
 
         # conversion to radians
@@ -251,8 +251,8 @@ class Angle(RecursiveObject):
             elif self._origin_unit == Angle.dms:
                 self.__dict__['_' + unit] = math.radians(self._origin_value[0] + self._origin_value[1] / 60. + self._origin_value[2] / 3600.)
             else:
-                raise NotImplementedError("conversion from this unit (" + \
-                                          self._origin_unit + \
+                raise NotImplementedError("conversion from this unit (" +
+                                          self._origin_unit +
                                           ") is not coded.")
 
         # conversion to (cos, sin)
@@ -268,8 +268,8 @@ class Angle(RecursiveObject):
                 self.__dict__['_' + unit] = (math.cos(anglerad),
                                              math.sin(anglerad))
             else:
-                raise NotImplementedError("conversion from this unit (" + \
-                                          self._origin_unit + \
+                raise NotImplementedError("conversion from this unit (" +
+                                          self._origin_unit +
                                           ") is not coded.")
 
         # conversion to (degrees, minutes, seconds)
@@ -282,8 +282,8 @@ class Angle(RecursiveObject):
                 decdeg = math.degrees(math.copysign(math.acos(self._origin_value[0]),
                                                     self._origin_value[1]))
             else:
-                raise NotImplementedError("conversion from this unit (" + \
-                                          self._origin_unit + \
+                raise NotImplementedError("conversion from this unit (" +
+                                          self._origin_unit +
                                           ") is not coded.")
             sign = int(math.copysign(1, decdeg))
             decdeg = decdeg * sign
@@ -294,20 +294,18 @@ class Angle(RecursiveObject):
             self.__dict__['_' + unit] = (degrees * sign, minutes, seconds)
 
         else:
-            raise NotImplementedError("conversion to this unit (" + unit + \
+            raise NotImplementedError("conversion to this unit (" + unit +
                                       ") is not coded.")
-
 
 
 #################
 ### FUNCTIONS ###
 #################
-
 def find_re_in_list(regexp, a_list):
     """
     Finds all elements from a list that match a regular expression.
     The regexp and the different elements of the list must be of the same type:
-    
+
     - strings
     - tuples with the same length
     - dictionnaries: all regexp keys must be keys of the list
@@ -333,9 +331,9 @@ def find_re_in_list(regexp, a_list):
         for field in a_list:
             if check_string_pattern(regexp, str(field)):
                 found.append(field)
-    elif type(regexp) == type(()):
+    elif isinstance(field, tuple):
         for field in a_list:
-            if type(field) != type(()):
+            if not isinstance(field, tuple):
                 raise epygramError("pattern and elements of the list must be of\
                                     the same type (tuples here).")
             if len(regexp) != len(field):
@@ -346,7 +344,7 @@ def find_re_in_list(regexp, a_list):
                 ok = ok and check_string_pattern(str(regexp[i]), str(field[i]))
             if ok:
                 found.append(field)
-    elif type(regexp) == type({}):
+    elif isinstance(regexp, dict):
         raise NotImplementedError("the dictionnary type of regexp is not yet\
                                    implemented.")
     else:
@@ -354,6 +352,7 @@ def find_re_in_list(regexp, a_list):
                                    implemented.")
 
     return found
+
 
 def nicedeco(decorator):
     """
@@ -367,6 +366,7 @@ def nicedeco(decorator):
         g.__dict__.update(f.__dict__)
         return g
     return new_decorator
+
 
 def degrees_nearest_mod(d, ref):
     """Returns the angle(s) **d** in the modulo nearest to **ref**."""
@@ -396,6 +396,7 @@ def degrees_nearest_mod(d, ref):
 
     return result
 
+
 def positive_longitude(lon, unit='degrees'):
     """Returns *lon* shifted in [0;360[ or [0;2pi[ (depending on *unit*)."""
 
@@ -403,22 +404,23 @@ def positive_longitude(lon, unit='degrees'):
         if unit == 'degrees':
             lon += 360.
         elif unit == 'radians':
-            lon += 2.*numpy.pi
+            lon += 2. * numpy.pi
         else:
             raise NotImplementedError()
 
     return lon
 
+
 def make_custom_cmap(filename):
     """
     Creates a custom Colormap from a set of RGB colors in a file with the
     following formating:
-    
+
     r1,g1,b1;\n
     r2,g2,b2;\n
     ...\n
     rn,gn,bn
-    
+
     each value being comprised between 0 and 255
     e.g. coming from http://colormap.org.
     """
@@ -440,22 +442,24 @@ def make_custom_cmap(filename):
 
     return cm
 
+
 def add_cmap(cmap):
     """
     Reads and registers the epygram-or-user-colormap called *cmap*,
     which must be either in config.epygram_colormaps or
-    config.usercolormaps. 
+    config.usercolormaps.
     """
     import matplotlib.pyplot as plt
 
     if cmap not in plt.colormaps():
-        if cmap in config.colormaps.keys():
+        if cmap in config.colormaps:
             plt.register_cmap(name=cmap,
                               cmap=make_custom_cmap(config.colormaps[cmap]))
         else:
-            raise epygramError("unknown colormap '" + cmap + \
+            raise epygramError("unknown colormap '" + cmap +
                                "': must be added to userconfig, in \
                                 usercolormaps.")
+
 
 def printstatus(step, end, refresh_freq=1):
     """
@@ -472,6 +476,7 @@ def printstatus(step, end, refresh_freq=1):
             sys.stdout.write('\b' * 4)
         else:
             sys.stdout.write('\n')
+
 
 def read_CSV_as_dict(filename):
     """
@@ -501,6 +506,7 @@ def read_CSV_as_dict(filename):
 
     return field_dict, file_priority
 
+
 def gfl2R(q, ql=0., qi=0., qr=0., qs=0., qg=0.):
     """
     Computes air specific gas constant R according to specific humidity,
@@ -524,47 +530,54 @@ def gfl2R(q, ql=0., qi=0., qr=0., qs=0., qg=0.):
 
 formatting_default_widths = (50, 20)
 separation_line = '{:-^{width}}'.format('', width=sum(formatting_default_widths) + 1) + '\n'
+
+
 def write_formatted(dest, label, value,
                     align='<',
                     firstcolumn_width=formatting_default_widths[0],
                     secondcolumn_width=formatting_default_widths[1]):
-    dest.write(('{:' + align + '{width}}').format(label, width=firstcolumn_width) \
-               + ':' \
-               + '{:>{width}}'.format(str(value), width=secondcolumn_width) \
-               + '\n')
+    dest.write(('{:' + align + '{width}}').format(label, width=firstcolumn_width) +
+               ':' +
+               '{:>{width}}'.format(str(value), width=secondcolumn_width) +
+               '\n')
+
+
 def write_formatted_fields(dest, label, value=None,
                            compression=None,
                            firstcolumn_width=formatting_default_widths[0],
                            secondcolumn_width=formatting_default_widths[1]):
     if compression is None:
         if value is None:
-            dest.write('{:<{width}}'.format(label, width=20)
-                       + '\n')
+            dest.write('{:<{width}}'.format(label, width=20) +
+                       '\n')
         else:
-            dest.write('{:<{width}}'.format(label, width=20) \
-                      + ':' \
-                      + '{:^{width}}'.format(str(value), width=10) \
-                      + '\n')
+            dest.write('{:<{width}}'.format(label, width=20) +
+                       ':' +
+                       '{:^{width}}'.format(str(value), width=10) +
+                       '\n')
     else:
-        line = '{:<{width}}'.format(label, width=20) \
-             + ':' \
-             + '{:^{width}}'.format(str(value), width=10) \
-             + ':' \
-             + compression \
-             + '\n'
+        line = '{:<{width}}'.format(label, width=20) + \
+               ':' + \
+               '{:^{width}}'.format(str(value), width=10) + \
+               ':' + \
+               compression + \
+               '\n'
         dest.write(line)
+
+
 def write_formatted_dict(dest, fid):
     name = fid.pop('name')
     dest.write('name: ' + name + '\n')
     for k in sorted(fid.keys()):
         dest.write('  ' + str(k) + ': ' + str(fid[k]) + '\n')
 
+
 def write_formatted_table(dest, table, alignments=['<', '^'], precision=6, float_type='E'):
     """
     A table is meant to be :
     <str> <str> <str> ...
     <str> <num> <num> ...
-     ...   ...   ...  ... 
+     ...   ...   ...  ...
     """
     float_style = ' {: .{precision}{type}} '
     array = numpy.array(table, dtype=str)
@@ -586,6 +599,7 @@ def write_formatted_table(dest, table, alignments=['<', '^'], precision=6, float
         line += ''.join([('{:' + alignments[1] + '{width}}').format(elements[j], width=columns_dimension[j + 1]) for j in range(len(elements))])
         dest.write(line + '\n')
 
+
 def linearize(s, quotes=False):
     """
     Returns string *s* linearized, i.e. without special characters that may
@@ -601,9 +615,11 @@ def linearize(s, quotes=False):
 
     return result
 
+
 def linearize2str(o, quotes=False):
     """Returns str(*o*) linearized (cf. util.linearized)."""
     return linearize(str(o))
+
 
 def str_or_int_to_datetime(dt):
     """
@@ -625,10 +641,11 @@ def str_or_int_to_datetime(dt):
 
     return dt
 
+
 def add_meridians_and_parallels_to(bm, meridians='auto', parallels='auto', ax=None):
     """
     Adds meridians and parallels to a basemap instance *bm*.
-    
+
     *meridians* and *parallels* enable to fine-tune the choice of lines to
     plot, with either:
       - 'auto': automatic scaling to the basemap extents
@@ -724,6 +741,7 @@ def add_meridians_and_parallels_to(bm, meridians='auto', parallels='auto', ax=No
                          dashes=[10, 1],
                          ax=ax)
 
+
 def nearlyEqual(a, b, epsilon=config.epsilon):
     """
     Function to compare floats
@@ -731,21 +749,22 @@ def nearlyEqual(a, b, epsilon=config.epsilon):
     Float.MIN_NORMAL was replaced by sys.float_info.min
     Float.MAX_VALUE was replaced by sys.float_info.max
     """
-    absA = numpy.abs(a);
-    absB = numpy.abs(b);
-    diff = numpy.abs(a - b);
+    absA = numpy.abs(a)
+    absB = numpy.abs(b)
+    diff = numpy.abs(a - b)
 
     if a == b:  # shortcut, handles infinities
         return True
     elif a == 0 or b == 0 or diff < sys.float_info.min:
-        #a or b is zero or both are extremely close to it
-        #relative error is less meaningful here
+        # a or b is zero or both are extremely close to it
+        # relative error is less meaningful here
         return diff < (epsilon * sys.float_info.min)
     else:  # use relative error
         return diff / min((absA + absB), sys.float_info.max) < epsilon
 
 nearlyEqualArray = numpy.vectorize(nearlyEqual)
 nearlyEqualArray.__doc__ = "Vector version of nearlyEqual()."
+
 
 def parse_str2dict(string, try_convert=None):
     """
@@ -762,6 +781,7 @@ def parse_str2dict(string, try_convert=None):
                 pass
     return d
 
+
 def stretch_array(array):
     """
     Return array.flatten() or compressed(), whether the array is
@@ -776,6 +796,7 @@ def stretch_array(array):
         raise NotImplementedError(' '.join(['type:', type(array), 'array']))
 
     return array
+
 
 def color_scale(cmap, max_val=None):
     """
@@ -795,6 +816,7 @@ def color_scale(cmap, max_val=None):
 
     return (norm, bounds)
 
+
 @contextmanager
 def stdout_redirected(to=os.devnull):
     '''
@@ -804,11 +826,11 @@ def stdout_redirected(to=os.devnull):
         print("from Python")
         os.system("echo non-Python applications are also supported")
     '''
-    #http://stackoverflow.com/questions/5081657/how-do-i-prevent-a-c-shared-library-to-print-on-stdout-in-python
+    # http://stackoverflow.com/questions/5081657/how-do-i-prevent-a-c-shared-library-to-print-on-stdout-in-python
     fd = sys.stdout.fileno()
 
-    ##### assert that Python and C stdio write using the same file descriptor
-    ####assert libc.fileno(ctypes.c_void_p.in_dll(libc, "stdout")) == fd == 1
+    # assert that Python and C stdio write using the same file descriptor
+    # assert libc.fileno(ctypes.c_void_p.in_dll(libc, "stdout")) == fd == 1
 
     def _redirect_stdout(to):
         sys.stdout.close()  # + implicit flush()
@@ -822,8 +844,9 @@ def stdout_redirected(to=os.devnull):
             yield  # allow code to be run with the redirected stdout
         finally:
             _redirect_stdout(to=old_stdout)  # restore stdout.
-                                            # buffering and flags such as
-                                            # CLOEXEC may be different
+                                             # buffering and flags such as
+                                             # CLOEXEC may be different
+
 
 @contextmanager
 def stderr_redirected(to=os.devnull):
@@ -834,7 +857,7 @@ def stderr_redirected(to=os.devnull):
         print("from Python")
         os.system("echo non-Python applications are also supported")
     '''
-    #Based on stdout_redirected
+    # Based on stdout_redirected
     fd = sys.stderr.fileno()
 
     def _redirect_stderr(to):
@@ -852,14 +875,15 @@ def stderr_redirected(to=os.devnull):
                                             # buffering and flags such as
                                             # CLOEXEC may be different
 
+
 def restrain_to_index_i_of_dim_d(a, i, d, n=None):
     """
     Of an array a[d1, d2, d3, ... dn], returns the array restricted to index i
     of the dimension d.
-    
+
     A more elegant solution would have been the following, except that it does
     not work when accessing netCDF variable (for which it was necessary).
-    
+
     indexes = [range(len(self._dimensions[d])) for d in variable.dimensions] # equivalent to [:, :, :, ...]
     for k in only.keys():
         indexes[variable.dimensions.index(k)] = [only[k]] # restrain to the "only" give
@@ -905,14 +929,15 @@ def restrain_to_index_i_of_dim_d(a, i, d, n=None):
 
     return ra
 
+
 def resize_to_4D(a, indexes, ma=False):
     """
     Of an array a[d1, d2, d3, ... dn], returns the array as a 4D one restricted to index i
     of the dimension d.
-    
+
     A more elegant solution would have been the following, except that it does
     not work when accessing netCDF variable (for which it was necessary).
-    
+
     indexes = [range(len(self._dimensions[d])) for d in variable.dimensions] # equivalent to [:, :, :, ...]
     for k in only.keys():
         indexes[variable.dimensions.index(k)] = [only[k]] # restrain to the "only" give
@@ -920,12 +945,11 @@ def resize_to_4D(a, indexes, ma=False):
     """
 
 
-
 def datetimes2fieldvaliditylist(datetimes, basis=None):
     """
     Return a FieldValidityList from a list of datetime.datetime instances
     (or a single datetime.datetime).
-    
+
     *basis* can be either
       - None (default): basis = validity
       - a single datetime.datetime
@@ -935,28 +959,29 @@ def datetimes2fieldvaliditylist(datetimes, basis=None):
     from epygram.base import FieldValidityList
 
     if isinstance(datetimes, datetime.datetime):
-        assert isinstance(basis, datetime.datetime) \
-               or (isinstance(basis, list) and isinstance(basis[0], datetime.datetime)) \
-               or basis is None
+        assert isinstance(basis, datetime.datetime) or \
+               (isinstance(basis, list) and
+                isinstance(basis[0], datetime.datetime)) or \
+               basis is None
         if isinstance(basis, list):
             fvl = FieldValidityList(date_time=[datetimes for _ in basis], basis=basis)
         else:
             fvl = FieldValidityList(date_time=datetimes, basis=basis)
     elif isinstance(datetimes, list) and isinstance(datetimes[0], datetime.datetime):
-        assert isinstance(basis, datetime.datetime) \
-               or basis is None \
-               or (isinstance(basis, list) \
-                   and isinstance(basis[0], datetime.datetime) \
-                   and len(basis) == len(datetimes))
+        assert isinstance(basis, datetime.datetime) or \
+               basis is None or \
+               (isinstance(basis, list) and
+                isinstance(basis[0], datetime.datetime) and
+                len(basis) == len(datetimes))
         if isinstance(basis, datetime.datetime) or basis is None:
             basis = [basis for _ in range(len(datetimes))]
         fvl = FieldValidityList(date_time=datetimes,
                                 basis=basis)
-
     else:
         raise TypeError("'datetimes' must be a datetime.datetime or a list of.")
 
     return fvl
+
 
 def ifNone_emptydict(arg):
     """ Transforms a None into a {}. """
@@ -964,13 +989,14 @@ def ifNone_emptydict(arg):
         arg = {}
     return arg
 
+
 def set_DateHour_axis(axis, datetimerange,
                       showgrid=True,
                       datefmt=None,
                       xtickslabelsrotation=30.):
     """
     Set an adequate axis ticks and ticks labels for Date/Hour axis.
-    
+
     *datetimerange* supposed to be a :class:`datetime.timedelta` instance
     """
     import matplotlib.dates as mdates
@@ -1012,6 +1038,7 @@ def set_DateHour_axis(axis, datetimerange,
         plt.xticks(rotation=xtickslabelsrotation)
         plt.sca(_ax)
 
+
 def set_figax(figure, ax, figsize=config.plotsizes):
     """
     Given existing matplotlib *figure* and an *ax* (or None),
@@ -1033,6 +1060,7 @@ def set_figax(figure, ax, figsize=config.plotsizes):
         figure, ax = plt.subplots(1, 1, figsize=figsize)
 
     return (figure, ax)
+
 
 def set_map_up(bm, ax,
                drawrivers=False,
@@ -1073,11 +1101,12 @@ def set_map_up(bm, ax,
                                    meridians=meridians,
                                    ax=ax)
 
+
 def datetimerange(start, stop=None, step=1, stepunit='h', tzinfo=None):
     """
     A generator of datetime.datetime objects ranging from *start* to *stop*
     (included) by *step*.
-    
+
     Arguments syntax:\n
     - *start* and *stop* being either:\n
       - a string: 'YYYYMMDDhhmmssx', hh, mm, ss and x being optional (x = microseconds)
@@ -1170,6 +1199,7 @@ def datetimerange(start, stop=None, step=1, stepunit='h', tzinfo=None):
             dt += step  # step < 0
 
     return rng
+
 
 def fmtfid(fmt, fid):
     """

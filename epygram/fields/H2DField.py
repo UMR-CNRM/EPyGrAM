@@ -7,6 +7,8 @@
 Contains the class that handle a Horizontal 2D field.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import numpy
 
 import footprints
@@ -20,7 +22,6 @@ from . import gimme_one_point
 epylog = footprints.loggers.getLogger(__name__)
 
 
-
 class H2DField(D3Field):
     """
     Horizontal 2-Dimensions field class.
@@ -30,7 +31,7 @@ class H2DField(D3Field):
 
     The natural being of a field is gridpoint, so that:
     a field always has a gridpoint geometry, but it has a spectral geometry only
-    in case it is spectral. 
+    in case it is spectral.
     """
 
     _collector = ('field',)
@@ -63,7 +64,7 @@ class H2DField(D3Field):
                       external_distance=None):
         """
         Extract a point as a PointField.
-        
+
         Cf. getvalue_ll() doc for other arguments.
         """
 
@@ -82,14 +83,12 @@ class H2DField(D3Field):
         return pt
 
 
-
 ###################
 # PRE-APPLICATIVE #
 ###################
 # (but useful and rather standard) !
 # [so that, subject to continuation through updated versions,
 #  including suggestions/developments by users...]
-
     def plotfield(self,
                   subzone=None,
                   title=None,
@@ -126,13 +125,13 @@ class H2DField(D3Field):
         Makes a simple plot of the field, with a number of options.
 
         Requires :mod:`matplotlib`
-        
+
         .. tabularcolumns:: |l|L|
 
         ==============   ====================================================
         Keywords         Description
         ==============   ====================================================
-        subzone          among ('C', 'CI'), for LAM fields only, plots the 
+        subzone          among ('C', 'CI'), for LAM fields only, plots the
                          data resp. on the C or C+I zone. \n
                          Default is no subzone, i.e. the whole field.
         gisquality       among ('c', 'l', 'i', 'h', 'f') -- by increasing
@@ -140,7 +139,7 @@ class H2DField(D3Field):
                          (coastlines, countries boundaries...).
         specificproj     enables to make basemap on the specified projection,
                          among: 'kav7', 'cyl', 'ortho', ('nsper', {...})
-                         (cf. Basemap doc). \n 
+                         (cf. Basemap doc). \n
                          In 'nsper' case, the {} may contain: ('sat_height' =
                          satellite height in km; 'lon' = longitude of nadir
                          in degrees; 'lat' = latitude of nadir in degrees.
@@ -151,8 +150,8 @@ class H2DField(D3Field):
         over             any existing figure and/or ax to be used for the
                          plot, given as a tuple (fig, ax), with None for
                          missing objects. *fig* is the frame of the
-                         matplotlib figure, containing eventually several 
-                         subplots (axes); *ax* is the matplotlib axes on 
+                         matplotlib figure, containing eventually several
+                         subplots (axes); *ax* is the matplotlib axes on
                          which the drawing is done. When given (is not None),
                          these objects must be coherent, i.e. ax being one of
                          the fig axes.
@@ -194,7 +193,7 @@ class H2DField(D3Field):
                          'tropics'
         minmax_in_title  if True and minmax is not None, adds min and max
                          values in title.
-        departments      if True, adds the french departments on map (instead 
+        departments      if True, adds the french departments on map (instead
                          of countries).
         boundariescolor  color of lines for boundaries (countries,
                          departments, coastlines)
@@ -207,7 +206,7 @@ class H2DField(D3Field):
         bluemarble       if > 0.0 (and <=1.0), displays NASA's "blue marble"
                          as background. The numerical value sets its
                          transparency.
-        background       if True, set a background color to 
+        background       if True, set a background color to
                          continents and oceans.
         mask_threshold   dict with min and/or max value(s) to mask outside.
         contourlabelfmt  format of the contour labels: e.g. 273.15 will
@@ -216,9 +215,9 @@ class H2DField(D3Field):
                          '%0.5e' => 2.731500e+02
         pointsmarker     shape of the points if graphicmode='points'.
                          Cf. matplotlib.scatter() for possible markers.
-        
+
         ==============   ====================================================
-        
+
         This method uses (hence requires) 'matplotlib' and 'basemap' libraries.
         """
 
@@ -233,7 +232,7 @@ class H2DField(D3Field):
 
         # 0.2 checkings
         if self.spectral:
-            raise epygramError("please convert to gridpoint with sp2gp()" + \
+            raise epygramError("please convert to gridpoint with sp2gp()" +
                                " method before plotting.")
         if len(self.validity) > 1:
             raise epygramError('to plot H2DField with time dimension, use plotanimation().')
@@ -288,7 +287,6 @@ class H2DField(D3Field):
             #################
             if academic:
                 (lons, lats) = self.geometry.get_lonlat_grid(subzone=subzone)
-                #x, y = lons, lats
                 x = (lons - lons.min()) * self.geometry.grid['X_resolution']
                 y = (lats - lats.min()) * self.geometry.grid['Y_resolution']
             else:
@@ -392,13 +390,13 @@ class H2DField(D3Field):
                     yf = y.compressed()
                     zf = data.compressed()
                     tri = True
-                    #FIXME: problem of duplicate points with arpege grid
+                    # FIXME: problem of duplicate points with arpege grid
                 elif self.geometry.dimensions['Y'] == 1:
                     xf = x.flatten()
                     yf = y.flatten()
                     zf = data.flatten()
                     tri = True
-                    #FIXME: problem of triangulation for contourlines
+                    # FIXME: problem of triangulation for contourlines
                 else:
                     xf = x
                     yf = y
@@ -472,15 +470,15 @@ class H2DField(D3Field):
         """
         Plot the field with animation with regards to time dimension.
         Returns a :class:`matplotlib.animation.FuncAnimation`.
-        
+
         In addition to those specified below, all :meth:`plotfield` method
         arguments can be provided.
-        
+
         Args:\n
         - *title* = title for the plot. '__auto__' (default) will print
           the current validity of the time frame.
         - *repeat*: to repeat animation
-        - *interval*: number of milliseconds between two validities 
+        - *interval*: number of milliseconds between two validities
         """
 
         import matplotlib.animation as animation
@@ -544,11 +542,11 @@ class H2DField(D3Field):
                           **kwargs):
         """
         Perturb the field values with the values of a set of points.
-        
+
         *points* meant to be a list/fieldset of PointField.
         *alpha* is the blending value, ranging from 0. to 1.:
           e.g. with 'nearest' morphing, the final value of the point is
-          alpha*point.value + (1-alpha)*original_field.value 
+          alpha*point.value + (1-alpha)*original_field.value
         *morphing* is the way the point modify the field:
           - 'nearest': only the nearest point is modified
           - 'exp_decay': modifies the surrounding points with an isotrop
@@ -581,7 +579,7 @@ class H2DField(D3Field):
                 sigma = kwargs['sigma']
                 lon = p.geometry.grid['longitudes'][0]
                 lat = p.geometry.grid['latitudes'][0]
-                zero_radius = 3.*sigma
+                zero_radius = 3. * sigma
                 selection_points_ij = self.geometry.nearest_points(lon, lat, interpolation=('square:radius', zero_radius))
                 selection_points_ll = self.geometry.ij2ll([sp[0] for sp in selection_points_ij], [sp[1] for sp in selection_points_ij])
                 selection_points_ll = [(selection_points_ll[0][k], selection_points_ll[1][k]) for k in range(len(selection_points_ll[0]))]
@@ -605,22 +603,22 @@ class H2DField(D3Field):
 
         if isinstance(other, self.__class__):
             if self.spectral != other.spectral:
-                raise epygramError("cannot operate a spectral field with a" + \
+                raise epygramError("cannot operate a spectral field with a" +
                                    " non-spectral field.")
             if self.geometry.rectangular_grid:
                 if self.geometry.dimensions['X'] != other.geometry.dimensions['X'] or\
                    self.geometry.dimensions['Y'] != other.geometry.dimensions['Y']:
-                    raise epygramError("operations on fields cannot be done if" + \
-                                       " fields do not share their gridpoint" + \
+                    raise epygramError("operations on fields cannot be done if" +
+                                       " fields do not share their gridpoint" +
                                        " dimensions.")
             else:
                 if self.geometry.dimensions != other.geometry.dimensions:
-                    raise epygramError("operations on fields cannot be done if" + \
-                                       " fields do not share their gridpoint" + \
+                    raise epygramError("operations on fields cannot be done if" +
+                                       " fields do not share their gridpoint" +
                                        " dimensions.")
             if self.spectral_geometry != other.spectral_geometry:
-                raise epygramError("operations on fields cannot be done if" + \
-                                   " fields do not share their spectral" + \
+                raise epygramError("operations on fields cannot be done if" +
+                                   " fields do not share their spectral" +
                                    " geometry.")
         else:
             super(D3Field, self)._check_operands(other)

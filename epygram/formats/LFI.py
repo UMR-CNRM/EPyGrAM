@@ -7,7 +7,7 @@
 Contains the class to handle LFI format.
 """
 
-__all__ = ['LFI']
+from __future__ import print_function, absolute_import, unicode_literals, division
 
 import datetime
 import os
@@ -27,21 +27,22 @@ from epygram.base import FieldSet, FieldValidity, Field
 from epygram.resources import FileResource
 from epygram.fields import H2DField, MiscField, D3Field
 from epygram.geometries.VGeometry import hybridH2altitude, hybridH2pressure
-from epygram.config import epsilon
+
+__all__ = ['LFI']
 
 epylog = footprints.loggers.getLogger(__name__)
 
 
-
 gridIndicatorDict = {0:('__unknown__', '__unknown__'),
-                   1:('center', 'mass'),
-                   2:('center-left', 'mass'),
-                   3:('lower-center', 'mass'),
-                   4:('center', 'flux'),
-                   5:('lower-left', 'mass'),
-                   6:('center-left', 'flux'),
-                   7:('lower-center', 'flux'),
-                   8:('lower-left', 'flux')}
+                     1:('center', 'mass'),
+                     2:('center-left', 'mass'),
+                     3:('lower-center', 'mass'),
+                     4:('center', 'flux'),
+                     5:('lower-left', 'mass'),
+                     6:('center-left', 'flux'),
+                     7:('lower-center', 'flux'),
+                     8:('lower-left', 'flux')}
+
 
 def parse_LFIstr_totuple(strfid):
     """Parse and return a tuple LFI fid from a string."""
@@ -64,9 +65,10 @@ def parse_LFIstr_totuple(strfid):
                 fid[k] = None
     return tuple(fid)
 
+
 def inquire_field_dict(fieldname):
     """
-    Returns the info contained in the LFI _field_dict for the requested field. 
+    Returns the info contained in the LFI _field_dict for the requested field.
     """
 
     matching_field = None
@@ -86,6 +88,7 @@ def inquire_field_dict(fieldname):
 
     return copy.deepcopy(matching_field)
 
+
 def _complete_generic_fid_from_fid(generic_fid, fieldidentifier):
     """Complete a generic fid with information of fieldidentifier."""
 
@@ -104,11 +107,12 @@ def _complete_generic_fid_from_fid(generic_fid, fieldidentifier):
         elif haslevel:
             generic_fid['level'] = level
         elif field_info['type'] == '3D':
-            pass  #multilevel in true3d
+            pass  # multilevel in true3d
         else:
             raise epygramError("Must not happen...")
 
     return generic_fid
+
 
 class LFI(FileResource):
     """
@@ -127,7 +131,7 @@ class LFI(FileResource):
                 access='rwx',
                 info="Compression flag."),
             true3d=dict(
-                info="",  #TODO: Seb
+                info="",  # TODO: Seb
                 optional=True,
                 default=False,
                 type=bool)
@@ -207,7 +211,7 @@ class LFI(FileResource):
         if not self.fmtdelayedopen:
             self.open()
 
-        #cache for records
+        # cache for records
         self._listLFInamesCache = None
 
     def open(self):
@@ -261,7 +265,8 @@ class LFI(FileResource):
         fid = inquire_field_dict(fieldname)
         fid = _complete_generic_fid_from_fid(fid, fieldidentifier)
         if fid['type'] == '3D':
-            if self.geometry is None: self._read_geometry()
+            if self.geometry is None:
+                self._read_geometry()
             fid['typeOfFirstFixedSurface'] = self.geometry.vcoordinate.typeoffirstfixedsurface
         fid.pop('type')
         fid.pop('name')
@@ -271,7 +276,7 @@ class LFI(FileResource):
     def find_fields_in_resource(self, seed=None, fieldtype=[], generic=False):
         """
         Returns a list of the fields from resource whose identifier match the given seed.
-        
+
         Args: \n
         - *seed*: might be:
           - a tuple of regular expressions,
@@ -290,9 +295,9 @@ class LFI(FileResource):
         else:
             fieldtypeslist = [fieldtype]
         if not self.true3d:
-            if 'H2D' in fieldtypeslist and not '3D' in fieldtypeslist:
-                #3D field will appear as 2D field by readfield method
-                #If you look for 2D fields, you must also take 3D fields
+            if 'H2D' in fieldtypeslist and '3D' not in fieldtypeslist:
+                # 3D field will appear as 2D field by readfield method
+                # If you look for 2D fields, you must also take 3D fields
                 fieldtypeslist.append('3D')
         fieldslist = []
         def fill_fieldslist(tmplist):
@@ -338,7 +343,7 @@ class LFI(FileResource):
     def _listfields(self, complete=False):
         """
         Actual listfields() method for LFI.
-        
+
         Args: \n
         - *complete*: if True method returns a list of {'LFI':LFI_fid, 'generic':generic_fid}
                       if False method return a list of LFI_fid
@@ -350,9 +355,11 @@ class LFI(FileResource):
                 if self.true3d:
                     fieldslist.append(fieldname)
                 else:
-                    if self.geometry is None: self._read_geometry()
+                    if self.geometry is None:
+                        self._read_geometry()
                     kmax = len(self.geometry.vcoordinate.grid['gridlevels']) + 1
-                    for level in range(kmax): fieldslist.append((fieldname, level))
+                    for level in range(kmax):
+                        fieldslist.append((fieldname, level))
             elif field_info['type'] == 'H2D':
                 if self.true3d:
                     fieldslist.append(fieldname)
@@ -422,7 +429,7 @@ class LFI(FileResource):
         """
         Reads one field, given its identifier (tuple (LFI name, level)), and returns a Field instance.
         Interface to Fortran routines from 'ifsaux'.
-        
+
         Args: \n
         - *fieldidentifier*: "LFI fieldname" if true3d, else (LFI fieldname, level).
         - *getdata*: optional, if *False*, only metadata are read, the field do not contain data.
@@ -432,12 +439,12 @@ class LFI(FileResource):
         if self.openmode == 'w':
             raise epygramError("cannot read fields in resource if with openmode == 'w'.")
         if self.true3d:
-            if type(fieldidentifier) != type(""):
+            if not isinstance(fieldidentifier, str):
                 raise epygramError("fieldidentifier of a LFI field is a string (when resource opened in true3d).")
         else:
             if isinstance(fieldidentifier, str):
                 fieldidentifier = parse_LFIstr_totuple(fieldidentifier)
-            if type(fieldidentifier) != type(tuple()) or len(fieldidentifier) != 2:
+            if not isinstance(fieldidentifier, tuple) or len(fieldidentifier) != 2:
                 raise epygramError("fieldidentifier of a LFI field is a tuple (name, level) (when resource not opened in true3d).")
 
         # Get field info
@@ -447,8 +454,10 @@ class LFI(FileResource):
             fieldname, level = fieldidentifier
         field_info = inquire_field_dict(fieldname)
         if field_info['type'] in ['H2D', '3D']:
-            if self.geometry is None: self._read_geometry()
-            if self.validity is None: self._read_validity()
+            if self.geometry is None:
+                self._read_geometry()
+            if self.validity is None:
+                self._read_validity()
 
             # Make geometry object
             kwargs_geom = dict(structure=field_info['type'] if self.true3d else 'H2D',
@@ -457,7 +466,7 @@ class LFI(FileResource):
                                dimensions=self.geometry.dimensions,
                                geoid=config.LFI_default_geoid,
                                position_on_grid=None
-                              )
+                               )
             if self.geometry.projected_geometry:
                 kwargs_geom['projection'] = self.geometry.projection
 
@@ -477,31 +486,35 @@ class LFI(FileResource):
                 if field_info['type'] != '3D':
                     kwargs_vcoord.pop('grid', None)
         # Get data if requested or only metadata
-        field_length = wlfi.wlfinfo(self._unit, fieldname)[0]  #Record length
+        field_length = wlfi.wlfinfo(self._unit, fieldname)[0]  # Record length
         if field_length == 0:
             raise epygramError("This record does not exist.")
-        lengthToRead = min(field_length, 2 + LFI._LFIsoftware_cst['JPXKRK'] + 3) if not getdata else field_length  #Length needed
-        rawData = wlfi.wlfilec(self._unit, fieldname, lengthToRead, getdata)  #Reading
+        lengthToRead = min(field_length, 2 + LFI._LFIsoftware_cst['JPXKRK'] + 3) if not getdata else field_length  # Length needed
+        rawData = wlfi.wlfilec(self._unit, fieldname, lengthToRead, getdata)  # Reading
         (h, v) = gridIndicatorDict[rawData[0]]
         gridIndicator = {'vertical':v, 'horizontal':h}
         comment_length = rawData[1]
-        if comment_length > LFI._LFIsoftware_cst['JPXKRK']: raise epygramError("comment length is superior to the limit.")
+        if comment_length > LFI._LFIsoftware_cst['JPXKRK']:
+            raise epygramError("comment length is superior to the limit.")
         comment = ""
-        for i in rawData[2:comment_length + 2]: comment += chr(i)
+        for i in rawData[2:comment_length + 2]:
+            comment += chr(i)
         data = rawData[comment_length + 2:]
         if getdata:
             if self._compressed is None and fieldname != 'LFI_COMPRESSED':
                 self._read_compression()
             if self._compressed:
                 (lengthAfter, compressionType) = wlfi.wget_compheader(len(data), data, lengthToRead)
-                if lengthAfter > 0: data = wlfi.wdecompress_field(len(data), data, compressionType, lengthAfter)
+                if lengthAfter > 0:
+                    data = wlfi.wdecompress_field(len(data), data, compressionType, lengthAfter)
             if field_info['type'] == 'Misc':
                 if field_info['dimension'] == 0:
                     if field_info['nature'] == 'int':
                         dataOut = data[0]
                     elif field_info['nature'] == 'str':
                         dataOut = ""
-                        for num in data: dataOut += chr(num)
+                        for num in data:
+                            dataOut += chr(num)
                     elif field_info['nature'] == 'bool':
                         dataOut = bool(data[0])
                     elif field_info['nature'] == 'float':
@@ -514,9 +527,9 @@ class LFI(FileResource):
                     elif field_info['nature'] == 'float':
                         dataOut = numpy.copy(data.view('float64')[:])
                     elif field_info['nature'] == 'str':
-                        raise NotImplementedError("reading of datatype " + \
+                        raise NotImplementedError("reading of datatype " +
                                                   field_info['nature'] + " array.")
-                        #TOBECHECKED: table of int(str) = table of tables ???
+                        # TOBECHECKED: table of int(str) = table of tables ???
                         dataOut = numpy.copy(data)
                     elif field_info['nature'] == 'bool':
                         dataOut = data != 0
@@ -524,16 +537,17 @@ class LFI(FileResource):
                         raise NotImplementedError("reading of datatype " + field_info['nature'] + " array.")
                 data = dataOut
             elif field_info['type'] == 'H2D':
-                if (not self.true3d) and level != 0: raise epygramError("level must be 0 for a one-level field.")
+                if (not self.true3d) and level != 0:
+                    raise epygramError("level must be 0 for a one-level field.")
                 offset = 0
                 nature = field_info['nature'] if 'nature' in field_info else 'float'
                 if nature == 'float':
-                    data = numpy.array(data.view('float64')[offset:offset + 
-                                                            self.geometry.dimensions['X'] * 
+                    data = numpy.array(data.view('float64')[offset:offset +
+                                                            self.geometry.dimensions['X'] *
                                                             self.geometry.dimensions['Y']])
                 elif nature == 'int':
-                    data = numpy.array(data[offset:offset + 
-                                       self.geometry.dimensions['X'] * 
+                    data = numpy.array(data[offset:offset +
+                                       self.geometry.dimensions['X'] *
                                        self.geometry.dimensions['Y']])
                 else:
                     raise NotImplementedError("reading of datatype " + field_info['nature'] + " field.")
@@ -541,16 +555,16 @@ class LFI(FileResource):
                 kmax = len(self.geometry.vcoordinate.grid['gridlevels']) + 1
                 if self.true3d:
                     offset = 0
-                    data = numpy.array(data.view('float64')[offset:offset + 
-                                                            self.geometry.dimensions['X'] * 
-                                                            self.geometry.dimensions['Y'] * 
+                    data = numpy.array(data.view('float64')[offset:offset +
+                                                            self.geometry.dimensions['X'] *
+                                                            self.geometry.dimensions['Y'] *
                                                             kmax])
                 else:
                     if level not in range(kmax):
                         raise epygramError("level must be between 0 and kmax for a 3D field (level=" + str(level) + ").")
                     offset = level * self.geometry.dimensions['X'] * self.geometry.dimensions['Y']
-                    data = numpy.array(data.view('float64')[offset:offset + 
-                                                            self.geometry.dimensions['X'] * 
+                    data = numpy.array(data.view('float64')[offset:offset +
+                                                            self.geometry.dimensions['X'] *
                                                             self.geometry.dimensions['Y']])
 
         # Create field
@@ -558,8 +572,8 @@ class LFI(FileResource):
             # Create H2D field
             fid = fieldname if self.true3d else (fieldname, level)
             fid = {self.format: fid,
-                 'generic': self._get_generic_fid(fid)
-                }
+                   'generic':self._get_generic_fid(fid)
+                   }
             kwargs_geom['position_on_horizontal_grid'] = gridIndicator['horizontal']
             kwargs_vcoord['position_on_grid'] = gridIndicator['vertical']
             kwargs_geom['vcoordinate'] = fpx.geometry(**kwargs_vcoord)
@@ -571,8 +585,8 @@ class LFI(FileResource):
         elif field_info['type'] == 'Misc':
             # Create Misc field
             fid = {self.format: (fieldname, None),
-                 'generic': FPDict()
-                }
+                   'generic': FPDict()
+                   }
             class empty(object): pass
             geometry = empty()
             geometry.position_on_horizontal_grid = gridIndicator['horizontal']
@@ -590,17 +604,18 @@ class LFI(FileResource):
                                      self.geometry.dimensions['X'] * self.geometry.dimensions['Y']))
                 data = geometry.reshape_data(data, 'Z')
             field.setdata(data)
-            if fieldname == 'LFI_COMPRESSED': self._compressed = data
+            if fieldname == 'LFI_COMPRESSED':
+                self._compressed = data
 
         return field
 
     def readfields(self, requestedfields=None, getdata=True):
         """
         Returns a :class:`epygram.base.FieldSet` containing requested fields read in the resource.
-        
+
         Args: \n
         - *requestedfields*: might be \n
-          - a tuple of regular expressions (e.g. ('RVT', '?')) or a regular expression (e.g. 'R?T') if true3d 
+          - a tuple of regular expressions (e.g. ('RVT', '?')) or a regular expression (e.g. 'R?T') if true3d
           - a list of LFI fields identifiers with regular expressions (e.g. [('COVER???', 0), ('RVT', '*')])
           - if not specified, interpretated as all fields that will be found in resource
         - *getdata*: optional, if *False*, only metadata are read, the fields do not contain data.
@@ -616,7 +631,7 @@ class LFI(FileResource):
     def writefield(self, field):
         """
         Write a field in the resource.
-        
+
         Args: \n
         - *field*: a :class:`epygram.base.Field` instance or :class:`epygram.H2DField`.
         """
@@ -631,7 +646,7 @@ class LFI(FileResource):
     def writefields(self, fieldset):
         """
         Write the fields of the *fieldset* in the resource.
-        
+
         Args: \n
         - *fieldset*: must be a :class:`epygram.base.FieldSet` instance.
         """
@@ -657,61 +672,66 @@ class LFI(FileResource):
         else:
             specialFields = [(name, None) for name in specialNames]
         specialFieldsComments = {'LFI_COMPRESSED':'Compressed articles',
-                               'CARTESIAN':'Logical for cartesian geometry'.ljust(100),
-                               'LAT0':'reference latitude for conformal projection (DEGREES)'.ljust(100),
-                               'LON0':'reference longitude for conformal projection (DEGREES)'.ljust(100),
-                               'LATORI':'DEGREES'.ljust(100),
-                               'LATOR':'DEGREES'.ljust(100),
-                               'LONORI':'DEGREES'.ljust(100),
-                               'LONOR':'DEGREES'.ljust(100),
-                               'RPK':''.ljust(100),
-                               'BETA':'rotation angle (DEGREES)'.ljust(100),
-                               'IMAX':''.ljust(100),
-                               'JMAX':''.ljust(100),
-                               'KMAX':''.ljust(100),
-                               'XHAT':'Position x in the conformal or cartesian plane (METERS)'.ljust(100),
-                               'YHAT':'Position y in the conformal or cartesian plane (METERS)'.ljust(100),
-                               'ZHAT':'height level without orography (METERS)'.ljust(100),
-                               'DTEXP%TDATE':'YYYYMMDD',
-                               'DTEXP%TIME':'SECONDS',
-                               'DTCUR%TDATE':'YYYYMMDD',
-                               'DTCUR%TIME':'SECONDS',
-                               'SLEVE':''.ljust(100)}
+                                 'CARTESIAN':'Logical for cartesian geometry'.ljust(100),
+                                 'LAT0':'reference latitude for conformal projection (DEGREES)'.ljust(100),
+                                 'LON0':'reference longitude for conformal projection (DEGREES)'.ljust(100),
+                                 'LATORI':'DEGREES'.ljust(100),
+                                 'LATOR':'DEGREES'.ljust(100),
+                                 'LONORI':'DEGREES'.ljust(100),
+                                 'LONOR':'DEGREES'.ljust(100),
+                                 'RPK':''.ljust(100),
+                                 'BETA':'rotation angle (DEGREES)'.ljust(100),
+                                 'IMAX':''.ljust(100),
+                                 'JMAX':''.ljust(100),
+                                 'KMAX':''.ljust(100),
+                                 'XHAT':'Position x in the conformal or cartesian plane (METERS)'.ljust(100),
+                                 'YHAT':'Position y in the conformal or cartesian plane (METERS)'.ljust(100),
+                                 'ZHAT':'height level without orography (METERS)'.ljust(100),
+                                 'DTEXP%TDATE':'YYYYMMDD',
+                                 'DTEXP%TIME':'SECONDS',
+                                 'DTCUR%TDATE':'YYYYMMDD',
+                                 'DTCUR%TIME':'SECONDS',
+                                 'SLEVE':''.ljust(100)}
         specialFieldsGridIndicator = {'LFI_COMPRESSED':0,
-                                    'CARTESIAN':0,
-                                    'LAT0':0,
-                                    'LON0':0,
-                                    'LATORI':0,
-                                    'LATOR':0,
-                                    'LONORI':0,
-                                    'LONOR':0,
-                                    'RPK':0,
-                                    'BETA':0,
-                                    'IMAX':0,
-                                    'JMAX':0,
-                                    'KMAX':0,
-                                    'XHAT':2,
-                                    'YHAT':3,
-                                    'ZHAT':4,
-                                    'DTEXP%TDATE':4,
-                                    'DTEXP%TIME':4,
-                                    'DTCUR%TDATE':4,
-                                    'DTCUR%TIME':4,
-                                    'SLEVE':4}
+                                      'CARTESIAN':0,
+                                      'LAT0':0,
+                                      'LON0':0,
+                                      'LATORI':0,
+                                      'LATOR':0,
+                                      'LONORI':0,
+                                      'LONOR':0,
+                                      'RPK':0,
+                                      'BETA':0,
+                                      'IMAX':0,
+                                      'JMAX':0,
+                                      'KMAX':0,
+                                      'XHAT':2,
+                                      'YHAT':3,
+                                      'ZHAT':4,
+                                      'DTEXP%TDATE':4,
+                                      'DTEXP%TIME':4,
+                                      'DTCUR%TDATE':4,
+                                      'DTCUR%TIME':4,
+                                      'SLEVE':4}
         writtenfields = self.listfields()
         has2D = False
         has3D = False
         for fid in writtenfields:
             name = fid if self.true3d else fid[0]
             field_info = inquire_field_dict(name)
-            if field_info['type'] == '3D': has3D = True
-            if field_info['type'] == 'H2D' and name != 'ZS' and not '.DATIM' in name: has2D = True
+            if field_info['type'] == '3D':
+                has3D = True
+            if field_info['type'] == 'H2D' and name != 'ZS' and '.DATIM' not in name:
+                has2D = True
         if has2D or has3D:
-            if self._compressed is None: self._read_compression()
+            if self._compressed is None:
+                self._read_compression()
             specialValues['LFI_COMPRESSED'] = self._compressed
         if has3D:
-            if ('SLEVE', None) in writtenfields: specialValues['SLEVE'] = self.readfield(('SLEVE', None))
-            else: specialValues['SLEVE'] = False
+            if ('SLEVE', None) in writtenfields:
+                specialValues['SLEVE'] = self.readfield(('SLEVE', None))
+            else:
+                specialValues['SLEVE'] = False
 
         myFieldset = FieldSet()
         fieldsMTO = []
@@ -719,16 +739,16 @@ class LFI(FileResource):
         for field in fieldset:
             keep = True
             fid = field.fid[self.format]
-            #This field must not be already written, except if this is a special record
-            #because special records can be written to file automaticaly when the first H2DField is encountered
+            # This field must not be already written, except if this is a special record
+            # because special records can be written to file automaticaly when the first H2DField is encountered
             if fid in writtenfields and fid not in specialFields:
                 raise epygramError("there already is a field with the same name in this LFI.")
             elif fid in writtenfields:
                 keep = False
-                #In case of a special record already written in file, value must be the same
+                # In case of a special record already written in file, value must be the same
                 if self.readfield(fid).getdata() != field.getdata():
                     raise epygramError("there already is a field with the same name in this LFI with a different value.")
-            #check for level validity
+            # check for level validity
             if isinstance(field, H2DField) or isinstance(field, D3Field):
                 if (not self.true3d) and (not isinstance(fid[1], int)):
                     raise epygramError("the level of a 2D field must be an integer")
@@ -739,24 +759,29 @@ class LFI(FileResource):
             if fid in appendedfields:
                 raise epygramError("a same field cannot be written twice in a LFI.")
             appendedfields.append(fid)
-            if keep: myFieldset.append(field)
+            if keep:
+                myFieldset.append(field)
 
-        if not self.isopen: self.open()
+        if not self.isopen:
+            self.open()
 
-        #geometry, validity and compression
+        # geometry, validity and compression
         for field in fieldsMTO:
             for record, value in self._get_geometryValidity_from_field(field).iteritems():
-                #Cache value for next field
+                # Cache value for next field
                 if record not in specialValues:
                     if (record if self.true3d else (record, None)) in appendedfields:
                         for f in myFieldset:
-                            if (f.fid if self.true3d else f.fid[0]) == record: specialValues[record] = f.getdata()
+                            if (f.fid if self.true3d else f.fid[0]) == record:
+                                specialValues[record] = f.getdata()
                     elif (record if self.true3d else (record, None)) in writtenfields:
                         specialValues[record] = self.readfield(record if self.true3d else (record, None)).getdata()
                     else:
                         specialValues[record] = value
-                        if record == 'LFI_COMPRESSED': keep = value  #we keep it only if its value is True
-                        else: keep = True
+                        if record == 'LFI_COMPRESSED':
+                            keep = value  # we keep it only if its value is True
+                        else:
+                            keep = True
                         if keep:
                             comment = specialFieldsComments[record]
                             (h, v) = gridIndicatorDict[specialFieldsGridIndicator[record]]
@@ -770,13 +795,13 @@ class LFI(FileResource):
                             f.geometry = geometry
                             myFieldset.append(f)
                 if record in ['LAT0', 'LON0', 'LATOR', 'LATORI', 'LONOR', 'LONORI', 'RPK', 'BETA', 'ZHAT']:
-                    #Float comparisons
+                    # Float comparisons
                     special_rpk = record == 'RPK' and \
                                   field.geometry.secant_projection and \
                                   field.geometry.name not in ['mercator', 'polar_stereographic']
                     if special_rpk:
                         # In geometries, when seant, we store latin1 and latin2 which are computed from RPK
-                        # Computation is not exact computing back RPK from latin1 and latin2 does not give exactly the same result 
+                        # Computation is not exact computing back RPK from latin1 and latin2 does not give exactly the same result
                         latin1_field = field.geometry.projection['secant_lat1'].get('degrees')
                         latin2_field = field.geometry.projection['secant_lat2'].get('degrees')
                         if 'latin1' not in specialValues:
@@ -787,14 +812,14 @@ class LFI(FileResource):
                     else:
                         check = numpy.all(util.nearlyEqualArray(value, specialValues[record]))
                 elif record in ['XHAT', 'YHAT']:
-                    #We check deltaX and deltaY because XHAT and YHAT can be computed in two different ways (prep_ideal or prep_pgd)
+                    # We check deltaX and deltaY because XHAT and YHAT can be computed in two different ways (prep_ideal or prep_pgd)
                     check = util.nearlyEqualArray(value[1] - value[0],
                                                   specialValues[record][1] - specialValues[record][0])
                 else:
                     check = numpy.all(value == specialValues[record])
                 if not check:
                     raise epygramError("this field is not compatible with the fields already written to the file: " + record)
-        #writing
+        # writing
         done = []
         for iField in range(len(myFieldset)):
             if iField not in done:
@@ -810,15 +835,18 @@ class LFI(FileResource):
                             if myFieldset[i].fid[self.format] == (field.fid[self.format][0], level):
                                 f = myFieldset[i]
                                 num = i
-                        if f is None: raise epygramError("All levels of a 3D field must be written at once.")
-                        if not isinstance(f, H2DField): raise epygramError("All fields composing a 3D field must be H2DField")
+                        if f is None:
+                            raise epygramError("All levels of a 3D field must be written at once.")
+                        if not isinstance(f, H2DField):
+                            raise epygramError("All fields composing a 3D field must be H2DField")
                         if comment is None:
                             comment = f.comment
                         elif comment != f.comment:
                             raise epygramError("All fields composing a same 3D field must have the same comment.")
                         (h, v) = f.geometry.position_on_horizontal_grid, f.geometry.vcoordinate.position_on_grid
                         for key, value in gridIndicatorDict.iteritems():
-                            if value == (h, v): mygridIndicator = key
+                            if value == (h, v):
+                                mygridIndicator = key
                         if gridIndicator is None:
                             gridIndicator = mygridIndicator
                         elif gridIndicator != mygridIndicator:
@@ -830,7 +858,7 @@ class LFI(FileResource):
                 else:
                     if (isinstance(field, H2DField) and not self.true3d) or (isinstance(field, D3Field) and self.true3d):
                         dataInt = numpy.ma.copy(field.getdata()).view('int64').flatten()
-                    else:  #Misc type
+                    else:  # Misc type
                         data = field.getdata()
                         if 'int' in field.datatype.name:
                             dataInt = data.flatten()
@@ -848,15 +876,17 @@ class LFI(FileResource):
                     comment = field.comment
                     (h, v) = field.geometry.position_on_horizontal_grid, field.geometry.vcoordinate.position_on_grid
                     for key, value in gridIndicatorDict.iteritems():
-                        if value == (h, v): gridIndicator = key
+                        if value == (h, v):
+                            gridIndicator = key
                 header = numpy.ndarray(2 + len(comment), dtype=numpy.int64)
                 header[0] = gridIndicator
                 header[1] = len(comment)
-                for i in range(len(comment)): header[2 + i] = ord(comment[i])
+                for i in range(len(comment)):
+                    header[2 + i] = ord(comment[i])
                 name = field.fid[self.format] if self.true3d else field.fid[self.format][0]
                 if ('LFI_COMPRESSED' in specialValues and specialValues['LFI_COMPRESSED'] and
                    dataInt.size % ((specialValues['IMAX'] + 2) * (specialValues['JMAX'] + 2)) == 0 and
-                   name != 'ZS' and not '.DATIM' in name):
+                   name != 'ZS' and '.DATIM' not in name):
                     (dataInt, size) = wlfi.wcompress_field(dataInt,
                                                            specialValues['IMAX'] + 2,
                                                            specialValues['JMAX'] + 2,
@@ -865,7 +895,8 @@ class LFI(FileResource):
                 dataToWrite = numpy.concatenate((header, dataInt))
                 wlfi.wlfiecr(self._unit, name, len(dataToWrite), dataToWrite)
 
-                if self.empty: self.empty = False
+                if self.empty:
+                    self.empty = False
 
     def rename_field(self, fid, new_fid):
         """
@@ -889,7 +920,7 @@ class LFI(FileResource):
         """
         Extracts a vertical profile from the LFI resource, given its fid
         and the geographic location (*lon*/*lat*) of the profile.
-        
+
         Args: \n
         - *fid* must have syntax: ('PARAMETER', '\*') if not true3d, else 'PARAMETER',
           \* being a true star character,
@@ -898,17 +929,17 @@ class LFI(FileResource):
         - *lat* is the latitude of the desired point.
         - *geometry* is the geometry on which extract data. If None, it is built from
           lon/lat.
-        - *vertical_coordinate* defines the requested vertical coordinate of the 
+        - *vertical_coordinate* defines the requested vertical coordinate of the
           V1DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
           possible values).
-        - *interpolation* defines the interpolation function used to compute 
+        - *interpolation* defines the interpolation function used to compute
           the profile at requested lon/lat from the fields grid:
           - if 'nearest' (default), extracts profile at the horizontal nearest neighboring gridpoint;
           - if 'linear', computes profile with horizontal linear spline interpolation;
           - if 'cubic', computes profile with horizontal cubic spline interpolation.
         - *external_distance* can be a dict containing the target point value
           and an external field on the same grid as self, to which the distance
-          is computed within the 4 horizontally nearest points; e.g. 
+          is computed within the 4 horizontally nearest points; e.g.
           {'target_value':4810, 'external_field':an_H2DField_with_same_geometry}.
           If so, the nearest point is selected with
           distance = |target_value - external_field.data|
@@ -918,7 +949,8 @@ class LFI(FileResource):
         if geometry is None:
             if None in [lon, lat]:
                 raise epygramError("You must give a geometry or lon *and* lat")
-            if self.geometry is None: self._read_geometry()
+            if self.geometry is None:
+                self._read_geometry()
             pointG = self.geometry.make_point_geometry(lon, lat)
         else:
             if lon is not None or lat is not None:
@@ -943,7 +975,7 @@ class LFI(FileResource):
         Extracts a vertical section from the LFI resource, given its fid
         and the geographic (lon/lat) coordinates of its ends.
         The section is returned as a V2DField.
-        
+
         Args: \n
         - *fid* must have syntax: ('PARAMETER', '\*') if not true3d else 'PARAMETER',
           \* being a true star character,
@@ -952,21 +984,21 @@ class LFI(FileResource):
         - *end2* must be a tuple (lon, lat).
         - *geometry* is the geometry on which extract data. If None, defaults to
           linearily spaced positions computed from  *points_number*.
-        - *points_number* defines the total number of horizontal points of the 
+        - *points_number* defines the total number of horizontal points of the
           section (including ends). If None, defaults to a number computed from
           the *ends* and the *resolution*.
-        - *resolution* defines the horizontal resolution to be given to the 
+        - *resolution* defines the horizontal resolution to be given to the
           field. If None, defaults to the horizontal resolution of the field.
-        - *vertical_coordinate* defines the requested vertical coordinate of the 
+        - *vertical_coordinate* defines the requested vertical coordinate of the
           V2DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
           possible values).
-        - *interpolation* defines the interpolation function used to compute 
+        - *interpolation* defines the interpolation function used to compute
           the profile points locations from the fields grid: \n
-          - if 'nearest', each horizontal point of the section is 
+          - if 'nearest', each horizontal point of the section is
             taken as the horizontal nearest neighboring gridpoint;
-          - if 'linear' (default), each horizontal point of the section is 
+          - if 'linear' (default), each horizontal point of the section is
             computed with linear spline interpolation;
-          - if 'cubic', each horizontal point of the section is 
+          - if 'cubic', each horizontal point of the section is
             computed with linear spline interpolation.
         - *cheap_height* has no effect (compatibity with FA format)
         """
@@ -974,7 +1006,8 @@ class LFI(FileResource):
         if geometry is None:
             if None in [end1, end2]:
                 raise epygramError("You must give a geometry or end1 *and* end2")
-            if self.geometry is None: self._read_geometry()
+            if self.geometry is None:
+                self._read_geometry()
             sectionG = self.geometry.make_section_geometry(end1, end2,
                                                            points_number=points_number,
                                                            resolution=resolution)
@@ -998,22 +1031,22 @@ class LFI(FileResource):
         """
         Extracts a subdomain from the LFI resource, given its fid
         and the geometry to use.
-        
+
         Args: \n
         - *fid* must have syntax: ('PARAMETER', '\*') if not true3d else 'PARAMETER',
           \* being a true star character,
           and PARAMETER being the name of the parameter requested, as named in LFI.
         - *geometry* is the geometry on which extract data.
-        - *vertical_coordinate* defines the requested vertical coordinate of the 
+        - *vertical_coordinate* defines the requested vertical coordinate of the
           V2DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
           possible values).
-        - *interpolation* defines the interpolation function used to compute 
+        - *interpolation* defines the interpolation function used to compute
           the profile points locations from the fields grid: \n
-          - if 'nearest', each horizontal point of the section is 
+          - if 'nearest', each horizontal point of the section is
             taken as the horizontal nearest neighboring gridpoint;
-          - if 'linear' (default), each horizontal point of the section is 
+          - if 'linear' (default), each horizontal point of the section is
             computed with linear spline interpolation;
-          - if 'cubic', each horizontal point of the section is 
+          - if 'cubic', each horizontal point of the section is
             computed with linear spline interpolation.
         - *cheap_height* has no effect (compatibity with FA format)
         """
@@ -1032,14 +1065,14 @@ class LFI(FileResource):
         # vertical coords conversion
         if vertical_coordinate not in (None, subdomain.geometry.vcoordinate.typeoffirstfixedsurface):
             if subdomain.geometry.vcoordinate.typeoffirstfixedsurface == 118 and \
-                   vertical_coordinate in (102, 103):
+               vertical_coordinate in (102, 103):
                 zsfield = self.readfield('ZS' if self.true3d else ('ZS', 0))
                 zs_values = zsfield.getvalue_ll(*geometry.get_lonlat_grid(),
                                                 interpolation=interpolation, one=False)
                 subdomain.geometry.vcoordinate = hybridH2altitude(subdomain.geometry.vcoordinate,
-                                                                zs_values,
-                                                                gridposition=subdomain.geometry.vcoordinate.position_on_grid,
-                                                                conv2height=(vertical_coordinate == 103))
+                                                                  zs_values,
+                                                                  gridposition=subdomain.geometry.vcoordinate.position_on_grid,
+                                                                  conv2height=(vertical_coordinate == 103))
             elif subdomain.geometry.vcoordinate.typeoffirstfixedsurface == 118 and \
                    vertical_coordinate == 100:
                 if self.true3d:
@@ -1060,20 +1093,16 @@ class LFI(FileResource):
                                           interpolation=interpolation,
                                           exclude_extralevels=True)
                 subdomain.geometry.vcoordinate = hybridH2pressure(subdomain.geometry.vcoordinate,
-                                                                P.getdata(),
-                                                                P.geometry.vcoordinate.position_on_grid)
+                                                                  P.getdata(),
+                                                                  P.geometry.vcoordinate.position_on_grid)
             else:
                 raise NotImplementedError("this vertical coordinate conversion.")
 
-
         return subdomain
-
-
 
 ###########
 # pre-app #
 ###########
-
     @FileResource._openbeforedelayed
     def what(self, out=sys.stdout,
              details=False,
@@ -1081,7 +1110,7 @@ class LFI(FileResource):
              **kwargs):
         """
         Writes in file a summary of the contents of the LFI.
-        
+
         Args: \n
         - *out*: the output open file-like object (duck-typing: *out*.write()
           only is needed).
@@ -1102,32 +1131,33 @@ class LFI(FileResource):
             listoffields = listfields
         else:
             onelevel = {}
-            for (f, l) in listfields: onelevel[f] = l
+            for (f, l) in listfields:
+                onelevel[f] = l
             listoffields = [f for (f, l) in listfields]
         if sortfields:
             sortedfields = self.sortfields()
 
         def write_formatted(dest, label, value):
-            dest.write('{:<{width}}'.format(label, width=firstcolumn_width) \
-                    + ':' \
-                    + '{:>{width}}'.format(str(value), width=secondcolumn_width) \
-                    + '\n')
+            dest.write('{:<{width}}'.format(label, width=firstcolumn_width) +
+                       ':' +
+                       '{:>{width}}'.format(str(value), width=secondcolumn_width) +
+                       '\n')
         def write_formatted_col(dest, label, value):
-            dest.write('{:>{width}}'.format(label, width=firstcolumn_width) \
-                    + ':' \
-                    + '{:>{width}}'.format(str(value), width=secondcolumn_width) \
-                    + '\n')
+            dest.write('{:>{width}}'.format(label, width=firstcolumn_width) +
+                       ':' +
+                       '{:>{width}}'.format(str(value), width=secondcolumn_width) +
+                       '\n')
         def write_formatted_fields(dest, label, gridIndicator=None, comment=None):
             if gridIndicator is None and comment is None:
-                dest.write('{:<{width}}'.format(label, width=20) \
-                        + '\n')
+                dest.write('{:<{width}}'.format(label, width=20) +
+                           '\n')
             else:
-                dest.write('{:<{width}}'.format(label, width=20) \
-                        + ':' \
-                        + '{:^{width}}'.format(str(gridIndicator), width=10) \
-                        + ':' \
-                        + comment \
-                        + '\n')
+                dest.write('{:<{width}}'.format(label, width=20) +
+                           ':' +
+                           '{:^{width}}'.format(str(gridIndicator), width=10) +
+                           ':' +
+                           comment +
+                           '\n')
         out.write("### FORMAT: " + self.format + "\n")
         out.write("\n")
 
@@ -1162,23 +1192,22 @@ class LFI(FileResource):
                     field = self.readfield(f if self.true3d else (f, onelevel[f]))
                     if hasattr(field, 'geometry'):
                         gridIndicator = {('__unknown__', '__unknown__'):0,
-                                       ('center', 'mass'):1,
-                                       ('center-left', 'mass'):2,
-                                       ('lower-center', 'mass'):3,
-                                       ('center', 'flux'):4,
-                                       ('lower-left', 'mass'):5,
-                                       ('center-left', 'flux'):6,
-                                       ('lower-center', 'flux'):7,
-                                       ('lower-left', 'flux'):8}[field.geometry.position_on_horizontal_grid,
-                                                                 field.geometry.vcoordinate.position_on_grid]
-                    else: gridIndicator = '-'
+                                         ('center', 'mass'):1,
+                                         ('center-left', 'mass'):2,
+                                         ('lower-center', 'mass'):3,
+                                         ('center', 'flux'):4,
+                                         ('lower-left', 'mass'):5,
+                                         ('center-left', 'flux'):6,
+                                         ('lower-center', 'flux'):7,
+                                         ('lower-left', 'flux'):8}[field.geometry.position_on_horizontal_grid,
+                                                                   field.geometry.vcoordinate.position_on_grid]
+                    else:
+                        gridIndicator = '-'
                     write_formatted_fields(out, f, gridIndicator, field.comment)
                 else:
                     write_formatted_fields(out, f)
                 done.append(f)
         out.write(sepline)
-
-
 
 ##############
 # the LFI WAY #
@@ -1209,7 +1238,8 @@ class LFI(FileResource):
         listnames = self._listLFInames()
         if 'CARTESIAN' in listnames:
             cartesian = self.readfield(s('CARTESIAN', None)).getdata()
-        else: cartesian = False
+        else:
+            cartesian = False
         if cartesian:
             imax = int(self.readfield(s('IMAX', None)).getdata())
             jmax = int(self.readfield(s('JMAX', None)).getdata())
@@ -1222,7 +1252,8 @@ class LFI(FileResource):
                 if kmax > 1:
                     zhat = self.readfield(s('ZHAT', None)).getdata()
                     kmax += 2
-            else: kmax = 0
+            else:
+                kmax = 0
             grid = {'X_resolution':xhat[1] - xhat[0],
                     'Y_resolution':yhat[1] - yhat[0],
                     'LAMzone':'CIE',
@@ -1246,7 +1277,7 @@ class LFI(FileResource):
                                grid=grid,
                                dimensions=dimensions,
                                geoid=config.LFI_default_geoid,
-                              )
+                               )
         else:
             lat0 = self.readfield(s('LAT0', None)).getdata()
             lon0 = self.readfield(s('LON0', None)).getdata()
@@ -1263,21 +1294,22 @@ class LFI(FileResource):
                 if kmax > 1:
                     zhat = self.readfield(s('ZHAT', None)).getdata()
                     kmax += 2
-            else: kmax = 0
+            else:
+                kmax = 0
 
             projection = {'reference_lon':Angle(lon0, 'degrees'),
                           'rotation': Angle(beta, 'degrees')
                           }
             if abs(rpk - math.sin(math.radians(lat0))) <= config.epsilon:
-                #non secant
+                # non secant
                 projection['reference_lat'] = Angle(lat0, 'degrees')
             else:
                 if abs(rpk) in [0., 1.]:
-                    #mercator or polar stereographic: one secant latitude
+                    # mercator or polar stereographic: one secant latitude
                     projection['reference_lat'] = Angle(numpy.copysign(90, lat0), 'degrees')
                     projection['secant_lat'] = Angle(lat0, 'degrees')
                 else:
-                    #lambert: two secant latitudes
+                    # lambert: two secant latitudes
                     latin1, latin2 = self._get_latin1_latin2_lambert(lat0, rpk)
                     projection['secant_lat1'] = latin1
                     projection['secant_lat2'] = latin2
@@ -1312,13 +1344,14 @@ class LFI(FileResource):
                                dimensions=dimensions,
                                geoid=config.LFI_default_geoid,
                                projection=projection
-                              )
+                               )
 
         if kmax > 1:
             H = zhat[-1]
             if 'SLEVE' in listnames:
                 sleve = self.readfield(s('SLEVE', None)).getdata()
-            else: sleve = False
+            else:
+                sleve = False
             Ai = [c for c in zhat[0:kmax + 2]][1:]
             Bi = [1 - c / H for c in zhat[0:kmax + 2]][1:]
             grid = {'gridlevels': tuple([(i + 1, FPDict({'Ai':Ai[i], 'Bi':Bi[i]})) for
@@ -1329,7 +1362,7 @@ class LFI(FileResource):
                              'position_on_grid': 'mass',
                              'grid': grid,
                              'levels': list([i for i in range(len(Ai) + 1)])
-                            }
+                             }
         else:
             kwargs_vcoord = {'structure': 'V',
                              'typeoffirstfixedsurface': 255,
@@ -1356,14 +1389,14 @@ class LFI(FileResource):
             dtexpTime = float(self.readfield(s('DTEXP%TIME', None)).getdata())
             kwargs['basis'] = (datetime.datetime(dtexpDate[0],
                                                  dtexpDate[1],
-                                                 dtexpDate[2]) + 
+                                                 dtexpDate[2]) +
                                datetime.timedelta(seconds=dtexpTime))
             if 'DTCUR%TDATE' in listnames:
                 dtcurDate = self.readfield(s('DTCUR%TDATE', None)).getdata()
                 dtcurTime = float(self.readfield(s('DTCUR%TIME', None)).getdata())
                 kwargs['term'] = (datetime.datetime(dtcurDate[0],
                                                     dtcurDate[1],
-                                                    dtcurDate[2]) + 
+                                                    dtcurDate[2]) +
                                   datetime.timedelta(seconds=dtcurTime) - kwargs['basis'])
         elif 'DTCUR%TDATE' in listnames:
             dtcurDate = self.readfield(s('DTCUR%TDATE', None)).getdata()
@@ -1392,19 +1425,22 @@ class LFI(FileResource):
         and the validty of this field.
         """
         specialFields = dict()
-        if self._compressed is None: self._read_compression()
+        if self._compressed is None:
+            self._read_compression()
         specialFields['LFI_COMPRESSED'] = self._compressed
         g = field.geometry
         field_info = inquire_field_dict(field.fid[self.format] if self.true3d else field.fid[self.format][0])
         specialFields['IMAX'] = g.dimensions['X'] - 2
         specialFields['JMAX'] = 1 if g.dimensions['Y'] == 1 else g.dimensions['Y'] - 2
         dimX = g.dimensions['X']
-        if dimX == 1: dimX += 2
+        if dimX == 1:
+            dimX += 2
         specialFields['XHAT'] = numpy.arange(-g.grid['X_resolution'] / 2.,
                                              g.grid['X_resolution'] * (dimX - 1),
                                              g.grid['X_resolution'])
         dimY = g.dimensions['Y']
-        if dimY == 1: dimY += 2
+        if dimY == 1:
+            dimY += 2
         specialFields['YHAT'] = numpy.arange(-g.grid['Y_resolution'] / 2.,
                                              g.grid['Y_resolution'] * (dimY - 1),
                                              g.grid['Y_resolution'])
@@ -1412,7 +1448,8 @@ class LFI(FileResource):
             if field_info['type'] == '3D':
                 specialFields['SLEVE'] = g.vcoordinate.typeoffirstfixedsurface != 118
                 kmax = len(g.vcoordinate.grid['gridlevels']) + 1
-                if kmax > 1: kmax -= 2
+                if kmax > 1:
+                    kmax -= 2
                 specialFields['KMAX'] = kmax
                 Ai = [level[1]['Ai'] for level in g.vcoordinate.grid['gridlevels']]
                 Ai = [-Ai[1]] + Ai
@@ -1422,11 +1459,11 @@ class LFI(FileResource):
         if g.name == 'academic':
             specialFields['BETA'] = 0.
             specialFields['CARTESIAN'] = True
-            if g.grid.has_key('latitude'):
+            if 'latitude' in g.grid:
                 specialFields['LAT0'] = g.grid['latitude'].get('degrees')
             else:
                 specialFields['LAT0'] = 0.
-            if g.grid.has_key('longitude'):
+            if 'longitude' in g.grid:
                 specialFields['LON0'] = g.grid['longitude'].get('degrees')
             else:
                 specialFields['LON0'] = 0.
@@ -1440,8 +1477,10 @@ class LFI(FileResource):
             else:
                 if g.name in ['mercator', 'polar_stereographic']:
                     specialFields['LAT0'] = g.projection['secant_lat'].get('degrees')
-                    if g.name == 'mercator': specialFields['RPK'] = 0.
-                    else: specialFields['RPK'] = numpy.copysign(1, specialFields['LAT0'])
+                    if g.name == 'mercator':
+                        specialFields['RPK'] = 0.
+                    else:
+                        specialFields['RPK'] = numpy.copysign(1, specialFields['LAT0'])
                 else:
                     latin1 = g.projection['secant_lat1'].get('degrees')
                     latin2 = g.projection['secant_lat2'].get('degrees')

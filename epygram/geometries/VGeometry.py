@@ -7,6 +7,8 @@
 Contains the class for Vertical geometry of fields.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import numpy
 import sys
 
@@ -15,7 +17,6 @@ from footprints import FootprintBase, FPDict, FPList, proxy as fpx
 
 from epygram import profiles, epygramError, config
 from epygram.util import RecursiveObject, write_formatted, separation_line
-
 
 
 class VGeometry(RecursiveObject, FootprintBase):
@@ -29,7 +30,7 @@ class VGeometry(RecursiveObject, FootprintBase):
     is interpreted as:\n
     - mass: points are located on same levels as the grid points.
     - flux: points are located on half-levels, hence are N+1.
-    
+
     levels is a list with one item for each level represented in data.
     Each item can be a scalar (constant value for all the data point),
                      an array with the horizontal geographic shape (level constant in time but varying on the horizontal),
@@ -110,21 +111,19 @@ class VGeometry(RecursiveObject, FootprintBase):
         out.write("\n")
 
 
-
-############################
-### CONVERSION FUNCTIONS ###
-############################
-
+########################
+# CONVERSION FUNCTIONS #
+########################
 def hybridP2pressure(hybridP_geometry, Psurf, vertical_mean,
                      gridposition=None):
     """
     Converts a 'hybrid_pressure' VGeometry to a 'pressure' VGeometry.
-    
+
     *Psurf* is the surface pressure in Pa, needed for integration of Ai and Bi.
 
     *gridposition* (= 'mass' or 'flux') is the target grid position. By
     default the data position in the origin geometry is taken.
-    
+
     *vertical_mean* defines the kind of averaging done on the vertical
     to compute half-levels from full-levels, or inverse: 'geometric' or
     'arithmetic'.
@@ -147,15 +146,16 @@ def hybridP2pressure(hybridP_geometry, Psurf, vertical_mean,
         levels = profiles.hybridP2fluxpressure(A, B, Psurf)
     else:
         raise epygramError("gridposition != 'mass' or 'flux'.")
-    levels = [l/100 for l in levels.squeeze()]
+    levels = [l / 100 for l in levels.squeeze()]
     kwargs_vcoord = {'structure':'V',
                      'typeoffirstfixedsurface': 100,
                      'position_on_grid': hybridP_geometry.position_on_grid,
                      'grid': {'gridlevels':levels},
                      'levels': levels
-                    }
+                     }
 
     return fpx.geometry(**kwargs_vcoord)
+
 
 def hybridH2pressure(hybridH_geometry, P, position):
     """
@@ -183,16 +183,15 @@ def hybridH2pressure(hybridH_geometry, P, position):
     else:
         raise NotImplementedError("grid positions can only be 'mass' or 'flux'.")
     levels = levels[numpy.array(hybridH_geometry.levels) - 1]
-    levels = [l/100 for l in levels.squeeze()]
+    levels = [l / 100 for l in levels.squeeze()]
     kwargs_vcoord = {'structure':'V',
                      'typeoffirstfixedsurface': 100,
                      'position_on_grid': hybridH_geometry.position_on_grid,
                      'grid':{'gridlevels':levels},
                      'levels': levels
-                    }
+                     }
 
     return fpx.geometry(**kwargs_vcoord)
-
 
 
 def hybridP2altitude(hybridP_geometry, R, T, Psurf, vertical_mean,
@@ -240,9 +239,10 @@ def hybridP2altitude(hybridP_geometry, R, T, Psurf, vertical_mean,
                      'position_on_grid': hybridP_geometry.position_on_grid,
                      'grid':{'gridlevels':list(levels)},
                      'levels': list(levels)
-                    }
+                     }
 
     return fpx.geometry(**kwargs_vcoord)
+
 
 def hybridH2altitude(hybridH_geometry, Zsurf,
                      gridposition=None, conv2height=False):
@@ -269,7 +269,7 @@ def hybridH2altitude(hybridH_geometry, Zsurf,
     # compute altitudes
     A = [level[1]['Ai'] for level in hybridH_geometry.grid['gridlevels']]
     B = [level[1]['Bi'] for level in hybridH_geometry.grid['gridlevels']]
-    #profiles.hybridH2*height wait for Ai and Bi describing the flux level of extra level under the ground
+    # profiles.hybridH2*height wait for Ai and Bi describing the flux level of extra level under the ground
     A = [-A[1]] + A
     B = [2 - B[1]] + B
     if gridposition == 'mass':
@@ -288,9 +288,10 @@ def hybridH2altitude(hybridH_geometry, Zsurf,
                      'position_on_grid': hybridH_geometry.position_on_grid,
                      'grid':{'gridlevels':list(levels)},
                      'levels': list(levels)
-                    }
+                     }
 
     return fpx.geometry(**kwargs_vcoord)
+
 
 def pressure2altitude(pressure_geometry, R, T, vertical_mean,
                       Pdep=0., Phi_surf=0.):
@@ -309,11 +310,11 @@ def pressure2altitude(pressure_geometry, R, T, vertical_mean,
       'arithmetic'.
     """
     raise NotImplementedError("Must be modified")
-    #La fonction n'a pas été revue depuis la modification sur les géométries verticales.
-    #Je n'ai pas prévu le cas d'une grille définie sur des niveaux pression avec des niveaux
-    #qui peuvent être différents (au moins à cause des mass/flux).
-    #Pour intégrer la possibilité, il faudrait peut-être mettre une grille dans tous les cas
-    #et que levels ne soit, à chaque fois, qu'une liste d'entiers indiquant les niveaux dans la grille.
+    # La fonction n'a pas été revue depuis la modification sur les géométries verticales.
+    # Je n'ai pas prévu le cas d'une grille définie sur des niveaux pression avec des niveaux
+    # qui peuvent être différents (au moins à cause des mass/flux).
+    # Pour intégrer la possibilité, il faudrait peut-être mettre une grille dans tous les cas
+    # et que levels ne soit, à chaque fois, qu'une liste d'entiers indiquant les niveaux dans la grille.
     if pressure_geometry.grid['gridposition'] == 'flux':
         # compute alt
         levels = profiles.pressure2altitude(R, T, vertical_mean,
@@ -340,7 +341,6 @@ def pressure2altitude(pressure_geometry, R, T, vertical_mean,
                         grid=grid,
                         hlocation=pressure_geometry.hlocation,
                         position_on_grid=pressure_geometry.position_on_grid)
-
 
 
 footprints.collectors.get(tag='geometrys').fasttrack = ('format',)

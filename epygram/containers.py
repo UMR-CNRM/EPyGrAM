@@ -7,16 +7,17 @@
 Contains the containers for a Resource.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
+import os
+
 from footprints import FootprintBase
 
 from epygram.util import RecursiveObject
 
 
-
 class File(RecursiveObject, FootprintBase):
-    """
-    Generic class implementing a File.
-    """
+    """Generic class implementing a File."""
 
     _collector = ('container', 'file')
     _footprint = dict(
@@ -29,11 +30,7 @@ class File(RecursiveObject, FootprintBase):
     )
 
     def __init__(self, *args, **kwargs):
-        """
-        Constructor. See its footprint for arguments.
-        """
-        import os
-
+        """Constructor. See its footprint for arguments."""
         # super to footprints constructor
         super(File, self).__init__(*args, **kwargs)
         # initialise absolute pathname
@@ -41,22 +38,15 @@ class File(RecursiveObject, FootprintBase):
 
     @property
     def basename(self):
-        """
-        Returns the basename of the file.
-        """
-        import os
+        """Returns the basename of the file."""
         return os.path.basename(self._abspath)
 
     @property
     def abspath(self):
-        """
-        Returns the absolute path of the file.
-        """
+        """Returns the absolute path of the file."""
         return self._abspath
 
     @property
     def absdir(self):
-        """
-        Returns the absolute path of the directory of the file.
-        """
+        """Returns the absolute path of the directory of the file."""
         return self._abspath[:-len(self.basename)]

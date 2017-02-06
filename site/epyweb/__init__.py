@@ -3,7 +3,9 @@
 # Copyright (c) Météo France (2016-)
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
-from __future__ import print_function
+
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import os
 import json
 import datetime
@@ -18,7 +20,7 @@ import matplotlib
 matplotlib.use("Agg")
 from mpl_toolkits.basemap import Basemap
 
-import web
+from . import web
 
 from footprints.util import rangex
 import epygram

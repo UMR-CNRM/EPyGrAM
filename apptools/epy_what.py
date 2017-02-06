@@ -4,6 +4,8 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import argparse
 import sys
 
@@ -26,11 +28,11 @@ def main(filename,
         sortfields: sort fields. Cf. formats what() method for further details.
         stdoutput: if True, output is redirected to stdout.
         mode: for GRIB only, among ('one+list', 'fid_list', 'what', 'ls', 'mars'), \n
-          - 'one+list' = gives the validity/geometry of the first field in 
+          - 'one+list' = gives the validity/geometry of the first field in
             GRIB, plus the list of fid.
           - 'fid_list' = gives only the fid of each field in GRIB.
           - 'what' = gives the values of the keys from each GRIB message that
-            are used to generate an **epygram** field from the message (slower). 
+            are used to generate an **epygram** field from the message (slower).
           - 'ls' = gives the values of the 'ls' keys from each GRIB message.
           - 'mars' = gives the values of the 'mars' keys from each GRIB message.
     """
@@ -47,9 +49,7 @@ def main(filename,
                   details=details,
                   sortfields=sortfields,
                   mode=mode)
-
 # end of main() ###############################################################
-
 
 
 if __name__ == '__main__':

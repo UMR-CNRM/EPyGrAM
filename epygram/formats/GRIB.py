@@ -8,6 +8,8 @@ Contains classes for GRIB resource and GRIB individual message,
 editions 1 and 2.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 __all__ = ['GRIB']
 
 import datetime
@@ -33,8 +35,7 @@ import gribapi
 epylog = footprints.loggers.getLogger(__name__)
 
 
-
-#FIXME: temporary conversion of surface types
+# FIXME: temporary conversion of surface types
 onetotwo = {1:1,  # ground or water surface
             20:20,  # isothermal level
             100:100,  # isobaric surface
@@ -49,10 +50,12 @@ onetotwo = {1:1,  # ground or water surface
             }
 twotoone = {v:k for (k, v) in onetotwo.iteritems()}
 
+
 def parse_GRIBstr_todict(strfid):
     """Parse and return a dict GRIB fid from a string."""
     fid = util.parse_str2dict(strfid, try_convert=int)
     return fid
+
 
 class GRIBmessage(RecursiveObject, dict):
     """
@@ -96,7 +99,7 @@ class GRIBmessage(RecursiveObject, dict):
           in. n = *offset_position*, if given, enables to read the n+1'th GRIB
           message in file. Defaults to 0. Negative value counts from the end.
         - ('field', :class:`epygram.fields.H2DField`)
-          In that case, the *packing* options, *grib_edition*, 
+          In that case, the *packing* options, *grib_edition*,
           *other_GRIB_options* and the *sample* to be used can be forced using
           the adhoc arguments (cf _build_msg_from_field() doc).
         - ('gribid', *gribid*)
@@ -153,7 +156,7 @@ class GRIBmessage(RecursiveObject, dict):
 
     def __setitem__(self, key, value):
         if value is not None:
-            if gribapi.__version__ <= '1.10.4':  #FIXME: 1.10.4 needs this; 1.14.0 does not; in between ???
+            if gribapi.__version__ <= '1.10.4':  # FIXME: 1.10.4 needs this; 1.14.0 does not; in between ???
                 if isinstance(value, numpy.float):
                     value = float(value)
                 elif isinstance(value, numpy.int):
@@ -283,9 +286,9 @@ class GRIBmessage(RecursiveObject, dict):
                 else:
                     sample = config.GRIB_default_sample[grib_edition]
             else:
-                #if 'gauss' in field.geometry.name:
+                # if 'gauss' in field.geometry.name:
                 #    sample = 'gg_sfc_grib' + str(grib_edition)
-                #else:
+                # else:
                     sample = 'GRIB' + str(grib_edition) + required_packingType[4:]  # [4:] to remove leading 'grid_*'
                     if sample + '.tmpl' not in os.listdir(config.GRIB_samples_path):
                         sample = config.GRIB_default_sample[grib_edition]
@@ -365,7 +368,7 @@ class GRIBmessage(RecursiveObject, dict):
                 epylog.warning("geometry has no geoid: assume 'shapeOfTheEarth' = 6.")
                 self['shapeOfTheEarth'] = 6
             else:
-                if (field.geometry.geoid.get('a') == grib_utilities.pyproj_geoid_shapes[6]['a'] and \
+                if (field.geometry.geoid.get('a') == grib_utilities.pyproj_geoid_shapes[6]['a'] and
                     field.geometry.geoid.get('b') == grib_utilities.pyproj_geoid_shapes[6]['b']) or \
                    field.geometry.geoid.get('geoidradius') == grib_utilities.myproj_geoid_shapes[6]['geoidradius']:
                     self['shapeOfTheEarth'] = 6
@@ -438,7 +441,7 @@ class GRIBmessage(RecursiveObject, dict):
                     try:
                         self['LaDInDegrees'] = lat_ts
                     except gribapi.GribInternalError:
-                        if abs(lat_ts - \
+                        if abs(lat_ts -
                                numpy.copysign(60., field.geometry.projection['reference_lat'].get('degrees'))) > config.epsilon:
                             raise epygramError("unable to write polar stereographic geometry to GRIB1 if *secant_lat* is not +/-60 degrees.")
                     self['orientationOfTheGridInDegrees'] = field.geometry.projection['reference_lon'].get('degrees')
@@ -449,7 +452,7 @@ class GRIBmessage(RecursiveObject, dict):
                     try:
                         self['LaDInDegrees'] = lat_ts
                     except gribapi.GribInternalError:
-                        pass  #TOBECHECKED: in GRIB1, lat_ts=0. ?
+                        pass  # TOBECHECKED: in GRIB1, lat_ts=0. ?
                     if abs(field.geometry.projection['rotation'].get('degrees')) > config.epsilon:
                         raise NotImplementedError("*rotation* attribute of projection != 0.")
                 if field.geometry.name in ('lambert', 'polar_stereographic'):
@@ -484,10 +487,7 @@ class GRIBmessage(RecursiveObject, dict):
             # spectral case
             if field.spectral_geometry.space == 'bi-fourier':
                 self['gridType'] = 'sh'  # in bi-fourier case, this is a bypass
-                #self['sphericalHarmonics'] = 1  # in bi-fourier case, this is a bypass
-                #self['J'] = field.spectral_geometry.truncation['in_X']
-                #self['K'] = field.spectral_geometry.truncation['in_Y']
-                self['J'] = max(field.spectral_geometry.truncation['in_X'],  #TOBECHECKED:
+                self['J'] = max(field.spectral_geometry.truncation['in_X'],  # TOBECHECKED:
                                 field.spectral_geometry.truncation['in_Y'])
                 self['K'] = self['J']
                 self['M'] = self['J']
@@ -513,8 +513,8 @@ class GRIBmessage(RecursiveObject, dict):
                 self._set_array_attribute('pv', ab)
             else:
                 pass
-                #FIXME: this should be done but it changes gridType !!!
-                #self['numberOfVerticalCoordinateValues'] = 0
+                # FIXME: this should be done but it changes gridType !!!
+                # self['numberOfVerticalCoordinateValues'] = 0
         elif grib_edition == 2:
             if len(field.geometry.vcoordinate.levels) > 1:
                 raise epygramError("field has more than one level")
@@ -594,7 +594,7 @@ class GRIBmessage(RecursiveObject, dict):
                 else:
                     raise NotImplementedError('this ordering: not yet.')
             else:
-                if not(self['iScansNegatively'] == 0 and \
+                if not(self['iScansNegatively'] == 0 and
                        self['jScansPositively'] == 0):
                     raise NotImplementedError('this ordering: not yet.')
 
@@ -606,11 +606,11 @@ class GRIBmessage(RecursiveObject, dict):
                 self['bitmapPresent'] = 1
                 self['missingValue'] = values.fill_value
                 if 'gauss' in field.geometry.name:
-                    values = field.geometry.fill_maskedvalues(values)  #TOBECHECKED:
+                    values = field.geometry.fill_maskedvalues(values)  # TOBECHECKED:
                 else:
                     values = values.filled(values.fill_value)
             else:
-                pass  #TODO: bitmap in GRIB1 ?
+                pass  # TODO: bitmap in GRIB1 ?
         if not field.spectral:
             # is it necessary to pre-write values ? (packingType != from sample)
             # Yes it is (don't really know why...)
@@ -635,7 +635,7 @@ class GRIBmessage(RecursiveObject, dict):
 
         packing = copy.copy(packing)
         if packing.get('bitsPerValue') is not None and packing.get('bitsPerValue') > 24:
-            packing['bitsPerValue'] = 24  #FIXME: problem with bitsPerValue = 30 at least
+            packing['bitsPerValue'] = 24  # FIXME: problem with bitsPerValue = 30 at least
         order = ['packingType', 'complexPacking', 'boustrophedonicOrdering',
                  'bitsPerValue']
         for k in order:
@@ -754,7 +754,7 @@ class GRIBmessage(RecursiveObject, dict):
                                      'ABgrid_position':'flux'}
         vcoordinate = fpx.geometry(**kwargs_vcoord)
         if self['gridType'] == 'sh':
-            raise NotImplementedError('not yet')  #TODO: or not to do ?
+            raise NotImplementedError('not yet')  # TODO: or not to do ?
             dimensions = {'X':self['Nx'],
                           'Y':self['Ny']}
         else:
@@ -794,9 +794,9 @@ class GRIBmessage(RecursiveObject, dict):
                 epylog.warning(' '.join(['for centre:',
                                          self['centreDescription'],
                                          "(OSI-SAF)"
-                                         "and polar stereographic" + \
-                                         "projection, lat_ts is taken in" + \
-                                         "3rd position in attribute 'pv[]'" + \
+                                         "and polar stereographic" +
+                                         "projection, lat_ts is taken in" +
+                                         "3rd position in attribute 'pv[]'" +
                                          "of GRIB message !"]))
                 (a, b, lat_ts) = self['pv']
                 geoid = {'a':a, 'b':b}
@@ -805,10 +805,10 @@ class GRIBmessage(RecursiveObject, dict):
                           'secant_lat':Angle(lat_ts, 'degrees'),
                           'rotation':Angle(0., 'degrees')
                           }
-            #TOBEDELETED: in GRIB stereo-polar projection, the resolution is supposed
+            # TOBEDELETED: in GRIB stereo-polar projection, the resolution is supposed
             # to be given at 60deg (GRIB1) and 'LaD'deg (GRIB2)
-            #m = (1. + numpy.copysign(1., lat_0) * numpy.sin(numpy.radians(lat_0))) / \
-            #    (1. + numpy.copysign(1., lat_0) * numpy.sin(numpy.radians(lat_ts)))
+            # m = (1. + numpy.copysign(1., lat_0) * numpy.sin(numpy.radians(lat_0))) / \
+            #     (1. + numpy.copysign(1., lat_0) * numpy.sin(numpy.radians(lat_ts)))
             m = 1
             grid = {'X_resolution':float(self['DxInMetres']) * m,
                     'Y_resolution':float(self['DyInMetres']) * m,
@@ -851,7 +851,7 @@ class GRIBmessage(RecursiveObject, dict):
                     'LAMzone':None}
         elif 'gg' in self['gridType']:
             projection = None
-            #NOTE: this is a (good) approximation actually, the true latitudes are the roots of Legendre polynoms
+            # NOTE: this is a (good) approximation actually, the true latitudes are the roots of Legendre polynoms
             latitudes = numpy.linspace(self['latitudeOfFirstGridPointInDegrees'],
                                        self['latitudeOfLastGridPointInDegrees'],
                                        self['Nj'])
@@ -964,7 +964,7 @@ class GRIBmessage(RecursiveObject, dict):
     def readkeys(self, namespace=None):
         """
         Reads and returns the available keys of the message.
-        
+
         Args:\n
         - *namespace*: the namespace of keys to be read, among:\n
           - **None**: to get all keys present in message,
@@ -1079,7 +1079,7 @@ class GRIBmessage(RecursiveObject, dict):
                                             order='C')[:, ::-1]
                 else:
                     raise NotImplementedError("not yet !")
-            if self['editionNumber'] == 2 and self['bitMapIndicator'] == 0:  #TODO: GRIB1
+            if self['editionNumber'] == 2 and self['bitMapIndicator'] == 0:  # TODO: GRIB1
                 data2d = numpy.ma.masked_equal(data2d, self['missingValue'])
             field.setdata(data2d)
 
@@ -1091,7 +1091,6 @@ class GRIBmessage(RecursiveObject, dict):
         file to be written to.
         """
         gribapi.grib_write(self._gid, ofile)
-
 
 
 class GRIB(FileResource):
@@ -1153,9 +1152,9 @@ class GRIB(FileResource):
 
         Argument *onlykey* can be specified as a string or a tuple of strings,
         so that only specified keys of the fid will returned.
-        
+
         Argument *select* can be specified as a dict(key=value) to restrain
-        the list of fields to those that match the key:value pairs. 
+        the list of fields to those that match the key:value pairs.
         """
 
         if select is not None:
@@ -1327,8 +1326,8 @@ class GRIB(FileResource):
         else:
             raise epygramError("unknown type for seed: " + str(type(seed)))
         if fieldslist == []:
-            raise epygramError("no field matching '" + str(seed) + \
-                               "' was found in resource " + \
+            raise epygramError("no field matching '" + str(seed) +
+                               "' was found in resource " +
                                self.container.abspath)
         if generic:
             fieldslist2 = [copy.copy(f) for f in fieldslist]
@@ -1358,7 +1357,7 @@ class GRIB(FileResource):
 
         If *footprints_proxy_as_builder* == **True**, uses footprints.proxy
         to build fields. True decreases performance.
-        
+
         If *get_info_as_json* is not **None**, writes the keys given in
         *get_info_as_json* as json in field.comment.
         """
@@ -1377,10 +1376,10 @@ class GRIB(FileResource):
             if all([fid.get(k, None) in (v, None) for k, v in handgrip.items()]):
                 filtered_matchingfields.append(field)
         if len(filtered_matchingfields) > 1:
-            raise epygramError("several fields found for that *handgrip*;" + \
+            raise epygramError("several fields found for that *handgrip*;" +
                                " please refine.")
         elif len(filtered_matchingfields) == 0:
-            raise epygramError("inconsistency in *handgrip*; check again" + \
+            raise epygramError("inconsistency in *handgrip*; check again" +
                                " values and types of values")
 
         return filtered_matchingfields[0]
@@ -1403,7 +1402,7 @@ class GRIB(FileResource):
 
         If *footprints_proxy_as_builder* == **True**, uses footprints.proxy
         to build fields. True decreases performance.
-        
+
         If *get_info_as_json* is not **None**, writes the keys given in
         *get_info_as_json* as json in field.comment.
         """
@@ -1412,11 +1411,11 @@ class GRIB(FileResource):
         idx = gribapi.grib_index_new_from_file(self.container.abspath, handgrip.keys())
         # filter
         for k, v in handgrip.items():
-            #FIXME: ? BUG in gribapi ? type conversion seems not to work for index
+            # FIXME: ? BUG in gribapi ? type conversion seems not to work for index
             if k == 'indicatorOfTypeOfLevel' and isinstance(v, int):  # GRIB1
                 type_conv_GRIB1 = {1:'sfc',
                                    8:'sfc',
-                                   #20:'20',
+                                   # 20:'20',
                                    100:'pl',
                                    102:'sfc',
                                    103:'sfc',
@@ -1424,8 +1423,8 @@ class GRIB(FileResource):
                                    109:'ml',
                                    111:'sfc',
                                    112:'sfc',
-                                   #113:'sfc',
-                                   #115:'115',
+                                   # 113:'sfc',
+                                   # 115:'115',
                                    117:'pv',
                                    200:'sfc',
                                    }
@@ -1493,17 +1492,17 @@ class GRIB(FileResource):
         """
         Extracts a vertical profile from the GRIB resource, given a handgrip
         and the geographic location (*lon*/*lat*) of the profile.
-        
+
         Args: \n
         - *handgrip* MUST define the parameter and the type of levels
         - *lon* is the longitude of the desired point.
         - *lat* is the latitude of the desired point.
         - *geometry* is the geometry on which extract data. If None, it is built from
           lon/lat.
-        - *vertical_coordinate* defines the requested vertical coordinate of the 
+        - *vertical_coordinate* defines the requested vertical coordinate of the
           V1DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
           possible values).
-        - *interpolation* defines the interpolation function used to compute 
+        - *interpolation* defines the interpolation function used to compute
           the profile at requested lon/lat from the fields grid:
           - if 'nearest' (default), extracts profile at the horizontal nearest neighboring gridpoint;
           - if 'linear', computes profile with horizontal linear spline interpolation;
@@ -1514,7 +1513,7 @@ class GRIB(FileResource):
           departure (Non-Hydrostatic data). Computation therefore faster.
         - *external_distance* can be a dict containing the target point value
           and an external field on the same grid as self, to which the distance
-          is computed within the 4 horizontally nearest points; e.g. 
+          is computed within the 4 horizontally nearest points; e.g.
           {'target_value':4810, 'external_field':an_H2DField_with_same_geometry}.
           If so, the nearest point is selected with
           distance = |target_value - external_field.data|
@@ -1553,28 +1552,28 @@ class GRIB(FileResource):
         Extracts a vertical section from the GRIB resource, given its handgrip
         and the geographic (lon/lat) coordinates of its ends.
         The section is returned as a V2DField.
-        
+
         Args: \n
         - *handgrip* MUST define the parameter and the type of levels
         - *end1* must be a tuple (lon, lat).
         - *end2* must be a tuple (lon, lat).
         - *geometry* is the geometry on which extract data. If None, defaults to
           linearily spaced positions computed from  *points_number*.
-        - *points_number* defines the total number of horizontal points of the 
+        - *points_number* defines the total number of horizontal points of the
           section (including ends). If None, defaults to a number computed from
           the *ends* and the *resolution*.
-        - *resolution* defines the horizontal resolution to be given to the 
+        - *resolution* defines the horizontal resolution to be given to the
           field. If None, defaults to the horizontal resolution of the field.
-        - *vertical_coordinate* defines the requested vertical coordinate of the 
+        - *vertical_coordinate* defines the requested vertical coordinate of the
           V2DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
           possible values).
-        - *interpolation* defines the interpolation function used to compute 
+        - *interpolation* defines the interpolation function used to compute
           the profile points locations from the fields grid: \n
-          - if 'nearest', each horizontal point of the section is 
+          - if 'nearest', each horizontal point of the section is
             taken as the horizontal nearest neighboring gridpoint;
-          - if 'linear' (default), each horizontal point of the section is 
+          - if 'linear' (default), each horizontal point of the section is
             computed with linear spline interpolation;
-          - if 'cubic', each horizontal point of the section is 
+          - if 'cubic', each horizontal point of the section is
             computed with linear spline interpolation.
         - *cheap_height*: if True and *vertical_coordinate* among
           ('altitude', 'height'), the computation of heights is done without
@@ -1590,8 +1589,8 @@ class GRIB(FileResource):
             if None in [end1, end2]:
                 raise epygramError("You must give a geometry or end1 *and* end2")
             sectionG = field3d.geometry.make_section_geometry(end1, end2,
-                                                           points_number=points_number,
-                                                           resolution=resolution)
+                                                              points_number=points_number,
+                                                              resolution=resolution)
         else:
             if end1 is not None or end2 is not None:
                 raise epygramError("You cannot provide end1 or end2 when geometry is given")
@@ -1613,20 +1612,20 @@ class GRIB(FileResource):
         """
         Extracts a subdomain from the GRIB resource, given its handgrip
         and the geometry to use.
-        
+
         Args: \n
         - *handgrip* MUST define the parameter and the type of levels
         - *geometry* is the geometry on which extract data.
-        - *vertical_coordinate* defines the requested vertical coordinate of the 
+        - *vertical_coordinate* defines the requested vertical coordinate of the
           V2DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
           possible values).
-        - *interpolation* defines the interpolation function used to compute 
+        - *interpolation* defines the interpolation function used to compute
           the profile points locations from the fields grid: \n
-          - if 'nearest', each horizontal point of the section is 
+          - if 'nearest', each horizontal point of the section is
             taken as the horizontal nearest neighboring gridpoint;
-          - if 'linear' (default), each horizontal point of the section is 
+          - if 'linear' (default), each horizontal point of the section is
             computed with linear spline interpolation;
-          - if 'cubic', each horizontal point of the section is 
+          - if 'cubic', each horizontal point of the section is
             computed with linear spline interpolation.
         - *cheap_height*: if True and *vertical_coordinate* among
           ('altitude', 'height'), the computation of heights is done without
@@ -1664,14 +1663,14 @@ class GRIB(FileResource):
                                 side_handgrip = {'indicatorOfTypeOfLevel':handgrip.get('indicatorOfTypeOfLevel')}
                             side_handgrip['shortName'] = p
                             side_profiles[p] = self.extract_subdomain(side_handgrip, geometry,
-                                                              interpolation=interpolation,
-                                                              external_distance=external_distance)
+                                                                      interpolation=interpolation,
+                                                                      external_distance=external_distance)
                         side_profiles[p] = side_profiles[p].getdata()
                     except epygramError:
                         # fields not present in file
                         if p in ('t', 'q'):
-                            raise epygramError("Temperature and Specific" + \
-                                               " Humidity must be in" + \
+                            raise epygramError("Temperature and Specific" +
+                                               " Humidity must be in" +
                                                " resource.")
                         else:
                             side_profiles[p] = numpy.zeros(side_profiles['t'].shape)
@@ -1679,11 +1678,11 @@ class GRIB(FileResource):
                                  ['q']])
                 if vertical_coordinate == 102:
                     raise NotImplementedError("not yet.")
-                    #surface_geopotential = geopotential.getvalue_ll(*geometry.get_lonlat_grid(),
-                    #                                                interpolation=interpolation,
-                    #                                                one=False,
-                    #                                                external_distance=external_distance)
-                    #del geopotential
+                    # surface_geopotential = geopotential.getvalue_ll(*geometry.get_lonlat_grid(),
+                    #                                                 interpolation=interpolation,
+                    #                                                 one=False,
+                    #                                                 external_distance=external_distance)
+                    # del geopotential
                 else:
                     surface_geopotential = numpy.zeros(geometry.get_lonlat_grid()[0].size)
 
@@ -1692,13 +1691,13 @@ class GRIB(FileResource):
             if subdomain.geometry.vcoordinate.typeoffirstfixedsurface == 100 and \
                  vertical_coordinate in (102, 103):
                 subdomain.geometry.vcoordinate = pressure2altitude(subdomain.geometry.vcoordinate,
-                                                             R,
-                                                             side_profiles['t'],
-                                                             vertical_mean,
-                                                             Pdep=side_profiles['pdep'],
-                                                             Phi_surf=surface_geopotential)
+                                                                   R,
+                                                                   side_profiles['t'],
+                                                                   vertical_mean,
+                                                                   Pdep=side_profiles['pdep'],
+                                                                   Phi_surf=surface_geopotential)
             else:
-                raise NotImplementedError("this vertical coordinate" + \
+                raise NotImplementedError("this vertical coordinate" +
                                           " conversion.")
 
         return subdomain
@@ -1742,8 +1741,8 @@ class GRIB(FileResource):
                 if m._read_validity().get() != onefield.validity.get():
                     epylog.error(str(m._read_validity()))
                     epylog.error(str(onefield.validity))
-                    raise epygramError("all fields do not share their" + \
-                                       " validity; 'one+list' mode" + \
+                    raise epygramError("all fields do not share their" +
+                                       " validity; 'one+list' mode" +
                                        " disabled.")
             onefield.what(out, vertical_geometry=False,
                           cumulativeduration=False,
@@ -1786,5 +1785,3 @@ class GRIB(FileResource):
             for f in listoffields:
                 write_formatted_dict(out, f)
         out.write(separation_line)
-
-

@@ -12,6 +12,8 @@ This module contains:
 - a function to plot a series of spectra.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import numpy
 import copy
 
@@ -19,9 +21,9 @@ from epygram import epygramError
 from epygram.util import RecursiveObject, write_formatted_table, set_figax
 
 
-
 _file_id = 'epygram.spectra.Spectrum'
 _file_columns = ['#', 'lambda', 'variance']
+
 
 def read_Spectrum(filename):
     """Read a Spectrum written in file and return it."""
@@ -148,14 +150,14 @@ class Spectrum(RecursiveObject):
                            unit=unit,
                            title=title)
 
-### internal
-
+##########
+# internal
     def _check_operands(self, other):
         """Check compatibility of both spectra."""
 
         if isinstance(other, Spectrum):
             assert all((len(self.variances) == len(other.variances),
-                        self.resolution == other.resolution or \
+                        self.resolution == other.resolution or
                         None in (self.resolution, other.resolution))), \
                    "operations between spectra require that they share dimension and resolution."
         else:
@@ -182,6 +184,7 @@ class Spectrum(RecursiveObject):
                         name=name,
                         resolution=self.resolution,
                         mean2=mean2)
+
     def __sub__(self, other):
         (othermean2, othername, otherval) = self._check_operands(other)
         mean2 = None if None in (self.mean2, othermean2) else self.mean2 - othermean2
@@ -190,6 +193,7 @@ class Spectrum(RecursiveObject):
                         name=name,
                         resolution=self.resolution,
                         mean2=mean2)
+
     def __mul__(self, other):
         (othermean2, othername, otherval) = self._check_operands(other)
         mean2 = None if None in (self.mean2, othermean2) else self.mean2 * othermean2
@@ -198,6 +202,7 @@ class Spectrum(RecursiveObject):
                         name=name,
                         resolution=self.resolution,
                         mean2=mean2)
+
     def __div__(self, other):
         (othermean2, othername, otherval) = self._check_operands(other)
         mean2 = None if None in (self.mean2, othermean2) else self.mean2 / othermean2
@@ -207,10 +212,10 @@ class Spectrum(RecursiveObject):
                         resolution=self.resolution,
                         mean2=mean2)
 
+
 #############################
 ### FUNCTIONS FOR SPECTRA ###
 #############################
-
 def sort(spectra):
     """ Sort a list of spectra with regards to their name. """
 
@@ -223,6 +228,7 @@ def sort(spectra):
                 break
     return sortedspectra
 
+
 def dctspectrum(x, log=None, verbose=False):
     """
     Function *dctspectrum* takes a 2D-array as argument and returns its 1D
@@ -232,7 +238,7 @@ def dctspectrum(x, log=None, verbose=False):
         Denis et al. (2002) : 'Spectral Decomposition of Two-Dimensional
         Atmospheric Fields on Limited-Area Domains Using
         the Discrete Cosine Transform (DCT).'
-    
+
     *log* is an optional logging.Logger instance to which print info
     in *verbose* case.
     """
@@ -273,6 +279,7 @@ def dctspectrum(x, log=None, verbose=False):
 
     return variance
 
+
 def plotspectra(spectra,
                 over=(None, None),
                 slopes=[{'exp':-3, 'offset':1, 'label':'-3'},
@@ -282,13 +289,13 @@ def plotspectra(spectra,
                 title=None):
     """
     To plot a series of spectra.
-    
+
     Args:\n
     - over = any existing figure and/or ax to be used for the
       plot, given as a tuple (fig, ax), with None for
       missing objects. *fig* is the frame of the
-      matplotlib figure, containing eventually several 
-      subplots (axes); *ax* is the matplotlib axes on 
+      matplotlib figure, containing eventually several
+      subplots (axes); *ax* is the matplotlib axes on
       which the drawing is done. When given (is not None),
       these objects must be coherent, i.e. ax being one of
       the fig axes.
@@ -327,7 +334,8 @@ def plotspectra(spectra,
     linestyles = ['-', '--', '-.', ':']
 
     # axes
-    if title is not None : ax.set_title(title)
+    if title is not None :
+        ax.set_title(title)
     ax.set_yscale('log')
     ax.set_ylim(window['ymin'], window['ymax'])
     ax.set_xscale('log')

@@ -10,6 +10,8 @@ The standard default parameters lie below. They can be overwritten by
 the user in the User config file :attr:`userconfigfile`.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import os
 import sys
 import platform
@@ -17,7 +19,7 @@ import copy
 
 import footprints
 
-from epygram import __version__
+from . import __version__
 
 
 

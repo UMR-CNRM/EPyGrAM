@@ -4,6 +4,8 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import argparse
 import sys
 from footprints import FPDict
@@ -15,7 +17,6 @@ from epygram.args_catalog import add_arg_to_parser, \
                                  files_management, fields_management, \
                                  misc_options, runtime_options, \
                                  extraction_options, output_options
-
 
 
 def main(filename,
@@ -53,7 +54,7 @@ def main(filename,
         external_distance: can be a dict containing the target point value
                            and an additional field fid, to which field the distance
                            for computing nearest point
-                           is computed within the 4 horizontally nearest points; e.g. 
+                           is computed within the 4 horizontally nearest points; e.g.
                            {'target_value':4810, 'external_field':an_additional_fid}.
                            If so, the nearest point is selected with
                            distance = |target_value - external_field.data|
@@ -64,7 +65,7 @@ def main(filename,
     if resource.format not in ('GRIB', 'FA', 'LFI'):
         epylog.warning(" ".join(["tool NOT TESTED with format",
                                  resource.format, "!"]))
-    diffmode = refname != None
+    diffmode = refname is not None
     if diffmode:
         reference = epygram.formats.resource(refname, openmode='r')
 
@@ -77,7 +78,6 @@ def main(filename,
         values = {}
         fidlist = resource.find_fields_in_resource(seed=fieldseed, fieldtype='H2D')
         if resource.format == 'GRIB':
-            print fidlist
             fidlist = [FPDict(d) for d in fidlist]
         firstfield = True
         for f in fidlist:
@@ -88,8 +88,8 @@ def main(filename,
             if operation is not None:
                 field.operation(**operation)
             if pressure_unit_hpa and \
-               (field.fid['generic'].get('discipline') == 0 and \
-                field.fid['generic'].get('parameterCategory') == 3 and \
+               (field.fid['generic'].get('discipline') == 0 and
+                field.fid['generic'].get('parameterCategory') == 3 and
                 field.fid['generic'].get('parameterNumber') in (0, 1, 2, 8, 11, 25)):
                 field.scalar_operation('/', 100.)
             if firstfield and interpolation == 'nearest':
@@ -127,8 +127,8 @@ def main(filename,
                 if operation is not None:
                     field.operation(**operation)
                 if pressure_unit_hpa and \
-                   (field.fid['generic'].get('discipline') == 0 and \
-                    field.fid['generic'].get('parameterCategory') == 3 and \
+                   (field.fid['generic'].get('discipline') == 0 and
+                    field.fid['generic'].get('parameterCategory') == 3 and
                     field.fid['generic'].get('parameterNumber') in (0, 1, 2, 8, 11, 25)):
                     field.scalar_operation('/', 100.)
                 if firstfield and interpolation == 'nearest':
@@ -151,8 +151,8 @@ def main(filename,
                 if operation is not None:
                     field.operation(**operation)
                 if pressure_unit_hpa and \
-                   (field.fid['generic'].get('discipline') == 0 and \
-                    field.fid['generic'].get('parameterCategory') == 3 and \
+                   (field.fid['generic'].get('discipline') == 0 and
+                    field.fid['generic'].get('parameterCategory') == 3 and
                     field.fid['generic'].get('parameterNumber') in (0, 1, 2, 8, 11, 25)):
                     field.scalar_operation('/', 100.)
                 if firstfield and interpolation == 'nearest':
@@ -249,9 +249,7 @@ def main(filename,
     out.write(head + '\n')
     out.write('-' * len(head) + '\n')
     write_formatted_table(out, output, precision=precision)
-
 # end of main() ###############################################################
-
 
 
 if __name__ == '__main__':
@@ -292,7 +290,7 @@ if __name__ == '__main__':
         epylog.setLevel('INFO')
 
     # 2.1 options
-    if args.Drefname != None:
+    if args.Drefname is not None:
         refname = args.Drefname
         diffonly = True
     else:
@@ -315,7 +313,7 @@ if __name__ == '__main__':
                              'external_field':external_distance[1]}
     else:
         external_distance = False
-    if args.operation != None:
+    if args.operation is not None:
         _operation = args.operation.split(',')
         operation = {'operation':_operation.pop(0).strip()}
         if len(_operation) > 0:
@@ -324,9 +322,9 @@ if __name__ == '__main__':
         operation = None
 
     # 2.2 list of fields to be processed
-    if args.field != None:
+    if args.field is not None:
         fieldseed = args.field
-    elif args.listoffields != None:
+    elif args.listoffields is not None:
         listfile = epygram.containers.File(filename=args.listoffields)
         with open(listfile.abspath, 'r') as l:
             fieldseed = l.readlines()

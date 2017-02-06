@@ -7,8 +7,9 @@
 Contains the class to for Miscellaneous fields.
 """
 
-from epygram.base import Field
+from __future__ import print_function, absolute_import, unicode_literals, division
 
+from epygram.base import Field
 
 
 class MiscField(Field):
@@ -20,14 +21,10 @@ class MiscField(Field):
 
     @property
     def datatype(self):
-        """
-        Returns the data type.
-        """
+        """Returns the data type."""
         return self._data.dtype
 
     @property
     def shape(self):
-        """
-        Returns the data shape.
-        """
+        """Returns the data shape."""
         return self._data.shape

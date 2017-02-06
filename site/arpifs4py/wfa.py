@@ -7,18 +7,19 @@
 Wrappers for FA library.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 from ctypes import c_longlong, c_char_p, c_bool, c_double
 import numpy as np
 
 from . import ctypesFF, IN, OUT, treatReturnCode, addReturnCode
 
 
-
 @ctypesFF
 def get_facst(*args):
     """
     Export maximum sizes used for fa format.
-    
+
     Args:\n
     1) JPXPAH
     2) JPXIND
@@ -30,18 +31,19 @@ def get_facst(*args):
             (c_longlong(), OUT),
             (c_longlong(), OUT)]
 
+
 @treatReturnCode
 @ctypesFF
 @addReturnCode
 def wfaitou(*args):
     """
     Open a FA file.
-    
+
     Args:\n
     1) CDFILE: path to file to open
     2) CDSTATE: state of file ('NEW', 'OLD')
     3) CDNOMC: name of "cadre"
-    
+
     Returns:\n
     1) KNUMER: logical unit number associated to file
     """
@@ -50,16 +52,17 @@ def wfaitou(*args):
             (c_longlong(), OUT),
             (c_char_p(args[2].ljust(16)), IN)]
 
+
 @treatReturnCode
 @ctypesFF
 @addReturnCode
 def wfaveur(*args):
     """
     Get compression parameters of a field in file.
-    
+
     Args:\n
     1) KNUMER: logical unit number associated to file
-    
+
     Returns:\n
     1) KNGRIB: Grib encoding level (-1,0,1,2,3);
     2) KNBPDG: Number of bits by grid point value
@@ -76,21 +79,23 @@ def wfaveur(*args):
             (c_longlong(), OUT),
             (c_longlong(), OUT)]
 
+
 @treatReturnCode
 @ctypesFF
 @addReturnCode
 def wfalsif(*args):
     """
     Get identifier of file.
-    
+
     Args:\n
     1) KNUMER: logical unit number associated to file
-    
+
     Returns:\n
     1) CDIDEN: identifier of file
     """
     return [(c_longlong(args[0]), IN),
-            (c_char_p(" "*80), OUT)]
+            (c_char_p(" " * 80), OUT)]
+
 
 @treatReturnCode
 @ctypesFF
@@ -98,13 +103,13 @@ def wfalsif(*args):
 def wfanion(*args):
     """
     Get the characteristics of a field.
-    
+
     Args:\n
     1) KNUMER: logical unit number associated to file
     2) CDPREF: potential prefix of record name
     3) KNIVAU: potential vertical level
     4) CDSUFF: potential suffix of record name
-    
+
     Returns:\n
     1) LDEXIS: true if record exists
     2) LDCOSP: true if field is spectral
@@ -123,15 +128,16 @@ def wfanion(*args):
             (c_longlong(), OUT),
             (c_longlong(), OUT)]
 
+
 @ctypesFF
 def wfacies(*args):
     """
     Get parameters in header.
-    
+
     Args:\n
     1-4) KXPAH, KXIND, KXGEO, KXNIV: maximal dimensions
     5) CDNOMC: name of "cadre"
-    
+
     Returns:\n
     1) KTYPTR: Type of horizontal transformation
     2) PSLAPO: Sinus of latitude of pole of interest
@@ -172,21 +178,23 @@ def wfacies(*args):
             (np.ndarray((args[3] + 1,), dtype=np.float64), OUT),
             (c_bool(), OUT)]
 
+
 @treatReturnCode
 @ctypesFF
 @addReturnCode
 def wfadies(*args):
     """
     Get the date and time of a field.
-    
+
     Args:\n
     1) KNUMER: logical unit number associated to file
-    
+
     Returns:\n
     1) KDATEF: array of date elements
     """
     return [(c_longlong(args[0]), IN),
             (np.ndarray((11,), dtype=np.int64), OUT)]
+
 
 @treatReturnCode
 @ctypesFF
@@ -194,15 +202,16 @@ def wfadies(*args):
 def wfadiex(*args):
     """
     Get the date and time of a field (precision to the second).
-    
+
     Args:\n
     1) KNUMER: logical unit number associated to file
-    
+
     Returns:\n
     1) KDATEF: array of date elements (precision to the second)
     """
     return [(c_longlong(args[0]), IN),
             (np.ndarray((22,), dtype=np.int64), OUT)]
+
 
 @ctypesFF
 def wfacade(*args):
@@ -252,13 +261,14 @@ def wfacade(*args):
             (args[18], IN),
             (c_bool(args[19]), IN)]
 
+
 @treatReturnCode
 @ctypesFF
 @addReturnCode
 def wfagote(*args):
     """
     Set compression parameters of a field in file.
-    
+
     Args:\n
     1) KNUMER: logical unit number associated to file
     2) KNGRIB: Grib encoding level (-1,0,1,2,3);
@@ -276,13 +286,14 @@ def wfagote(*args):
             (c_longlong(args[5]), IN),
             (c_longlong(args[6]), IN)]
 
+
 @treatReturnCode
 @ctypesFF
 @addReturnCode
 def wfautif(*args):
     """
     Set identifier of file.
-    
+
     Args:\n
     1) KNUMER: logical unit number associated to file
     2) CDIDEN: identifier of file
@@ -290,13 +301,14 @@ def wfautif(*args):
     return [(c_longlong(args[0]), IN),
             (c_char_p(args[1].ljust(80)), IN)]
 
+
 @treatReturnCode
 @ctypesFF
 @addReturnCode
 def wfandar(*args):
     """
     Set the date and time of a field.
-    
+
     Args:\n
     1) KNUMER: logical unit number associated to file
     2) KDATEF: array of date elements
@@ -304,13 +316,14 @@ def wfandar(*args):
     return [(c_longlong(args[0]), IN),
             (args[1], IN)]
 
+
 @treatReturnCode
 @ctypesFF
 @addReturnCode
 def wfandax(*args):
     """
     Set the date and time of a field (precision to the second).
-    
+
     Args:\n
     1) KNUMER: logical unit number associated to file
     2) KDATEF: array of date elements (precision to the second)
@@ -318,13 +331,14 @@ def wfandax(*args):
     return [(c_longlong(args[0]), IN),
             (args[1], IN)]
 
+
 @treatReturnCode
 @ctypesFF
 @addReturnCode
 def wfacile(*args):
     """
     Read a 2D field.
-    
+
     Args:\n
     1) KSIZE: size of array to read
     2) KNUMER: logical unit number associated to file
@@ -332,7 +346,7 @@ def wfacile(*args):
     4) KNIVAU: potential vertical level
     5) CDSUFF: potential suffix of record name
     6) LDCOSP: true if spectral
-    
+
     Returns:\n
     6) PCHAMP: float values read
     """
@@ -343,6 +357,7 @@ def wfacile(*args):
             (c_char_p(args[4].ljust(12)), IN),
             (np.ndarray((args[0],), dtype=np.float64), OUT),
             (c_bool(args[5]), IN)]
+
 
 @treatReturnCode
 @ctypesFF
@@ -350,7 +365,7 @@ def wfacile(*args):
 def wfacilo(*args):
     """
     Read a 2D field. With reordering of spectral fields.
-    
+
     Args:\n
     1) KSIZE: size of array to read
     2) KNUMER: logical unit number associated to file
@@ -358,7 +373,7 @@ def wfacilo(*args):
     4) KNIVAU: potential vertical level
     5) CDSUFF: potential suffix of record name
     6) LDCOSP: true if spectral
-    
+
     Returns:\n
     6) PCHAMP: float values read
     """
@@ -370,13 +385,14 @@ def wfacilo(*args):
             (np.ndarray((args[0],), dtype=np.float64), OUT),
             (c_bool(args[5]), IN)]
 
+
 @treatReturnCode
 @ctypesFF
 @addReturnCode
 def wfaienc(*args):
     """
     Write a 2D field.
-    
+
     Args:\n
     1) KNUMER: logical unit number associated to file
     2) CDPREF: potential prefix of record name
@@ -393,6 +409,7 @@ def wfaienc(*args):
             (c_longlong(args[4]), IN),
             (args[5], IN),
             (c_bool(args[6]), IN)]
+
 
 @treatReturnCode
 @ctypesFF
@@ -400,7 +417,7 @@ def wfaienc(*args):
 def wfaieno(*args):
     """
     Write a 2D field. With reordering of spectral fields.
-    
+
     Args:\n
     1) KNUMER: logical unit number associated to file
     2) CDPREF: potential prefix of record name
@@ -418,18 +435,19 @@ def wfaieno(*args):
             (args[5], IN),
             (c_bool(args[6]), IN)]
 
+
 @treatReturnCode
 @ctypesFF
 @addReturnCode
 def wfalais(*args):
     """
     Write a meta-field.
-    
+
     Args:\n
     1) KNUMER: logical unit number associated to file
     2) CDNOMA: name of record
     3) KLONGD: length of PDONNE
-    
+
     Returns:\n
     1) PDONNE: data to read
     """
@@ -438,13 +456,14 @@ def wfalais(*args):
             (np.ndarray((args[2],), dtype=np.float64), OUT),
             (c_longlong(args[2]), IN)]
 
+
 @treatReturnCode
 @ctypesFF
 @addReturnCode
 def wfaisan(*args):
     """
     Write a meta-field.
-    
+
     Args:\n
     1) KNUMER: logical unit number associated to file
     2) CDNOMA: name of record
@@ -456,13 +475,14 @@ def wfaisan(*args):
             (c_longlong(args[2]), IN),
             (args[3], IN)]
 
+
 @treatReturnCode
 @ctypesFF
 @addReturnCode
 def wfairme(*args):
     """
     Close the FA file.
-    
+
     Args:\n
     1) KNUMER: logical unit number associated to file
     2) CDSTTU: status ('KEEP', 'DELETE', 'DEFAUT')

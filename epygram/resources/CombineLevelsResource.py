@@ -8,6 +8,8 @@ Contains the class that handle a CombineLevelsResource.
 This resource exposes 3D fields when the low level resource only expose horizontal fields.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import copy
 import numpy
 
@@ -16,7 +18,6 @@ from footprints import FPDict, proxy as fpx
 from epygram.base import Resource, FieldSet
 from epygram.util import fmtfid
 from epygram import epygramError
-
 
 
 class CombineLevelsResource(Resource):
@@ -46,7 +47,8 @@ class CombineLevelsResource(Resource):
     def open(self):
         """Opens the low level resource"""
 
-        if not self.resource.isopen: self.resource.open()
+        if not self.resource.isopen:
+            self.resource.open()
 
     def close(self):
         """Closes the low level resource."""
@@ -79,7 +81,7 @@ class CombineLevelsResource(Resource):
         else:
             raise epygramError("unknown type for seed: " + str(type(seed)))
         if fieldslist == []:
-            raise epygramError("no field matching '" + str(seed) + \
+            raise epygramError("no field matching '" + str(seed) +
                                "' was found in resource ")
         if generic:
             fieldslist = [(fieldslist[i], fieldslist[i]) for i in range(len(fieldslist))]
@@ -99,7 +101,7 @@ class CombineLevelsResource(Resource):
             generic_fid = fid['generic']
             level = generic_fid.pop('level', None)  # we suppress level from generic_fid
             hashable_generic_fid = tuple([(k, generic_fid[k]) for k in sorted(generic_fid.keys())])
-            if not hashable_generic_fid in result:
+            if hashable_generic_fid not in result:
                 result[hashable_generic_fid] = {'original_fids':[], 'generic':None}
             result[hashable_generic_fid]['original_fids'].append((original_fid, level))
             result[hashable_generic_fid]['generic'] = generic_fid
@@ -110,7 +112,6 @@ class CombineLevelsResource(Resource):
                 v['generic']['level'] = v['original_fids'][0][1]
 
         return result
-
 
     def listfields(self, onlykey=None, select=None, complete=False):
         """Lists the available fields."""
@@ -154,9 +155,7 @@ class CombineLevelsResource(Resource):
         return sortedfields
 
     def readfield(self, handgrip, getdata=True):
-        """
-        Read the field in the low level resource and join the levels.
-        """
+        """Read the field in the low level resource and join the levels."""
 
         result = self.readfields(handgrip=handgrip, getdata=getdata)
         if len(result) != 1:
@@ -164,9 +163,7 @@ class CombineLevelsResource(Resource):
         return result[0]
 
     def readfields(self, handgrip, getdata=True):
-        """
-        Read the field in the low level resource and join the levels.
-        """
+        """Read the field in the low level resource and join the levels."""
 
         fieldset = FieldSet()
         cont = self._create_list()
@@ -180,7 +177,7 @@ class CombineLevelsResource(Resource):
                         found = k
             if found is None:
                 raise epygramError("Internal error....")
-            if not 'parameterNumber' in fid or fid['parameterNumber'] == 255:
+            if 'parameterNumber' not in fid or fid['parameterNumber'] == 255:
                 # We do not join levels when parameterNumber is not known
                 for original_fid in cont[found]['original_fid']:
                     field = self.resource.readfield(original_fid[0])
@@ -204,7 +201,7 @@ class CombineLevelsResource(Resource):
                     kwargs_vcoord['levels'] = [255]
                     kwargs_geom['vcoordinate'] = fpx.geometry(**kwargs_vcoord)
                     for k, v in kwargs_geom.iteritems():
-                        if type(v) == type(FPDict()):
+                        if isinstance(v, FPDict):
                             kwargs_geom[k] = dict(v)
                     ref_geometry = fpx.geometry(**kwargs_geom)
                     spectral = fields[0].spectral
@@ -213,7 +210,7 @@ class CombineLevelsResource(Resource):
                     kwargs_field['fid'] = {'generic':fid}
                     kwargs_field['geometry'] = ref_geometry
                     for k, v in kwargs_field.iteritems():
-                        if type(v) == type(FPDict()):
+                        if isinstance(v, FPDict):
                             kwargs_field[k] = dict(v)
                     ref_field = fpx.field(**kwargs_field)
                     for i, field in enumerate(fields):
@@ -225,7 +222,7 @@ class CombineLevelsResource(Resource):
                         kwargs_vcoord['levels'] = [255]
                         kwargs_geom['vcoordinate'] = fpx.geometry(**kwargs_vcoord)
                         for k, v in kwargs_geom.iteritems():
-                            if type(v) == type(FPDict()):
+                            if isinstance(v, FPDict):
                                 kwargs_geom[k] = dict(v)
                         geometry_field = fpx.geometry(**kwargs_geom)
                         levels_field = field.geometry.vcoordinate.levels
@@ -239,7 +236,7 @@ class CombineLevelsResource(Resource):
                         kwargs_field['fid'] = {'generic':fid}
                         kwargs_field['geometry'] = geometry_field
                         for k, v in kwargs_field.iteritems():
-                            if type(v) == type(FPDict()):
+                            if isinstance(v, FPDict):
                                 kwargs_field[k] = dict(v)
                         myf = fpx.field(**kwargs_field)
                         if ref_field != myf:
@@ -255,7 +252,8 @@ class CombineLevelsResource(Resource):
                     # Loop over the fields
                     first = True
                     for i in levelsorder:
-                        if fields[i].spectral: fields[i].sp2gp()
+                        if fields[i].spectral:
+                            fields[i].sp2gp()
                         if first:
                             first = False
                             data = fields[i].getdata(d4=True)[:, 0:1, :, :]
@@ -296,23 +294,14 @@ class CombineLevelsResource(Resource):
         # To implement writefield we need to check that each validity is affected to only one resource
 
     def extractprofile(self, *args, **kwargs):
-        """
-        Extracts profiles.
-        """
-
+        """Extracts profiles."""
         return self.resource.extractprofile(*args, **kwargs)
 
     def extractsection(self, *args, **kwargs):
-        """
-        Extracts sections.
-        """
-
+        """Extracts sections."""
         return self.resource.extractsection(*args, **kwargs)
 
     @property
     def spectral_geometry(self):
-        """
-        Returns the spectral_geometry
-        """
-
+        """Returns the spectral_geometry"""
         return self.resource.spectral_geometry

@@ -10,6 +10,8 @@ It uses PIL for image reading.
 This module uses code from pylibtiff (https://pypi.python.org/pypi/libtiff, https://code.google.com/p/pylibtiff or https://github.com/hmeine/pylibtiff)
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import os
 import StringIO
 import numpy
@@ -35,7 +37,7 @@ class TiffFile(object):
     _type2name = {1:'BYTE', 2:'ASCII', 3:'SHORT', 4:'LONG', 5:'RATIONAL',  # two longs, lsm uses it for float64
                   6:'SBYTE', 7:'UNDEFINED', 8:'SSHORT', 9:'SLONG', 10:'SRATIONAL',
                   11:'FLOAT', 12:'DOUBLE',
-                 }
+                  }
     _name2type = dict((v, k) for k, v in _type2name.items())
     _name2type['SHORT|LONG'] = _name2type['LONG']
     _name2type['LONG|SHORT'] = _name2type['LONG']
@@ -61,7 +63,6 @@ class TiffFile(object):
         @property
         def type2dt(self):
             return dict((k, numpy.dtype(v).newbyteorder('<')) for k, v in TiffFile._type2dtype.items())
-
 
     class _BigEndianNumpyDTypes(object):
         uint8 = numpy.dtype('>u1')
@@ -172,7 +173,7 @@ class TiffFile(object):
             else:
                 ifd.append(IFDEntry(entrytag, entrytype, entryvalue))
         if path == () and ifd.has_tag(273):
-            #Raw data
+            # Raw data
             nbRows = ifd.get_value(257)
             offsetValues = ifd.get_value(273)
             nbRowsPerStrip = ifd.get_value(278)
@@ -180,18 +181,19 @@ class TiffFile(object):
             if not isinstance(offsetValues, numpy.ndarray):
                 offsetValues = numpy.array([offsetValues])
                 nbBytesPerStrip = numpy.array([nbBytesPerStrip])
-            if nbRows / nbRowsPerStrip + (1 if  nbRows % nbRowsPerStrip != 0 else 0) != len(offsetValues):
+            if nbRows / nbRowsPerStrip + (1 if nbRows % nbRowsPerStrip != 0 else 0) != len(offsetValues):
                 raise PyexttiffError("Total number of rows, strip numbers and number of rows per strips are not consistent.")
             data = []
             for i in range(len(offsetValues)):
                 data.append(self._get_values(offsetValues[i], 1, nbBytesPerStrip[i]))
             ifd.get_entry(273).set_value(data)
 
-            #Image data
+            # Image data
             im = self.get_PILImage()
             im.seek(num)
             data = numpy.array(im)
-            if data.shape == (): data = numpy.array(im)  #Sometimes must be called twice to return values...
+            if data.shape == ():
+                data = numpy.array(im)  # Sometimes must be called twice to return values...
             ifd._image = data
         nextIFD = self._get_uint32(offset + 2 + n * 12)
         return (ifd, nextIFD)
@@ -261,34 +263,27 @@ class TiffFile(object):
 
 
 class IFD(list):
-
-    """
-    This class represent an IFD.
-    """
+    """This class represent an IFD."""
 
     def __init__(self):
-        """
-        Initialisation method of IFD class.
-        """
+        """Initialisation method of IFD class."""
         self._image = None
 
     def has_tag(self, tag):
-        """
-        Returns True if an entry fits the tag given
-        """
+        """Returns True if an entry fits the tag given"""
         result = False
         for entry in self:
-            if entry.get_tag() == tag: result = True
+            if entry.get_tag() == tag:
+                result = True
         return result
 
     def get_entry(self, tag):
-        """
-        Returns the entry for a tag
-        """
+        """Returns the entry for a tag"""
         if not self.has_tag(tag):
             raise PyexttiffError("This tag doesn't exist in this IFD.")
         for entry in self:
-            if entry.get_tag() == tag: result = entry
+            if entry.get_tag() == tag:
+                result = entry
         return result
 
     def get_value(self, tag, human=True):
@@ -303,39 +298,28 @@ class IFD(list):
         return self.get_entry(tag).get_value(human)
 
     def has_image(self):
-        """
-        Returns True if one tag is an image
-        """
-        return self._image != None
+        """Returns True if one tag is an image"""
+        return self._image is not None
 
     def get_image(self):
-        """
-        Returns the image
-        """
+        """Returns the image"""
         if not self.has_image():
             raise PyexttiffError("This IFD doesn't contain an image.")
         return self._image
 
     def get_tags(self):
-        """
-        Returns the list of the tags
-        """
+        """Returns the list of the tags"""
         return [entry.get_tag() for entry in self]
 
     def as_dict(self):
-        """
-        Returns a dictionary containing all entries.
-        """
+        """Returns a dictionary containing all entries."""
         return dict([(entry.get_tag(), entry.get_value()) for entry in self])
 
 
 class IFDEntry(object):
+    """This class represent an IFD entry"""
 
-    """
-    This class represent an IFD entry
-    """
-
-    #<TagName> <Hex> <Type> <Number of values>
+    # <TagName> <Hex> <Type> <Number of values>
     _tag_info = '''
 # standard tags:
 NewSubfileType FE LONG 1
@@ -505,7 +489,8 @@ EXIF_ImageUniqueID a420 ASCII 33
     _tag_name2value = {}
     _tag_value2type = {}
     for line in _tag_info.split('\n'):
-        if not line or line.startswith('#'): continue
+        if not line or line.startswith('#'):
+            continue
         if line[0] == ' ':
             pass
         else:
@@ -526,21 +511,15 @@ EXIF_ImageUniqueID a420 ASCII 33
         self._value = value
 
     def is_image(self):
-        """
-        Returns True if content in an image
-        """
+        """Returns True if content in an image"""
         return self.get_tag() == 273
 
     def is_IFD(self):
-        """
-        Returns True if content is an IFD.
-        """
+        """Returns True if content is an IFD."""
         return isinstance(self.get_value(), IFD)
 
     def get_tag(self):
-        """
-        Returns the tag
-        """
+        """Returns the tag"""
         return self._tag
 
     def get_value(self, human=True):
@@ -552,25 +531,20 @@ EXIF_ImageUniqueID a420 ASCII 33
         """
         value = self._value
         if human:
-            if len(value) == 1: value = value[0]
+            if len(value) == 1:
+                value = value[0]
             if self.get_type() == 2:
                 value = ''.join(value.view('|S%s' % (value.nbytes // value.size)))
         return value
 
     def get_tagName(self):
-        """
-        Returns the tag name
-        """
+        """Returns the tag name"""
         return self._tag_value2name.get(self.get_tag, 'TAG%s' % (hex(self._tag),))
 
     def get_type(self):
-        """
-        Returns the type of entry.
-        """
+        """Returns the type of entry."""
         return self._type
 
     def set_value(self, value):
-        """
-        Sets the value of the entry.
-        """
+        """Sets the value of the entry."""
         self._value = value

@@ -4,6 +4,8 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import argparse
 import time
 import copy
@@ -11,7 +13,7 @@ import copy
 import footprints
 from footprints import FPDict, FPList
 import taylorism
-#import interrupt
+# import interrupt
 
 import epygram
 from epygram.args_catalog import add_arg_to_parser, \
@@ -20,15 +22,11 @@ from epygram.args_catalog import add_arg_to_parser, \
                                  operational_options, output_options
 from epygram.formats import grib_utilities
 
-#taylorism.interrupt.logger.setLevel('WARNING')
+# taylorism.interrupt.logger.setLevel('WARNING')
 epylog = footprints.loggers.getLogger(__name__)
 
-
-
-### Conversion tools ###
-########################
-
 fmt_dict = {'grb':'GRIB', 'nc':'netCDF', 'geo':'GeoPoints'}
+
 
 class Converter(taylorism.Worker):
 
@@ -59,6 +57,7 @@ class Converter(taylorism.Worker):
         )
     )
 
+
 def convert(filename,
             output_format_suffix,
             get_write_kwargs=lambda *args:{},
@@ -71,7 +70,7 @@ def convert(filename,
     Args:
         filename: name of the file to be processed.
         output_format_suffix: among 'grb' (GRIB2), 'nc' (netCDF4), 'geo' (GeoPoints)
-        get_write_kwargs: function that gives the necessary write options 
+        get_write_kwargs: function that gives the necessary write options
         fieldseed: either a fid or a list of fid, used as a seed for
                    generating the list of fields to be processed.
         subzone: LAM zone among ('C', 'CI', None).
@@ -79,7 +78,7 @@ def convert(filename,
                         file.
         progressmode: among ('verbose', 'percentage', None)
         other kwargs are specific to output formats, and passed to
-                     get_write_kwargs(), wherein they can be handled whatever for... 
+                     get_write_kwargs(), wherein they can be handled whatever for...
     """
     t0 = time.time()
 
@@ -145,11 +144,11 @@ def convert(filename,
                 output_resource = epygram.formats.resource('.'.join([filename,
                                                                      field.fid[fmt_dict[output_format_suffix]],
                                                                      output_format_suffix]),
-                                                       openmode='w',
-                                                       fmt=fmt_dict[output_format_suffix],
-                                                       other_attributes=({'FORMAT':'XYV'} if kwargs.pop('llv') else None),
-                                                       #columns=(['LAT', 'LON', 'VALUE'] if kwargs.pop('llv') else None)
-                                                       )
+                                                           openmode='w',
+                                                           fmt=fmt_dict[output_format_suffix],
+                                                           other_attributes=({'FORMAT':'XYV'} if kwargs.pop('llv') else None),
+                                                           # columns=(['LAT', 'LON', 'VALUE'] if kwargs.pop('llv') else None)
+                                                           )
             else:
                 output_resource = epygram.formats.resource('.'.join([filename,
                                                                      field.fid[fmt_dict[output_format_suffix]],
@@ -169,9 +168,8 @@ def convert(filename,
                      "in", str(t1 - t0), "s."])
 
 
-
-### GRIB2 writer ###
-####################
+# GRIB2 writer #
+################
 class Griber(Converter):
 
     _footprint = dict(
@@ -259,9 +257,8 @@ class Griber(Converter):
         return done
 
 
-
-### netCDF writer ###
-#####################
+# netCDF writer #
+#################
 class NetCDFWriter(Converter):
 
     _footprint = dict(
@@ -307,9 +304,8 @@ class NetCDFWriter(Converter):
         return done
 
 
-
-### GeoPoints writer ###
-########################
+# GeoPoints writer #
+####################
 class GeoPointsWriter(Converter):
 
     _footprint = dict(
@@ -377,7 +373,6 @@ class GeoPointsWriter(Converter):
         return done
 
 
-
 ################################################################################
 # MAIN
 def main(filenames,
@@ -387,15 +382,15 @@ def main(filenames,
          **kwargs):
     """
     Converts a series of files to *output_format_suffix*.
-    
+
     Mandatory arguments:
     - *filenames*: name(s) of the files to be processed
     - *output_format_suffix*: among 'grb' (GRIB2), 'nc' (netCDF4), 'geo' (GeoPoints) 
-    
+
     Technical named (optional) arguments:
     - *threads_number*: parallelisation of files processing
     - *progressmode*: among ('verbose', 'percentage', None)
-    
+
     Other named arguments depend on the output format, and are defined in the
     Workers footprints attributes !
     """
@@ -418,9 +413,7 @@ def main(filenames,
     taylorism.batch_main(common_instructions, individual_instructions,
                          scheduler=taylorism.MaxThreadsScheduler(threads_number),
                          verbose=(progressmode == 'verbose'))
-
 # end of main() ###############################################################
-
 
 
 if __name__ == '__main__':
@@ -496,9 +489,9 @@ if __name__ == '__main__':
             progressmode = 'percentage'
 
     # 2.2 list of fields to be processed
-    if args.field != None:
+    if args.field is not None:
         fieldseed = [args.field]
-    elif args.listoffields != None:
+    elif args.listoffields is not None:
         listfile = epygram.containers.File(filename=args.listoffields)
         with open(listfile.abspath, 'r') as l:
             fieldseed = l.readlines()
@@ -531,8 +524,6 @@ if __name__ == '__main__':
          precision=args.precision,
          llv=args.llv,
          )
-
-
 
 ###########
 ### END ###

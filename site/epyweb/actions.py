@@ -3,7 +3,9 @@
 # Copyright (c) Météo France (2016-)
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
-from __future__ import print_function
+
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import os
 import json
 import cPickle
@@ -14,7 +16,7 @@ import matplotlib
 matplotlib.use("Agg")
 from mpl_toolkits.basemap import Basemap
 
-import web
+from . import web
 
 from footprints.util import rangex
 import epygram
@@ -27,6 +29,7 @@ __all__ = ['Epyweb',
            'GetCacheSize', 'GetGeometries', 'GetFieldsAsJSON', 'GetLocalFile',
            'GetFile', 'GetMinMax', 'GetDomain', 'GetPNG',
            'MyPlot', 'MyPlotOverlay', 'MyPlotDiff']
+
 
 ####################
 # urls <=> classes ############################################################
@@ -120,7 +123,7 @@ class GetFile(object):
             mode = vortexArgs['request_mode']
             del vortexArgs['request_mode']
 
-            #Utile pour garder trace du fichier, A ou B, d'origine
+            # Utile pour garder trace du fichier, A ou B, d'origine
             try:
                 fromid = vortexArgs['fromid']
                 del vortexArgs['fromid']
@@ -137,7 +140,7 @@ class GetFile(object):
                 # Chemin
                 ressources = usevortex.get_resources(getmode='exist',
                                                      **vortexArgs)
-                reponse['remotepath'] = '\n'.join([str(exist) + ':\n' + loc.replace(';', '\n') for (loc, exist) in ressources])  #[m for m in ressources]
+                reponse['remotepath'] = '\n'.join([str(exist) + ':\n' + loc.replace(';', '\n') for (loc, exist) in ressources])  # [m for m in ressources]
                 if mode == 'existence':
                     # Existence physique : tableau de True False
                     ressources = usevortex.get_resources(getmode='exist',
@@ -154,7 +157,7 @@ class GetFile(object):
                                                                                       str(uuid.uuid4())
                                                                                       ])),
                                                          **vortexArgs)
-                    reponse['localpath'] = [str(m) for m in ressources]  #str(m[0])
+                    reponse['localpath'] = [str(m) for m in ressources]  # str(m[0])
             return json.dumps(reponse)
         except ValueError:
             raise Exception('getFile error')
@@ -171,7 +174,7 @@ class GetMinMax(object):
             subzone = getAjaxArg('subzone')
             FF = getAjaxArg('FF')
             ope = getAjaxArg('operation')
-            #string vs unicode problems...
+            # string vs unicode problems...
             try:
                 champ['typeOfLevel'] = champ['typeOfLevel'].encode()
                 champ = {str(k):champ[k] for k in champ.keys()}
@@ -219,7 +222,7 @@ class GetDomain(object):
             fichier = getAjaxArg('file')
             resource = epygram.formats.resource(fichier, 'r')
 
-            #On prend la géométrie du 1er champ => compatibilité FA / GRIB
+            # On prend la géométrie du 1er champ => compatibilité FA / GRIB
             firstfield = resource.readfield(resource.listfields()[0])
             if firstfield.geometry.rectangular_grid:
                 (llcrnrlon, llcrnrlat) = firstfield.geometry.gimme_corners_ll()['ll']
@@ -230,8 +233,7 @@ class GetDomain(object):
                 (llcrnrlon, llcrnrlat) = (-180, -90)
                 (urcrnrlon, urcrnrlat) = (180, 90)
 
-            monzoom = {
-                       'lonmin': min(llcrnrlon, ulcrnrlon),
+            monzoom = {'lonmin': min(llcrnrlon, ulcrnrlon),
                        'lonmax': max(lrcrnrlon, urcrnrlon),
                        'latmin': min(llcrnrlat, lrcrnrlat),
                        'latmax': max(urcrnrlat, ulcrnrlat),
@@ -255,14 +257,14 @@ class MyPlot(object):
             import matplotlib.pyplot as plt
             print('Start MyPlot')
 
-            #For unik name
+            # For unik name
             local_uuid = str(uuid.uuid4())
 
             files = getAjaxArgSmart('file')
             champ = getAjaxArgSmart('field')
             champ_v = getAjaxArgSmart('field_v')
 
-            #string vs unicode problems...
+            # string vs unicode problems...
             for cle, val in champ.iteritems():
                 try:
                     champ[cle]['typeOfLevel'] = val['typeOfLevel'].encode()
@@ -277,7 +279,7 @@ class MyPlot(object):
                 except Exception:
                     print("Warning unicode")
 
-            figax = (None, None)  #New figure (= no overlay)
+            figax = (None, None)  # New figure (= no overlay)
             basemap_pickle_name = getAjaxArgSmart('basemap_pickle_name')
 
             monzoom = getAjaxArgSmart('monzoom')
@@ -296,8 +298,8 @@ class MyPlot(object):
                 if isinstance(_current_basemap, Basemap):
                     current_basemap = _current_basemap
 
-            #Attention, decuml marche bien entre échéances mais actif aussi entre dates !!
-            #Pas (encore ?) pour OVERLAY et DIFF
+            # Attention, decuml marche bien entre échéances mais actif aussi entre dates !!
+            # Pas (encore ?) pour OVERLAY et DIFF
             decumul = getAjaxArgSmart('decumul')
             operation = getAjaxArgSmart('operation')
 
@@ -305,12 +307,12 @@ class MyPlot(object):
             # ensuite on trace champLu - champAvant, si champAvant n'existe pas (cas RR @0h) -> champLu only
             out = {}
 
-            #for fichier in files:
+            # for fichier in files:
             for cle, val in files.iteritems():
                 indiceDecumul = 0
                 liste_tmp = []
                 myplot_args = get_common_args(cle)
-                #Garde fou pour decumul
+                # Garde fou pour decumul
                 if FF[cle] or vecteurs[cle]:
                     decumul[cle] = False
                     print("decumul forced to ", decumul)
@@ -334,13 +336,13 @@ class MyPlot(object):
                                 fieldDecumul = field
                                 indiceDecumul = +1
                                 continue
-                    except Exception:  #Cas des RR @0h : param n'existe pas
+                    except Exception:  # Cas des RR @0h : param n'existe pas
                         indiceDecumul = +1
                         continue
 
                     if decumul[cle]:
                             waitforme = field
-                            try:  #Cas des RR @0h : param n'erxiste pas
+                            try:  # Cas des RR @0h : param n'erxiste pas
                                 validity = field.validity
                                 fid = field.fid
                                 field = field - fieldDecumul
@@ -358,7 +360,7 @@ class MyPlot(object):
                                                                       zoom=monzoom)
                         cPickle.dump(current_basemap, open(os.path.join(epyweb_workdir,
                                                                         basemap_pickle_name), 'w'))
-                        #On réutilise le cache
+                        # On réutilise le cache
 
                     myplot = make_my_plot(resource, field, cle, champ, champ_v, FF, vecteurs,
                                           current_basemap, figax, vectors_subsampling,
@@ -374,20 +376,20 @@ class MyPlot(object):
                     except Exception:
                         myunikname = os.path.basename(fichier) + "." + str(champ[cle].replace(' ', '_'))
 
-                    #On rajoute un petit uuid en cas de rafraichissement d'image
+                    # On rajoute un petit uuid en cas de rafraichissement d'image
                     myunikfile = os.path.join(epyweb_workdir,
                                               myunikname + "." + local_uuid + '.png')
                     print("Saving figure ", myunikfile)
                     myplot[0].savefig(myunikfile, dpi=dpi, bbox_inches='tight')
 
-                    #memory management
+                    # memory management
                     resource.close()
                     del resource
                     del field
                     plt.close(myplot[0])
                     del myplot
 
-                    #SLIDE IMAGE STYLE
+                    # SLIDE IMAGE STYLE
                     liste_tmp.append('/getPNG/' + os.path.basename(myunikfile))
 
                 out[cle] = liste_tmp
@@ -396,7 +398,7 @@ class MyPlot(object):
 
             del current_basemap
 
-            #On alterne A et B si besoin (cas de plot_both)
+            # On alterne A et B si besoin (cas de plot_both)
             if len(out) == 1:
                 out2 = out["A"]
             else:
@@ -426,7 +428,7 @@ class MyPlotOverlay(object):
             champ = getAjaxArgSmart('field')
             champ_v = getAjaxArgSmart('field_v')
 
-            #string vs unicode problems...
+            # string vs unicode problems...
             for cle, val in champ.iteritems():
                 try:
                     champ[cle]['typeOfLevel'] = val['typeOfLevel'].encode()
@@ -446,7 +448,7 @@ class MyPlotOverlay(object):
 
             monzoom = getAjaxArgSmart('monzoom')
 
-            #2adapt
+            # 2adapt
             FF = getAjaxArgSmart('FF')
             vecteurs = getAjaxArgSmart('vecteurs')
             vectors_subsampling = getAjaxArgSmart('vectors_subsampling')
@@ -462,11 +464,11 @@ class MyPlotOverlay(object):
                 if isinstance(_current_basemap, Basemap):
                     current_basemap = _current_basemap
 
-            #loop sur files["A"] puis concordance avec file["B"]
+            # loop sur files["A"] puis concordance avec file["B"]
             liste_tmp = []
             for indice, fichier in enumerate(files["A"]):
 
-                #1st layer
+                # 1st layer
                 myplot_args = get_common_args("A")
                 resource = epygram.formats.resource(fichier, 'r')
                 field = resource.readfield(champ["A"])
@@ -483,7 +485,7 @@ class MyPlotOverlay(object):
                                                                   specificproj=myplot_args["specificproj"],
                                                                   zoom=monzoom)
                     cPickle.dump(current_basemap, open(basemap_pickle_path, 'w'))
-                    #On ne le calcule que pour la 1ere itération de la boucle
+                    # On ne le calcule que pour la 1ere itération de la boucle
 
                 myplot_1 = make_my_plot(resource, field, "A", champ, champ_v, FF, vecteurs,
                                         current_basemap, figax, vectors_subsampling,
@@ -491,9 +493,9 @@ class MyPlotOverlay(object):
 
                 resource.close()
 
-                #2nd layer
+                # 2nd layer
                 myplot_args = get_common_args("B")
-                #on met la légende à gauche pour la champ B pour ne pas enpiéter sur la légende de A
+                # on met la légende à gauche pour la champ B pour ne pas enpiéter sur la légende de A
                 myplot_args["colorbar"] = "left"
                 resource = epygram.formats.resource(files["B"][indice], 'r')
                 field = resource.readfield(champ["B"])
@@ -512,14 +514,13 @@ class MyPlotOverlay(object):
                 except Exception:
                     myunikname = str(uuid.uuid4())
 
-
-                #On rajoute un petit uuid en cas de rafraichissement d'image
+                # On rajoute un petit uuid en cas de rafraichissement d'image
                 myunikfile = os.path.join(epyweb_workdir,
                                           myunikname + "." + local_uuid + '.png')
                 myplot[0].savefig(myunikfile, dpi=dpi, bbox_inches='tight')
 
-                #SLIDE IMAGE STYLE
-                #liste_tmp.append(myunikfile)
+                # SLIDE IMAGE STYLE
+                # liste_tmp.append(myunikfile)
                 liste_tmp.append('/getPNG/' + os.path.basename(myunikfile))
                 resource.close()
                 plt.close(myplot[0])
@@ -544,13 +545,13 @@ class MyPlotDiff(object):
             import matplotlib.pyplot as plt
             local_uuid = str(uuid.uuid4())
 
-            #Les listes de fichiers A et B doivent avoir la même dimension...
+            # Les listes de fichiers A et B doivent avoir la même dimension...
             filesA = getAjaxArgSmart('fileA')
             filesB = getAjaxArgSmart('fileB')
             champ = getAjaxArgSmart('field')
             champ_v = getAjaxArgSmart('field_v')
 
-            #string vs unicode problems...
+            # string vs unicode problems...
             for cle, val in champ.iteritems():
                 try:
                     champ[cle]['typeOfLevel'] = val['typeOfLevel'].encode()
@@ -565,7 +566,7 @@ class MyPlotDiff(object):
                 except Exception:
                     print("Warning unicode")
 
-            #For common arguments
+            # For common arguments
             myplot_args = get_common_args("A")
 
             figax = (None, None)
@@ -613,7 +614,7 @@ class MyPlotDiff(object):
                                                                   specificproj=myplot_args["specificproj"],
                                                                   zoom=monzoom)
                     cPickle.dump(current_basemap, open(basemap_pickle_path, 'w'))
-                    #On ne le calcule que pour la 1ere itération de la boucle
+                    # On ne le calcule que pour la 1ere itération de la boucle
 
                 if (FF["A"] and FF["B"]) or (vecteurs["A"] and vecteurs["B"]):
                     fieldA_v = resourceA.readfield(champ_v["A"])
@@ -646,7 +647,7 @@ class MyPlotDiff(object):
                         del FF_fieldB
                         print("no vector difference !")
                 else:
-                    #La méthode générique MakMyPlot n'est pas appelable ici -> duplication légère
+                    # La méthode générique MakMyPlot n'est pas appelable ici -> duplication légère
                     myplot_args.pop("vectorcolor", None)
 
                     myplot = field.plotfield(title=str(champ["B"]) + ' - \n' + str(champ["A"]) + '\n' + str(fieldB.validity.get()) + "-" + str(fieldA.validity.get()),
@@ -662,12 +663,12 @@ class MyPlotDiff(object):
                     myunikname = os.path.basename(fichier) + "." + ".".join("=".join((str(k), str(v))) for k, v in champ[cle].iteritems())
                 except Exception:
                     myunikname = str(uuid.uuid4())
-                #On rajoute un petit uuid en cas de rafraichissement d'image
+                # On rajoute un petit uuid en cas de rafraichissement d'image
                 myunikfile = os.path.join(epyweb_workdir,
                                           myunikname + "." + local_uuid + '.png')
                 myplot[0].savefig(myunikfile, dpi=dpi, bbox_inches='tight')
 
-                #SLIDE IMAGE STYLE
+                # SLIDE IMAGE STYLE
                 out2.append('/getPNG/' + os.path.basename(myunikfile))
 
                 print("Closing figure...")
@@ -689,6 +690,7 @@ class MyPlotDiff(object):
         except:
             raise
             print("Erreur 3615 diff")
+
 
 class GetPNG(object):
     """Retrieve figure file."""

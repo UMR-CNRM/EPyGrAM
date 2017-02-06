@@ -7,7 +7,7 @@
 Contains the class to handle LFA format.
 """
 
-__all__ = ['LFA']
+from __future__ import print_function, absolute_import, unicode_literals, division
 
 import os
 import numpy
@@ -20,6 +20,7 @@ from epygram import epygramError, config, util
 from epygram.resources import FileResource
 from epygram.fields import MiscField
 
+__all__ = ['LFA']
 
 
 class LFA(FileResource):
@@ -105,8 +106,8 @@ class LFA(FileResource):
             for s in seed:
                 fieldslist += util.find_re_in_list(s, self.listfields())
         if fieldslist == []:
-            raise epygramError("no field matching '" + seed + \
-                               "' was found in resource " + \
+            raise epygramError("no field matching '" + seed +
+                               "' was found in resource " +
                                self.container.abspath)
 
         return fieldslist
@@ -136,12 +137,12 @@ class LFA(FileResource):
     @FileResource._openbeforedelayed
     def writefield(self, field):
         """Writes a Field in resource."""
-        #TOBECHECKED: writing not tested
-        raise epygramError("writefield routine has not been tested..." + \
+        # TOBECHECKED: writing not tested
+        raise epygramError("writefield routine has not been tested..." +
                            " If you need to, you might face problems...")
 
         if not isinstance(field, epygram.base.Field):
-            raise epygramError("'field' argument has to be a" + \
+            raise epygramError("'field' argument has to be a" +
                                " epygram.base.Field.")
         data = numpy.array(field.getdata())
         if len(data.shape) != 1:
@@ -183,7 +184,7 @@ class LFA(FileResource):
              **kwargs):
         """
         Writes in file a summary of the contents of the LFA.
-        
+
         Args: \n
         - *out*: the output open file-like object (duck-typing: *out*.write()
           only is needed).
@@ -191,7 +192,7 @@ class LFA(FileResource):
         """
         firstcolumn_width = 50
         secondcolumn_width = 16
-        sepline = '{:-^{width}}'.format('', width=firstcolumn_width + \
+        sepline = '{:-^{width}}'.format('', width=firstcolumn_width +
                                             secondcolumn_width + 1) + '\n'
 
         listoffields = self.listfields()

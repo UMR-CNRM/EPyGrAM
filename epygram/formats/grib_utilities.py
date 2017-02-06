@@ -7,6 +7,8 @@
 Contains equivalences tables for GRIB encoding.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 #: Aliases to *productionStatusOfProcessedData* numbers
 productionStatusOfProcessedData_dict = {'oper':0,
                                         'dble':1,
@@ -69,27 +71,27 @@ myproj_geoid_shapes = {0:{'geoidshape':'sphere',
 pyproj_geoid_shapes = {0:{'a':6367470.,
                           'b':6367470.},
                        2:{'a':6378160.,
-                          #'b':6356775.,
+                          # 'b':6356775.,
                           'rf':297.},
                        4:{'ellps':'GRS80',
-                          #'a':6378137.,
-                          #'b':6356752.314,
-                          #'rf':298.257222101
+                          # 'a':6378137.,
+                          # 'b':6356752.314,
+                          # 'rf':298.257222101
                           },
                        5:{'ellps':'WGS84',
-                          #'a':6378137.,
-                          #'b':6356752.3142,
-                          #'flattening':298.257223563,
+                          # 'a':6378137.,
+                          # 'b':6356752.3142,
+                          # 'flattening':298.257223563,
                           },
                        6:{'a':6371229.,
                           'b':6371229.},
                        8:{'a':6371200.,
                           'b':6371200.},
-                       9:{'ellps':'airy',  #TOBECHECKED:
-                          #'a':6377563.369,
-                          #'b':6356752.314,
-                          #'rf':299.3249646,
-                          #'lambda0':0,
+                       9:{'ellps':'airy',  # TOBECHECKED:
+                          # 'a':6377563.369,
+                          # 'b':6356752.314,
+                          # 'rf':299.3249646,
+                          # 'lambda0':0,
                           }}
 
 #: Type of statistical process over a duration

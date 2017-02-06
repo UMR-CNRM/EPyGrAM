@@ -7,6 +7,8 @@
 Contains the class that handle a FileResource.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import footprints
 
 from epygram.base import Resource
@@ -14,6 +16,7 @@ from epygram.util import nicedeco
 from epygram import epygramError, config
 
 epylog = footprints.loggers.getLogger(__name__)
+
 
 class FileResource(Resource):
     """Generic abstract class implementing a Resource."""
@@ -31,7 +34,7 @@ class FileResource(Resource):
                 optional=True,
                 default=False,
                 type=bool,
-                info="Opening of the resource delayed (not at time of " + \
+                info="Opening of the resource delayed (not at time of " +
                      "construction).")
         )
     )
@@ -94,7 +97,6 @@ class FileResource(Resource):
 
         if openmode is not None:
             self._attributes['openmode'] = openmode
-
 
 
 footprints.collectors.get(tag='epyresources').fasttrack = ('format',)

@@ -7,11 +7,12 @@
 Wrappers for LFI library.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 from ctypes import c_longlong, c_char_p, c_bool
 import numpy as np
 
-from . import ctypesFF, IN, OUT, treatReturnCode, addReturnCode
-
+from . import ctypesFF, IN, OUT, INOUT, treatReturnCode, addReturnCode
 
 
 @treatReturnCode
@@ -20,10 +21,10 @@ from . import ctypesFF, IN, OUT, treatReturnCode, addReturnCode
 def wlfinaf(*args):
     """
     Get info about number of records in file.
-    
+
     Args:\n
     1) KNUMER: logical unit number associated to file
-    
+
     Returns:\n
     1) KNALDO: Number of actual logical data records (holes excluded)
     2) KNTROU: Number of logical records which are holes
@@ -36,17 +37,19 @@ def wlfinaf(*args):
             (c_longlong(), OUT),
             (c_longlong(), OUT)]
 
+
 @treatReturnCode
 @ctypesFF
 @addReturnCode
 def wlfipos(*args):
     """
     Rewind record.
-    
+
     Args:\n
     1) KNUMER: logical unit number associated to file
     """
     return [(c_longlong(args[0]), IN)]
+
 
 @treatReturnCode
 @ctypesFF
@@ -54,21 +57,22 @@ def wlfipos(*args):
 def wlficas(*args):
     """
     Run through records getting their names and lengths.
-    
+
     Args:\n
     1) KNUMER: logical unit number associated to file
     2) LDAVAN: true if one must move forward the pointer
-    
+
     Returns:\n
     1) CDNOMA: name of next record
     2) KLONG: length of next record
     3) KPOSEX: position in file of the first word of next record
     """
     return [(c_longlong(args[0]), IN),
-            (c_char_p(" "*16), OUT),
+            (c_char_p(" " * 16), OUT),
             (c_longlong(), OUT),
             (c_longlong(), OUT),
             (c_bool(args[1]), IN)]
+
 
 @treatReturnCode
 @ctypesFF
@@ -76,7 +80,7 @@ def wlficas(*args):
 def wlfiouv(*args):
     """
     Open a LFI file.
-    
+
     Args:\n
     1) CDFILE: path to file to open
     2) CDSTATE: state of file ('NEW', 'OLD', 'UNKNOWN', 'SCRATCH')
@@ -88,13 +92,14 @@ def wlfiouv(*args):
            (c_char_p(args[1]), IN),
            (c_longlong(), OUT)]
 
+
 @treatReturnCode
 @ctypesFF
 @addReturnCode
 def wlfifer(*args):
     """
     Close a LFI file.
-    
+
     Args:\n
     1) KNUMER: logical unit number associated to file
     2) CDSTTC: close status ('KEEP', 'SCRATCH', 'DELETE')
@@ -102,17 +107,18 @@ def wlfifer(*args):
     return[(c_longlong(args[0]), IN),
            (c_char_p(args[1].ljust(7)), IN)]
 
+
 @treatReturnCode
 @ctypesFF
 @addReturnCode
 def wlfinfo(*args):
     """
     Get length of a record.
-    
+
     Args:\n
     1) KNUMER: logical unit number associated to file
     2) CDNOMA: name of record
-    
+
     Returns:\n
     1) KLONG: length of record
     2) KPOSEX: position in file of the first word of next record
@@ -122,19 +128,20 @@ def wlfinfo(*args):
            (c_longlong(), OUT),
            (c_longlong(), OUT)]
 
+
 @treatReturnCode
 @ctypesFF
 @addReturnCode
 def wlfilec(*args):
     """
     Read a record.
-    
+
     Args:\n
     1) KNUMER: logical unit number associated to file
     2) CDNOMA: name of record
     3) KLONG: length of record
     4) LDABORT: must we raise an exception on error -21 ?
-    
+
     Returns:\n
     1) KTAB: integer array read
     """
@@ -144,13 +151,14 @@ def wlfilec(*args):
            (c_bool(args[3]), IN),
            (np.ndarray((args[2],), dtype=np.int64), OUT)]
 
+
 @treatReturnCode
 @ctypesFF
 @addReturnCode
 def wlfiecr(*args):
     """
     Write a record.
-    
+
     Args:\n
     1) KNUMER: logical unit number associated to file
     2) CDNOMA: name of field to write
@@ -162,13 +170,14 @@ def wlfiecr(*args):
            (c_longlong(args[2]), IN),
            (args[3], IN)]
 
+
 @treatReturnCode
 @ctypesFF
 @addReturnCode
 def wlfiren(*args):
     """
     Rename a record.
-    
+
     Args:\n
     1) KNUMER: logical unit number associated to file
     2) CDNOM1: name of record to rename
@@ -178,19 +187,21 @@ def wlfiren(*args):
            (c_char_p(args[1].ljust(16)), IN),
            (c_char_p(args[2].ljust(16)), IN)]
 
+
 @treatReturnCode
 @ctypesFF
 @addReturnCode
 def wlfisup(*args):
     """
     Delete a record.
-    
+
     Args:\n
     1) KNUMER: logical unit number associated to file
     2) CDNOMA: name of record to delete
     """
     return[(c_longlong(args[0]), IN),
            (c_char_p(args[1].ljust(16)), IN)]
+
 
 @ctypesFF
 def wget_compheader(*args):
@@ -201,7 +212,7 @@ def wget_compheader(*args):
     1) KSIZE: Size of KDATA
     2) KDATA: (part of) integer array read from record
     3) KLONG: length of compressed data
-    
+
     Returns:\n
     1) KLONU: length of uncompressed data
     2) KTYPECOMP: type of compression
@@ -211,6 +222,7 @@ def wget_compheader(*args):
            (c_longlong(args[2]), IN),
            (c_longlong(), OUT),
            (c_longlong(), OUT)]
+
 
 @ctypesFF
 def wdecompress_field(*args):
@@ -222,7 +234,7 @@ def wdecompress_field(*args):
     2) KCOMP: compressed integer array
     3) KTYPECOMP: type of compression
     4) KLDECOMP: length of decompressed data
-    
+
     Returns:\n
     1) KDECOMP: decompressed data integer array
     """
@@ -231,6 +243,7 @@ def wdecompress_field(*args):
            (c_longlong(args[2]), IN),
            (c_longlong(args[3]), IN),
            (np.ndarray((args[3],), dtype=np.int64), OUT)]
+
 
 @ctypesFF
 def wcompress_field(*args):
@@ -241,7 +254,7 @@ def wcompress_field(*args):
     1) KTAB: decompressed data integer array (IN)
     2,3) KX, KY: x and y dimensions
     4) KSIZEDECOMP: size of decompressed data
-    
+
     Returns:\n
     1) KTAB: compressed data integer array (OUT)
     2) KSIZECOMP: size of compressed integer array

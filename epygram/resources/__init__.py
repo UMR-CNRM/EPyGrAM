@@ -12,8 +12,10 @@ Module contains:
     temporal evolution;
   - CombineLevelsResource: from a resource containing 2D fields on adjacent
     levels, emulates a resource that provide 3D fields
-- a proxy function to build such meta resources 
+- a proxy function to build such meta resources
 """
+
+from __future__ import print_function, absolute_import, unicode_literals, division
 
 from epygram import epygramError
 from epygram.base import Resource
@@ -22,12 +24,11 @@ from .MultiValiditiesResource import MultiValiditiesResource
 from .CombineLevelsResource import CombineLevelsResource
 
 
-
 def meta_resource(filenames_or_resources, openmode, rtype):
     """
     Factory for meta resources, such as MultiValiditiesResource or
     CombineLevelsResource.
-    
+
     *filenames_or_resources* can be either a filename or a list of,
                              or a resource or a list of.
     *openmode*: among 'r', 'w', 'a'

@@ -9,6 +9,8 @@ Contains the class for a Horizontal 2D field.
 Plus a function to create a Vector field from 2 scalar fields.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import numpy
 import sys
 
@@ -17,7 +19,6 @@ from footprints import proxy as fpx, FPList
 from epygram import config, epygramError, util, epylog
 from epygram.base import Field, FieldValidityList
 from . import H2DField
-
 
 
 def make_vector_field(fX, fY):
@@ -30,10 +31,10 @@ def make_vector_field(fX, fY):
     if not isinstance(fX, H2DField) or not isinstance(fY, H2DField):
         raise epygramError("'fX', 'fY' must be H2DField.")
     if fX.geometry.dimensions != fY.geometry.dimensions:
-        raise epygramError("'fX', 'fY' must be share their gridpoint" + \
+        raise epygramError("'fX', 'fY' must be share their gridpoint" +
                            " dimensions.")
     if fX.spectral_geometry != fY.spectral_geometry:
-        raise epygramError("'fX', 'fY' must be share their spectral" + \
+        raise epygramError("'fX', 'fY' must be share their spectral" +
                            " geometry.")
     if fX.structure != fY.structure:
         raise epygramError("'fX', 'fY' must share their structure.")
@@ -185,14 +186,14 @@ class H2DVectorField(Field):
             raise epygramError("data must have as many components as VectorField.")
         for i in range(len(self.components)):
             self.components[i].setdata(data[i])
-    
+
     def deldata(self):
         """Empties the data."""
         for i in range(len(self.components)):
             self.components[i].deldata()
-    
+
     data = property(getdata, setdata, deldata, "Accessor to the field data.")
-    
+
     def to_module(self):
         """
         Returns a :class:`epygram.H2DField` whose data is the module of the
@@ -264,15 +265,13 @@ class H2DVectorField(Field):
         """
         Reprojects a wind vector (u, v) from the grid axes onto real
         sphere, i.e. with components on true zonal/meridian axes.
-        
+
         If *map_factor_correction*, applies a
         correction of magnitude due to map factor.
-        
+
         If *reverse*, apply the reverse reprojection.
         """
 
-        #assert self.geometry.name == 'rotated_reduced_gauss', \
-        #       "method only available for Gauss geometry."
         (lon, lat) = self.geometry.get_lonlat_grid()
         u = self.components[0].getdata()
         v = self.components[1].getdata()
@@ -312,7 +311,7 @@ class H2DVectorField(Field):
     def compute_vordiv(self, divide_by_m=False):
         """
         Compute vorticity and divergence fields from the vector field.
-        
+
         If *divide_by_m* is True, apply f = f/m beforehand, where m is the map
         factor.
         """
@@ -375,8 +374,8 @@ class H2DVectorField(Field):
           Any existing figure and/or ax to be used for the
           plot, given as a tuple (fig, ax), with None for
           missing objects. *fig* is the frame of the
-          matplotlib figure, containing eventually several 
-          subplots (axes); *ax* is the matplotlib axes on 
+          matplotlib figure, containing eventually several
+          subplots (axes); *ax* is the matplotlib axes on
           which the drawing is done. When given (is not None),
           these objects must be coherent, i.e. ax being one of
           the fig axes.
@@ -387,7 +386,7 @@ class H2DVectorField(Field):
           quality. Defines the quality for GIS elements (coastlines, countries
           boundaries...). Default is 'i'. Cf. 'basemap' doc for more details.
         - *specificproj*: enables to make basemap on the specified projection,
-          among: 'kav7', 'cyl', 'ortho', ('nsper', {...}) (cf. Basemap doc). \n 
+          among: 'kav7', 'cyl', 'ortho', ('nsper', {...}) (cf. Basemap doc). \n
           In 'nsper' case, the {} may contain:\n
           - 'sat_height' = satellite height in km;
           - 'lon' = longitude of nadir in degrees;
@@ -404,7 +403,7 @@ class H2DVectorField(Field):
           *use_basemap* object. (because making Basemap is the most
           time-consuming step).
         - *drawrivers*: to add rivers on map.
-        - *departments*: if True, adds the french departments on map (instead 
+        - *departments*: if True, adds the french departments on map (instead
           of countries).
         - *boundariescolor*: color of lines for boundaries (countries,
           departments, coastlines)
@@ -430,7 +429,7 @@ class H2DVectorField(Field):
         - *plot_module_options*: options (dict) to be passed to module.plotfield().
         - *bluemarble*: if > 0.0 (and <=1.0), displays NASA's "blue marble"
           as background. The numerical value sets its transparency.
-        - *background*: if True, set a background color to 
+        - *background*: if True, set a background color to
           continents and oceans.
         - *quiverkey*: to activate quiverkey; must contain arguments to be
           passed to pyplot.quiverkey(), as a dict.
@@ -438,7 +437,7 @@ class H2DVectorField(Field):
           vector components are projected on ('grid' or 'lonlat').
         - *map_factor_correction*: if True, applies a correction of magnitude
           to vector due to map factor.
-        
+
         This method uses (hence requires) 'matplotlib' and 'basemap' libraries.
         """
         import matplotlib.pyplot as plt
@@ -449,7 +448,7 @@ class H2DVectorField(Field):
         quiver_options = util.ifNone_emptydict(quiver_options)
 
         if self.spectral:
-            raise epygramError("please convert to gridpoint with sp2gp()" + \
+            raise epygramError("please convert to gridpoint with sp2gp()" +
                                " method before plotting.")
 
         # 1. Figure, ax
@@ -503,7 +502,7 @@ class H2DVectorField(Field):
                                 background=background)
         # 3. Prepare data
         (lons, lats) = self.geometry.get_lonlat_grid(subzone=subzone)
-        if lons.ndim == 1:  #self.geometry.dimensions['Y'] == 1:
+        if lons.ndim == 1:  # self.geometry.dimensions['Y'] == 1:
             lons = lons[::subsampling]
             lats = lats[::subsampling]
         else:
@@ -577,15 +576,15 @@ class H2DVectorField(Field):
         """
         Plot the field with animation with regards to time dimension.
         Returns a :class:`matplotlib.animation.FuncAnimation`.
-        
+
         In addition to those specified below, all :meth:`plotfield` method
         arguments can be provided.
-        
+
         Args:\n
         - *title* = title for the plot. '__auto__' (default) will print
           the current validity of the time frame.
         - *repeat*: to repeat animation
-        - *interval*: number of milliseconds between two validities 
+        - *interval*: number of milliseconds between two validities
         """
 
         import matplotlib.animation as animation
@@ -731,13 +730,13 @@ class H2DVectorField(Field):
         Internal method to check compatibility of terms in operations on fields.
         """
 
-        if not 'vector' in other._attributes:
-            raise epygramError("cannot operate a Vector field with a" + \
+        if 'vector' not in other._attributes:
+            raise epygramError("cannot operate a Vector field with a" +
                                " non-Vector one.")
         else:
             if isinstance(other, self.__class__):
                 if len(self.components) != len(other.components):
-                    raise epygramError("vector fields must have the same" + \
+                    raise epygramError("vector fields must have the same" +
                                        " number of components.")
             super(H2DVectorField, self)._check_operands(other)
 

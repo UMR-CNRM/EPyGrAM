@@ -12,9 +12,11 @@ This module contains functions to:
 - to plot vertical profiles.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import numpy
 
-from epygram import config
+from . import config
 
 # Constants
 Cpd = config.Cpd
@@ -22,11 +24,9 @@ Rd = config.Rd
 Rv = config.Rv
 
 
-
 ################
 ### FORMULAS ###
 ################
-
 def hybridP2fluxpressure(A, B, Psurf):
     """
     Computes the pressure at flux levels defined by hybrid-pressure
@@ -59,7 +59,6 @@ def hybridP2fluxpressure(A, B, Psurf):
     return pi_tilde
 
 
-
 def hybridP2masspressure(A, B, Psurf, vertical_mean):
     """
     Computes the pressure at mass levels defined by hybrid-pressure
@@ -81,7 +80,6 @@ def hybridP2masspressure(A, B, Psurf, vertical_mean):
         raise ValueError('pi array must be in ascending order.')
 
     return pi
-
 
 
 def hybridH2fluxheight(A, B, Zsurf, conv2height=False):
@@ -120,7 +118,6 @@ def hybridH2fluxheight(A, B, Zsurf, conv2height=False):
     return H_tilde
 
 
-
 def hybridH2massheight(A, B, Zsurf, conv2height=False):
     """
     Computes the altitude at mass levels defined by hybrid-height
@@ -147,7 +144,6 @@ def hybridH2massheight(A, B, Zsurf, conv2height=False):
     return H
 
 
-
 def flux2masspressures(pi_tilde, vertical_mean, Ptop=config.default_Ptop):
     """Converts pressures at flux levels to mass levels."""
 
@@ -172,11 +168,10 @@ def flux2masspressures(pi_tilde, vertical_mean, Ptop=config.default_Ptop):
             else:
                 pi[ik] = (pi_tilde[ik] + pi_tilde[ik - 1]) / 2.
         else:
-            raise NotImplementedError("vertical_mean not among" + \
+            raise NotImplementedError("vertical_mean not among" +
                                       " ('geometric', 'arithmetic').")
 
     return pi
-
 
 
 def mass2fluxpressures(pi, vertical_mean, Ptop=config.default_Ptop):
@@ -203,11 +198,10 @@ def mass2fluxpressures(pi, vertical_mean, Ptop=config.default_Ptop):
             else:
                 pi_tilde[ik] = (pi[ik] + pi[ik - 1]) / 2.
         else:
-            raise NotImplementedError("vertical_mean not among" + \
+            raise NotImplementedError("vertical_mean not among" +
                                       " ('geometric', 'arithmetic').")
 
     return pi_tilde
-
 
 
 def flux2massheights(H_tilde):
@@ -224,7 +218,6 @@ def flux2massheights(H_tilde):
     H[-1] = 2 * H_tilde[-1] - H_tilde[-2]
 
     return H[1:-1]
-
 
 
 def mass2fluxheights(H):
@@ -247,7 +240,6 @@ def mass2fluxheights(H):
 #            pi_tilde[ik] = pi[ik]**2 / pi_tilde[ik-1]
 
     return H_tilde
-
 
 
 def pressure2altitude(R, T, vertical_mean,
@@ -328,15 +320,14 @@ def pressure2altitude(R, T, vertical_mean,
         if k == L:
             partialsum[ik] = 0.
         else:
-            partialsum[ik] = partialsum[ik + 1] + R[ik + 1] * T[ik + 1] * delta[ik + 1] / \
-                             (1. + myPdep[ik + 1] / pi[ik + 1])
+            partialsum[ik] = partialsum[ik + 1] + R[ik + 1] * T[ik + 1] * \
+                             delta[ik + 1] / (1. + myPdep[ik + 1] / pi[ik + 1])
         Phi[ik] = myPhi_surf + partialsum[ik] + R[ik] * T[ik] * alpha[ik] / \
                   (1. + myPdep[ik] / pi[ik])
     # Altitude
     z = Phi / config.g0
 
     return z
-
 
 
 def hybridP2altitude(A, B, R, T, Psurf, vertical_mean,

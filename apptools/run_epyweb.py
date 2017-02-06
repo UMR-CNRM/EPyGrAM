@@ -4,6 +4,8 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import argparse
 
 import epygram
@@ -34,7 +36,6 @@ if __name__ == '__main__':
 
     ### 3. Main
     ###########
-    
     epyweb.main(open_browser=args.open_browser,
                 port=args.port,
                 verbose=args.verbose)

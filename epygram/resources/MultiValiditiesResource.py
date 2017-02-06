@@ -7,6 +7,8 @@
 Contains the class that handle a MultiValiditiesResource.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import copy
 import numpy
 
@@ -17,7 +19,6 @@ from epygram.util import fmtfid
 from epygram.base import Resource, FieldSet, FieldValidityList
 
 
-
 class _open_and_close(object):
     def __init__(self, r):
         self.r = r
@@ -25,6 +26,7 @@ class _open_and_close(object):
         self.r.open()
     def __exit__(self, t, v, tbk):
         self.r.close()
+
 
 class MultiValiditiesResource(Resource):
     """Class implementing a MultiValiditiesResource."""
@@ -167,7 +169,6 @@ class MultiValiditiesResource(Resource):
         else:
             raise epygramError("All spectral_geometry are not identical")
 
-
     def _join_validities(self, fieldset):
         """
         Join the different fields
@@ -197,7 +198,7 @@ class MultiValiditiesResource(Resource):
         kwargs_geom = copy.deepcopy(fieldset[0].geometry.footprint_as_dict())
         kwargs_geom['vcoordinate'] = fpx.geometry(structure='V', typeoffirstfixedsurface=255, levels=[255])
         for k, v in kwargs_geom.iteritems():
-            if type(v) == type(FPDict()):
+            if isinstance(v, FPDict):
                 kwargs_geom[k] = dict(v)
         geometry = fpx.geometry(**kwargs_geom)
         kwargs_vcoord = copy.deepcopy(fieldset[0].geometry.vcoordinate.footprint_as_dict())
@@ -214,7 +215,7 @@ class MultiValiditiesResource(Resource):
             kwargs_geom = copy.deepcopy(field.geometry.footprint_as_dict())
             kwargs_geom['vcoordinate'] = fpx.geometry(structure='V', typeoffirstfixedsurface=255, levels=[255])
             for k, v in kwargs_geom.iteritems():
-                if type(v) == type(FPDict()):
+                if isinstance(v, FPDict):
                     kwargs_geom[k] = dict(v)
             geometry_field = fpx.geometry(**kwargs_geom)
             kwargs_vcoord = copy.deepcopy(field.geometry.vcoordinate.footprint_as_dict())
@@ -265,7 +266,7 @@ class MultiValiditiesResource(Resource):
         kwargs_field['validity'] = FieldValidityList()
         kwargs_field['geometry'] = geometry
         for k, v in kwargs_field.iteritems():
-            if type(v) == type(FPDict()):
+            if isinstance(v, FPDict):
                 kwargs_field[k] = dict(v)
         field = fpx.field(**kwargs_field)
         sameProcesstype = True
@@ -274,10 +275,10 @@ class MultiValiditiesResource(Resource):
             kwargs_field.pop('data')
             kwargs_field['validity'] = FieldValidityList()
             kwargs_field['geometry'] = geometry
-            sameProcesstype = sameProcesstype and  kwargs_field['processtype'] == fieldset[0].processtype
+            sameProcesstype = sameProcesstype and kwargs_field['processtype'] == fieldset[0].processtype
             kwargs_field['processtype'] = fieldset[0].processtype  # we exclude processtype from the comparison
             for k, v in kwargs_field.iteritems():
-                if type(v) == type(FPDict()):
+                if isinstance(v, FPDict):
                     kwargs_field[k] = dict(v)
             myf = fpx.field(**kwargs_field)
             if field != myf:

@@ -9,12 +9,15 @@ ctypesForFortran:
 Contains a decorator to wrap call to ctypes functions.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 from ctypes import c_char_p, create_string_buffer, c_longlong, POINTER, byref
 import numpy as np
 
 IN = 1
 OUT = 2
 INOUT = 3
+
 
 def ctypesForFortranFactory(solib):
     def ctypesForFortran(func):
@@ -131,7 +134,7 @@ def ctypesForFortranFactory(solib):
                         resultArgs.append(arg[0])
             f = solib.__getitem__(func.__name__ + '_')
             f.argtypes = argtypes1 + argtypes2
-            #f.restype=None
+            # f.restype=None
             f(*(effectiveArgs1 + effectiveArgs2))
             result = tuple([(arg.value if arg.__class__.__name__ != 'ndarray'
                              else arg)

@@ -4,16 +4,19 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 """
-This module has been developped as a temporary alternative to :mod`pyproj`.
-Its usage is deprecated: it may be removed from the package in a future version.
+This module has been developped as a temporary alternative to :mod:`pyproj`.
+
+.. deprecated:: 1.0.0
+   Use :mod:`pyproj` instead. Shall be removed from the package in a future version.
 """
+
+from __future__ import print_function, absolute_import, unicode_literals, division
 
 import math
 import numpy
 
 from epygram import config
 from epygram.base import RecursiveObject
-
 
 
 class Proj(RecursiveObject):
@@ -28,22 +31,22 @@ class Proj(RecursiveObject):
                  x_0=0., y_0=0., **proj_params):
         """
         Initializes parameters for projection formulas.
-        
+
         Args:
-        
+
         - *proj*: name of the projection, among ('lambert', 'mercator', 'polar_stereographic')
         - *geoidshape*: actually, only 'sphere' is implemented.
         - *earth_radius*: can be specified, to use a specific earth radius, in m.
         - *x_0*, *y_0* : offset of Origin in (x, y) coordinates of projected map.
         - *proj_params*: a set of arguments that depends on the projection.
           (all lon/lat are in degrees):
-          
+
           + lambert: lon_0 = longitude of reference point \n
                      lat_1 = first secant latitude \n
                      lat_2 = second secant latitude \n
                      if tangent, lat_1 = lat_2 = lat_0 = latitude of reference point = tangency latitude
           + mercator: lon_0 = longitude of reference point
-                      lat_ts = tangency latitude (0°) or secant latitude 
+                      lat_ts = tangency latitude (0°) or secant latitude
           + polar_stereographic: lon_0 = longitude of reference point
                                  lat_0 = +/- 90° depending on the projection pole
                                  lat_ts = secant or tangency latitude
@@ -93,9 +96,9 @@ class Proj(RecursiveObject):
             self._p['sign'] = math.copysign(1., proj_params['lat_0'])
             if abs(proj_params['lat_0'] - proj_params['lat_ts']) > config.epsilon:
                 self.secant = True
-                #mf = math.cos(proj_params['lat_ts'] * deg2rad)
-                #tf = math.tan(math.pi / 4. - self._p['sign'] * proj_params['lat_ts'] / 2.)
-                #self._p['k0'] = mf / (2.*tf)
+                # mf = math.cos(proj_params['lat_ts'] * deg2rad)
+                # tf = math.tan(math.pi / 4. - self._p['sign'] * proj_params['lat_ts'] / 2.)
+                # self._p['k0'] = mf / (2.*tf)
                 self._p['k0'] = (1 + self._p['sign'] * math.sin(proj_params['lat_ts'] * deg2rad)) / 2.
             else:
                 self.secant = False
@@ -104,8 +107,8 @@ class Proj(RecursiveObject):
     def __call__(self, x, y, inverse=False):
         """
         Converts lon/lat coordinates (in °) to x/y coord in the projection.
-        
-        If *inverse* is *True*, makes the inverse conversion, from x/y to lon/lat (in °). 
+
+        If *inverse* is *True*, makes the inverse conversion, from x/y to lon/lat (in °).
         """
 
         if not isinstance(x, numpy.ndarray):

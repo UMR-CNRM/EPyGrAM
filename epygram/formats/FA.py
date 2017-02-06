@@ -9,7 +9,7 @@ Contains the class for FA format.
 Plus a function to guess a field type given its name.
 """
 
-__all__ = ['FA', 'inquire_field_dict']
+from __future__ import print_function, absolute_import, unicode_literals, division
 
 import datetime
 import os
@@ -24,8 +24,7 @@ from footprints import FPDict, FPList, proxy as fpx
 from arpifs4py import wfa, wlfi, wtransforms
 
 from epygram import config, epygramError, util
-from epygram.util import Angle, separation_line, \
-                         write_formatted_fields
+from epygram.util import Angle, separation_line, write_formatted_fields
 from epygram.base import FieldSet, FieldValidity, FieldValidityList
 from epygram.resources import FileResource
 from epygram.geometries import D3Geometry, SpectralGeometry
@@ -33,8 +32,9 @@ from epygram.geometries.VGeometry import hybridP2pressure, hybridP2altitude, \
                                          pressure2altitude
 from epygram.fields import MiscField, H2DField
 
-epylog = footprints.loggers.getLogger(__name__)
+__all__ = ['FA', 'inquire_field_dict']
 
+epylog = footprints.loggers.getLogger(__name__)
 
 
 def inquire_field_dict(fieldname):
@@ -58,12 +58,13 @@ def inquire_field_dict(fieldname):
             break
 
     if matching_field is None:
-        epylog.info("field '" + fieldname + "' is not referenced in" + \
+        epylog.info("field '" + fieldname + "' is not referenced in" +
                     " Field_Dict_FA. Assume its type being a MiscField.")
         matching_field = {'name':fieldname, 'type':'Misc',
                           'nature':'float', 'dimension':'1'}
 
     return copy.deepcopy(matching_field)
+
 
 def _complete_generic_fid_from_name(generic_fid, fieldname):
     """Complete a generic fid with information of fieldname."""
@@ -123,6 +124,7 @@ def _complete_generic_fid_from_name(generic_fid, fieldname):
 
     return generic_fid
 
+
 def get_generic_fid(fieldname):
     """Return a generic fid from fieldname (via Field Dict)."""
 
@@ -134,11 +136,13 @@ def get_generic_fid(fieldname):
 
     return fid
 
+
 def _gen_headername():
     """Generates a random headername for the FA software."""
     import uuid
 
     return str(uuid.uuid4()).replace('-', '')[0:16]
+
 
 def _create_header_from_geometry(geometry, spectral_geometry=None):
     """
@@ -157,7 +161,7 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
            "geometry must be a D3Geometry (or heirs) instance."
     if spectral_geometry is not None and\
        not isinstance(spectral_geometry, SpectralGeometry):
-        raise epygramError("spectral_geometry must be a SpectralGeometry" + \
+        raise epygramError("spectral_geometry must be a SpectralGeometry" +
                            " instance.")
     if geometry.projected_geometry:
         assert geometry.projection['rotation'] == Angle(0., 'radians'), \
@@ -242,7 +246,7 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
             PSINLA[11] = 0.0
         elif geometry.projected_geometry:
             if geometry.secant_projection:
-                raise epygramError("cannot write secant projected" + \
+                raise epygramError("cannot write secant projected" +
                                    " geometries in FA.")
             PSINLA[1] = geometry.projection['reference_lat'].get('cos_sin')[1]
             PSINLA[6] = geometry.grid['X_resolution']
@@ -330,6 +334,7 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
 
     return headername
 
+
 class FA(FileResource):
     """Class implementing all specificities for FA resource format."""
 
@@ -340,14 +345,14 @@ class FA(FileResource):
                 default='FA'),
             headername=dict(
                 optional=True,
-                info="With openmode == 'w', name of an existing header," + \
+                info="With openmode == 'w', name of an existing header," +
                      " for the new FA to use its geometry."),
             validity=dict(
                 type=FieldValidityList,
                 optional=True,
                 access='rwx',
-                info="With openmode == 'w', describes the temporal validity" + \
-                      " of the resource."),
+                info="With openmode == 'w', describes the temporal validity" +
+                     " of the resource."),
             default_compression=dict(
                 type=FPDict,
                 optional=True,
@@ -356,13 +361,13 @@ class FA(FileResource):
                 optional=True,
                 default='unknown',
                 access='rwx',
-                info="With openmode == 'w', identifies the FA by a keyword," + \
+                info="With openmode == 'w', identifies the FA by a keyword," +
                      " usually the model abbreviation."),
             processtype=dict(
                 optional=True,
                 default='analysis',
                 access='rwx',
-                info="With openmode == 'w', identifies the processus that" + \
+                info="With openmode == 'w', identifies the processus that" +
                      " produced the resource.")
         )
     )
@@ -462,8 +467,8 @@ class FA(FileResource):
             if self.openmode in ('r', 'a') and self.headername is None:
                 self._attributes['headername'] = _gen_headername()
             if geometry is not None or validity is not None:
-                epylog.warning(self.container.abspath + ": FA.open():" + \
-                               " geometry/validity argument will be ignored" + \
+                epylog.warning(self.container.abspath + ": FA.open():" +
+                               " geometry/validity argument will be ignored" +
                                " with this openmode ('r','a').")
             # open, getting logical unit
             try:
@@ -532,16 +537,10 @@ class FA(FileResource):
             except Exception:
                 raise IOError("closing " + self.container.abspath)
             self.isopen = False
-            # Cleanings
-            #if self.openmode == 'w' and self.empty:
-            #    os.remove(self.container.abspath)
-
-
 
 ################
 # ABOUT FIELDS #
 ################
-
     def find_fields_in_resource(self, seed=None, fieldtype=[], generic=False):
         """
         Returns a list of the fields from resource whose name match the given
@@ -558,7 +557,7 @@ class FA(FileResource):
           the fields.
         """
 
-        if type(fieldtype) == type(list()):
+        if isinstance(fieldtype, list):
             fieldtypeslist = fieldtype
         else:
             fieldtypeslist = [fieldtype]
@@ -584,8 +583,8 @@ class FA(FileResource):
                    inquire_field_dict(f)['type'] in fieldtypeslist:
                     fieldslist.append(f)
         if fieldslist == []:
-            raise epygramError("no field matching: " + str(seed) + \
-                               " was found in resource " + \
+            raise epygramError("no field matching: " + str(seed) +
+                               " was found in resource " +
                                self.container.abspath)
         if generic:
             fieldslist = [(f, get_generic_fid(f)) for f in fieldslist]
@@ -603,7 +602,7 @@ class FA(FileResource):
     def _listfields(self, complete=False):
         """
         Actual listfields() method for FA.
-        
+
         Args: \n
         - *complete*: if True method returns a list of {'FA':FA_fid, 'generic':generic_fid}
                       if False method return a list of FA_fid
@@ -729,7 +728,7 @@ class FA(FileResource):
                                                                    fieldname[4:])[1:6]
         except RuntimeError as e:
             if 'arpifs4py: Error code -93 was raised' in str(e):
-                raise epygramError(fieldname+': seems like you try to read a MiscField as a H2DField...')
+                raise epygramError(fieldname + ': seems like you try to read a MiscField as a H2DField...')
             else:
                 raise e
         encoding = {'spectral':LDCOSP, 'KNGRIB':KNGRIB, 'KNBITS':KNBITS,
@@ -744,7 +743,7 @@ class FA(FileResource):
         """
         Reads one field, given its FA name, and returns a Field instance.
         Interface to Fortran routines from 'ifsaux'.
-        
+
         Args: \n
         - *fieldname*: FA fieldname
         - *getdata*: if *False*, only metadata are read, the field do not
@@ -754,7 +753,7 @@ class FA(FileResource):
         """
 
         if self.openmode == 'w':
-            raise epygramError("cannot read fields in resource if with" + \
+            raise epygramError("cannot read fields in resource if with" +
                                " openmode == 'w'.")
         assert fieldname in self.listfields(), ' '.join(["field",
                                                          str(fieldname),
@@ -813,10 +812,10 @@ class FA(FileResource):
                     total_system_memory = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')
                     memory_needed_for_transforms = truncation['max'] ** 3 / 2 * 8
                     if memory_needed_for_transforms >= config.prevent_swapping_legendre * total_system_memory:
-                        raise epygramError('Legendre spectral transforms need ' + \
-                                           str(int(float(memory_needed_for_transforms) / (1024 ** 2.))) + \
-                                           ' MB memory, while only ' + \
-                                           str(int(float(total_system_memory) / (1024 ** 2.))) + \
+                        raise epygramError('Legendre spectral transforms need ' +
+                                           str(int(float(memory_needed_for_transforms) / (1024 ** 2.))) +
+                                           ' MB memory, while only ' +
+                                           str(int(float(total_system_memory) / (1024 ** 2.))) +
                                            ' MB is available: SWAPPING prevented !')
                     SPdatasize = wtransforms.w_trans_inq(self.geometry.dimensions['lat_number'],
                                                          truncation['max'],
@@ -863,7 +862,7 @@ class FA(FileResource):
                     elif field_info['nature'] == 'float':
                         dataOut = data[0]
                     else:
-                        raise NotImplementedError("reading of datatype " + \
+                        raise NotImplementedError("reading of datatype " +
                                                   field_info['nature'] + ".")
                 else:
                     # copy is necessary for garbage collector
@@ -872,17 +871,16 @@ class FA(FileResource):
                     elif field_info['nature'] == 'float':
                         dataOut = numpy.copy(data)
                     elif field_info['nature'] == 'str':
-                        raise NotImplementedError("reading of datatype " + \
+                        raise NotImplementedError("reading of datatype " +
                                                   field_info['nature'] + " array.")
                         dataOut = numpy.copy(data)
                     elif field_info['nature'] == 'bool':
                         dataOut = numpy.copy(data.view('bool')[:])
                     else:
-                        raise NotImplementedError("reading of datatype " + \
+                        raise NotImplementedError("reading of datatype " +
                                                   field_info['nature'] + " array.")
                 data = dataOut
             elif field_info['type'] == 'H2D':
-                #FIXME: next export version
                 if config.spectral_coeff_order == 'model':
                     data = numpy.array(wfa.wfacilo(datasize,
                                                    self._unit,
@@ -891,7 +889,7 @@ class FA(FileResource):
                                                    fieldname[4:],
                                                    spectral))
                 else:
-                    #CLEANME: when everybody can use facilo (CY41T1_op1 onwards)
+                    # FIXME: next export version CLEANME: when everybody can use facilo (CY41T1_op1 onwards)
                     data = numpy.array(wfa.wfacile(datasize,
                                                    self._unit,
                                                    fieldname[0:4],
@@ -969,7 +967,7 @@ class FA(FileResource):
     def writefield(self, field, compression=None):
         """
         Write a field in the resource.
-        
+
         Args: \n
         - *field*: a :class:`epygram.base.Field` instance or
           :class:`epygram.fields.H2DField`.
@@ -988,7 +986,7 @@ class FA(FileResource):
                 # given one at opening. For opening it, either write a H2DField
                 # in, or call its method open(geometry, validity), geometry
                 # being a D3Geometry (or heirs), validity being a FieldValidity.
-                raise epygramError("cannot write a this kind of field on a" + \
+                raise epygramError("cannot write a this kind of field on a" +
                                    " non-open FA.")
             if self.validity is None:
                 if len(field.validity) != 1:
@@ -999,7 +997,7 @@ class FA(FileResource):
             self.open()
 
         if not self.empty and field.fid[self.format] in self.listfields():
-            epylog.info("there already is a field with the same name in" + \
+            epylog.info("there already is a field with the same name in" +
                         " this FA: overwrite.")
 
         if isinstance(field, MiscField):
@@ -1012,17 +1010,17 @@ class FA(FileResource):
                     dataReal = numpy.array([ord(d) for d in data]).view('float64')
                 elif 'bool' in field.datatype.name:
                     dataReal = numpy.array(1 if data else 0).view('float64')
-                elif 'float' in  field.datatype.name:
+                elif 'float' in field.datatype.name:
                     dataReal = data
                 else:
-                    raise NotImplementedError("writing of datatype " + \
+                    raise NotImplementedError("writing of datatype " +
                                               field.datatype.name + ".")
             else:
                 try:
                     dataReal = numpy.copy(data.view('float64'))
                 except Exception:
-                    raise NotImplementedError("writing of datatype " + \
-                                              field.datatype.__name__ + \
+                    raise NotImplementedError("writing of datatype " +
+                                              field.datatype.__name__ +
                                               " array.")
             wfa.wfaisan(self._unit,
                         field.fid[self.format],
@@ -1048,7 +1046,7 @@ class FA(FileResource):
             if field.spectral_geometry is not None and\
                field.spectral_geometry != self.spectral_geometry:
                 # compatibility check
-                raise epygramError("spectral geometry incompatibility:" + \
+                raise epygramError("spectral geometry incompatibility:" +
                                    " a FA can hold only one geometry.")
             if self.validity.cumulativeduration() is None and field.validity.cumulativeduration() is not None:
                 self.validity.set(cumulativeduration=field.validity.cumulativeduration())
@@ -1058,7 +1056,7 @@ class FA(FileResource):
                 data = numpy.copy(data[data.mask == False].data)
             if compression is not None:
                 modified_compression = True
-            elif self.fieldscompression.has_key(field.fid[self.format]):
+            elif field.fid[self.format] in self.fieldscompression:
                 compression = self.fieldscompression[field.fid[self.format]]
                 modified_compression = True
             else:
@@ -1066,7 +1064,6 @@ class FA(FileResource):
                 compression = self._getrunningcompression()
             if modified_compression:
                 self._setrunningcompression(**compression)
-            #FIXME: next export version
             if config.spectral_coeff_order == 'model':
                 wfa.wfaieno(self._unit,
                             field.fid[self.format][0:4],
@@ -1075,7 +1072,7 @@ class FA(FileResource):
                             len(data), data,
                             field.spectral)
             else:
-                #CLEANME: when everybody can use facilo (CY41T1_op1 onwards)
+                # FIXME: next export version CLEANME: when everybody can use faieno (CY41T1_op1 onwards)
                 wfa.wfaienc(self._unit,
                             field.fid[self.format][0:4],
                             0,
@@ -1085,9 +1082,10 @@ class FA(FileResource):
             if modified_compression:
                 # set back to default
                 self._setrunningcompression(**self.default_compression)
-            if not self.fieldscompression.has_key(field.fid[self.format]):
+            if field.fid[self.format] not in self.fieldscompression:
                 self.fieldscompression[field.fid[self.format]] = compression
-        if self.empty: self.empty = False
+        if self.empty:
+            self.empty = False
 
     def writefields(self, fieldset, compression=None):
         """
@@ -1103,7 +1101,7 @@ class FA(FileResource):
         if not isinstance(fieldset, FieldSet):
             raise epygramError("'fieldset' argument must be of kind FieldSet.")
         if len(fieldset) != len(compression):
-            raise epygramError("fieldset and compression must have the same" + \
+            raise epygramError("fieldset and compression must have the same" +
                                " length.")
 
         # Be sure the first field to be written is an H2DField,
@@ -1125,15 +1123,11 @@ class FA(FileResource):
             super(FA, self).writefields(fieldset)
 
     def rename_field(self, fieldname, new_name):
-        """
-        Renames a field "in place".
-        """
+        """Renames a field "in place"."""
         wlfi.wlfiren(self._unit, fieldname, new_name)
 
     def delfield(self, fieldname):
-        """
-        Deletes a field from file "in place".
-        """
+        """Deletes a field from file "in place"."""
         wlfi.wlfisup(self._unit, fieldname)
 
     @FileResource._openbeforedelayed
@@ -1146,7 +1140,7 @@ class FA(FileResource):
         """
         Extracts a vertical profile from the FA resource, given its pseudoname
         and the geographic location (*lon*/*lat*) of the profile.
-        
+
         Args: \n
         - *pseudoname* must have syntax: 'K\*PARAMETER',
           K being the kind of surface (S,P,H,V),
@@ -1157,9 +1151,9 @@ class FA(FileResource):
         - *lat* is the latitude of the desired point.
         - *geometry* is the geometry on which extract data. If None, it is built from
           lon/lat.
-        - *vertical_coordinate* defines the requested vertical coordinate of the 
+        - *vertical_coordinate* defines the requested vertical coordinate of the
           V1DField (as number of GRIB2 norm: http://apps.ecmwf.int/codes/grib/format/grib2/ctables/4/5).
-        - *interpolation* defines the interpolation function used to compute 
+        - *interpolation* defines the interpolation function used to compute
           the profile at requested lon/lat from the fields grid:
           - if 'nearest' (default), extracts profile at the horizontal nearest neighboring gridpoint;
           - if 'linear', computes profile with horizontal linear spline interpolation;
@@ -1170,7 +1164,7 @@ class FA(FileResource):
           departure (Non-Hydrostatic data). Computation therefore faster.
         - *external_distance* can be a dict containing the target point value
           and an external field on the same grid as self, to which the distance
-          is computed within the 4 horizontally nearest points; e.g. 
+          is computed within the 4 horizontally nearest points; e.g.
           {'target_value':4810, 'external_field':an_H2DField_with_same_geometry}.
           If so, the nearest point is selected with
           distance = |target_value - external_field.data|
@@ -1179,7 +1173,8 @@ class FA(FileResource):
         if geometry is None:
             if None in [lon, lat]:
                 raise epygramError("You must give a geometry or lon *and* lat")
-            if self.geometry is None: self._read_geometry()
+            if self.geometry is None:
+                self._read_geometry()
             pointG = self.geometry.make_point_geometry(lon, lat)
         else:
             if lon is not None or lat is not None:
@@ -1206,7 +1201,7 @@ class FA(FileResource):
         Extracts a vertical section from the FA resource, given its pseudoname
         and the geographic (lon/lat) coordinates of its ends.
         The section is returned as a V2DField.
-        
+
         Args: \n
         - *pseudoname* must have syntax: 'K\*PARAMETER',
           K being the kind of surface (S,P,H,V),
@@ -1217,21 +1212,21 @@ class FA(FileResource):
         - *end2* must be a tuple (lon, lat).
         - *geometry* is the geometry on which extract data. If None, defaults to
           linearily spaced positions computed from  *points_number*.
-        - *points_number* defines the total number of horizontal points of the 
+        - *points_number* defines the total number of horizontal points of the
           section (including ends). If None, defaults to a number computed from
           the *ends* and the *resolution*.
-        - *resolution* defines the horizontal resolution to be given to the 
+        - *resolution* defines the horizontal resolution to be given to the
           field. If None, defaults to the horizontal resolution of the field.
-        - *vertical_coordinate* defines the requested vertical coordinate of the 
+        - *vertical_coordinate* defines the requested vertical coordinate of the
           V2DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
           possible values).
-        - *interpolation* defines the interpolation function used to compute 
+        - *interpolation* defines the interpolation function used to compute
           the profile points locations from the fields grid: \n
-          - if 'nearest', each horizontal point of the section is 
+          - if 'nearest', each horizontal point of the section is
             taken as the horizontal nearest neighboring gridpoint;
-          - if 'linear' (default), each horizontal point of the section is 
+          - if 'linear' (default), each horizontal point of the section is
             computed with linear spline interpolation;
-          - if 'cubic', each horizontal point of the section is 
+          - if 'cubic', each horizontal point of the section is
             computed with linear spline interpolation.
         - *cheap_height*: if True and *vertical_coordinate* among
           ('altitude', 'height'), the computation of heights is done without
@@ -1242,7 +1237,8 @@ class FA(FileResource):
         if geometry is None:
             if None in [end1, end2]:
                 raise epygramError("You must give a geometry or end1 *and* end2")
-            if self.geometry is None: self._read_geometry()
+            if self.geometry is None:
+                self._read_geometry()
             sectionG = self.geometry.make_section_geometry(end1, end2,
                                                            points_number=points_number,
                                                            resolution=resolution)
@@ -1267,7 +1263,7 @@ class FA(FileResource):
         """
         Extracts a subdomain from the FA resource, given its fid
         and the geometry to use.
-        
+
         Args: \n
         - *pseudoname* must have syntax: 'K\*PARAMETER',
           K being the kind of surface (S,P,H,V),
@@ -1275,16 +1271,16 @@ class FA(FileResource):
           and PARAMETER being the name of the parameter requested, as named in
           FA.
         - *geometry* is the geometry on which extract data.
-        - *vertical_coordinate* defines the requested vertical coordinate of the 
+        - *vertical_coordinate* defines the requested vertical coordinate of the
           V2DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
           possible values).
-        - *interpolation* defines the interpolation function used to compute 
+        - *interpolation* defines the interpolation function used to compute
           the profile points locations from the fields grid: \n
-          - if 'nearest', each horizontal point of the section is 
+          - if 'nearest', each horizontal point of the section is
             taken as the horizontal nearest neighboring gridpoint;
-          - if 'linear' (default), each horizontal point of the section is 
+          - if 'linear' (default), each horizontal point of the section is
             computed with linear spline interpolation;
-          - if 'cubic', each horizontal point of the section is 
+          - if 'cubic', each horizontal point of the section is
             computed with linear spline interpolation.
         - *cheap_height*: if True and *vertical_coordinate* among
           ('altitude', 'height'), the computation of heights is done without
@@ -1295,7 +1291,7 @@ class FA(FileResource):
                                                fieldtype=['H2D', '3D'],
                                                generic=True)
         if fidlist == []:
-            raise epygramError("cannot find profile for " + str(pseudoname) + \
+            raise epygramError("cannot find profile for " + str(pseudoname) +
                                " in resource.")
         # find the prevailing type of level
         leveltypes = [f[1]['typeOfFirstFixedSurface'] for f in fidlist]
@@ -1306,7 +1302,7 @@ class FA(FileResource):
             leveltypes = [k for k, v in leveltypes_num.items() if
                           v == max(leveltypes_num.values())]
             if len(leveltypes) > 1:
-                raise epygramError("unable to determine type of level" + \
+                raise epygramError("unable to determine type of level" +
                                    " to select.")
         leveltype = leveltypes[0]
         # filter by type of level
@@ -1365,8 +1361,8 @@ class FA(FileResource):
                     except epygramError:
                         # fields not present in file
                         if p in ('t', 'q'):
-                            raise epygramError("Temperature and Specific" + \
-                                               " Humidity must be in" + \
+                            raise epygramError("Temperature and Specific" +
+                                               " Humidity must be in" +
                                                " resource.")
                         else:
                             side_profiles[p] = numpy.zeros(side_profiles['t'].shape)
@@ -1412,7 +1408,7 @@ class FA(FileResource):
                                                                    Pdep=side_profiles['pdep'],
                                                                    Phi_surf=surface_geopotential)
             else:
-                raise NotImplementedError("this vertical coordinate" + \
+                raise NotImplementedError("this vertical coordinate" +
                                           " conversion.")
 
         return subdomain
@@ -1512,12 +1508,9 @@ class FA(FileResource):
                 write_formatted_fields(out, f)
         out.write(separation_line)
 
-
-
 ##############
 # the FA WAY #
 ##############
-
     def _get_header(self, out=sys.stdout, mode='FA'):
         """
         Write the "header" of the resource in **out**.
@@ -1585,15 +1578,15 @@ class FA(FileResource):
                                                        self.headername)[:-1]
         Ai = [c * PREFER for c in PAHYBR[0:KNIVER + 1]]
         Bi = [c for c in PBHYBR[0:KNIVER + 1]]
-        vertical_grid = {'gridlevels': tuple([(i + 1, FPDict({'Ai':Ai[i], 'Bi':Bi[i]})) for
-                                         i in range(len(Ai))]),
+        vertical_grid = {'gridlevels': tuple([(i + 1, FPDict({'Ai':Ai[i], 'Bi':Bi[i]}))
+                                              for i in range(len(Ai))]),
                          'ABgrid_position':'flux'}
         kwargs_vcoord = {'structure': 'V',
                          'typeoffirstfixedsurface':119,
                          'position_on_grid': 'mass',
                          'grid': vertical_grid,
                          'levels': list([i + 1 for i in range(len(Ai) - 1)])
-                        }
+                         }
         vcoordinate_read_in_header = fpx.geometry(**kwargs_vcoord)
         self.reference_pressure = PREFER
 
@@ -1714,7 +1707,7 @@ class FA(FileResource):
                           'lat_number':KNLATI,
                           'lon_number_by_lat':FPList([n for n in
                                                       lon_number_by_lat])
-                              }
+                          }
             spectral_space = 'legendre'
             spectral_trunc = {'max':KTRONC,
                               'shape':'triangular',
@@ -1758,7 +1751,7 @@ class FA(FileResource):
                 hour += m // 60
             minute = m % 60
         processtype = int(KDATEF[8])
-        if   processtype == 0:
+        if processtype == 0:
             self.processtype = 'analysis'
         elif processtype == 1:
             self.processtype = 'initialization'
@@ -1854,14 +1847,14 @@ class FA(FileResource):
         """
 
         if self.openmode == 'r':
-            raise IOError("method _setrunningcompression() can only be" + \
+            raise IOError("method _setrunningcompression() can only be" +
                           " called if 'openmode' in('w', 'a').")
         comp = copy.deepcopy(self.default_compression)
         for k in kwargs.keys():
             if k in self.default_compression.keys():
                 comp[k] = kwargs[k]
             else:
-                raise epygramError("unknown parameter: " + k + \
+                raise epygramError("unknown parameter: " + k +
                                    " passed as argument.")
         wfa.wfagote(self._unit,
                     comp['KNGRIB'],
