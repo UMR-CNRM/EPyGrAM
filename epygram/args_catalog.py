@@ -35,7 +35,7 @@ def add_arg_to_parser(parser, arg, **flychanges):
 _defaults = {}
 _defaults.update(config.__dict__)
 
-#: Arguments dealing with files
+# : Arguments dealing with files
 files_management = {
     'principal_file':[
         'filename',
@@ -103,7 +103,7 @@ files_management = {
              default=False)],
                     }
 
-#: Arguments dealing with fields
+# : Arguments dealing with fields
 fields_management = {
     'field':[
         '-f', '-F', '--field',
@@ -297,7 +297,7 @@ fields_management = {
              default=str(_defaults.get('netCDF_default_compression', 4)))],
                     }
 
-#: Arguments dealing with output
+# : Arguments dealing with output
 output_options = {
     'output':[
         '-o', '--output',
@@ -399,7 +399,7 @@ output_options = {
              default=False)],
                   }
 
-#: Miscellaneous arguments
+# : Miscellaneous arguments
 misc_options = {
     'LAMzone':[
         '-z', '--zone',
@@ -466,7 +466,7 @@ misc_options = {
                  dest='diff_to_avg')],
                 }
 
-#: Arguments dealing with graphical options
+# : Arguments dealing with graphical options
 graphical_options = {
     'legend':[
         '-L', '--legend',
@@ -700,7 +700,7 @@ graphical_options = {
              default=None)],
                      }
 
-#: Arguments dealing with extraction stuff
+# : Arguments dealing with extraction stuff
 extraction_options = {
     'point_coordinates':[
         '-c', '--coordinates',
@@ -781,7 +781,7 @@ extraction_options = {
              default=True)]
                       }
 
-#: Arguments dealing with runtime options
+# : Arguments dealing with runtime options
 runtime_options = {
     'verbose':[
         '-v', '--verbose',
@@ -798,10 +798,10 @@ runtime_options = {
         '-t', '--threads_number',
         dict(help="number of threads to be run in parallel.",
              type=int,
-             default=multiprocessing.cpu_count() / 2)],
+             default=multiprocessing.cpu_count() // 2)],
                    }
 
-#: Operational arguments
+# : Operational arguments
 operational_options = {
     'suite':[
         '-S', '--suite',
@@ -824,7 +824,7 @@ operational_options = {
              type=int)],
                    }
 
-#: Arguments for domain_maker
+# : Arguments for domain_maker
 domain_maker_options = {
     'mode':[
         '-l',

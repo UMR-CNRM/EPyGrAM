@@ -307,7 +307,7 @@ def plotverticalhovmoller(profile,
         for i in range(len(profile.validity)):
             d = profile.validity[i].get() if xaxis_label == 'Validity' else profile.validity[i].getbasis()
             timedelta = d - epoch
-            p = (timedelta.microseconds + (timedelta.seconds + timedelta.days * 24 * 3600) * 10 ** 6) / 1e6
+            p = (timedelta.microseconds + (timedelta.seconds + timedelta.days * 24 * 3600) * 1e6) / 1e6
             x[i, :] = matplotlib.dates.epoch2num(p)
         data = profile.getdata()
         if profile.geometry.vcoordinate.typeoffirstfixedsurface in (119, 100):
@@ -342,8 +342,9 @@ def plotverticalhovmoller(profile,
         else:
             raise epygramError("cannot plot uniform field.")
         L = int((levelsnumber - 1) // 15) + 1
-        hlevels = [levels[l] for l in range(len(levels) - L / 3) if
-                   l % L == 0] + [levels[-1]]
+        hlevels = [levels[l]
+                   for l in range(len(levels) - L // 3)
+                   if l % L == 0] + [levels[-1]]
         # plot
         if reverseY and not ax.yaxis_inverted():
             ax.invert_yaxis()
@@ -605,8 +606,8 @@ def plotanimation(profile,
     profile0.setdata(profile.getdata()[0, ...])
     mindata = profile.getdata().min()
     maxdata = profile.getdata().max()
-    mindata -= (maxdata - mindata) / 10
-    maxdata += (maxdata - mindata) / 10
+    mindata -= (maxdata - mindata) / 10.
+    maxdata += (maxdata - mindata) / 10.
 
     if kwargs.get('ema', False):
         epylog.warning("'ema' option not fully tested in animation: min/max may not be optimised.")

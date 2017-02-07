@@ -334,8 +334,9 @@ class H2DField(D3Field):
             # set levels and ticks levels
             levels = numpy.linspace(m, M, levelsnumber)
             L = int((levelsnumber - 1) // 15) + 1
-            tick_levels = [levels[l] for l in range(len(levels) - (L / 3 + 1)) if
-                           l % L == 0] + [levels[-1]]
+            tick_levels = [levels[l]
+                           for l in range(len(levels) - (L // 3 + 1))
+                           if l % L == 0] + [levels[-1]]
             if colormap in config.colormaps_scaling.keys():
                 (norm, levels) = util.color_scale(colormap, max_val=M)
                 tick_levels = levels
@@ -588,10 +589,10 @@ class H2DField(D3Field):
                     if distance <= zero_radius:
                         (i, j) = selection_points_ij[selection_points_ll.index(sp)]
                         if increment:
-                            local_alpha = numpy.exp(-distance ** 2 / (2 * sigma ** 2))
+                            local_alpha = numpy.exp(-distance ** 2. / (2. * sigma ** 2))
                             self._data[:, :, j, i] = self._data[:, :, j, i] + local_alpha * p.getdata()
                         else:
-                            local_alpha = alpha * numpy.exp(-distance ** 2 / (2 * sigma ** 2))
+                            local_alpha = alpha * numpy.exp(-distance ** 2. / (2. * sigma ** 2))
                             self._data[:, :, j, i] = local_alpha * p.getdata() + (1. - local_alpha) * self._data[:, :, j, i]
             else:
                 raise NotImplementedError("morphing: " + morphing + " :not yet.")

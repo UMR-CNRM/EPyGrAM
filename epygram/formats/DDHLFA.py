@@ -224,10 +224,10 @@ class DDHLFA(LFA):
             else:
                 # profile fields
                 if not getdata:
-                    fieldlevels = wlfa.wlfacas(self._unit, fieldname)[1] / \
+                    fieldlevels = wlfa.wlfacas(self._unit, fieldname)[1] // \
                                   self.domains['number']
                 else:
-                    fieldlevels = len(field_from_LFA.getdata()) / \
+                    fieldlevels = len(field_from_LFA.getdata()) // \
                                   self.domains['number']
                 if fieldlevels == self.levels['VT']:
                     position_on_grid = 'mass'

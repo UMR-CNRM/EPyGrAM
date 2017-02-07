@@ -793,7 +793,7 @@ class FieldValidity(RecursiveObject):
             out = self._date_time - self._basis
         elif fmt == 'IntHours':
             term = self._date_time - self._basis
-            out = int(term.total_seconds() / 3600)
+            out = int(term.total_seconds() // 3600)
         elif fmt == 'IntSeconds':
             term = self._date_time - self._basis
             out = int(term.total_seconds())
@@ -819,7 +819,7 @@ class FieldValidity(RecursiveObject):
         if fmt is None:
             out = self._cumulativeduration
         elif fmt == 'IntHours':
-            out = int(self._cumulativeduration.total_seconds() / 3600)
+            out = int(self._cumulativeduration.total_seconds() // 3600)
         elif fmt == 'IntSeconds':
             out = int(self._cumulativeduration.total_seconds())
         else:

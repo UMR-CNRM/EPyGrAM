@@ -77,7 +77,7 @@ def _complete_generic_fid_from_name(generic_fid, fieldname):
             level = int(fieldname[1:6])
             if level == 0:  # problem linked to number of digits
                 level = 100000
-            generic_fid['level'] = level / 100  # hPa
+            generic_fid['level'] = level / 100.  # hPa
         elif generic_fid['typeOfFirstFixedSurface'] == 103:  # height
             try:
                 generic_fid['level'] = int(fieldname[1:6])
@@ -230,7 +230,7 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
         KNOZPA = numpy.zeros(JPXIND, dtype=numpy.int64)
 
         # PSINLA
-        PSINLA = numpy.zeros(max((1 + geometry.dimensions['Y']) / 2, 18))
+        PSINLA = numpy.zeros(max(int((1 + geometry.dimensions['Y']) / 2), 18))
         PSINLA[0] = -1
         if geometry.name == 'regular_lonlat':
             PSINLA[1] = -9
@@ -253,8 +253,8 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
             PSINLA[7] = geometry.grid['Y_resolution']
             PSINLA[8] = geometry.grid['X_resolution'] * geometry.dimensions['X']
             PSINLA[9] = geometry.grid['Y_resolution'] * geometry.dimensions['Y']
-            PSINLA[10] = 2 * math.pi / PSINLA[8]
-            PSINLA[11] = 2 * math.pi / PSINLA[9]
+            PSINLA[10] = 2. * math.pi / PSINLA[8]
+            PSINLA[11] = 2. * math.pi / PSINLA[9]
             PSINLA[2] = geometry.projection['reference_lon'].get('radians')
             PSINLA[3] = geometry.projection['reference_lat'].get('radians')
             PSINLA[4] = geometry.getcenter()[0].get('radians')
@@ -269,8 +269,8 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
             PSINLA[7] = geometry.grid['Y_resolution']
             PSINLA[8] = geometry.grid['X_resolution'] * geometry.dimensions['X']
             PSINLA[9] = geometry.grid['Y_resolution'] * geometry.dimensions['Y']
-            PSINLA[10] = 2 * math.pi / PSINLA[8]
-            PSINLA[11] = 2 * math.pi / PSINLA[9]
+            PSINLA[10] = 2. * math.pi / PSINLA[8]
+            PSINLA[11] = 2. * math.pi / PSINLA[9]
 
     else:  # global
         if geometry.name == 'reduced_gauss':
@@ -288,25 +288,25 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
             KTRONC = spectral_geometry.truncation['max']
         else:
             # default: linear truncation...
-            KTRONC = (geometry.dimensions['max_lon_number'] - 1) / 2
+            KTRONC = (geometry.dimensions['max_lon_number'] - 1) // 2
             KTRONC = 2 * (KTRONC // 2)  # make it even
         KNLATI = geometry.dimensions['lat_number']
         KNXLON = geometry.dimensions['max_lon_number']
         KNLOPA = numpy.zeros(JPXPAH, dtype=numpy.int64)
-        KNLOPA[0:KNLATI / 2] = geometry.dimensions['lon_number_by_lat'][0:KNLATI / 2]
+        KNLOPA[0:KNLATI // 2] = geometry.dimensions['lon_number_by_lat'][0:KNLATI // 2]
         KNOZPA = numpy.zeros(JPXIND, dtype=numpy.int64)
         if spectral_geometry is not None:
-            KNOZPA[0:KNLATI / 2] = spectral_geometry.truncation['max_zonal_wavenumber_by_lat'][0:KNLATI / 2]
+            KNOZPA[0:KNLATI // 2] = spectral_geometry.truncation['max_zonal_wavenumber_by_lat'][0:KNLATI // 2]
         else:
-            KNOZPA[0:KNLATI / 2] = wtransforms.w_trans_inq(geometry.dimensions['lat_number'],
+            KNOZPA[0:KNLATI // 2] = wtransforms.w_trans_inq(geometry.dimensions['lat_number'],
                                                            KTRONC,
                                                            len(geometry.dimensions['lon_number_by_lat']),
                                                            numpy.array(geometry.dimensions['lon_number_by_lat']),
-                                                           config.KNUMMAXRESOL)[2][0:KNLATI / 2]
+                                                           config.KNUMMAXRESOL)[2][0:KNLATI // 2]
         PSINLA = numpy.zeros((1 + geometry.dimensions['lat_number']) / 2,
                              dtype=numpy.float64)
-        PSINLA[0:KNLATI / 2] = numpy.array([s.get('cos_sin')[1] for s in
-                                            geometry.grid['latitudes'][0:KNLATI / 2]])
+        PSINLA[0:KNLATI // 2] = numpy.array([s.get('cos_sin')[1] for s in
+                                            geometry.grid['latitudes'][0:KNLATI // 2]])
 
     # vertical geometry
     PREFER = FA.reference_pressure
@@ -1683,9 +1683,9 @@ class FA(FileResource):
             # ARPEGE global
             projection = None
             # reconstruction of tables on both hemispheres
-            KNLOPA = KNLOPA[:KNLATI / 2]
-            KNOZPA = KNOZPA[:KNLATI / 2]
-            PSINLA = PSINLA[:KNLATI / 2]
+            KNLOPA = KNLOPA[:KNLATI // 2]
+            KNOZPA = KNOZPA[:KNLATI // 2]
+            PSINLA = PSINLA[:KNLATI // 2]
             lon_number_by_lat = [n for n in KNLOPA] + [KNLOPA[-(n + 1)] for n in
                                                        range(0, len(KNLOPA))]
             max_zonal_wavenumber_by_lat = [n for n in KNOZPA] + \
@@ -1792,10 +1792,10 @@ class FA(FileResource):
                             self.validity.cumulativeduration(fmt='IntHours')
         elif termunit == 'days':
             KDATEF[5] = 2
-            KDATEF[6] = self.validity.term('IntHours') / 24
+            KDATEF[6] = self.validity.term('IntHours') // 24
             if self.validity.cumulativeduration() is not None:
                 KDATEF[9] = (self.validity.term('IntHours') - \
-                             self.validity.cumulativeduration('IntHours')) / 24
+                             self.validity.cumulativeduration('IntHours')) // 24
         else:
             raise NotImplementedError("term unit other than hours/days ?")
         # KDATEF[7] = 0

@@ -918,7 +918,7 @@ class D3RectangularGridGeometry(D3Geometry):
 
         def _increments(n):
             def _rng(n):
-                return numpy.arange(-n / 2 + 1, n / 2 + 1)
+                return numpy.arange(-n // 2 + 1, n // 2 + 1)
             if self.name == 'academic' and self.dimensions['X'] == 1:
                 i_incr = _rng(1)
             else:
@@ -3072,10 +3072,10 @@ class D3GaussGeometry(D3Geometry):
         if isinstance(i, list) or isinstance(i, tuple) or\
            isinstance(i, numpy.ndarray):
             lat = [self.grid['latitudes'][n].get('degrees') for n in j]
-            lon = [numpy.pi * 2 * i[n] / self.dimensions['lon_number_by_lat'][j[n]] for n in range(len(j))]
+            lon = [(numpy.pi * 2 * i[n]) / self.dimensions['lon_number_by_lat'][j[n]] for n in range(len(j))]
         else:
             lat = self.grid['latitudes'][j].get('degrees')
-            lon = numpy.pi * 2. * i / self.dimensions['lon_number_by_lat'][j]
+            lon = (numpy.pi * 2. * i) / self.dimensions['lon_number_by_lat'][j]
 
         lon = numpy.degrees(lon)
         (lon, lat) = self._rotate_stretch(lon, lat, reverse=True)
@@ -3700,7 +3700,7 @@ class D3GaussGeometry(D3Geometry):
 
         # Wind transformation
         if reverse:
-            zm = 1 / zm
+            zm = 1. / zm
             zsa = -zsa
         pusr = zm * (zca * pust - zsa * pvst)
         pvsr = zm * (zsa * pust + zca * pvst)
@@ -3878,7 +3878,7 @@ class D3GaussGeometry(D3Geometry):
 
         def _increments(n):
             def _rng(n):
-                return numpy.arange(-n / 2 + 1, n / 2 + 1)
+                return numpy.arange(-n // 2 + 1, n // 2 + 1)
             if self.name == 'academic' and self.dimensions['X'] == 1:
                 i_incr = _rng(1)
             else:

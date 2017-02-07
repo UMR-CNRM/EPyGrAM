@@ -468,7 +468,7 @@ def printstatus(step, end, refresh_freq=1):
     in % at which reprinting status.
     """
 
-    status = step * 100 / end
+    status = step * 100. / end
     if status % refresh_freq == 0:
         sys.stdout.write('{:>{width}}%'.format(int(status), width=3))
         sys.stdout.flush()

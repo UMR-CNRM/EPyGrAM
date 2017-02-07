@@ -353,8 +353,8 @@ class GRIBmessage(RecursiveObject, dict):
         if term_in_seconds / 3600. < config.epsilon:
             self['stepUnits'] = 'h'  # hours
             if cumulative:
-                self['startStep'] = int(startStep_in_seconds / 3600)
-            self['endStep'] = int(term_in_seconds / 3600)
+                self['startStep'] = int(startStep_in_seconds // 3600)
+            self['endStep'] = int(term_in_seconds // 3600)
         else:
             self['stepUnits'] = 's'  # seconds
             if cumulative:
@@ -479,7 +479,7 @@ class GRIBmessage(RecursiveObject, dict):
                 self['latitudeOfLastGridPointInDegrees'] = field.geometry.grid['latitudes'][-1].get('degrees')
                 self['longitudeOfLastGridPointInDegrees'] = 360. - 360. / field.geometry.dimensions['lon_number_by_lat'][-1]
                 self['Nj'] = field.geometry.dimensions['lat_number']
-                self['N'] = field.geometry.dimensions['lat_number'] / 2
+                self['N'] = field.geometry.dimensions['lat_number'] // 2
                 self._set_array_attribute('pl', field.geometry.dimensions['lon_number_by_lat'])
             else:
                 raise NotImplementedError("not yet.")
@@ -747,8 +747,8 @@ class GRIBmessage(RecursiveObject, dict):
         if kwargs_vcoord['typeoffirstfixedsurface'] == 119:
             self._readattribute('pv', array=True)
             A_and_B = self['pv']
-            Ai = A_and_B[:len(A_and_B) / 2]
-            Bi = A_and_B[len(A_and_B) / 2:]
+            Ai = A_and_B[:len(A_and_B) // 2]
+            Bi = A_and_B[len(A_and_B) // 2:]
             kwargs_vcoord['grid'] = {'gridlevels': tuple([(i + 1, FPDict({'Ai':Ai[i], 'Bi':Bi[i]})) for
                                                           i in range(len(Ai))]),
                                      'ABgrid_position':'flux'}

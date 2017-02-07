@@ -146,7 +146,7 @@ def hybridP2pressure(hybridP_geometry, Psurf, vertical_mean,
         levels = profiles.hybridP2fluxpressure(A, B, Psurf)
     else:
         raise epygramError("gridposition != 'mass' or 'flux'.")
-    levels = [l / 100 for l in levels.squeeze()]
+    levels = [l / 100. for l in levels.squeeze()]
     kwargs_vcoord = {'structure':'V',
                      'typeoffirstfixedsurface': 100,
                      'position_on_grid': hybridP_geometry.position_on_grid,
