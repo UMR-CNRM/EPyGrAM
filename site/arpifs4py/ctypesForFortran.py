@@ -9,7 +9,7 @@ ctypesForFortran:
 Contains a decorator to wrap call to ctypes functions.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
+from __future__ import print_function, absolute_import, division  # , unicode_literals
 
 from ctypes import c_char_p, create_string_buffer, c_longlong, POINTER, byref
 import numpy as np

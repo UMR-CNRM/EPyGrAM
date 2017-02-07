@@ -115,7 +115,7 @@ if config.noninteractive_backend:
     except ImportError:
         pass
 
-### COMPONENTS (modules) ###
+# COMPONENTS (modules) #
 from . import util
 from . import base
 from . import containers
@@ -146,7 +146,7 @@ if len(config.usermodules) > 0:
             imp.load_source(m['name'], m['abspath'])
 
 
-### OTHERS ###
+# OTHERS #
 def showconfig():
     """
     Print current config.

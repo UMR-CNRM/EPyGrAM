@@ -83,8 +83,8 @@ def check_spectral(filename):
 ###########
 # Monitor #
 ###########
-geom = False
-fields = True
+geom = True
+fields = False
 spectral = False
 mapfactor = False
 #footprints.logger.setLevel('DEBUG')

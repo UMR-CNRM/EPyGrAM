@@ -167,7 +167,7 @@ class D3CommonField(Field):
                     my_tn = my_t.item()
                 interp_points.append(self.geometry.nearest_points(lonn, latn,
                                                                   {'linear':{'n':'2*2'},
-                                                                   'cubic':{'n':'2*2'}}[interpolation]))
+                                                                   'cubic':{'n':'4*4'}}[interpolation]))
             # depack
             all_i = []
             all_j = []
@@ -1272,29 +1272,29 @@ class D3Field(D3CommonField):
         if t is None:
             my_t = numpy.zeros(maxsize, dtype=int)
         else:
-            my_t = numpy.array(t)
+            my_t = numpy.array(t, dtype=int)
             if my_t.size != maxsize:
                 if my_t.size != 1:
                     raise epygramError("t must be scalar or must have the same length as other indexes")
-                my_t = numpy.array([my_t.item()] * maxsize)
+                my_t = numpy.array([my_t.item()] * maxsize, dtype=int)
         if k is None:
             my_k = numpy.zeros(maxsize, dtype=int)
         else:
-            my_k = numpy.array(k)
+            my_k = numpy.array(k, dtype=int)
             if my_k.size != maxsize:
                 if my_k.size != 1:
                     raise epygramError("k must be scalar or must have the same length as other indexes")
-                my_k = numpy.array([my_k.item()] * maxsize)
+                my_k = numpy.array([my_k.item()] * maxsize, dtype=int)
         if j is None:
             my_j = numpy.zeros(maxsize, dtype=int)
         else:
-            my_j = numpy.array(j)
+            my_j = numpy.array(j, dtype=int)
             if my_j.size != maxsize:
                 raise epygramError("j must have the same length as other indexes")
         if i is None:
             my_i = numpy.zeros(maxsize, dtype=int)
         else:
-            my_i = numpy.array(i)
+            my_i = numpy.array(i, dtype=int)
             if my_i.size != maxsize:
                 raise epygramError("i must have the same length as other indexes")
 
