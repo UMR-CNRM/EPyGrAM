@@ -9,6 +9,7 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 import argparse
 import time
 import os
+import six
 
 import footprints
 import taylorism
@@ -212,7 +213,7 @@ def femars_ensemble(filenames,
     common_instructions = {'other_grib_options':other_GRIB_options}
     if threads_number == 1:
         common_instructions['progressmode'] = progressmode
-    if isinstance(fieldseed, str):
+    if isinstance(fieldseed, six.string_types):
         common_instructions['fieldseed'] = footprints.FPList([fieldseed])
     individual_instructions = {'fileA':filenames_,
                                'fileB':filenames}
@@ -285,7 +286,7 @@ def femars_avg(filenames,
                            'fileB':avg_tmp}
     if threads_number == 1:
         common_instructions['progressmode'] = progressmode
-    if isinstance(fieldseed, str):
+    if isinstance(fieldseed, six.string_types):
         common_instructions['fieldseed'] = footprints.FPList([fieldseed])
     individual_instructions = {'fileA':filenames}
 
@@ -311,7 +312,7 @@ def femars_avg(filenames,
 
 if __name__ == '__main__':
 
-    ### 1. Parse arguments
+    # ## 1. Parse arguments
     ######################
     parser = argparse.ArgumentParser(description='FEMARS based on epygram.',
                                      epilog='End of help for: %(prog)s (EPyGrAM v' + epygram.__version__ + ')')
@@ -330,7 +331,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    ### 2. Initializations
+    # ## 2. Initializations
     ######################
     epygram.init_env()
     # 2.0 logs
@@ -360,7 +361,7 @@ if __name__ == '__main__':
     else:
         fieldseed = default_fieldseed
 
-    ### 3. Main
+    # ## 3. Main
     ###########
     if args.diff_to_avg:
         femars_avg(args.filenames,

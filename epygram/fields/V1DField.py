@@ -11,6 +11,7 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 
 import datetime
 import numpy
+import six
 
 import footprints
 
@@ -473,7 +474,7 @@ def plotprofiles(profiles,
 
     if isinstance(profiles, V1DField):
         profiles = [profiles]
-    if isinstance(labels, str):
+    if isinstance(labels, six.string_types):
         labels = [labels]
     p0 = profiles[0]
     if p0.geometry.vcoordinate.typeoffirstfixedsurface in (119, 100):

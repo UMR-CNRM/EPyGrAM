@@ -12,6 +12,7 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 import os
 import numpy
 import sys
+import six
 
 from arpifs4py import wlfa
 
@@ -99,7 +100,7 @@ class LFA(FileResource):
 
         if seed is None:
             fieldslist = self.listfields()
-        elif isinstance(seed, str):
+        elif isinstance(seed, six.string_types):
             fieldslist = util.find_re_in_list(seed, self.listfields())
         elif isinstance(seed, list):
             fieldslist = []

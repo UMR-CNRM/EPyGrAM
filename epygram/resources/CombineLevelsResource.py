@@ -12,6 +12,7 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 
 import copy
 import numpy
+import six
 
 from footprints import FPDict, proxy as fpx
 
@@ -120,7 +121,7 @@ class CombineLevelsResource(Resource):
         if select is not None:
             fidlist = [f for f in fidlist if all([(k in f and f[k] == select[k]) for k in select.keys()])]
         if onlykey is not None:
-            if isinstance(onlykey, str):
+            if isinstance(onlykey, six.string_types):
                 fidlist = [f[onlykey] for f in fidlist]
             elif isinstance(onlykey, tuple):
                 fidlist = [{k:f[k] for k in onlykey} for f in fidlist]

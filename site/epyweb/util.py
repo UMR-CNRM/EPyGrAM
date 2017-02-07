@@ -9,6 +9,7 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 import json
 import datetime
 import copy
+import six
 
 import matplotlib
 matplotlib.use("Agg")
@@ -83,7 +84,7 @@ def getAjaxArgSmart(sArg, sDefault=''):
                     return False
                 elif dic[sArg] == 'true':
                     return True
-                elif isinstance(dic[sArg], str) and dic[sArg].startswith('{'):
+                elif isinstance(dic[sArg], six.string_types) and dic[sArg].startswith('{'):
                     return json.loads(dic[sArg])
                 else:
                     return dic[sArg]

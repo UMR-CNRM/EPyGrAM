@@ -37,6 +37,7 @@ def meta_resource(filenames_or_resources, openmode, rtype):
              'CL' for a CombineLevelsResource
              'MV+CL' for a composition of both (should be similar to CL+MV)
     """
+    import six
     from epygram.formats import resource
     from footprints import proxy as fpx
 
@@ -45,7 +46,7 @@ def meta_resource(filenames_or_resources, openmode, rtype):
 
     if not isinstance(filenames_or_resources, list):
         filenames_or_resources = [filenames_or_resources]
-    if isinstance(filenames_or_resources[0], str):
+    if isinstance(filenames_or_resources[0], six.string_types):
         resources = [resource(f, openmode, fmtdelayedopen=True) for f in filenames_or_resources]
     elif isinstance(filenames_or_resources[0], Resource):
         resources = filenames_or_resources

@@ -16,6 +16,7 @@ import numpy
 import math
 import re
 import sys
+import six
 
 import footprints
 from footprints import FPDict, proxy as fpx
@@ -308,18 +309,18 @@ class LFI(FileResource):
             tmplist = self.listfields()
             fill_fieldslist(tmplist)
         elif (isinstance(seed, tuple) and not self.true3d) or \
-             (isinstance(seed, str) and self.true3d):
+             (isinstance(seed, six.string_types) and self.true3d):
             tmplist = util.find_re_in_list(seed, self.listfields())
             fill_fieldslist(tmplist)
         elif isinstance(seed, list):
             tmplist = []
             for s in seed:
                 tmplist += self.find_fields_in_resource(seed=s)
-#                if isinstance(s, str):
+#                if isinstance(s, six.string_types):
 #                    s = parse_LFIstr_totuple(s)
 #                tmplist += util.find_re_in_list(s, self.listfields())
             fill_fieldslist(tmplist)
-        elif isinstance(seed, str):
+        elif isinstance(seed, six.string_types):
             seed = parse_LFIstr_totuple(seed)
             tmplist = util.find_re_in_list(seed, self.listfields())
             fill_fieldslist(tmplist)
@@ -439,10 +440,10 @@ class LFI(FileResource):
         if self.openmode == 'w':
             raise epygramError("cannot read fields in resource if with openmode == 'w'.")
         if self.true3d:
-            if not isinstance(fieldidentifier, str):
+            if not isinstance(fieldidentifier, six.string_types):
                 raise epygramError("fieldidentifier of a LFI field is a string (when resource opened in true3d).")
         else:
-            if isinstance(fieldidentifier, str):
+            if isinstance(fieldidentifier, six.string_types):
                 fieldidentifier = parse_LFIstr_totuple(fieldidentifier)
             if not isinstance(fieldidentifier, tuple) or len(fieldidentifier) != 2:
                 raise epygramError("fieldidentifier of a LFI field is a tuple (name, level) (when resource not opened in true3d).")

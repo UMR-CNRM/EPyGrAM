@@ -18,6 +18,7 @@ import numpy
 import math
 import re
 import sys
+import six
 
 import footprints
 from footprints import FPDict, FPList, proxy as fpx
@@ -568,7 +569,7 @@ class FA(FileResource):
                 if fieldtypeslist == [] or\
                    inquire_field_dict(f)['type'] in fieldtypeslist:
                     fieldslist.append(f)
-        elif isinstance(seed, str):
+        elif isinstance(seed, six.string_types):
             tmplist = util.find_re_in_list(seed, self.listfields())
             for f in tmplist:
                 if fieldtypeslist == [] or\

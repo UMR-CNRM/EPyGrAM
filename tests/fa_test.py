@@ -14,7 +14,7 @@ def check_geom(filename):
     thefa = epygram.formats.resource(filename, openmode='r', fmt='FA')
     fieldname = 'SURFIND.TERREMER'
     field = thefa.readfield(fieldname)
-    field.plotfield(levelsnumber=3)
+    field.plotfield(levelsnumber=3, gisquality='c')
     plt.show()
     if mapfactor:
         mf = thefa.geometry.map_factor_field()
@@ -87,7 +87,7 @@ geom = True
 fields = False
 spectral = False
 mapfactor = False
-#footprints.logger.setLevel('DEBUG')
+# footprints.logger.setLevel('DEBUG')
 
 # Geometries
 if geom:

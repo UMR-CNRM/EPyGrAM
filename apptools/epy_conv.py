@@ -9,6 +9,7 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 import argparse
 import time
 import copy
+import six
 
 import footprints
 from footprints import FPDict, FPList
@@ -405,7 +406,7 @@ def main(filenames,
     common_instructions['output_format_suffix'] = output_format_suffix
     if threads_number == 1:
         common_instructions['progressmode'] = progressmode
-    if isinstance(filenames, str):
+    if isinstance(filenames, six.string_types):
         filenames = [filenames]
     individual_instructions = {'filename':filenames}
 
@@ -418,7 +419,7 @@ def main(filenames,
 
 if __name__ == '__main__':
 
-    ### 1. Parse arguments
+    # ## 1. Parse arguments
     ######################
     parser = argparse.ArgumentParser(description='An EPyGrAM tool for converting file formats. \
                                                   Spectral fields are converted into gridpoints.',
@@ -452,7 +453,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    ### 2. Initializations
+    # ## 2. Initializations
     ######################
     epygram.init_env()
     # 2.0 logs
@@ -500,7 +501,7 @@ if __name__ == '__main__':
     else:
         fieldseed = None
 
-    ### 3. Main
+    # ## 3. Main
     ###########
     main(args.filenames,
          args.output_format,

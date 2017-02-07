@@ -17,6 +17,7 @@ import os
 import numpy
 import copy
 import sys
+import six
 
 import footprints
 from footprints import proxy as fpx, FPDict, FPList
@@ -1166,7 +1167,7 @@ class GRIB(FileResource):
         if select is not None:
             fidlist = [f for f in fidlist if all([f[k] == select[k] for k in select.keys()])]
         if onlykey is not None:
-            if isinstance(onlykey, str):
+            if isinstance(onlykey, six.string_types):
                 fidlist = [f[onlykey] for f in fidlist]
             elif isinstance(onlykey, tuple):
                 fidlist = [{k:f[k] for k in onlykey} for f in fidlist]
@@ -1215,13 +1216,13 @@ class GRIB(FileResource):
         Syntax example: 'shortName':'u+v', or 'indicatorOfParameter':'33+34'
         """
 
-        if isinstance(fieldseed, str):
+        if isinstance(fieldseed, six.string_types):
             fieldseed = parse_GRIBstr_todict(fieldseed)
 
         seeds = [fieldseed.copy(), fieldseed.copy()]
         for i in (0, 1):
             for k, v in seeds[i].items():
-                if isinstance(v, str) and '+' in v:
+                if isinstance(v, six.string_types) and '+' in v:
                     v = v.split('+')[i]
                     try:
                         seeds[i][k] = int(v)
@@ -1318,10 +1319,10 @@ class GRIB(FileResource):
         elif isinstance(seed, list):
             fieldslist = []
             for s in seed:
-                if isinstance(s, str):
+                if isinstance(s, six.string_types):
                     s = parse_GRIBstr_todict(s)
                 fieldslist.extend(self.listfields(select=s))
-        elif isinstance(seed, str):
+        elif isinstance(seed, six.string_types):
             fieldslist = self.listfields(select=parse_GRIBstr_todict(seed))
         else:
             raise epygramError("unknown type for seed: " + str(type(seed)))
@@ -1362,7 +1363,7 @@ class GRIB(FileResource):
         *get_info_as_json* as json in field.comment.
         """
 
-        if isinstance(handgrip, str):
+        if isinstance(handgrip, six.string_types):
             handgrip = parse_GRIBstr_todict(handgrip)
 
         matchingfields = self.readfields(handgrip,

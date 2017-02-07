@@ -16,6 +16,7 @@ import numpy
 from collections import OrderedDict
 import datetime
 from dateutil import parser as dt_parser
+import six
 
 import netCDF4
 
@@ -125,7 +126,7 @@ class netCDF(FileResource):
 
         if seed is None:
             fieldslist = self.listfields()
-        elif isinstance(seed, str):
+        elif isinstance(seed, six.string_types):
             fieldslist = util.find_re_in_list(seed, self.listfields())
         elif isinstance(seed, list):
             fieldslist = []
@@ -653,7 +654,7 @@ class netCDF(FileResource):
                     grid = {'latitudes':FPList([Angle(l, 'degrees') for l in latitudes]),
                             'dilatation_coef':1.}
                     if hasattr(grid_mapping, 'lon_number_by_lat'):
-                        if isinstance(grid_mapping.lon_number_by_lat, unicode):
+                        if isinstance(grid_mapping.lon_number_by_lat, six.string_types):
                             lon_number_by_lat = self._variables[grid_mapping.lon_number_by_lat.split(' ')[1]][:]
                         else:
                             kwargs_geom['name'] = 'regular_gauss'
@@ -857,7 +858,7 @@ class netCDF(FileResource):
                        ' '.join(['variable', varname,
                                  'already exist with other type:',
                                  self._variables[varname].dtype])
-                if isinstance(dimensions, str):
+                if isinstance(dimensions, six.string_types):
                     dimensions = (dimensions,)
                 assert self._variables[varname].dimensions == tuple(dimensions), \
                        ' '.join(['variable', varname,
@@ -938,7 +939,7 @@ class netCDF(FileResource):
                 dims.append(tgrid)
             else:
                 _, _status = check_or_add_variable(tgrid, float)
-            datetime0 = field.validity[0].getbasis().isoformat(sep=' ')
+            datetime0 = field.validity[0].getbasis().isoformat(sep=b' ')
             datetimes = [int((dt.get() - field.validity[0].getbasis()).total_seconds()) for dt in field.validity]
             if _status == 'created':
                 self._variables[tgrid][:] = datetimes

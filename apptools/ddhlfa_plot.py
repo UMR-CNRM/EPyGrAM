@@ -7,6 +7,7 @@
 from __future__ import print_function, absolute_import, unicode_literals, division
 
 import argparse
+import six
 
 import epygram
 from epygram import epylog
@@ -90,7 +91,7 @@ def main(filename,
 
 
 if __name__ == '__main__':
-    ### 1. Parse arguments
+    # ## 1. Parse arguments
     ######################
     epygramstr = 'EPyGrAM'
     parser = argparse.ArgumentParser(description='An ' + epygramstr + ' tool for simple\
@@ -110,7 +111,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    ### 2. Initializations
+    # ## 2. Initializations
     ######################
     epygram.init_env()
     # 2.0 logs
@@ -121,7 +122,7 @@ if __name__ == '__main__':
     # 2.1 arguments
     if isinstance(args.domain_number, int):
         domains = [args.domain_number]
-    elif isinstance(args.domain_number, str):
+    elif isinstance(args.domain_number, six.string_types):
         domains = args.domain_number.split(',')
         domains = [int(i) for i in domains]
 
@@ -137,7 +138,7 @@ if __name__ == '__main__':
     else:
         fieldseed = None
 
-    ### 3. Main
+    # ## 3. Main
     ###########
     main(args.filename,
          fieldseed,

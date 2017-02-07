@@ -13,6 +13,7 @@ import numpy
 import datetime
 import copy
 import sys
+import six
 
 import footprints
 from footprints import FootprintBase, FPDict
@@ -514,7 +515,7 @@ class FieldSet(RecursiveObject, list):
         If *reverse* is *True*, sorts by decreasing order.
         """
 
-        if isinstance(attribute, str):
+        if isinstance(attribute, six.string_types):
             if key is None:
                 cmpfct = lambda x, y: cmp(x._attributes[attribute],
                                           y._attributes[attribute])
@@ -840,7 +841,7 @@ class FieldValidity(RecursiveObject):
 
         if not asGRIB2code and isinstance(self._statistical_process_on_duration, int):
             out = grib_utilities.statistical_processes.get(self._statistical_process_on_duration, None)
-        elif asGRIB2code and isinstance(self._statistical_process_on_duration, str):
+        elif asGRIB2code and isinstance(self._statistical_process_on_duration, six.string_types):
             out = {v:k for k, v in grib_utilities.statistical_processes.items()}.get(self._statistical_process_on_duration, None)
         else:
             out = self._statistical_process_on_duration

@@ -17,6 +17,7 @@ import StringIO
 import numpy
 import mmap
 import PIL.Image
+import six
 
 
 class PyexttiffError(Exception):
@@ -236,7 +237,7 @@ class TiffFile(object):
             dtype = typ
             size = typ().itemsize
         else:
-            if isinstance(typ, str):
+            if isinstance(typ, six.string_types):
                 ntyp = typ
                 typ = TiffFile._name2type.get(typ)
             else:

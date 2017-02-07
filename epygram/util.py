@@ -16,6 +16,7 @@ import numpy
 import sys
 import datetime
 from contextlib import contextmanager
+import six
 
 from footprints import FootprintBase
 
@@ -589,7 +590,7 @@ def write_formatted_table(dest, table, alignments=['<', '^'], precision=6, float
     for i in range(array.shape[0]):
         elements = []
         for elem in table[i][1:]:
-            if isinstance(elem, str):
+            if isinstance(elem, six.string_types):
                 elements.append(elem)
             elif isinstance(elem, float) or isinstance(elem, int) :
                 elements.append(float_style.format(elem, precision=precision, type=float_type))
@@ -682,7 +683,7 @@ def add_meridians_and_parallels_to(bm, meridians='auto', parallels='auto', ax=No
         parallels = numpy.arange(latmin, latmax, delta_lat)
     elif parallels == 'default':
         parallels = numpy.arange(-90, 90, 10)
-    elif isinstance(parallels, str):
+    elif isinstance(parallels, six.string_types):
         pl = []
         if 'equator' in parallels:
             pl.append(0.)
@@ -708,7 +709,7 @@ def add_meridians_and_parallels_to(bm, meridians='auto', parallels='auto', ax=No
         meridians = numpy.arange(lonmin, lonmax, delta_lon)
     elif meridians == 'default':
         meridians = numpy.arange(0, 360, 10)
-    elif isinstance(meridians, str):
+    elif isinstance(meridians, six.string_types):
         ml = []
         if 'greenwich' in meridians:
             ml.append(0.)
@@ -1151,7 +1152,7 @@ def datetimerange(start, stop=None, step=1, stepunit='h', tzinfo=None):
         return dt
 
     if not isinstance(start, datetime.datetime):
-        if isinstance(start, str):
+        if isinstance(start, six.string_types):
             start = parse_str(start)
         elif isinstance(start, list) or isinstance(start, tuple):
             start = parse_iterable(start)
@@ -1160,14 +1161,14 @@ def datetimerange(start, stop=None, step=1, stepunit='h', tzinfo=None):
     if not isinstance(stop, datetime.datetime):
         if stop is None:
             stop = start
-        elif isinstance(stop, str):
+        elif isinstance(stop, six.string_types):
             stop = parse_str(stop)
         elif isinstance(stop, list) or isinstance(stop, tuple):
             stop = parse_iterable(stop)
         else:
             raise TypeError("unknown type for *stop*: " + str(type(stop)))
     if not isinstance(step, datetime.timedelta):
-        if isinstance(stop, str):
+        if isinstance(stop, six.string_types):
             step = int(step)
         assert isinstance(step, int)
         assert stepunit in ('D', 'h', 'm', 's', 'x')
