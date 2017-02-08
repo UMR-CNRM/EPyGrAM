@@ -27,7 +27,7 @@ from epygram import config, epygramError, util
 __all__ = []
 
 _formats_in_loading_order = copy.copy(config.implemented_formats)
-_loaded_first_formats = ['FA', 'LFI', 'DDHLFA', 'LFA']  # because they might have been compiled with newer libraries versions
+_loaded_first_formats = ['GRIB', 'FA', 'LFI', 'DDHLFA', 'LFA']  # because they might have been compiled with newer libraries versions
 for lff in _loaded_first_formats[::-1]:
     if lff in _formats_in_loading_order:
         _formats_in_loading_order = [lff] + [f for f in _formats_in_loading_order if f != lff]

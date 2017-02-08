@@ -21,7 +21,7 @@ from . import web
 from footprints.util import rangex
 import epygram
 
-from . import epyweb_workdir, vortex_cache, render, basemap_pickle_path
+from . import epyweb_workdir, vortex_cache, render, basemap_pickle_path, all_fatal_exceptions
 from . import util
 from .util import getAjaxArg, getAjaxArgSmart, check_for_operation, get_common_args, make_my_plot
 
@@ -46,6 +46,8 @@ class GetCacheSize(object):
             cacheSize = os.popen("du -kshx " + vortex_cache).read()
             return json.dumps(cacheSize)
         except:
+            if all_fatal_exceptions:
+                raise
             return "Error in cache size retrieval"
 
 
@@ -74,6 +76,8 @@ class GetFieldsAsJSON(object):
             else:
                 print("File does not exist => exit")
         except Exception:
+            if all_fatal_exceptions:
+                raise
             print("Erreur getfieldsasjson")
             return "Erreur getfieldsasjson"
 
@@ -91,6 +95,8 @@ class GetLocalFile(object):
             reponse['localpath'] = args['file_path']
             return reponse
         except ValueError:
+            if all_fatal_exceptions:
+                raise
             raise Exception('getFile error')
 
 
@@ -160,6 +166,8 @@ class GetFile(object):
                     reponse['localpath'] = [str(m) for m in ressources]  # str(m[0])
             return json.dumps(reponse)
         except ValueError:
+            if all_fatal_exceptions:
+                raise
             raise Exception('getFile error')
 
 
@@ -211,6 +219,8 @@ class GetMinMax(object):
             return json.dumps(stats)
 
         except Exception, ex:
+            if all_fatal_exceptions:
+                raise
             print(ex.__str__())
 
 
@@ -246,6 +256,8 @@ class GetDomain(object):
             return json.dumps(monzoom)
 
         except Exception, ex:
+            if all_fatal_exceptions:
+                raise
             print(ex.__str__())
 
 

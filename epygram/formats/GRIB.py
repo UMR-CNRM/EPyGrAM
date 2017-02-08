@@ -162,9 +162,13 @@ class GRIBmessage(RecursiveObject, dict):
                     value = float(value)
                 elif isinstance(value, numpy.int):
                     value = int(value)
-            gribapi.grib_set(self._gid, key, value)
+            if isinstance(value, six.string_types):  # FIXME: gribapi str/unicode incompatibility
+                v = str(v)
+            else:
+                v = value
+            gribapi.grib_set(self._gid, str(key), v)  # FIXME: gribapi str/unicode incompatibility
         else:
-            gribapi.grib_set_missing(self._gid, key)
+            gribapi.grib_set_missing(self._gid, str(key))  # FIXME: gribapi str/unicode incompatibility
         super(GRIBmessage, self).__setitem__(key, value)
 
     def get(self, key, default=None):
@@ -181,7 +185,7 @@ class GRIBmessage(RecursiveObject, dict):
     def _clone_from_sample(self, sample):
         """Clone a sample GRIB message."""
 
-        sample_gid = gribapi.grib_new_from_samples(sample)
+        sample_gid = gribapi.grib_new_from_samples(str(sample))  # FIXME: gribapi str/unicode incompatibility
         gid = gribapi.grib_clone(sample_gid)
         gribapi.grib_release(sample_gid)
         return gid
@@ -209,24 +213,24 @@ class GRIBmessage(RecursiveObject, dict):
                                      'typeOfSecondFixedSurface',
                                      # type error when setting key 'centre' if str
                                      'centre', 'originatingCentre'):
-                        attr = gribapi.grib_get(self._gid, attribute, int)
+                        attr = gribapi.grib_get(self._gid, str(attribute), int)  # FIXME: gribapi str/unicode incompatibility
                     else:
-                        attr = gribapi.grib_get(self._gid, attribute)
+                        attr = gribapi.grib_get(self._gid, str(attribute))  # FIXME: gribapi str/unicode incompatibility
                 except gribapi.GribInternalError as e:
                     # differenciation not well done... PB in gribapi
                     if str(e) == 'Passed array is too small':
-                        attr = gribapi.grib_get_double_array(self._gid, attribute)
+                        attr = gribapi.grib_get_double_array(self._gid, str(attribute))  # FIXME: gribapi str/unicode incompatibility
                     else:
                         raise type(e)(str(e) + ' : "' + attribute + '"')
             else:
-                attr = gribapi.grib_get_double_array(self._gid, attribute)
+                attr = gribapi.grib_get_double_array(self._gid, str(attribute))  # FIXME: gribapi str/unicode incompatibility
         else:
             attr = gribapi.grib_get_values(self._gid)
         super(GRIBmessage, self).__setitem__(attribute, attr)
 
     def _set_array_attribute(self, attribute, value):
         """Setter for array attributes."""
-        gribapi.grib_set_array(self._gid, attribute, value)
+        gribapi.grib_set_array(self._gid, str(attribute), value)  # FIXME: gribapi str/unicode incompatibility
 
     def _build_msg_from_field(self, field,
                               ordering=config.GRIB_default_ordering,
@@ -972,7 +976,8 @@ class GRIBmessage(RecursiveObject, dict):
           - 'ls': to get the same default keys as the grib_ls,
           - 'mars': to get the keys used by MARS.
         """
-
+        if isinstance(namespace, six.string_types):
+            namespace = str(namespace)  # FIXME: gribapi str/unicode incompatibility
         key_iter = gribapi.grib_keys_iterator_new(self._gid,
                                                   namespace=namespace)
         namespace = []
@@ -1189,7 +1194,7 @@ class GRIB(FileResource):
             gid = gribapi.grib_new_from_file(_file, headers_only=True)
             if gid is None:
                 break
-            n = gribapi.grib_get(gid, 'editionNumber')
+            n = gribapi.grib_get(gid, b'editionNumber')  # FIXME: gribapi str/unicode incompatibility
             for k in GRIBmessage.fid_keys[n] + additional_keys:
                 if k in (# bug in GRIB_API ? 1, 103 & 105 => 'sfc'
                          'typeOfFirstFixedSurface',
@@ -1197,12 +1202,12 @@ class GRIB(FileResource):
                          'typeOfSecondFixedSurface',
                          # type error when setting key 'centre' if str
                          'centre', 'originatingCentre'):
-                    fid[k] = gribapi.grib_get(gid, k, int)
+                    fid[k] = gribapi.grib_get(gid, str(k), int)  # FIXME: gribapi str/unicode incompatibility
                 elif k in ('topLevel', 'bottomLevel'):
-                    if gribapi.grib_get(gid, 'topLevel') != gribapi.grib_get(gid, 'bottomLevel'):
-                        fid[k] = gribapi.grib_get(gid, k)
+                    if gribapi.grib_get(gid, b'topLevel') != gribapi.grib_get(gid, b'bottomLevel'):  # FIXME: gribapi str/unicode incompatibility
+                        fid[k] = gribapi.grib_get(gid, str(k))  # FIXME: gribapi str/unicode incompatibility
                 else:
-                    fid[k] = gribapi.grib_get(gid, k)
+                    fid[k] = gribapi.grib_get(gid, str(k))  # FIXME: gribapi str/unicode incompatibility
             gribapi.grib_release(gid)
             fidlist.append(fid)
         _file.close()
@@ -1409,7 +1414,8 @@ class GRIB(FileResource):
         """
 
         matchingfields = FieldSet()
-        idx = gribapi.grib_index_new_from_file(self.container.abspath, handgrip.keys())
+        idx = gribapi.grib_index_new_from_file(self.container.abspath,
+                                               [str(k) for k in handgrip.keys()])  # FIXME: gribapi str/unicode incompatibility
         # filter
         for k, v in handgrip.items():
             # FIXME: ? BUG in gribapi ? type conversion seems not to work for index
@@ -1438,7 +1444,9 @@ class GRIB(FileResource):
                                    109:'pv',
                                    119:'hpl', }
                 v = type_conv_GRIB2.get(v, str(v))
-            gribapi.grib_index_select(idx, k, v)
+            if isinstance(v, six.string_types):  # FIXME: gribapi str/unicode incompatibility
+                v = str(v)
+            gribapi.grib_index_select(idx, str(k), v)  # FIXME: gribapi str/unicode incompatibility
         # load messages
         while True:
             gid = gribapi.grib_new_from_index(idx)

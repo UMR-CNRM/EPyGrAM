@@ -61,6 +61,8 @@ if not os.path.exists(vortex_cache):
 epyweb_workdir = os.path.join(epygram.config.userlocaldir, 'epyweb')
 basemap_pickle_path = os.path.join(epyweb_workdir, 'basemap.cPickle')
 
+# Debug mode
+all_fatal_exceptions = False
 
 #############
 # Web stuff ###################################################################
