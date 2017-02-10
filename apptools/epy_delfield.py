@@ -80,7 +80,7 @@ def main(filename, fieldseed,
             if source.format == 'GRIB':
                 options = [k[0] for k in epygram.config.GRIB_default_packing[1]] + \
                           [k[0] for k in epygram.config.GRIB_default_packing[2]]
-                options.extend(epygram.config.GRIB_default_ordering.keys())
+                options.extend(list(epygram.config.GRIB_default_ordering.keys()))
                 options.append('centre')
                 options = {'get_info_as_json':options}
             else:
@@ -113,7 +113,7 @@ def main(filename, fieldseed,
 
 if __name__ == '__main__':
 
-    ### 1. Parse arguments
+    # ## 1. Parse arguments
     ######################
     parser = argparse.ArgumentParser(description='An EPyGrAM tool for removing field(s) from a resource.',
                                      epilog='End of help for: %(prog)s (EPyGrAM v' + epygram.__version__ + ')')
@@ -130,7 +130,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    ### 2. Initializations
+    # ## 2. Initializations
     ######################
     epygram.init_env()
     # 2.0 logs
@@ -158,7 +158,7 @@ if __name__ == '__main__':
     else:
         fieldseed = None
 
-    ### 3. Main
+    # ## 3. Main
     ###########
     main(args.filename, fieldseed,
          reverse=args.reverse,

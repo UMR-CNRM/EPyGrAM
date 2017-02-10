@@ -120,12 +120,12 @@ def convert(filename,
             field.select_subzone(subzone)
         # output fid
         if resource.format == 'GRIB':
-            grib_edition = field.fid[field.fid.keys()[0]]['editionNumber']
+            grib_edition = field.fid[list(field.fid.keys())[0]]['editionNumber']
             fid = field.fid['GRIB' + str(grib_edition)]
         else:
             fid = field.fid[resource.format]
         if output_format_suffix == 'grb':
-            if 'generic' not in field.fid.keys():
+            if 'generic' not in field.fid:
                 raise NotImplementedError("how to convert this fid to GRIB2 ?")
             field.fid['GRIB2'] = epygram.formats.fid_converter(field.fid['generic'], 'generic', 'GRIB2')
             assert all([k in field.fid['GRIB2']
@@ -352,9 +352,9 @@ class GeoPointsWriter(Converter):
         def get_write_kwargs_for_GeoPoints(input_resource, field, kwargs):
             write_kwargs = {}
             write_kwargs['order'] = kwargs.get('order', 'C')
-            if 'lonlat_precision' in kwargs.keys():
+            if 'lonlat_precision' in kwargs:
                 write_kwargs['llprecision'] = kwargs['lonlat_precision']
-            if 'precision' in kwargs.keys():
+            if 'precision' in kwargs:
                 write_kwargs['precision'] = kwargs['precision']
             return write_kwargs
 

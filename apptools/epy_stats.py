@@ -228,15 +228,15 @@ def main(filename,
             output = ['# ' + fid]
             output.extend(diff_params)
             output = [output]
-            if f in stats.keys():
+            if f in stats:
                 output.append([resource.container.basename] + [stats[f].get(singlemap[k], None) for k in diff_params])
             else:
                 output.append([resource.container.basename] + ['-' for k in diff_params])
-            if f in refstats.keys():
+            if f in refstats:
                 output.append([reference.container.basename] + [refstats[f].get(singlemap[k], None) for k in diff_params])
             else:
                 output.append([reference.container.basename] + ['-' for k in diff_params])
-            if f in refstats.keys():
+            if f in refstats:
                 output.append([head] + [diffstats[f].get(diffmap[k], None) for k in diff_params])
             else:
                 output.append([head] + ['-' for k in diff_params])
@@ -247,7 +247,7 @@ def main(filename,
 
 if __name__ == '__main__':
 
-    ### 1. Parse arguments
+    # ## 1. Parse arguments
     ######################
     parser = argparse.ArgumentParser(description='An EPyGrAM tool for computing basic statistics on \
                                                   meteorological fields.',
@@ -274,7 +274,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    ### 2. Initializations
+    # ## 2. Initializations
     ######################
     epygram.init_env()
     # 2.0 logs
@@ -326,7 +326,7 @@ if __name__ == '__main__':
     else:
         fieldseed = None
 
-    ### 3. Main
+    # ## 3. Main
     ###########
     main(args.filename,
          fieldseed,

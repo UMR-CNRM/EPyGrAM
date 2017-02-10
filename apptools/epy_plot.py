@@ -150,14 +150,14 @@ def main(filename,
             if global_shift_center is not None:
                 field.global_shift_center(global_shift_center)
             if composition is not None:
-                if 'file' in composition.keys():
+                if 'file' in composition:
                     toreadin = epygram.formats.resource(composition['file'], 'r')
                 else:
                     toreadin = resource
                 composefield = toreadin.readfield(composition['fid'])
-                if 'file' in composition.keys():
+                if 'file' in composition:
                     del toreadin
-                if 'preset' in composition.keys():
+                if 'preset' in composition:
                     composefield.operation(composition['preset'])
                 field.operation(composition['operation'], operand=composefield)
             if pressure_unit_hpa and \
@@ -392,7 +392,7 @@ def main(filename,
 
 if __name__ == '__main__':
 
-    ### 1. Parse arguments
+    # ## 1. Parse arguments
     ######################
     parser = argparse.ArgumentParser(description='An EPyGrAM tool for simple plots\
                                                   of meteorological fields from a resource.',
@@ -442,7 +442,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    ### 2. Initializations
+    # ## 2. Initializations
     ######################
     epygram.init_env()
     # 2.0 logs
@@ -534,7 +534,7 @@ if __name__ == '__main__':
     else:
         raise epygramError("Need to specify a field (-f) or two wind fields (--wU/--wV).")
 
-    ### 3. Main
+    # ## 3. Main
     ###########
     main(args.filename,
          fieldseed,
