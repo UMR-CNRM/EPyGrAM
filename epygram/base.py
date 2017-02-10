@@ -1006,21 +1006,21 @@ class FieldValidityList(RecursiveObject, list):
             # Check that all lengths are equal
             length = None
             mykwargs = {}
-            for k, v in kwargs.iteritems():
+            for k, v in kwargs.items():
                 mykwargs[k] = [v] if not isinstance(v, list) else v
                 if length is None or length == 1:
                     length = len(mykwargs[k])
                 if len(mykwargs[k]) != length:
                     raise epygramError("All the arguments must have the same length.")
 
-            for k, v in mykwargs.iteritems():
+            for k, v in mykwargs.items():
                 if len(v) == 1:
                     mykwargs[k] = mykwargs[k] * length
 
             # We set the different objects
             if length is None:
                 length = 1
-            self.extend([FieldValidity(**{key: value[i] for (key, value) in mykwargs.iteritems()}) for i in range(length)])
+            self.extend([FieldValidity(**{key: value[i] for (key, value) in mykwargs.items()}) for i in range(length)])
         elif isinstance(length, int):
             for _ in range(length):
                 self.append(FieldValidity())
@@ -1078,7 +1078,7 @@ class FieldValidityList(RecursiveObject, list):
         # Check that all lengths are equal
         length = None
         mykwargs = {}
-        for k, v in kwargs.iteritems():
+        for k, v in kwargs.items():
             mykwargs[k] = [v] if not isinstance(v, list) else v
             if length is None or length == 1:
                 length = len(mykwargs[k])
@@ -1088,13 +1088,13 @@ class FieldValidityList(RecursiveObject, list):
         if length == 1:
             length = len(self)
 
-        for k, v in mykwargs.iteritems():
+        for k, v in mykwargs.items():
             if len(v) == 1:
                 mykwargs[k] = mykwargs[k] * length
 
         # We set the different objects
         for i in range(length):
-            self[i].set(**{key: value[i] for (key, value) in mykwargs.iteritems()})
+            self[i].set(**{key: value[i] for (key, value) in mykwargs.items()})
 
     def what(self, out=sys.stdout, cumulativeduration=True):
         """

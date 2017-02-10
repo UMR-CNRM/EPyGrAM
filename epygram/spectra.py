@@ -46,7 +46,7 @@ def read_Spectrum(filename):
             init_kwargs['mean2'] = float(table.pop(0)[2])
         elif not int(table[0][0]) == 1:
             raise epygramError("first wavenumber must be 0 or 1.")
-        if 'resolution'  in init_kwargs.keys():
+        if 'resolution' in init_kwargs:
             init_kwargs['resolution'] = float(init_kwargs['resolution'])
         else:
             k = int(table[-1][0])

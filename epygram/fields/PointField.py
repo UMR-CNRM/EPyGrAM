@@ -70,7 +70,7 @@ class PointField(D3Field):
 
         plot_kwargs = ifNone_emptydict(plot_kwargs)
         legend_kwargs = ifNone_emptydict(legend_kwargs)
-        if 'label' not in plot_kwargs.keys():
+        if 'label' not in plot_kwargs:
             plot_kwargs['label'] = str(self.fid)
 
         assert len(self.validity) > 1, 'only time-dimensioned PointField can be plot.'

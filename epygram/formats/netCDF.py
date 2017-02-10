@@ -143,7 +143,7 @@ class netCDF(FileResource):
 
     def _listfields(self):
         """Returns the fid list of the fields inside the resource."""
-        return self._variables.keys()
+        return list(self._variables.keys())
 
     @FileResource._openbeforedelayed
     def ncinfo_field(self, fid):
@@ -204,7 +204,7 @@ class netCDF(FileResource):
             for sd in config.netCDF_standard_dimensions:
                 # if behaviour is not explicitly given,
                 # try to find out who is "d" among the standard dimensions
-                if sd not in behaviour.keys() and d in config.netCDF_usualnames_for_standard_dimensions[sd]:
+                if sd not in behaviour and d in config.netCDF_usualnames_for_standard_dimensions[sd]:
                     behaviour[sd] = d
         dims_dict_n2e = {}
         for d in variable_dimensions.keys():
@@ -219,13 +219,13 @@ class netCDF(FileResource):
                 sg = sd.replace('dimension', 'grid')
                 # if behaviour is not explicitly given,
                 # try to find out who is "f" among the standard grids
-                if sg not in behaviour.keys() and f in config.netCDF_usualnames_for_standard_dimensions[sd] or \
+                if sg not in behaviour and f in config.netCDF_usualnames_for_standard_dimensions[sd] or \
                    f == behaviour.get(sd):
                     behaviour[sg] = f
 
         # 2. time
         def get_validity(T_varname):
-            if T_varname not in self._variables.keys():
+            if T_varname not in self._listfields():
                 raise epygramError('unable to find T_grid in variables.')
             T = self._variables[T_varname][:]
             time_unit = self._variables[T_varname].units
@@ -251,15 +251,15 @@ class netCDF(FileResource):
                         fv = FieldValidity(date_time=v, basis=basis)
                 validity.append(fv)
             return validity
-        if 'T_dimension' in dims_dict_e2n.keys():
+        if 'T_dimension' in dims_dict_e2n:
             # field has a time dimension
             var_corresponding_to_T_grid = behaviour.get('T_grid', False)
             validity = get_validity(var_corresponding_to_T_grid)
-            if dims_dict_e2n['T_dimension'] in only.keys():
+            if dims_dict_e2n['T_dimension'] in only:
                 validity = validity[only[dims_dict_e2n['T_dimension']]]
-        elif any([t in self._variables.keys() for t in config.netCDF_usualnames_for_standard_dimensions['T_dimension']]):
+        elif any([t in self._listfields() for t in config.netCDF_usualnames_for_standard_dimensions['T_dimension']]):
             # look for a time variable
-            T_varnames = [t for t in config.netCDF_usualnames_for_standard_dimensions['T_dimension'] if t in self._variables.keys()]
+            T_varnames = [t for t in config.netCDF_usualnames_for_standard_dimensions['T_dimension'] if t in self._listfields()]
             _v = get_validity(T_varnames[0])
             if len(_v) == 1:
                 validity = _v
@@ -274,13 +274,13 @@ class netCDF(FileResource):
         kwargs_geom = {}
         kwargs_geom['position_on_horizontal_grid'] = 'center'
         # 3.1 identify the structure
-        keys = copy.copy(variable_dimensions.keys())
+        keys = copy.copy(list(variable_dimensions.keys()))
         for k in only.keys():
             if k in keys:
                 keys.remove(k)
             else:
                 raise ValueError("dimension: " + k + " from 'only' not in field variable.")
-        if 'T_dimension' in dims_dict_e2n.keys() and dims_dict_e2n['T_dimension'] not in only.keys():
+        if 'T_dimension' in dims_dict_e2n and dims_dict_e2n['T_dimension'] not in only:
             keys.remove(dims_dict_e2n['T_dimension'])
         squeezed_variables = [dims_dict_n2e.get(k)
                               for k in keys
@@ -321,7 +321,7 @@ class netCDF(FileResource):
                                        "config.netCDF_usualnames_for_standard_dimensions",
                                        "in $HOME/.epygram/userconfig.py"]))
             raise epygramError(" ".join(["unable to guess structure of field:",
-                                         str(variable_dimensions.keys()),
+                                         str(list(variable_dimensions.keys())),
                                          "=> refine behaviour dimensions or",
                                          "filter dimensions with 'only'."]))
         else:
@@ -363,7 +363,7 @@ class netCDF(FileResource):
         if D3 or H2D:
             if set(['X_dimension', 'Y_dimension']).issubset(set(dims_dict_e2n.keys())):
                 flattened = False
-            elif 'N_dimension' in dims_dict_e2n.keys():
+            elif 'N_dimension' in dims_dict_e2n:
                 flattened = True
             else:
                 raise epygramError('unable to find grid dimensions.')
@@ -371,15 +371,15 @@ class netCDF(FileResource):
                 dimensions['X'] = variable_dimensions[dims_dict_e2n['X_dimension']]
                 dimensions['Y'] = variable_dimensions[dims_dict_e2n['Y_dimension']]
             else:  # flattened
-                if 'X_dimension' in all_dimensions_e2n.keys() \
-                   and 'Y_dimension' in all_dimensions_e2n.keys():
+                if 'X_dimension' in all_dimensions_e2n \
+                   and 'Y_dimension' in all_dimensions_e2n:
                     dimensions['X'] = len(self._dimensions[all_dimensions_e2n['X_dimension']])
                     dimensions['Y'] = len(self._dimensions[all_dimensions_e2n['Y_dimension']])
                 elif behaviour.get('H1D_is_H2D_unstructured', False):
                     dimensions['X'] = variable_dimensions[dims_dict_e2n['N_dimension']]
                     dimensions['Y'] = 1
                 else:
-                    assert 'X_dimension' in all_dimensions_e2n.keys(), \
+                    assert 'X_dimension' in all_dimensions_e2n, \
                            ' '.join(["unable to find X_dimension of field:",
                                      "please specify with readfield() argument",
                                      "adhoc_behaviour={'X_dimension':'" + d + "'}",
@@ -388,7 +388,7 @@ class netCDF(FileResource):
                                      "or complete",
                                      "config.netCDF_usualnames_for_standard_dimensions",
                                      "in $HOME/.epygram/userconfig.py"])
-                    assert 'Y_dimension' in all_dimensions_e2n.keys(), \
+                    assert 'Y_dimension' in all_dimensions_e2n, \
                            ' '.join(["unable to find Y_dimension of field:",
                                      "please specify with readfield() argument",
                                      "adhoc_behaviour={'Y_dimension':'" + d + "'}",
@@ -403,7 +403,7 @@ class netCDF(FileResource):
             # assert var_corresponding_to_Z_grid in self._variables.keys(), \
             #        'unable to find Z_grid in variables.'
             levels = None
-            if var_corresponding_to_Z_grid in self._variables.keys():
+            if var_corresponding_to_Z_grid in self._listfields():
                 if hasattr(self._variables[var_corresponding_to_Z_grid], 'standard_name') \
                    and self._variables[var_corresponding_to_Z_grid].standard_name in ('atmosphere_hybrid_sigma_pressure_coordinate',
                                                                                       'atmosphere_hybrid_height_coordinate'):
@@ -428,7 +428,7 @@ class netCDF(FileResource):
                     if self._variables[behaviour['Z_grid']].units == 'km':
                         gridlevels = gridlevels * 1000.  # get back to metres
             else:
-                gridlevels = range(1, variable_dimensions[dims_dict_e2n['Z_dimension']] + 1)
+                gridlevels = list(range(1, variable_dimensions[dims_dict_e2n['Z_dimension']] + 1))
                 kwargs_vcoord['typeoffirstfixedsurface'] = 255
             kwargs_vcoord['grid']['gridlevels'] = [p for p in gridlevels]  # footprints purpose
             if levels is None:
@@ -441,7 +441,7 @@ class netCDF(FileResource):
         if H2D or D3:
             def find_grid_in_variables():
                 var_corresponding_to_X_grid = behaviour.get('X_grid', False)
-                if var_corresponding_to_X_grid not in self._variables.keys():
+                if var_corresponding_to_X_grid not in self._listfields():
                     epylog.error(" ".join(["unable to find X_grid in variables.",
                                            "Please specify with readfield()",
                                            "argument",
@@ -450,7 +450,7 @@ class netCDF(FileResource):
                                            "my_resource.behave(X_grid='name_of_the_variable')"]))
                     raise epygramError('unable to find X_grid in variables.')
                 var_corresponding_to_Y_grid = behaviour.get('Y_grid', False)
-                if var_corresponding_to_Y_grid not in self._variables.keys():
+                if var_corresponding_to_Y_grid not in self._listfields():
                     epylog.error(" ".join(["unable to find Y_grid in variables.",
                                            "Please specify with readfield()",
                                            "argument",
@@ -465,7 +465,7 @@ class netCDF(FileResource):
                         behaviour['grid_is_lonlat'] = False
                     elif 'lat' in var_corresponding_to_Y_grid.lower() and \
                          'lon' in var_corresponding_to_X_grid.lower() and \
-                         'grid_is_lonlat' not in behaviour.keys():
+                         'grid_is_lonlat' not in behaviour:
                         behaviour['grid_is_lonlat'] = True
                 if len(self._variables[var_corresponding_to_X_grid].dimensions) == 1 and \
                    len(self._variables[var_corresponding_to_Y_grid].dimensions) == 1:
@@ -702,7 +702,7 @@ class netCDF(FileResource):
                             'Y_resolution':abs(Ygrid[1, 0] - Ygrid[0, 0])}
         elif V1D or V2D or points:
             var_corresponding_to_X_grid = behaviour.get('X_grid', False)
-            if var_corresponding_to_X_grid not in self._variables.keys():
+            if var_corresponding_to_X_grid not in self._listfields():
                 if points or V1D:
                     lon = ['_']
                 else:
@@ -710,7 +710,7 @@ class netCDF(FileResource):
             else:
                 lon = self._variables[var_corresponding_to_X_grid][:]
             var_corresponding_to_Y_grid = behaviour.get('Y_grid', False)
-            if var_corresponding_to_Y_grid not in self._variables.keys():
+            if var_corresponding_to_Y_grid not in self._listfields():
                 if points or V1D:
                     lat = ['_']
                 else:
@@ -765,23 +765,23 @@ class netCDF(FileResource):
             # re-shuffle to have data indexes in order (t,z,y,x)
             positions = []
             shp4D = [1, 1, 1, 1]
-            if 'T_dimension' in dims_dict_e2n.keys():
+            if 'T_dimension' in dims_dict_e2n:
                 idx = variable.dimensions.index(dims_dict_e2n['T_dimension'])
                 positions.append(idx)
                 shp4D[0] = buffdata.shape[idx]
-            if 'Z_dimension' in dims_dict_e2n.keys():
+            if 'Z_dimension' in dims_dict_e2n:
                 idx = variable.dimensions.index(dims_dict_e2n['Z_dimension'])
                 positions.append(idx)
                 shp4D[1] = buffdata.shape[idx]
-            if 'Y_dimension' in dims_dict_e2n.keys():
+            if 'Y_dimension' in dims_dict_e2n:
                 idx = variable.dimensions.index(dims_dict_e2n['Y_dimension'])
                 positions.append(idx)
                 shp4D[2] = buffdata.shape[idx]
-            if 'X_dimension' in dims_dict_e2n.keys():
+            if 'X_dimension' in dims_dict_e2n:
                 idx = variable.dimensions.index(dims_dict_e2n['X_dimension'])
                 positions.append(idx)
                 shp4D[3] = buffdata.shape[idx]
-            elif 'N_dimension' in dims_dict_e2n.keys():
+            elif 'N_dimension' in dims_dict_e2n:
                 idx = variable.dimensions.index(dims_dict_e2n['N_dimension'])
                 positions.append(idx)
                 shp4D[3] = buffdata.shape[idx]
@@ -848,7 +848,7 @@ class netCDF(FileResource):
         def check_or_add_variable(varname, vartype,
                                   dimensions=(),
                                   **kwargs):
-            if unicode(varname) not in self._variables.keys():
+            if six.text_type(varname) not in self._listfields():  # TOBECHECKED:
                 var = self._nc.createVariable(varname, vartype,
                                               dimensions=dimensions,
                                               **kwargs)
@@ -894,7 +894,7 @@ class netCDF(FileResource):
                      len(self._dimensions[v]) == len(field.geometry.vcoordinate.levels))}.get('found', Z)
         # or specified behaviour
         Z = behaviour.get('Z_dimension', Z)
-        if 'gridlevels' in field.geometry.vcoordinate.grid.keys():
+        if 'gridlevels' in field.geometry.vcoordinate.grid:
             Z_gridsize = max(len(field.geometry.vcoordinate.grid['gridlevels']), 1)
             if field.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
                 Z_gridsize -= 1
@@ -1062,10 +1062,10 @@ class netCDF(FileResource):
                     self._variables[meta].latitudes = 'var: gauss_latitudes'
                     check_or_add_variable('gauss_latitudes', float, Y)
                     self._variables['gauss_latitudes'][:] = [l.get('degrees') for l in field.geometry.grid['latitudes']]
-                    if 'pole_lon' in field.geometry.grid.keys():
+                    if 'pole_lon' in field.geometry.grid:
                         self._variables[meta].pole_lon = field.geometry.grid['pole_lon'].get('degrees')
                         self._variables[meta].pole_lat = field.geometry.grid['pole_lat'].get('degrees')
-                    if 'dilatation_coef' in field.geometry.grid.keys():
+                    if 'dilatation_coef' in field.geometry.grid:
                         self._variables[meta].dilatation_coef = field.geometry.grid['dilatation_coef']
                 else:
                     epylog.info('assume Gauss grid parameters match.')

@@ -137,7 +137,7 @@ class GeoPoints(FileResource):
             if other_attributes is not None and self.other_attributes is None:
                 self._attributes['other_attributes'] = other_attributes
             if len(self.other_attributes) > 0:
-                if 'FORMAT' in self.other_attributes.keys():
+                if 'FORMAT' in self.other_attributes.keys:
                     if columns is not None:
                         epylog.warning("Double specification: columns overwritten by FORMAT.")
                     if self.other_attributes['FORMAT'] == 'XYV':
@@ -398,11 +398,11 @@ class GeoPoints(FileResource):
                 if field[0].validity.get() is not None:
                     columns.extend(['DATE', 'TIME'])
             elif isinstance(field, dict):
-                if 'lat' not in field.keys():
+                if 'lat' not in field:
                     raise epygramError("'lat' must be in field.keys().")
-                if 'lon' not in field.keys():
+                if 'lon' not in field:
                     raise epygramError("'lon' must be in field.keys().")
-                if 'value' not in field.keys():
+                if 'value' not in field:
                     raise epygramError("'value' must be in field.keys().")
                 for i in field.keys():
                     if i.upper() not in ('LAT', 'LON', 'VALUE'):
@@ -467,7 +467,7 @@ class GeoPoints(FileResource):
         else:
             raise NotImplementedError("*field* of that type.")
         for i in self.columns:
-            if i not in writebuffer.keys():
+            if i not in writebuffer:
                 writebuffer[i] = [0] * len(writebuffer['VALUE'])
         substruct = self.columns[2:]
 

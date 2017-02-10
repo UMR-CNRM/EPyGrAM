@@ -112,10 +112,10 @@ class MultiValiditiesResource(Resource):
         tmp = {}
         for r in self.resources:
             with _open_and_close(r):
-                for k, v in r.sortfields(*args, **kwargs).iteritems():
+                for k, v in r.sortfields(*args, **kwargs).items():
                     tmp[k] = tmp.get(k, []) + v
         result = {}
-        for k, v in tmp.iteritems():
+        for k, v in tmp.items():
             result[k] = list(set(v))
         return result
 
@@ -197,7 +197,7 @@ class MultiValiditiesResource(Resource):
         # Geometries
         kwargs_geom = copy.deepcopy(fieldset[0].geometry.footprint_as_dict())
         kwargs_geom['vcoordinate'] = fpx.geometry(structure='V', typeoffirstfixedsurface=255, levels=[255])
-        for k, v in kwargs_geom.iteritems():
+        for k, v in kwargs_geom.items():
             if isinstance(v, FPDict):
                 kwargs_geom[k] = dict(v)
         geometry = fpx.geometry(**kwargs_geom)
@@ -214,7 +214,7 @@ class MultiValiditiesResource(Resource):
                 raise epygramError("All fields must be gridpoint or spectral")
             kwargs_geom = copy.deepcopy(field.geometry.footprint_as_dict())
             kwargs_geom['vcoordinate'] = fpx.geometry(structure='V', typeoffirstfixedsurface=255, levels=[255])
-            for k, v in kwargs_geom.iteritems():
+            for k, v in kwargs_geom.items():
                 if isinstance(v, FPDict):
                     kwargs_geom[k] = dict(v)
             geometry_field = fpx.geometry(**kwargs_geom)
@@ -262,22 +262,20 @@ class MultiValiditiesResource(Resource):
 
         # Other metadata
         kwargs_field = copy.deepcopy(fieldset[0].footprint_as_dict())
-        kwargs_field.pop('data')
         kwargs_field['validity'] = FieldValidityList()
         kwargs_field['geometry'] = geometry
-        for k, v in kwargs_field.iteritems():
+        for k, v in kwargs_field.items():
             if isinstance(v, FPDict):
                 kwargs_field[k] = dict(v)
         field = fpx.field(**kwargs_field)
         sameProcesstype = True
         for f in fieldset[1:]:
             kwargs_field = copy.deepcopy(f.footprint_as_dict())
-            kwargs_field.pop('data')
             kwargs_field['validity'] = FieldValidityList()
             kwargs_field['geometry'] = geometry
             sameProcesstype = sameProcesstype and kwargs_field['processtype'] == fieldset[0].processtype
             kwargs_field['processtype'] = fieldset[0].processtype  # we exclude processtype from the comparison
-            for k, v in kwargs_field.iteritems():
+            for k, v in kwargs_field.items():
                 if isinstance(v, FPDict):
                     kwargs_field[k] = dict(v)
             myf = fpx.field(**kwargs_field)

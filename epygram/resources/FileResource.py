@@ -68,10 +68,10 @@ class FileResource(Resource):
         # protection against unhappy overwrites...
         if config.protect_unhappy_writes and \
            os.path.exists(self.container.abspath) and self.openmode == 'w':
-            self._overwrite = raw_input(' '.join([self.container.abspath,
-                                                  "will be overwritten:",
-                                                  "do you want to continue",
-                                                  "(y/n) ? "])) == 'y'
+            self._overwrite = input(' '.join([self.container.abspath,
+                                              "will be overwritten:",
+                                              "do you want to continue",
+                                              "(y/n) ? "])) == 'y'
             if not self._overwrite:
                 raise epygramError(self.container.abspath + " already exists.")
         if self.openmode == 'a':

@@ -547,13 +547,13 @@ def plotprofiles(profiles,
     else:
         ax.set_ylim(bottom=numpy.array(Y).min())
     if zoom is not None:
-        if 'ymin' in zoom.keys():
+        if 'ymin' in zoom:
             ax.set_ylim(bottom=zoom['ymin'])
-        if 'ymax' in zoom.keys():
+        if 'ymax' in zoom:
             ax.set_ylim(top=zoom['ymax'])
-        if 'xmin' in zoom.keys():
+        if 'xmin' in zoom:
             ax.set_xlim(left=zoom['xmin'])
-        if 'xmax' in zoom.keys():
+        if 'xmax' in zoom:
             ax.set_xlim(right=zoom['xmax'])
     if title is not None:
         ax.set_title(title)
@@ -614,9 +614,9 @@ def plotanimation(profile,
         epylog.warning("'ema' option not fully tested in animation: min/max may not be optimised.")
     zoom = kwargs.get('zoom')
     zoom = util.ifNone_emptydict(zoom)
-    if 'xmax' not in zoom.keys():
+    if 'xmax' not in zoom:
         zoom.update(xmax=maxdata)
-    if 'xmin' not in zoom.keys():
+    if 'xmin' not in zoom:
         zoom.update(xmin=mindata)
     kwargs['zoom'] = zoom
 
@@ -634,7 +634,7 @@ def plotanimation(profile,
 
     anim = animation.FuncAnimation(fig, update,
                                    fargs=[ax, profile, title_prefix],
-                                   frames=range(len(profile.validity) + 1),  # AM: don't really understand why but needed for the last frame to be shown
+                                   frames=list(range(len(profile.validity) + 1)),  # AM: don't really understand why but needed for the last frame to be shown
                                    interval=interval,
                                    repeat=repeat)
 

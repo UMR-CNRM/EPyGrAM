@@ -243,7 +243,7 @@ class H2DField(D3Field):
                 util.add_cmap(colormap)
             else:
                 from mpl_toolkits.basemap import cm
-                if colormap in cm.datad.keys():
+                if colormap in cm.datad:
                     plt.register_cmap(name=colormap, cmap=cm.__dict__[colormap])
         if graphicmode == 'contourlines':  # color of contours
             if contourcolor in cnames or contourcolor[0] == '#':
@@ -337,7 +337,7 @@ class H2DField(D3Field):
             tick_levels = [levels[l]
                            for l in range(len(levels) - (L // 3 + 1))
                            if l % L == 0] + [levels[-1]]
-            if colormap in config.colormaps_scaling.keys():
+            if colormap in config.colormaps_scaling.keys:
                 (norm, levels) = util.color_scale(colormap, max_val=M)
                 tick_levels = levels
             else:
@@ -532,7 +532,7 @@ class H2DField(D3Field):
 
         anim = animation.FuncAnimation(fig, update,
                                        fargs=[ax, self, field0, title_prefix, kwargs],
-                                       frames=range(len(self.validity) + 1),  # AM: don't really understand why but needed for the last frame to be shown
+                                       frames=list(range(len(self.validity) + 1)),  # AM: don't really understand why but needed for the last frame to be shown
                                        interval=interval,
                                        repeat=repeat)
 

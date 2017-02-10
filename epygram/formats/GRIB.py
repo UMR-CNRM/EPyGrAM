@@ -49,7 +49,7 @@ onetotwo = {1:1,  # ground or water surface
             115:108,  # level at specified pressure difference from ground to level
             117:109,  # potential vorticity surface
             }
-twotoone = {v:k for (k, v) in onetotwo.iteritems()}
+twotoone = {v:k for (k, v) in onetotwo.items()}
 
 
 def parse_GRIBstr_todict(strfid):
@@ -148,9 +148,9 @@ class GRIBmessage(RecursiveObject, dict):
         self.clear()
 
     def __getitem__(self, item):
-        if item not in self.keys():
+        if item not in list(self.keys()):
             self._readattribute(item)
-            if item not in self.keys():
+            if item not in list(self.keys()):
                 raise KeyError(item + " not in GRIBmessage keys.")
 
         return super(GRIBmessage, self).__getitem__(item)
@@ -315,13 +315,13 @@ class GRIBmessage(RecursiveObject, dict):
             for k in param_list:
                 self[k] = field.fid['GRIB1'][k]
         else:
-            if 'GRIB2' in field.fid.keys():
+            if 'GRIB2' in field.fid:
                 self['tablesVersion'] = field.fid['GRIB2'].get('tablesVersion', config.GRIB_default_tablesVersion)
             else:
                 self['tablesVersion'] = field.fid['generic'].get('tablesVersion', config.GRIB_default_tablesVersion)
             param_list = ['discipline', 'parameterCategory', 'parameterNumber']
             for k in param_list:
-                if 'GRIB2' in field.fid.keys():
+                if 'GRIB2' in field.fid:
                     self[k] = field.fid['GRIB2'][k]
                 else:
                     self[k] = field.fid['generic'][k]
@@ -540,14 +540,14 @@ class GRIBmessage(RecursiveObject, dict):
             if hasattr(field.geometry.vcoordinate, 'toplevel'):
                 self['topLevel'] = field.geometry.vcoordinate.toplevel
             else:
-                if 'GRIB2' in field.fid.keys():
+                if 'GRIB2' in field.fid:
                     self['topLevel'] = field.fid['GRIB2'].get('topLevel', field.geometry.vcoordinate.levels[0])
                 else:
                     self['topLevel'] = field.fid['generic'].get('topLevel', field.geometry.vcoordinate.levels[0])
             if hasattr(field.geometry.vcoordinate, 'bottomlevel'):
                 self['bottomLevel'] = field.geometry.vcoordinate.bottomlevel
             else:
-                if 'GRIB2' in field.fid.keys():
+                if 'GRIB2' in field.fid:
                     self['bottomLevel'] = field.fid['GRIB2'].get('bottomLevel', field.geometry.vcoordinate.levels[0])
                 else:
                     self['bottomLevel'] = field.fid['generic'].get('bottomLevel', field.geometry.vcoordinate.levels[0])
@@ -644,7 +644,7 @@ class GRIBmessage(RecursiveObject, dict):
         order = ['packingType', 'complexPacking', 'boustrophedonicOrdering',
                  'bitsPerValue']
         for k in order:
-            if k in packing.keys():
+            if k in packing:
                 try:
                     self[k] = packing.pop(k)
                 except gribapi.GribInternalError:
@@ -944,7 +944,7 @@ class GRIBmessage(RecursiveObject, dict):
         """
 
         if isinstance(E, dict):
-            items = E.items()
+            items = list(E.items())
         elif '__iter__' in dir(E):
             items = E
             for (k, v) in items:
@@ -1179,7 +1179,7 @@ class GRIB(FileResource):
         if complete:
             fidlist = [{'GRIB' + str(f['editionNumber']):f} for f in fidlist]
             for f in fidlist:
-                if 'GRIB2' in f.keys():
+                if 'GRIB2' in f:
                     f['generic'] = f['GRIB2']
 
         return fidlist
@@ -1292,7 +1292,7 @@ class GRIB(FileResource):
             except KeyError:
                 category = 'None'
             field = onlykeylistoffields[f]
-            if category in sortedfields.keys():
+            if category in sortedfields:  # FIXME: sortedfields is empty
                 sortedfields[category].append(field)
             else:
                 sortedfields[category] = [field]
@@ -1666,9 +1666,9 @@ class GRIB(FileResource):
                             # already extracted as requested profile
                             side_profiles[p] = subdomain
                         else:
-                            if 'typeOfFirstFixedSurface' in handgrip.keys():
+                            if 'typeOfFirstFixedSurface' in handgrip:
                                 side_handgrip = {'typeOfFirstFixedSurface':handgrip.get('typeOfFirstFixedSurface')}
-                            elif 'indicatorOfTypeOfLevel' in handgrip.keys():
+                            elif 'indicatorOfTypeOfLevel' in handgrip:
                                 side_handgrip = {'indicatorOfTypeOfLevel':handgrip.get('indicatorOfTypeOfLevel')}
                             side_handgrip['shortName'] = p
                             side_profiles[p] = self.extract_subdomain(side_handgrip, geometry,

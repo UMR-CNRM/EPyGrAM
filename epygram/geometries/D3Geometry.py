@@ -86,7 +86,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
     @property
     def projected_geometry(self):
         """ Is the geometry a projection ? """
-        return 'projection' in self._attributes.keys()
+        return 'projection' in self._attributes
 
     def __init__(self, *args, **kwargs):
         """Constructor. See its footprint for arguments."""
@@ -171,7 +171,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
         elif d4 or nb_validities >= 2:
             shape = tuple(list(levels.shape) + [nb_validities])
             levels = levels.repeat(nb_validities).reshape(shape)
-            shape_range = range(len(shape))
+            shape_range = list(range(len(shape)))
             levels = levels.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
 
         return levels
@@ -322,14 +322,14 @@ class D3Geometry(RecursiveObject, FootprintBase):
         shape = tuple(list(lons.shape) + [len(self.vcoordinate.levels)])
         lons = lons.repeat(len(self.vcoordinate.levels)).reshape(shape)
         lats = lats.repeat(len(self.vcoordinate.levels)).reshape(shape)
-        shape_range = range(len(shape))
+        shape_range = list(range(len(shape)))
         lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
         lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
         # We add validities
         shape = tuple(list(lons.shape) + [nb_validities])
         lons = lons.repeat(nb_validities).reshape(shape)
         lats = lats.repeat(nb_validities).reshape(shape)
-        shape_range = range(len(shape))
+        shape_range = list(range(len(shape)))
         lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
         lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
 
@@ -369,7 +369,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
         if kwargs.get('use_basemap') is None:
             bm_args = {k:kwargs[k]
                        for k in ('gisquality', 'subzone', 'specificproj', 'zoom')
-                       if k in kwargs.keys()}
+                       if k in kwargs}
             bm = self.make_basemap(**bm_args)
         else:
             bm = kwargs.get('use_basemap')
@@ -378,7 +378,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
                               'meridians', 'parallels',
                               'departments', 'boundariescolor',
                               'bluemarble', 'background')
-                    if k in kwargs.keys()}
+                    if k in kwargs}
         set_map_up(bm, ax, **map_args)
         (lons, lats) = self.get_lonlat_grid(subzone=kwargs.get('subzone'))
         if borderonly and 'gauss' not in self.name:
@@ -548,7 +548,7 @@ class D3RectangularGridGeometry(D3Geometry):
         if subzone not in ('C', 'CI'):
             raise epygramError("only possible values for 'subzone' are 'C'" +
                                " or 'CI'.")
-        if 'LAMzone' not in self.grid.keys():
+        if 'LAMzone' not in self.grid:
             raise epygramError("method for LAM grids only.")
 
         selectionE = []  # To remove E-zone
@@ -595,9 +595,9 @@ class D3RectangularGridGeometry(D3Geometry):
 
         geom_kwargs = copy.deepcopy(self._attributes)
         geom_kwargs.pop('dimensions')
-        if 'LAMzone' in geom_kwargs['grid'].keys():
+        if 'LAMzone' in geom_kwargs['grid']:
             geom_kwargs['grid']['LAMzone'] = None
-        if 'input_position' in geom_kwargs['grid'].keys():
+        if 'input_position' in geom_kwargs['grid']:
             coords_00 = self.ij2ll(first_i, first_j)
             geom_kwargs['grid']['input_position'] = (0, 0)
             geom_kwargs['grid']['input_lon'] = Angle(coords_00[0], 'degrees')
@@ -730,7 +730,7 @@ class D3RectangularGridGeometry(D3Geometry):
         - *subzone*: for LAM fields, returns the corners of the subzone.
         """
 
-        if 'LAMzone' not in self.grid.keys() or self.grid['LAMzone'] is None:
+        if 'LAMzone' not in self.grid or self.grid['LAMzone'] is None:
             ll = (0, 0)
             lr = (self.dimensions['X'] - 1, 0)
             ul = (0, self.dimensions['Y'] - 1)
@@ -996,7 +996,7 @@ class D3RectangularGridGeometry(D3Geometry):
         varname = ''
         grid = self.grid
         dimensions = self.dimensions
-        if 'LAMzone' in grid.keys():
+        if 'LAMzone' in grid:
             write_formatted(out, "Zone", grid['LAMzone'])
             if arpifs_var_names:
                 varname = ' (NDLON)'
@@ -1556,8 +1556,8 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
 
         if num < 2:
             raise epygramError("'num' must be at least 2.")
-        return zip(numpy.linspace(end1[0], end2[0], num=num),
-                   numpy.linspace(end1[1], end2[1], num=num))
+        return list(zip(numpy.linspace(end1[0], end2[0], num=num),
+                        numpy.linspace(end1[1], end2[1], num=num)))
 
     def resolution_ll(self, lon, lat):
         """
@@ -1930,8 +1930,8 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
             raise epygramError("'num' must be at least 2.")
         (x1, y1) = self.ll2xy(*end1)
         (x2, y2) = self.ll2xy(*end2)
-        xy_linspace = zip(numpy.linspace(x1, x2, num=num),
-                          numpy.linspace(y1, y2, num=num))
+        xy_linspace = list(zip(numpy.linspace(x1, x2, num=num),
+                               numpy.linspace(y1, y2, num=num)))
 
         return [self.xy2ll(*xy) for xy in xy_linspace]
 
@@ -2057,7 +2057,7 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
     def __eq__(self, other):
         """Test of equality by recursion on the object's attributes."""
         if self.__class__ == other.__class__ and \
-           self.__dict__.keys() == other.__dict__.keys():
+           set(self.__dict__.keys()) == set(other.__dict__.keys()):
             selfcp = self.copy()
             othercp = other.copy()
             for obj in [selfcp, othercp]:
@@ -2576,7 +2576,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                          [(imax, j) for j in range(jmin, jmax + 1)] + \
                          [(i, jmin) for i in range(imin, imax + 1)] + \
                          [(i, jmax) for i in range(imin, imax + 1)]
-                ilist, jlist = zip(*border)
+                ilist, jlist = list(zip(*border))
                 (x, y) = self.ij2xy(numpy.array(ilist), numpy.array(jlist))  # in model coordinates
                 (x, y) = self._rotate_axis(x, y, direction='xy2ll')  # non-rotated coordinates
                 (llcrnrlon, llcrnrlat) = self.xy2ll(*self._rotate_axis(x.min(), y.min(), direction='ll2xy'))
@@ -2639,7 +2639,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                          [(imax, j) for j in range(jmin, jmax + 1)] + \
                          [(i, jmin) for i in range(imin, imax + 1)] + \
                          [(i, jmax) for i in range(imin, imax + 1)]
-                ilist, jlist = zip(*border)
+                ilist, jlist = list(zip(*border))
                 (lons, lats) = self.ij2ll(numpy.array(ilist), numpy.array(jlist))
                 llcrnrlon, urcrnrlon = lons.min(), lons.max()
                 llcrnrlat, urcrnrlat = lats.min(), lats.max()
@@ -2691,8 +2691,8 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
             raise epygramError("'num' must be at least 2.")
         (x1, y1) = self.ll2xy(*end1)
         (x2, y2) = self.ll2xy(*end2)
-        xy_linspace = zip(numpy.linspace(x1, x2, num=num),
-                          numpy.linspace(y1, y2, num=num))
+        xy_linspace = list(zip(numpy.linspace(x1, x2, num=num),
+                               numpy.linspace(y1, y2, num=num)))
 
         return [tuple(numpy.around(self.xy2ll(*xy), 8)) for xy in xy_linspace]
 
@@ -3009,7 +3009,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
     def __eq__(self, other):
         """Test of equality by recursion on the object's attributes."""
         if self.__class__ == other.__class__ and \
-           self.__dict__.keys() == other.__dict__.keys():
+           set(self.__dict__.keys()) == set(other.__dict__.keys()):
             selfcp = self.deepcopy()
             othercp = other.deepcopy()
             for obj in [selfcp, othercp]:

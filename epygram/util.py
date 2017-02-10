@@ -73,7 +73,6 @@ class RecursiveObject(object):
         Recursive display of object: displays each of its attributes
         with indentation.
         """
-
         return self._strItem(self)
 
     def __eq__(self, other):
@@ -88,7 +87,7 @@ class RecursiveObject(object):
             else:
                 return numpy.all(array1 == array2)
         def comp_dict(dict1, dict2):
-            if dict1.keys() == dict2.keys():
+            if set(dict1.keys()) == set(dict2.keys()):
                 ok = True
                 for k in dict1.keys():
                     if not comp(dict1[k], dict2[k]):
@@ -120,7 +119,7 @@ class RecursiveObject(object):
                 return obj1 == obj2
 
         if self.__class__ == other.__class__ and \
-           self.__dict__.keys() == other.__dict__.keys():
+           set(self.__dict__.keys()) == set(other.__dict__.keys()):
             ok = True
             for attr in self.__dict__.keys():
                 if attr in ('_puredict', '_observer'):
@@ -1209,7 +1208,7 @@ def fmtfid(fmt, fid):
     (Useful for distinguishing GRIB1/2)
     """
     if fmt == 'GRIB':
-        if 'GRIB1' in fid.keys():
+        if 'GRIB1' in fid:
             fmtfid = 'GRIB1'
         else:
             fmtfid = 'GRIB2'

@@ -269,21 +269,17 @@ fields_management = {
     'FA_set_compression':[
         '-k', '--kompression',
         dict(help="bits number for FA gridpoint compression : KNBITS/KNBPDG.\
-                   Defaults to " + str(
-                   _defaults['FA_default_compression']['KNBPDG']\
-                   if 'FA_default_compression' in _defaults.keys()\
-                   else "(undefined)"
-                                       ) + ".",
+                   Defaults to " +
+                   str(_defaults.get('FA_default_compression',
+                                     {'KNBPDG':('undefined')}).get('KNBPDG', 'undefined')) + ".",
              type=int,
              default=None)],
     'GRIB2_packing':[
         '--GRIB2_packing',
         dict(help="packing for writing GRIB2s.\
-                   Defaults to " + str(
-                   _defaults['GRIB2_default_packing'][2]\
-                   if 'GRIB2_default_packing' in _defaults.keys()\
-                   else "(undefined)."
-                                       ) + ".",
+                   Defaults to " +
+                   str(_defaults.get('GRIB2_default_packing',
+                                     {2:'undefined'}).get(2, 'undefined')) + ".",
              default=None)],
     'netCDF_compression':[
         '--nc_comp',
@@ -293,7 +289,7 @@ fields_management = {
                    compression, 9 is high-but-slow compression. \
                    Default to " + str(_defaults.get('netCDF_default_compression',
                                                     "4")),
-             choices=range(0, 10),
+             choices=list(range(0, 10)),
              default=str(_defaults.get('netCDF_default_compression', 4)))],
                     }
 
@@ -305,9 +301,7 @@ output_options = {
                    among ('png', pdf). Pdf is kind of disadvised, for it is\
                    very slow and produces much too big files...",
              choices=['png', 'pdf'],
-             default=_defaults['default_graphical_output']\
-                     if 'default_graphical_output' in _defaults.keys()\
-                     else False)],
+             default=_defaults.get('default_graphical_output', False))],
     'outputfilename':[
         '-O', '--outputfilename',
         dict(help="store output in the specified filename (without format for\
@@ -342,19 +336,15 @@ output_options = {
     'GeoPoints_precision':[
         '-e', '--precision',
         dict(help="precision on GeoPoints' values (number of decimals in \
-                   scientific format). Default = " + str(
-                   _defaults['GeoPoints_precision'] if 'GeoPoints_precision'\
-                    in _defaults.keys() else 4) + '.',
-             default=_defaults['GeoPoints_precision'] if 'GeoPoints_precision'\
-             in _defaults.keys() else 4)],
+                   scientific format). Default = " +
+                   str(_defaults.get('GeoPoints_precision', 4)) + '.',
+             default=_defaults.get('GeoPoints_precision', 4))],
     'GeoPoints_lonlat_precision':[
         '-E', '--lonlat_precision',
         dict(help="precision on GeoPoints' longitudes/latitudes (number of \
-                   decimals). Default = " + str(
-                   _defaults['GeoPoints_lonlat_precision']\
-                   if 'GeoPoints_lonlat_precision' in _defaults.keys() else 4) + '.',
-             default=_defaults['GeoPoints_precision'] if 'GeoPoints_precision'\
-                     in _defaults.keys() else 4)],
+                   decimals). Default = " +
+                   str(_defaults.get('GeoPoints_lonlat_precision', 4)) + '.',
+             default=_defaults.get('GeoPoints_precision', 4))],
     'get_field_compression':[
         '-c', '--compression',
         dict(action='store_true',
@@ -410,9 +400,9 @@ misc_options = {
              default='CI')],
     'array_flattening_order':[
         '--order',
-            dict(help="for LAM arrays, whether to flatten in C (row-major) or\
-                       Fortran (column-major) order 2D arrays. Default = 'C'.",
-                 default='C')],
+        dict(help="for LAM arrays, whether to flatten in C (row-major) or\
+                   Fortran (column-major) order 2D arrays. Default = 'C'.",
+             default='C')],
     'operation_on_field':[
         '-x', '--operation',
         dict(help="do the requested operation on field right after reading it. \
@@ -422,7 +412,7 @@ misc_options = {
                    numpy function.\
                    For '-' operand, use short-name option -x without spacetab\
                    between option and argument.",
-              default=None)],
+             default=None)],
     'diffoperation_on_field':[
         '-X', '--diffoperation',
         dict(help="do the requested operation on difference field right after \
@@ -433,7 +423,7 @@ misc_options = {
                    numpy function.\
                    For '-' operand, use short-name option -X without spacetab\
                    between option and argument.",
-              default=None)],
+             default=None)],
     'pressure_unit_hpa':[
         '-u', '--pressure_unit_hpa',
         dict(action='store_true',
@@ -449,29 +439,29 @@ misc_options = {
                    on the *otherfield* before operation.\
                    Ex: 'SFX.FRAC_WATER, *, file=mypgd.fa, preset=ceil' \
                    will set non-water points of the plotted field (e.g. SFX.TS_WATER) to 0.",
-              default=None)],
+             default=None)],
     'mask_threshold':[
         '--mt', '--mask_threshold',
-            dict(help="set a threshold to mask values. E.g. 'min=0.0' will\
-                       mask negative values. 'min=0.0,max=1e8' will mask values\
-                       outside these boundaries.",
-                 default=None,
-                 dest='mask_threshold')],
+        dict(help="set a threshold to mask values. E.g. 'min=0.0' will\
+                   mask negative values. 'min=0.0,max=1e8' will mask values\
+                   outside these boundaries.",
+             default=None,
+             dest='mask_threshold')],
     'femars.diff_to_avg':[
         '--avg', '--diff_to_avg',
-            dict(help="instead of computing member to member differences, \
-                       compute member-to-average-of-members differences.",
-                 action='store_true',
-                 default=False,
-                 dest='diff_to_avg')],
+        dict(help="instead of computing member to member differences, \
+                   compute member-to-average-of-members differences.",
+             action='store_true',
+             default=False,
+             dest='diff_to_avg')],
                 }
 
 # : Arguments dealing with graphical options
 graphical_options = {
     'legend':[
         '-L', '--legend',
-            dict(help="legend to be written over field plot.",
-                 default=None)],
+        dict(help="legend to be written over field plot.",
+             default=None)],
     'scientifical_unit':[
         '-u', '--unit',
         dict(help="optional unit for labeling plot axis. Defaults to 'SI'.",
@@ -505,15 +495,15 @@ graphical_options = {
              default='colorshades')],
     'minmax':[
         '-m', '--minmax',
-            dict(help="min and max values for the plot colorbar.\
-                       Syntax: 'min, max'. '0.0, max' also works.\
-                       Default is the field min/max values.\
-                       In diff mode, this is valuable for resource and reference\
-                       only, (min, max) for difference plot should be defined\
-                       with --diffminmax option. For negative values, use\
-                       short-name option -m without spacetab between option and\
-                       argument.",
-                 default=None)],
+        dict(help="min and max values for the plot colorbar.\
+                   Syntax: 'min, max'. '0.0, max' also works.\
+                   Default is the field min/max values.\
+                   In diff mode, this is valuable for resource and reference\
+                   only, (min, max) for difference plot should be defined\
+                   with --diffminmax option. For negative values, use\
+                   short-name option -m without spacetab between option and\
+                   argument.",
+             default=None)],
     'diffminmax':[
         '-M', '--diffminmax',
         dict(help="min and max values for the difference plot colorbar.\
@@ -799,7 +789,7 @@ runtime_options = {
         dict(help="number of threads to be run in parallel.",
              type=int,
              default=multiprocessing.cpu_count() // 2)],
-                   }
+                    }
 
 # : Operational arguments
 operational_options = {
@@ -812,7 +802,7 @@ operational_options = {
     'typeOfGeneratingProcess':[
         '-g', '--typeOfGeneratingProcess',
         dict(help="GRIB's type of generating process.",
-             choices=grib_utilities.typeOfGeneratingProcess_dict.keys(),
+             choices=list(grib_utilities.typeOfGeneratingProcess_dict.keys()),
              default='Forecast')],
     'numod':[
         '-N', '--NUMOD',
@@ -822,7 +812,7 @@ operational_options = {
              dest='numod',
              default=None,
              type=int)],
-                   }
+                       }
 
 # : Arguments for domain_maker
 domain_maker_options = {
@@ -838,9 +828,7 @@ domain_maker_options = {
         '-n', '--no_display',
         dict(action='store_true',
              help="run without displaying the domain.",
-             default=_defaults['noninteractive_backend']\
-                     if 'noninteractive_backend'\
-                     in _defaults.keys() else False)],
+             default=_defaults.get('noninteractive_backend', False))],
     'maximize_CI_in_E':[
         '-m', '--maximize_CI_in_E',
         dict(action='store_true',

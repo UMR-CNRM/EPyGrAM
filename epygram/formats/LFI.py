@@ -768,7 +768,7 @@ class LFI(FileResource):
 
         # geometry, validity and compression
         for field in fieldsMTO:
-            for record, value in self._get_geometryValidity_from_field(field).iteritems():
+            for record, value in self._get_geometryValidity_from_field(field).items():
                 # Cache value for next field
                 if record not in specialValues:
                     if (record if self.true3d else (record, None)) in appendedfields:
@@ -845,7 +845,7 @@ class LFI(FileResource):
                         elif comment != f.comment:
                             raise epygramError("All fields composing a same 3D field must have the same comment.")
                         (h, v) = f.geometry.position_on_horizontal_grid, f.geometry.vcoordinate.position_on_grid
-                        for key, value in gridIndicatorDict.iteritems():
+                        for key, value in gridIndicatorDict.items():
                             if value == (h, v):
                                 mygridIndicator = key
                         if gridIndicator is None:
@@ -876,7 +876,7 @@ class LFI(FileResource):
                             raise NotImplementedError("writing of datatype " + field.datatype.name + " is not implemented.")
                     comment = field.comment
                     (h, v) = field.geometry.position_on_horizontal_grid, field.geometry.vcoordinate.position_on_grid
-                    for key, value in gridIndicatorDict.iteritems():
+                    for key, value in gridIndicatorDict.items():
                         if value == (h, v):
                             gridIndicator = key
                 header = numpy.ndarray(2 + len(comment), dtype=numpy.int64)

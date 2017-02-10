@@ -678,8 +678,7 @@ class FA(FileResource):
                 if info['typeOfFirstFixedSurface'] in ('119', '100', '103',
                                                        '109', '20'):
                     list3D.append(f)
-                    list3Dparams.append(filter(lambda x: not x.isdigit(),
-                                               f[1:]))
+                    list3Dparams.append(''.join([x for x in f[1:] if not x.isdigit()]))  # FIXME: use re instead, cause some fields may have digits in their name
                 else:
                     list2D.append(f)
             else:
@@ -1548,12 +1547,12 @@ class FA(FileResource):
                                 'PCODIL', 'KTRONC',
                                 'KNLATI', 'KNXLON', 'KNLOPA', 'KNOZPA', 'PSINLA',
                                 'KNIVER', 'PREFER', 'PAHYBR', 'PBHYBR')
-            zvars = zip(vars_from_facies,
-                        wfa.wfacies(self._FAsoftware_cst['JPXPAH'],
-                                    self._FAsoftware_cst['JPXIND'],
-                                    self._FAsoftware_cst['JPXGEO'],
-                                    self._FAsoftware_cst['JPXNIV'],
-                                    self.headername)[:-1])
+            zvars = list(zip(vars_from_facies,
+                             wfa.wfacies(self._FAsoftware_cst['JPXPAH'],
+                                         self._FAsoftware_cst['JPXIND'],
+                                         self._FAsoftware_cst['JPXGEO'],
+                                         self._FAsoftware_cst['JPXNIV'],
+                                         self.headername)[:-1]))
             for v in zvars:
                 out.write(v[0] + '\n')
                 out.write(str(v[1]) + '\n')
@@ -1852,7 +1851,7 @@ class FA(FileResource):
                           " called if 'openmode' in('w', 'a').")
         comp = copy.deepcopy(self.default_compression)
         for k in kwargs.keys():
-            if k in self.default_compression.keys():
+            if k in self.default_compression:
                 comp[k] = kwargs[k]
             else:
                 raise epygramError("unknown parameter: " + k +

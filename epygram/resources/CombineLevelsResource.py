@@ -96,7 +96,7 @@ class CombineLevelsResource(Resource):
 
         # Loop over the low level resource fids
         for fid in self.resource.listfields(complete=True):
-            assert 'generic' in fid.keys(), \
+            assert 'generic' in fid, \
                    "Not able to combine levels if fields do not have 'generic' fids"
             original_fid = fid[fmtfid(self.resource.format, fid)]
             generic_fid = fid['generic']
@@ -108,7 +108,7 @@ class CombineLevelsResource(Resource):
             result[hashable_generic_fid]['generic'] = generic_fid
 
         # For fields present on only one layer, we put again the level in the generic fid
-        for k, v in result.iteritems():
+        for k, v in result.items():
             if len(v['original_fids']) == 1 and v['original_fids'][0][1] is not None:
                 v['generic']['level'] = v['original_fids'][0][1]
 
@@ -148,7 +148,7 @@ class CombineLevelsResource(Resource):
             except KeyError:
                 category = 'None'
             field = onlykeylistoffields[f]
-            if category in sortedfields.keys():
+            if category in sortedfields:  # FIXME: ? sortedfields is empty...
                 sortedfields[category].append(field)
             else:
                 sortedfields[category] = [field]
@@ -170,7 +170,7 @@ class CombineLevelsResource(Resource):
         cont = self._create_list()
         for fid in self.listfields(select=handgrip):
             found = None
-            for k, v in cont.iteritems():
+            for k, v in cont.items():
                 if fid == v['generic']:
                     if found is not None:
                         raise epygramError("Internal error...")
@@ -201,7 +201,7 @@ class CombineLevelsResource(Resource):
                     kwargs_vcoord = copy.deepcopy(fields[0].geometry.vcoordinate.footprint_as_dict())
                     kwargs_vcoord['levels'] = [255]
                     kwargs_geom['vcoordinate'] = fpx.geometry(**kwargs_vcoord)
-                    for k, v in kwargs_geom.iteritems():
+                    for k, v in kwargs_geom.items():
                         if isinstance(v, FPDict):
                             kwargs_geom[k] = dict(v)
                     ref_geometry = fpx.geometry(**kwargs_geom)
@@ -210,7 +210,7 @@ class CombineLevelsResource(Resource):
                     kwargs_field = copy.deepcopy(fields[0].footprint_as_dict())
                     kwargs_field['fid'] = {'generic':fid}
                     kwargs_field['geometry'] = ref_geometry
-                    for k, v in kwargs_field.iteritems():
+                    for k, v in kwargs_field.items():
                         if isinstance(v, FPDict):
                             kwargs_field[k] = dict(v)
                     ref_field = fpx.field(**kwargs_field)
@@ -222,7 +222,7 @@ class CombineLevelsResource(Resource):
                         kwargs_vcoord = copy.deepcopy(field.geometry.vcoordinate.footprint_as_dict())
                         kwargs_vcoord['levels'] = [255]
                         kwargs_geom['vcoordinate'] = fpx.geometry(**kwargs_vcoord)
-                        for k, v in kwargs_geom.iteritems():
+                        for k, v in kwargs_geom.items():
                             if isinstance(v, FPDict):
                                 kwargs_geom[k] = dict(v)
                         geometry_field = fpx.geometry(**kwargs_geom)
@@ -236,7 +236,7 @@ class CombineLevelsResource(Resource):
                         kwargs_field = copy.deepcopy(field.footprint_as_dict())
                         kwargs_field['fid'] = {'generic':fid}
                         kwargs_field['geometry'] = geometry_field
-                        for k, v in kwargs_field.iteritems():
+                        for k, v in kwargs_field.items():
                             if isinstance(v, FPDict):
                                 kwargs_field[k] = dict(v)
                         myf = fpx.field(**kwargs_field)

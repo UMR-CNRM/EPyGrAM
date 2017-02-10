@@ -132,7 +132,7 @@ class V2DField(D3Field):
             z[k, :] = self.geometry.vcoordinate.levels[k]
         x = numpy.zeros((len(self.geometry.vcoordinate.levels),
                          self.geometry.dimensions['X']))
-        transect = zip(*self.geometry.get_lonlat_grid())
+        transect = list(zip(*self.geometry.get_lonlat_grid()))
         p0 = transect[0]
         plast = p0
         distance = 0
@@ -330,7 +330,7 @@ class V2DField(D3Field):
 
         anim = animation.FuncAnimation(fig, update,
                                        fargs=[ax, self, field0, title_prefix, kwargs],
-                                       frames=range(len(self.validity) + 1),  # AM: don't really understand why but needed for the last frame to be shown
+                                       frames=list(range(len(self.validity) + 1)),  # AM: don't really understand why but needed for the last frame to be shown
                                        interval=interval,
                                        repeat=repeat)
 
