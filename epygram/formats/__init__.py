@@ -26,8 +26,13 @@ from epygram import config, epygramError, util
 
 __all__ = []
 
+# Formats loading used to have to follow an order,
+# for common dynamic libraries of different versions.
+# Not sure this is still necessary, especially as long as we use the same Gribapi
+# in arpifs4py and GRIB interface
 _formats_in_loading_order = copy.copy(config.implemented_formats)
-_loaded_first_formats = ['GRIB', 'FA', 'LFI', 'DDHLFA', 'LFA']  # because they might have been compiled with newer libraries versions
+# _loaded_first_formats = ['GRIB', 'FA', 'LFI', 'DDHLFA', 'LFA']
+_loaded_first_formats = ['FA', 'LFI', 'DDHLFA', 'LFA']
 for lff in _loaded_first_formats[::-1]:
     if lff in _formats_in_loading_order:
         _formats_in_loading_order = [lff] + [f for f in _formats_in_loading_order if f != lff]

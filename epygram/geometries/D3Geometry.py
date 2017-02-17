@@ -1068,9 +1068,11 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
     def _consistency_check(self):
         """Check that the geometry is consistent."""
         grid_keys = ['latitudes', 'longitudes']
-        if set(self.grid.keys()) != set(grid_keys):
+        if set(self.grid.keys()) != set(grid_keys) and \
+           set(self.grid.keys()) != set(['DDH_domain']):
             raise epygramError("grid attribute must consist in keys: " +
-                               str(grid_keys))
+                               str(grid_keys) + " or " +
+                               str(['DDH_domain']))
 
     def get_lonlat_grid(self, subzone=None, position=None, d4=False, nb_validities=0):
         """

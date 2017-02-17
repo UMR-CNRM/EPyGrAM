@@ -598,7 +598,7 @@ class D3CommonField(Field):
         Extract a rectangular sub-array from the field, given the i,j index limits
         of the sub-array, and return the extracted field.
         """
-
+        assert not self.spectral
         newgeom = self.geometry.make_subarray_geometry(first_i, last_i,
                                                        first_j, last_j)
         # select data

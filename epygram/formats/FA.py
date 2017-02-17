@@ -809,7 +809,7 @@ class FA(FileResource):
                                                           self.geometry.grid['Y_resolution'])[1]
                 elif self.spectral_geometry.space == 'legendre':
                     # Global
-                    total_system_memory = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')
+                    total_system_memory = os.sysconf(b'SC_PAGE_SIZE') * os.sysconf(b'SC_PHYS_PAGES')
                     memory_needed_for_transforms = truncation['max'] ** 3 / 2 * 8
                     if memory_needed_for_transforms >= config.prevent_swapping_legendre * total_system_memory:
                         raise epygramError('Legendre spectral transforms need ' +
@@ -1218,8 +1218,7 @@ class FA(FileResource):
         - *resolution* defines the horizontal resolution to be given to the
           field. If None, defaults to the horizontal resolution of the field.
         - *vertical_coordinate* defines the requested vertical coordinate of the
-          V2DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
-          possible values).
+          V2DField (aka typeOfFirstFixedSurface in GRIB2).
         - *interpolation* defines the interpolation function used to compute
           the profile points locations from the fields grid: \n
           - if 'nearest', each horizontal point of the section is

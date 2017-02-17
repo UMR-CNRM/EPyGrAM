@@ -163,7 +163,7 @@ class GRIBmessage(RecursiveObject, dict):
                 elif isinstance(value, numpy.int):
                     value = int(value)
             if isinstance(value, six.string_types):  # FIXME: gribapi str/unicode incompatibility
-                v = str(v)
+                v = str(value)
             else:
                 v = value
             gribapi.grib_set(self._gid, str(key), v)  # FIXME: gribapi str/unicode incompatibility

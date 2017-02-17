@@ -22,7 +22,7 @@ import subprocess
 
 from . import ctypesForFortran
 
-_libs4py = "libs4py.so"
+_libs4py = "libs4py.so"  # local name in the directory
 
 
 # helpers
@@ -95,21 +95,9 @@ def treatReturnCode_LFA(func):
     return wrapper
 
 
-# common parameters and objects
-###############################
-
-IN = ctypesForFortran.IN
-OUT = ctypesForFortran.OUT
-INOUT = ctypesForFortran.INOUT
-
-so = PyDLL(os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                        _libs4py))
-ctypesFF = ctypesForFortran.ctypesForFortranFactory(so)
-
-
-def _complete_GRIB_samples_path_from_dynamic_gribapi():
+def complete_GRIB_samples_path_from_dynamic_gribapi(lib):
     import re
-    ldd_out = subprocess.check_output(['ldd', so._name])
+    ldd_out = subprocess.check_output(['ldd', lib])
     libs_grib_api = {}
     for line in ldd_out.splitlines():
         match = re.match('\s*(libgrib_api.*) => (.*)(/lib/libgrib_api.*\.so.*)\s\(0x.*', line)
@@ -119,12 +107,27 @@ def _complete_GRIB_samples_path_from_dynamic_gribapi():
     for l in set(libs_grib_api.values()):
         gsp = ':'.join([gsp, '/'.join([l, 'share/grib_api/samples'])])
     os.environ['GRIB_SAMPLES_PATH'] = gsp  # FIXME: seems not to work on Bull: to be exported beforehand ?
-_complete_GRIB_samples_path_from_dynamic_gribapi()
+
+
+# common parameters and objects
+###############################
+IN = ctypesForFortran.IN
+OUT = ctypesForFortran.OUT
+INOUT = ctypesForFortran.INOUT
+
+# shared objects library
+########################
+shared_objects_library = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                      _libs4py)
+complete_GRIB_samples_path_from_dynamic_gribapi(shared_objects_library)
 os.unsetenv('GRIB_DEFINITION_PATH')
+
+so = PyDLL(shared_objects_library)
+ctypesFF = ctypesForFortran.ctypesForFortranFactory(so)
+
 
 # sub-modules
 #############
-
 from . import wfa
 from . import wlfi
 from . import wlfa

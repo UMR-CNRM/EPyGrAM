@@ -617,7 +617,7 @@ def linearize(s, quotes=False):
 
 
 def linearize2str(o, quotes=False):
-    """Returns str(*o*) linearized (cf. util.linearized)."""
+    """Returns str(*o*) linearized (cf. util.linearize)."""
     return linearize(str(o))
 
 
@@ -635,7 +635,7 @@ def str_or_int_to_datetime(dt):
         hour = int(dt[8:10])
         minutes = int(dt[10:12])
         seconds = int(dt[12:14])
-    except IndexError:
+    except (IndexError, ValueError):
         pass
     dt = datetime.datetime(year, month, day, hour, minutes, seconds)
 
@@ -928,21 +928,6 @@ def restrain_to_index_i_of_dim_d(a, i, d, n=None):
         raise NotImplementedError("more than 5 dimensions in array.")
 
     return ra
-
-
-def resize_to_4D(a, indexes, ma=False):
-    """
-    Of an array a[d1, d2, d3, ... dn], returns the array as a 4D one restricted to index i
-    of the dimension d.
-
-    A more elegant solution would have been the following, except that it does
-    not work when accessing netCDF variable (for which it was necessary).
-
-    indexes = [range(len(self._dimensions[d])) for d in variable.dimensions] # equivalent to [:, :, :, ...]
-    for k in only.keys():
-        indexes[variable.dimensions.index(k)] = [only[k]] # restrain to the "only" give
-    return array[numpy.ix_(*indexes)]
-    """
 
 
 def datetimes2fieldvaliditylist(datetimes, basis=None):

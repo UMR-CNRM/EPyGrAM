@@ -337,7 +337,7 @@ class H2DField(D3Field):
             tick_levels = [levels[l]
                            for l in range(len(levels) - (L // 3 + 1))
                            if l % L == 0] + [levels[-1]]
-            if colormap in config.colormaps_scaling.keys:
+            if colormap in config.colormaps_scaling:
                 (norm, levels) = util.color_scale(colormap, max_val=M)
                 tick_levels = levels
             else:

@@ -86,8 +86,9 @@ def main(filename, refname, fieldseed,
                 else:
                     options[k] = v
             options = {'sample':'file:' + s.container.abspath,
-                       'packing':[(k, options.pop(k)) for k in
-                                  [k[0] for k in epygram.config.GRIB_default_packing[grib_edition]]],
+                       'packing':{k:options.pop(k) for k in
+                                  [k for k in epygram.config.GRIB_default_packing[grib_edition]]
+                                  if k in options},
                        'ordering':{k:options.pop(k) for k in
                                    epygram.config.GRIB_default_ordering.keys()},
                        'other_GRIB_options':options

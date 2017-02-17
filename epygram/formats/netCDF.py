@@ -418,7 +418,11 @@ class netCDF(FileResource):
                     b_name = formula_terms[formula_terms.index('b:') + 1]
                     b = self._variables[b_name][:]
                     gridlevels = [(i + 1, {'Ai':a[i], 'Bi':b[i]}) for i in range(len(a))]
-                    levels = [i + 1 for i in range(len(a))]
+                    levels = [i + 1 for i in range(variable_dimensions[dims_dict_e2n['Z_dimension']])]
+                    if len(gridlevels) == len(levels):
+                        kwargs_vcoord['grid']['ABgrid_position'] = 'mass'
+                    else:
+                        kwargs_vcoord['grid']['ABgrid_position'] = 'flux'
                 else:
                     gridlevels = self._variables[var_corresponding_to_Z_grid][:]
                 if hasattr(self._variables[behaviour['Z_grid']], 'standard_name'):
