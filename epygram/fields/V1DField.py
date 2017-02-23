@@ -336,12 +336,14 @@ def plotverticalhovmoller(profile,
             minmax_in_title = ''
         if abs(m - M) > config.epsilon:
             levels = numpy.linspace(m, M, levelsnumber)
-            vmin = vmax = None
-            if center_cmap_on_0:
-                vmax = max(abs(m), M)
-                vmin = -vmax
         else:
             raise epygramError("cannot plot uniform field.")
+        if center_cmap_on_0:
+            vmax = max(abs(m), M)
+            vmin = -vmax
+        else:
+            vmin = m
+            vmax = M
         L = int((levelsnumber - 1) // 15) + 1
         hlevels = [levels[l]
                    for l in range(len(levels) - L // 3)

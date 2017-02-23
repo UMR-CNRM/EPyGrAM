@@ -327,10 +327,12 @@ class H2DField(D3Field):
                 minmax_in_title = ''
             if abs(float(m) - float(M)) < config.epsilon:
                 raise epygramError("cannot plot uniform field.")
-            vmin = vmax = None
             if center_cmap_on_0:
                 vmax = max(abs(m), M)
                 vmin = -vmax
+            else:
+                vmin = m
+                vmax = M
             # set levels and ticks levels
             levels = numpy.linspace(m, M, levelsnumber)
             L = int((levelsnumber - 1) // 15) + 1
