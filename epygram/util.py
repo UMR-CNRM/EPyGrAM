@@ -107,13 +107,13 @@ class RecursiveObject(object):
                         break
                 return ok
         def comp(obj1, obj2):
-            if type(obj1) == type(obj2) == float:
+            if isinstance(obj1, float) and isinstance(obj2, float):
                 return comp_float(obj1, obj2)
-            elif type(obj1) == type(obj2) == numpy.ndarray:
+            elif isinstance(obj1, numpy.ndarray) and isinstance(obj2, numpy.ndarray):
                 return comp_array(obj1, obj2)
-            elif type(obj1) == type(obj2) == dict:
+            elif isinstance(obj1, dict) and isinstance(obj2, dict):
                 return comp_dict(obj1, obj2)
-            elif type(obj1) == type(obj2) == list:
+            elif isinstance(obj1, list) and isinstance(obj2, list):
                 return comp_list(obj1, obj2)
             else:
                 return obj1 == obj2
@@ -313,8 +313,8 @@ def find_re_in_list(regexp, a_list):
 
     def check_string_pattern(pattern, element):
         import re
-        if (type(pattern) not in [type(""), type(u"")]) or \
-           (type(element) not in [type(""), type(u"")]):
+        if not isinstance(pattern, six.string_types) or \
+           not isinstance(element, six.string_types):
             raise epygramError("pattern and element must be strings in \
                                 check_string_pattern function.")
         # protect '.'
@@ -327,7 +327,7 @@ def find_re_in_list(regexp, a_list):
         return re.match(mypattern, element.strip())
 
     found = []
-    if type(regexp) in [type(""), type(u"")]:
+    if isinstance(regexp, six.string_types):
         for field in a_list:
             if check_string_pattern(regexp, str(field)):
                 found.append(field)

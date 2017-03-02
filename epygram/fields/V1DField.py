@@ -601,7 +601,7 @@ def plotanimation(profile,
             title_prefix = ''
         else:
             title_prefix = title
-        title = title_prefix + '\n' + profile.validity[0].get().isoformat(sep=' ')
+        title = title_prefix + '\n' + profile.validity[0].get().isoformat(sep=b' ')
     else:
         title_prefix = None
     profile0 = profile.deepcopy()
@@ -630,7 +630,7 @@ def plotanimation(profile,
         if i < len(profile.validity):
             ax.lines[0].set_xdata(profile.getdata()[i, ...])
             if title_prefix is not None:
-                ax.set_title(title_prefix + '\n' + profile.validity[i].get().isoformat(sep=' '))
+                ax.set_title(title_prefix + '\n' + profile.validity[i].get().isoformat(sep=b' '))
 
         return ax.lines[0],
 

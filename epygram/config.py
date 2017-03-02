@@ -150,7 +150,7 @@ GRIB_default_ordering = {'iScansNegatively':0,
 #: - grid_ieee (100% // 12%)
 GRIB_default_packing = {1:{'packingType':'grid_second_order',
                            # 'complexPacking':1,
-                           'boustrophedonicOrdering':0,
+                           #'boustrophedonicOrdering':0,
                            'bitsPerValue':16,
                            # 'additionalFlagPresent':1,
                            },
@@ -169,11 +169,11 @@ satellites_local_GRIB2 = {'METEOSAT7':192,
                           'GOES11':195,
                           'GOES12':196,
                           'MTSAT1':197}
-# sensors local GRIB2 encoding
+#: sensors local GRIB2 encoding
 sensors_local_GRIB2 = {'MVIRI':192,
                        'SEVIRI':193,
                        'IMAGER':194}
-# GRIB: errors while setting packing are fatal
+#: GRIB: errors while setting packing are fatal
 GRIB_packing_fatal = True
 
 #: LFI field dictionaries
@@ -223,7 +223,8 @@ netCDF_replace_dot_in_variable_names = '.'
 #: netCDF default standard global attributes
 netCDF_default_global_attributes = {'Conventions':'CF-1.6',
                                     'made_with':'epygram-' + __version__}
-
+#: netCDF variables data type
+netCDF_default_variables_dtype = 'f8'
 
 
 ### OPTIONS ###

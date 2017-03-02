@@ -494,7 +494,7 @@ class H2DField(D3Field):
                 title_prefix = ''
             else:
                 title_prefix = title
-            title = title_prefix + '\n' + self.validity[0].get().isoformat(sep=' ')
+            title = title_prefix + '\n' + self.validity[0].get().isoformat(sep=b' ')
         else:
             title_prefix = None
         field0 = self.deepcopy()
@@ -528,7 +528,7 @@ class H2DField(D3Field):
                 fieldi.validity = myself.validity[i]
                 fieldi.setdata(myself.getdata()[i, ...])
                 if title_prefix is not None:
-                    title = title_prefix + '\n' + fieldi.validity.get().isoformat(sep=' ')
+                    title = title_prefix + '\n' + fieldi.validity.get().isoformat(sep=b' ')
                 fieldi.plotfield(title=title,
                                  **kwargs)
 

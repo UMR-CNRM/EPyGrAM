@@ -1338,8 +1338,11 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
                         ax=ax)
         else:
             # specificproj
-            lon0 = self._center_lon.get('degrees')
-            lat0 = self._center_lat.get('degrees')
+            if hasattr(self, '_center_lon') and hasattr(self, '_center_lat'):
+                lon0 = self._center_lon.get('degrees')
+                lat0 = self._center_lat.get('degrees')
+            else:
+                lon0 = lat0 = None
             if specificproj == 'kav7':
                 b = Basemap(resolution=gisquality, projection=specificproj,
                             lon_0=lon0,
@@ -3973,5 +3976,18 @@ class D3GaussGeometry(D3Geometry):
             write_formatted(out, "Truncation",
                             spectral_geometry['max'])
 
+    def __eq__(self, other):
+        """Test of equality by recursion on the object's attributes."""
+        if self.__class__ == other.__class__ and \
+           set(self.__dict__.keys()).discard('_buffered_gauss_grid') == \
+           set(other.__dict__.keys()).discard('_buffered_gauss_grid'):
+            selfcp = self.deepcopy()
+            selfcp._clear_buffered_gauss_grid()
+            othercp = other.deepcopy()
+            othercp._clear_buffered_gauss_grid()
+            ok = super(D3GaussGeometry, selfcp).__eq__(othercp)
+        else:
+            ok = False
+        return ok
 
 footprints.collectors.get(tag='geometrys').fasttrack = ('structure', 'name')

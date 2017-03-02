@@ -597,7 +597,7 @@ class H2DVectorField(Field):
                 title_prefix = ''
             else:
                 title_prefix = title
-            title = title_prefix + '\n' + self.validity[0].get().isoformat(sep=' ')
+            title = title_prefix + '\n' + self.validity[0].get().isoformat(sep=b' ')
         else:
             title_prefix = None
         field0 = self.deepcopy()
@@ -640,7 +640,7 @@ class H2DVectorField(Field):
                 fieldi.validity = fieldi.components[0].validity
                 fieldi.setdata([d[i, ...] for d in myself.getdata()])
                 if title_prefix is not None:
-                    title = title_prefix + '\n' + fieldi.validity.get().isoformat(sep=' ')
+                    title = title_prefix + '\n' + fieldi.validity.get().isoformat(sep=b' ')
                 fieldi.plotfield(title=title,
                                  **kwargs)
 

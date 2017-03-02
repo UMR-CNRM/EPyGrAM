@@ -17,6 +17,7 @@ from collections import OrderedDict
 import datetime
 from dateutil import parser as dt_parser
 import six
+import re
 
 import netCDF4
 
@@ -35,10 +36,14 @@ epylog = footprints.loggers.getLogger(__name__)
 
 _typeoffirstfixedsurface_dict = {'altitude':102,
                                  'height':103,
-                                 'hybrid-pressure':119,
-                                 'hybrid-height':118,
+                                 'atmosphere_hybrid_sigma_pressure_coordinate':119,
+                                 'atmosphere_hybrid_height_coordinate':118,
                                  'pressure':100}
+_typeoffirstfixedsurface_short_dict = _typeoffirstfixedsurface_dict.copy()
+_typeoffirstfixedsurface_short_dict.update({'hybrid-pressure':119,
+                                            'hybrid-height':118})
 _typeoffirstfixedsurface_dict_inv = {v:k for k, v in _typeoffirstfixedsurface_dict.items()}
+_typeoffirstfixedsurface_short_dict_inv = {v:k for k, v in _typeoffirstfixedsurface_short_dict.items()}
 
 _proj_dict = {'lambert':'lambert_conformal_conic',
               'mercator':'mercator',
@@ -225,31 +230,25 @@ class netCDF(FileResource):
 
         # 2. time
         def get_validity(T_varname):
+            validity = FieldValidityList()
+            validity.pop()
             if T_varname not in self._listfields():
                 raise epygramError('unable to find T_grid in variables.')
             T = self._variables[T_varname][:]
-            time_unit = self._variables[T_varname].units
-            T = netCDF4.num2date(T, time_unit)
-            validity = FieldValidityList()
-            validity.pop()
-            basis = netCDF4.num2date(0, time_unit)
-            if not isinstance(basis, datetime.datetime):
-                basis = '{:0>19}'.format(str(basis).strip())
-                basis = dt_parser.parse(basis, yearfirst=True)  # FIXME: years < 1000 become > 2000
-            if isinstance(T, datetime.datetime):
+            if len(self._variables[T_varname].dimensions) == 0:
                 T = [T]
-            for v in T:
-                if isinstance(v, datetime.datetime):
-                    fv = FieldValidity(date_time=v, basis=basis)
-                else:
-                    if v is None:
-                        epylog.info('time information not available.')
-                        fv = FieldValidity()
-                    else:
-                        v = '{:0>19}'.format(str(v).strip())
-                        v = dt_parser.parse(v, yearfirst=True)  # FIXME: years < 1000 become > 2000
-                        fv = FieldValidity(date_time=v, basis=basis)
-                validity.append(fv)
+            time_unit = getattr(self._variables[T_varname], 'units', '')
+            if re.match('hours|seconds|days|minutes\s+since.+$', time_unit):
+                T = netCDF4.num2date(T, time_unit)
+                T = [datetime.datetime(*t.timetuple()[:6]) for t in T]  # FIXME: not sure of that for dates older than julian/gregorian calendar
+                basis = netCDF4.num2date(0, time_unit)
+                basis = datetime.datetime(*basis.timetuple()[:6])  # FIXME: not sure of that for dates older than julian/gregorian calendar
+                for v in T:
+                    validity.append(FieldValidity(date_time=v, basis=basis))
+            else:
+                epylog.warning('temporal unit is not CF1.6-compliant, cannot decode.')
+                for v in T:
+                    validity.append(FieldValidity())
             return validity
         if 'T_dimension' in dims_dict_e2n:
             # field has a time dimension
@@ -257,7 +256,8 @@ class netCDF(FileResource):
             validity = get_validity(var_corresponding_to_T_grid)
             if dims_dict_e2n['T_dimension'] in only:
                 validity = validity[only[dims_dict_e2n['T_dimension']]]
-        elif any([t in self._listfields() for t in config.netCDF_usualnames_for_standard_dimensions['T_dimension']]):
+        elif any([t in self._listfields()
+                  for t in config.netCDF_usualnames_for_standard_dimensions['T_dimension']]):
             # look for a time variable
             T_varnames = [t for t in config.netCDF_usualnames_for_standard_dimensions['T_dimension'] if t in self._listfields()]
             _v = get_validity(T_varnames[0])
@@ -427,6 +427,8 @@ class netCDF(FileResource):
                     gridlevels = self._variables[var_corresponding_to_Z_grid][:]
                 if hasattr(self._variables[behaviour['Z_grid']], 'standard_name'):
                     kwargs_vcoord['typeoffirstfixedsurface'] = _typeoffirstfixedsurface_dict.get(self._variables[behaviour['Z_grid']].standard_name, 255)
+                elif hasattr(self._variables[behaviour['Z_grid']], 'short_name'):
+                    kwargs_vcoord['typeoffirstfixedsurface'] = _typeoffirstfixedsurface_short_dict.get(self._variables[behaviour['Z_grid']].short_name, 255)
                 # TODO: complete the reading of variable units to convert
                 if hasattr(self._variables[behaviour['Z_grid']], 'units'):
                     if self._variables[behaviour['Z_grid']].units == 'km':
@@ -966,8 +968,8 @@ class netCDF(FileResource):
                 check_or_add_dim(ZP1, size=Z_gridsize + 1)
                 zgrid, _status = check_or_add_variable(zgridname, int)
                 if _status == 'created':
+                    zgrid.standard_name = _typeoffirstfixedsurface_dict_inv[field.geometry.vcoordinate.typeoffirstfixedsurface]
                     if field.geometry.vcoordinate.typeoffirstfixedsurface == 119:
-                        zgrid.standard_name = "atmosphere_hybrid_sigma_pressure_coordinate"
                         zgrid.positive = "down"
                         zgrid.formula_terms = "ap: hybrid_coef_A b: hybrid_coef_B ps: surface_air_pressure"
                         check_or_add_variable('hybrid_coef_A', vartype, ZP1)
@@ -976,7 +978,6 @@ class netCDF(FileResource):
                         self._variables['hybrid_coef_B'][:] = [iab[1]['Bi'] for iab in field.geometry.vcoordinate.grid['gridlevels']]
                     elif field.geometry.vcoordinate.typeoffirstfixedsurface == 118:
                         # TOBECHECKED:
-                        zgrid.standard_name = "atmosphere_hybrid_height_coordinate"
                         zgrid.positive = "up"
                         zgrid.formula_terms = "a: hybrid_coef_A b: hybrid_coef_B orog: orography"
                         check_or_add_variable('hybrid_coef_A', vartype, ZP1)
@@ -999,8 +1000,8 @@ class netCDF(FileResource):
                 else:
                     assert zgrid[:].all() == numpy.array(field.geometry.vcoordinate.grid['gridlevels']).all(), \
                            ' '.join(['variable', zgrid, 'mismatch.'])
-            if _typeoffirstfixedsurface_dict_inv.get(field.geometry.vcoordinate.typeoffirstfixedsurface, False):
-                zgrid.short_name = _typeoffirstfixedsurface_dict_inv[field.geometry.vcoordinate.typeoffirstfixedsurface]
+            if _typeoffirstfixedsurface_short_dict_inv.get(field.geometry.vcoordinate.typeoffirstfixedsurface, False):
+                zgrid.short_name = _typeoffirstfixedsurface_short_dict_inv[field.geometry.vcoordinate.typeoffirstfixedsurface]
         # 3.2 grid (lonlat)
         dims_lonlat = []
         (lons, lats) = field.geometry.get_lonlat_grid()
@@ -1145,7 +1146,9 @@ class netCDF(FileResource):
 
         # 4. Variable
         varname = field.fid['netCDF'].replace('.', config.netCDF_replace_dot_in_variable_names)
-        _, _status = check_or_add_variable(varname, vartype, dims,
+        _, _status = check_or_add_variable(varname,
+                                           config.netCDF_default_variables_dtype,
+                                           dims,
                                            zlib=bool(compression),
                                            complevel=compression,
                                            fill_value=fill_value)

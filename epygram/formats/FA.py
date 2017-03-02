@@ -300,11 +300,11 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
             KNOZPA[0:KNLATI // 2] = spectral_geometry.truncation['max_zonal_wavenumber_by_lat'][0:KNLATI // 2]
         else:
             KNOZPA[0:KNLATI // 2] = wtransforms.w_trans_inq(geometry.dimensions['lat_number'],
-                                                           KTRONC,
-                                                           len(geometry.dimensions['lon_number_by_lat']),
-                                                           numpy.array(geometry.dimensions['lon_number_by_lat']),
-                                                           config.KNUMMAXRESOL)[2][0:KNLATI // 2]
-        PSINLA = numpy.zeros((1 + geometry.dimensions['lat_number']) / 2,
+                                                            KTRONC,
+                                                            len(geometry.dimensions['lon_number_by_lat']),
+                                                            numpy.array(geometry.dimensions['lon_number_by_lat']),
+                                                            config.KNUMMAXRESOL)[2][0:KNLATI // 2]
+        PSINLA = numpy.zeros((1 + geometry.dimensions['lat_number']) // 2,
                              dtype=numpy.float64)
         PSINLA[0:KNLATI // 2] = numpy.array([s.get('cos_sin')[1] for s in
                                             geometry.grid['latitudes'][0:KNLATI // 2]])
@@ -322,7 +322,6 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
         PAHYBR = numpy.array([0., 0.])
         PBHYBR = numpy.array([0., 1.])
     LDGARD = True
-
     wfa.wfacade(CDNOMC,
                 KTYPTR, PSLAPO, PCLOPO, PSLOPO,
                 PCODIL, KTRONC,
@@ -1702,6 +1701,8 @@ class FA(FileResource):
                 grid['pole_lat'] = Angle((math.cos(math.asin(PSLAPO)), PSLAPO),
                                          'cos_sin')
                 grid['pole_lon'] = Angle((PCLOPO, PSLOPO), 'cos_sin')
+            else:
+                raise ValueError('wrong value of KTYPTR in FA header: ' + str(KTYPTR))
             dimensions = {'max_lon_number':KNXLON,
                           'lat_number':KNLATI,
                           'lon_number_by_lat':FPList([n for n in

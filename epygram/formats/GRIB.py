@@ -175,10 +175,9 @@ class GRIBmessage(RecursiveObject, dict):
         """
         Same as dict.get(), but try to read attribute first.
         """
-
         try:
             value = self.__getitem__(key)
-        except KeyError:
+        except (KeyError, gribapi.GribInternalError):
             value = default
         return value
 
@@ -604,7 +603,7 @@ class GRIBmessage(RecursiveObject, dict):
                     raise NotImplementedError('this ordering: not yet.')
 
         # part 9 --- values
-        values = field.getdata().copy()
+        values = field.getdata(d4=True).copy()
         if isinstance(values, numpy.ma.masked_array):
             if self['editionNumber'] == 2:
                 self['bitMapIndicator'] = 0
@@ -616,6 +615,7 @@ class GRIBmessage(RecursiveObject, dict):
                     values = values.filled(values.fill_value)
             else:
                 pass  # TODO: bitmap in GRIB1 ?
+        values = values.squeeze()
         if not field.spectral:
             # is it necessary to pre-write values ? (packingType != from sample)
             # Yes it is (don't really know why...)
@@ -763,8 +763,8 @@ class GRIBmessage(RecursiveObject, dict):
             dimensions = {'X':self['Nx'],
                           'Y':self['Ny']}
         else:
-            dimensions = {'X':self['Nx'],
-                          'Y':self['Ny']}
+            dimensions = {'X':self.get('Nx', self['Ni']),
+                          'Y':self.get('Ny', self['Nj'])}
         if self['iScansNegatively'] == 0 and self['jScansPositively'] == 0:
             input_position = (0, dimensions['Y'] - 1)
         elif self['iScansNegatively'] == 0 and self['jScansPositively'] == 1:

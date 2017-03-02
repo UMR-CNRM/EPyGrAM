@@ -236,7 +236,7 @@ def main(filename,
                 output.append([reference.container.basename] + [refstats[f].get(singlemap[k], None) for k in diff_params])
             else:
                 output.append([reference.container.basename] + ['-' for k in diff_params])
-            if f in refstats:
+            if f in diffstats:
                 output.append([head] + [diffstats[f].get(diffmap[k], None) for k in diff_params])
             else:
                 output.append([head] + ['-' for k in diff_params])
