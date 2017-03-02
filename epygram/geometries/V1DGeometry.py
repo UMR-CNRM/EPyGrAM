@@ -54,7 +54,6 @@ class V1DGeometry(V2DUnstructuredGeometry):
         Args: \n
         - *out*: the output open file-like object (duck-typing: *out*.write()
           only is needed).
-
         """
 
         (lons, lats) = (self.grid['longitudes'], self.grid['latitudes'])

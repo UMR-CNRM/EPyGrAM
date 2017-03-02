@@ -6,7 +6,7 @@
 
 from __future__ import print_function, absolute_import, division, unicode_literals
 
-from unittest import main, TestCase
+from unittest import main
 import os
 import tempfile
 

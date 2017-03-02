@@ -20,7 +20,7 @@ from footprints import FPDict, FPList
 from arpifs4py import wlfa
 
 from epygram import config, epygramError
-from epygram.util import Angle
+from epygram.util import Angle, write_formatted, separation_line
 from epygram.base import FieldValidity, FieldValidityList, FieldSet
 from .LFA import LFA
 from epygram.geometries import V1DGeometry, PointGeometry, VGeometry
@@ -256,8 +256,8 @@ class DDHLFA(LFA):
                                                  structure='V',
                                                  typeoffirstfixedsurface=100,
                                                  levels=FPList(pressure_vertical_grid / 100.),
-                                                 # grid={'gridposition':gridposition,
-                                                 #       'gridlevels':pressure_vertical_grid},
+                                                 # grid={'gridposition':gridposition,  # TODO: ?
+                                                 #       'gridlevels':pressure_vertical_grid},  # TODO: ?
                                                  position_on_grid=position_on_grid),
                                              dimensions={'X':1, 'Y':1})
                     if getdata:
@@ -292,42 +292,11 @@ class DDHLFA(LFA):
           only is needed).
         - *sortfields*: **True** if the fields have to be sorted by type.
         """
-        firstcolumn_width = 50
-        secondcolumn_width = 16
-        sepline = '{:-^{width}}'.format('', width=firstcolumn_width +
-                                            secondcolumn_width + 1) + '\n'
 
         domains = self.domains
         mass_vertical_levels = len(self.readfield('VPP0')[0].geometry.vcoordinate.levels)
         listoffields = self.listfields()
         validity = self.validity
-
-        def write_formatted(dest, label, value):
-            dest.write('{:<{width}}'.format(label, width=firstcolumn_width) +
-                       ':' +
-                       '{:>{width}}'.format(str(value),
-                                            width=secondcolumn_width) +
-                       '\n')
-        def write_formatted_col(dest, label, value):
-            dest.write('{:>{width}}'.format(label, width=firstcolumn_width) +
-                       ':' +
-                       '{:>{width}}'.format(str(value),
-                                            width=secondcolumn_width) +
-                       '\n')
-        def write_formatted_fields(dest, label, value, compression=None):
-            if compression is None:
-                dest.write('{:<{width}}'.format(label, width=20) +
-                           ':' +
-                           '{:^{width}}'.format(str(value), width=10) +
-                           '\n')
-            else:
-                line = '{:<{width}}'.format(label, width=20) + \
-                       ':' + \
-                       '{:^{width}}'.format(str(value), width=10) + \
-                       ':' + \
-                       compression + \
-                       '\n'
-                dest.write(line)
 
         # Write out
         out.write("### FORMAT: " + self.format + "\n")
@@ -344,7 +313,7 @@ class DDHLFA(LFA):
         write_formatted(out, "Duration for cumulative quantities",
                         validity.cumulativeduration())
         write_formatted(out, "Kind of producting process", self.processtype)
-        out.write(sepline)
+        out.write(separation_line)
         out.write("\n")
 
         out.write("###############\n")
@@ -382,7 +351,7 @@ class DDHLFA(LFA):
             elif geom['type'] == 'zonal_bands':
                 write_formatted(out, "Center Latitude",
                                 geom['lat'].get('degrees'))
-        out.write(sepline)
+        out.write(separation_line)
         out.write("\n")
 
         out.write("#########################\n")
@@ -392,7 +361,7 @@ class DDHLFA(LFA):
                         mass_vertical_levels)
         write_formatted(out, "Number of vertical levels for fluxes",
                         mass_vertical_levels + 1)
-        out.write(sepline)
+        out.write(separation_line)
         out.write("\n")
 
         out.write("######################\n")
@@ -400,7 +369,7 @@ class DDHLFA(LFA):
         out.write("######################\n")
         numfields = len(listoffields)
         out.write("Number: " + str(numfields) + "\n")
-        out.write(sepline)
+        out.write(separation_line)
         if sortfields:
             out.write("Documentation:\n")
             out.write("-------------\n")
@@ -426,7 +395,7 @@ class DDHLFA(LFA):
         else:
             for f in listoffields:
                 out.write(f + "\n")
-        out.write(sepline)
+        out.write(separation_line)
 
     @FileResource._openbeforedelayed
     def _read_geometry(self):

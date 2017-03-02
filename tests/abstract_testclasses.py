@@ -44,8 +44,14 @@ suffixes = {'FA': 'fa',
 class TestFMT(TestCase):
 
     datadir = os.path.join(datadir, 'formats')
-    filename = ''  # to be redefined in real classes
+    basename = ''  # to be redefined in real classes
     len = 0  # to be redefined in real classes
+
+    def setUp(self):
+        self.filename = os.path.join(self.datadir, self.basename)
+
+    def tearDown(self):
+        del self.filename
 
     def test_listfields(self):
         with epygram.formats.resource(self.filename, 'r') as r:

@@ -7,30 +7,27 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 from unittest import main
-import os
 
-from . import abstract_testclasses
-
-datadir = 'data/formats'
+from . import abstract_testclasses as abtc
 
 
-class TestFA(abstract_testclasses.TestFMT):
-    filename = os.path.join(datadir, 'FA')
+class TestFA(abtc.TestFMT):
+    basename = 'FA'
     len = 134
 
 
-class TestGRIB(abstract_testclasses.TestFMT):
-    filename = os.path.join(datadir, 'GRIB')
+class TestGRIB(abtc.TestFMT):
+    basename = 'GRIB'
     len = 3
 
 
-class TestNetCDF(abstract_testclasses.TestFMT):
-    filename = os.path.join(datadir, 'netCDF')
+class TestNetCDF(abtc.TestFMT):
+    basename = 'netCDF'
     len = 9
 
 
-class TestDDHLFA(abstract_testclasses.TestFMT):
-    filename = os.path.join(datadir, 'ddh.LFA')
+class TestDDHLFA(abtc.TestFMT):
+    basename = 'ddh.LFA'
     len = 160
 
 
