@@ -1419,7 +1419,7 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
         if self.dimensions['X'] == 1:
             offset = (0, offset[1])
         if self.dimensions['Y'] == 1:
-            offset = (offset[1], 0)
+            offset = (offset[0], 0)
 
         return offset
 
@@ -1482,7 +1482,7 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
         if isinstance(j, list) or isinstance(j, tuple):
             j = numpy.array(j)
 
-        return self.xy2ll(*self.ij2xy(i, j))
+        return self.xy2ll(*self.ij2xy(i, j, position))
 
     def ll2ij(self, lon, lat, position=None):
         """
@@ -1501,7 +1501,7 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
         if isinstance(lat, list) or isinstance(lat, tuple):
             lat = numpy.array(lat)
 
-        return self.xy2ij(*self.ll2xy(lon, lat))
+        return self.xy2ij(*self.ll2xy(lon, lat), position=position)
 
     def ll2xy(self, lon, lat):
         """
@@ -1517,8 +1517,8 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
         if isinstance(lat, list) or isinstance(lat, tuple):
             lat = numpy.array(lat)
         #TOBECHECKED: position of self.ij2xy(0, 0) inside the formula
-        xy = ((lon - self.grid['input_lon']) * self.projection['reference_dX'] + self.ij2xy(0, 0)[0],
-              (lat - self.grid['input_lat']) * self.projection['reference_dY'] + self.ij2xy(0, 0)[1])
+        xy = ((lon - self.grid['input_lon']) * self.projection['reference_dX'] + self.ij2xy(0, 0, 'center')[0],
+              (lat - self.grid['input_lat']) * self.projection['reference_dY'] + self.ij2xy(0, 0, 'center')[1])
         return self._rotate_axis(*xy, direction='ll2xy')
 
     def xy2ll(self, x, y):
@@ -1537,8 +1537,8 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
 
         (a, b) = self._rotate_axis(x, y, direction='xy2ll')
         #TOBECHECKED: position of self.ij2xy(0, 0) inside the formula
-        return ((a - self.ij2xy(0, 0)[0]) / self.projection['reference_dX'] + self.grid['input_lon'],
-                (b - self.ij2xy(0, 0)[1]) / self.projection['reference_dY'] + self.grid['input_lat'])
+        return ((a - self.ij2xy(0, 0, 'center')[0]) / self.projection['reference_dX'] + self.grid['input_lon'],
+                (b - self.ij2xy(0, 0, 'center')[1]) / self.projection['reference_dY'] + self.grid['input_lat'])
 
     def distance(self, end1, end2):
         """

@@ -429,8 +429,6 @@ class LFI(FileResource):
                      Default is *True*.
         """
 
-        if self.openmode == 'w':
-            raise epygramError("cannot read fields in resource if with openmode == 'w'.")
         if self.true3d:
             if type(fieldidentifier) != type(""):
                 raise epygramError("fieldidentifier of a LFI field is a string (when resource opened in true3d).")
