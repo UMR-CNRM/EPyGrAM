@@ -51,7 +51,7 @@ class V2DField(D3Field):
 
     def plotfield(self,
                   over=(None, None),
-                  colorbar='vertical',
+                  colorbar='right',
                   colorbar_over=None,
                   graphicmode='colorshades',
                   minmax=None,
@@ -93,9 +93,8 @@ class V2DField(D3Field):
         - *levelsnumber*: number of levels for contours and colorbar.
         - *colormap*: name of the **matplotlib** colormap to use.
         - *center_cmap_on_0*: aligns the colormap center on the value 0.
-        - *colorbar*: if *False*, hide colorbar the plot; else, befines the
-          colorbar orientation, among ('horizontal', 'vertical').
-          Defaults to 'vertical'.
+        - *colorbar*: if *False*, hide colorbar the plot; else, defines the
+          colorbar position, among ('bottom', 'right'). Defaults to 'right'.
         - *zoom*: a dict containing optional limits to zoom on the plot. \n
           Syntax: e.g. {'ymax':500, ...}.
         - *minmax_in_title*: if True and minmax != None, adds min and max
@@ -197,15 +196,15 @@ class V2DField(D3Field):
             pf = ax.contourf(x, z, data, levels, cmap=colormap,
                              vmin=vmin, vmax=vmax)
             if colorbar:
-                position = 'right' if colorbar == 'vertical' else 'bottom'
+                orientation = 'vertical' if colorbar in ('right', 'left') else 'horizontal'
                 if colorbar_over is None:
-                    cax = make_axes_locatable(ax).append_axes(position,
+                    cax = make_axes_locatable(ax).append_axes(colorbar,
                                                               size="5%",
                                                               pad=0.2)
                 else:
                     cax = colorbar_over
                 cb = plt.colorbar(pf,
-                                  orientation=colorbar,
+                                  orientation=orientation,
                                   ticks=hlevels,
                                   cax=cax)
                 if minmax_in_title:

@@ -942,8 +942,8 @@ class GRIBmessage(RecursiveObject, dict):
             items = E.items()
         elif '__iter__' in dir(E):
             items = E
-            for (k, v) in items:
-                self[k] = v
+        for (k, v) in items:
+            self[k] = v
         for k in F:
             self[k] = F[k]
 
