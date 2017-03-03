@@ -248,6 +248,22 @@ class D3Geometry(RecursiveObject, FootprintBase):
 
     def make_point_geometry(self, lon, lat):
         """
+        Returns a PointGeometry.
+        """
+        vcoordinate = fpx.geometry(structure='V',
+                                   typeoffirstfixedsurface=255,
+                                   levels=[0])
+        return fpx.geometry(structure='Point',
+                            name='unstructured',
+                            vcoordinate=vcoordinate,
+                            dimensions={'X':1, 'Y':1},
+                            grid={'longitudes':[lon],
+                                  'latitudes':[lat]},
+                            position_on_horizontal_grid='center'
+                            )
+
+    def make_profile_geometry(self, lon, lat):
+        """
         Returns a V1DGeometry.
         """
         vcoordinate = fpx.geometry(structure='V',
@@ -279,6 +295,9 @@ class D3Geometry(RecursiveObject, FootprintBase):
           field. If None, defaults to the horizontal resolution of the field.
         - *position* defines the position of data in the grid (for projected grids only)
         """
+
+        assert isinstance(end1, tuple) or isinstance(end1, list)
+        assert isinstance(end2, tuple) or isinstance(end2, list)
         if position not in [None, 'center']:
             raise epygramError("position can only be None or 'center' for non-projected geometries.")
         if resolution is not None and points_number is not None:
@@ -893,7 +912,7 @@ class D3RectangularGridGeometry(D3Geometry):
                  around the position. (default shape == circle)
         :param position: position in the model cell of the lat lon position.
                Defaults to self.position_on_horizontal_grid.
-        :param: external_distance: can be a dict containing the target point value
+        :param external_distance: can be a dict containing the target point value
                 and an external field on the same grid as self, to which the distance
                 is computed within the 4 horizontally nearest points; e.g.
                 {'target_value':4810, 'external_field':a_3DField_with_same_geometry}.

@@ -215,10 +215,15 @@ class LFI(FileResource):
         # cache for records
         self._listLFInamesCache = None
 
-    def open(self):
+    def open(self, openmode=None):
         """
         Opens a LFI with ifsaux' LFIOUV, and initializes some attributes.
+
+        :param openmode: optional, to open with a specific openmode, eventually
+                         different from the one specified at initialization.
         """
+
+        super(LFI, self).open(openmode=openmode)
 
         if self.openmode in ('r', 'a'):
             # LFI already exists
@@ -952,7 +957,7 @@ class LFI(FileResource):
                 raise epygramError("You must give a geometry or lon *and* lat")
             if self.geometry is None:
                 self._read_geometry()
-            pointG = self.geometry.make_point_geometry(lon, lat)
+            pointG = self.geometry.make_profile_geometry(lon, lat)
         else:
             if lon is not None or lat is not None:
                 raise epygramError("You cannot provide lon or lat when geometry is given")

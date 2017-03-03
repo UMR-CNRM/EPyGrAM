@@ -33,7 +33,7 @@ class H2DGeometry(D3Geometry):
 
     def _consistency_check(self):
         """Check that the geometry is consistent."""
-        if len(self.vcoordinate.levels) != 1:
+        if len(self.vcoordinate.levels) > 1:
             raise epygramError("H2DGeometry must have only one level.")
         super(H2DGeometry, self)._consistency_check()
 

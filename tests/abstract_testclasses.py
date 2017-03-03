@@ -14,29 +14,7 @@ import cPickle
 import epygram
 
 from . import datadir
-
-
-# HELPERS
-#########
-def _build_test_for_attr(attr):
-    def test_(self):
-        self._test(attr)
-    test_.__name__ = str('test_{:s}'.format(attr))
-    return test_
-
-
-def add_tests_for_attrs(*attrs):
-    def decocls(cls):
-        for attr in attrs:
-            tst = _build_test_for_attr(attr)
-            setattr(cls, tst.__name__, tst)
-        return cls
-    return decocls
-
-suffixes = {'FA': 'fa',
-            'GRIB1':'grb1',
-            'GRIB2':'grb2',
-            'netCDF':'nc'}
+from .util import suffixes, delta_assertAlmostEqual
 
 
 # CLASSES
@@ -63,7 +41,7 @@ class TestFMT(TestCase):
                 r.what(out=out)
 
 
-class Test_geometrycommonmethods(TestCase):
+class Test_GeometryInterfaces(TestCase):
 
     datadir = os.path.join(datadir, 'geometries')
 
@@ -98,12 +76,13 @@ class Test_geometrycommonmethods(TestCase):
                     cPickle.dump(fld, pckl)
 
 
-class Test_H2DGeometry(Test_geometrycommonmethods):
+class Test_H2DGeometry(Test_GeometryInterfaces):
 
     fid_to_test = {'FA':'SURFGEOPOTENTIEL',
                    'GRIB1':{'indicatorOfParameter':6},
                    'GRIB2':{'shortName':'orog'},
-                   'netCDF':'SURFGEOPOTENTIEL'}
+                   'netCDF':'SURFGEOPOTENTIEL',
+                   'LFI':('ZS', 0)}
     fileprefix = ''  # to be defined in real classes
 
     def _test(self, fmt):
@@ -113,7 +92,7 @@ class Test_H2DGeometry(Test_geometrycommonmethods):
         self._test_rwr(filename, self.fid_to_test[fmt])
 
 
-class Test_DDHLFA_Geometry(Test_geometrycommonmethods):
+class Test_DDHLFA_Geometry(Test_GeometryInterfaces):
 
     ddh_domaintype = ['gridpoint', 'zonalband']
     fid_to_test = ''  # will define the actual type of geom to test, Point/V1D
@@ -127,3 +106,35 @@ class Test_DDHLFA_Geometry(Test_geometrycommonmethods):
         self._test_pickled(filename,
                            self.fid_to_test,
                            picklename)
+
+
+class Test_GeometryMethods(TestCase):
+
+    fid = ''
+    basename = ''
+    datadir = os.path.join(datadir, 'geometry_methods')
+
+    def setUp(self):
+        filename = os.path.join(self.datadir, self.basename)
+        r = epygram.formats.resource(filename, 'r')
+        self.fld = r.readfield(self.fid)
+        self.geo = self.fld.geometry
+        del r
+
+    def tearDown(self):
+        del self.fld
+        del self.geo
+
+    def assertAlmostEqualSeq(self, first, second, delta):
+        self.assertEqual(len(first), len(second))
+        for i in range(len(first)):
+            self.assertAlmostEqual(first[i], second[i], delta=delta)
+
+    def _test_mtd(self, mtd, args, kwargs, assertion, expected):
+        out = getattr(self.geo, mtd)(*args, **kwargs)
+        if assertion == 'Equal':
+            self.assertEqual(out, expected)
+        elif assertion == 'AlmostEqual':
+            self.assertAlmostEqual(out, expected, delta=delta_assertAlmostEqual)
+        elif assertion == 'IsInstance':
+            self.assertIsInstance(out, expected)

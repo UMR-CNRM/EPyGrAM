@@ -1174,7 +1174,7 @@ class FA(FileResource):
                 raise epygramError("You must give a geometry or lon *and* lat")
             if self.geometry is None:
                 self._read_geometry()
-            pointG = self.geometry.make_point_geometry(lon, lat)
+            pointG = self.geometry.make_profile_geometry(lon, lat)
         else:
             if lon is not None or lat is not None:
                 raise epygramError("You cannot provide lon or lat when geometry is given")

@@ -6,9 +6,14 @@
 
 from __future__ import print_function, absolute_import, division, unicode_literals
 
-from unittest import main
+from unittest import main, skipIf
+
+from epygram import epylog
 
 from . import abstract_testclasses as abtc
+
+epylog.setLevel('WARNING')
+skip_LFI = True
 
 
 class TestFA(abtc.TestFMT):
@@ -29,6 +34,12 @@ class TestNetCDF(abtc.TestFMT):
 class TestDDHLFA(abtc.TestFMT):
     basename = 'ddh.LFA'
     len = 160
+
+
+@skipIf(skip_LFI, "LFI testing not ready yet (and greedy)")
+class TestLFI(abtc.TestFMT):
+    basename = 'LFI'
+    len = 1270
 
 
 if __name__ == '__main__':

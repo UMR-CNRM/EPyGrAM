@@ -1535,7 +1535,7 @@ class GRIB(FileResource):
         if geometry is None:
             if None in [lon, lat]:
                 raise epygramError("You must give a geometry or lon *and* lat")
-            pointG = field3d.geometry.make_point_geometry(lon, lat)
+            pointG = field3d.geometry.make_profile_geometry(lon, lat)
         else:
             if lon is not None or lat is not None:
                 raise epygramError("You cannot provide lon or lat when geometry is given")

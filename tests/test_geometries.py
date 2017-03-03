@@ -6,76 +6,81 @@
 
 from __future__ import print_function, absolute_import, division, unicode_literals
 
-from unittest import main
+from unittest import main, skipIf
 import os
 import tempfile
 
 import epygram
 
 from . import abstract_testclasses as abtc
+from . import util
+
+fast = False  # skips some slow tests
 
 
 # H2D
 #####
-@abtc.add_tests_for_attrs('FA', 'GRIB2', 'netCDF')
+@skipIf(fast, 'slow test')
+@util.add_tests_for_attrs('FA', 'GRIB2', 'netCDF')
 class Test_gaussC1(abtc.Test_H2DGeometry):
     fileprefix = 'gaussC1'
 
 
-@abtc.add_tests_for_attrs('FA', 'GRIB2', 'netCDF')
+@skipIf(fast, 'slow test')
+@util.add_tests_for_attrs('FA', 'GRIB2', 'netCDF')
 class Test_gaussC2p4(abtc.Test_H2DGeometry):
     fileprefix = 'gaussC2.4'
 
 
-@abtc.add_tests_for_attrs('FA', 'GRIB2', 'netCDF')
+@util.add_tests_for_attrs('FA', 'GRIB2', 'netCDF')
 class Test_lambertHN(abtc.Test_H2DGeometry):
     fileprefix = 'lambert_HN'
 
 
-@abtc.add_tests_for_attrs('FA', 'GRIB2', 'netCDF')
+@util.add_tests_for_attrs('FA', 'GRIB2', 'netCDF')  # , 'LFI')
 class Test_lambertHS(abtc.Test_H2DGeometry):
     fileprefix = 'lambert_HS'
 
 
-@abtc.add_tests_for_attrs('FA', 'GRIB1', 'GRIB2', 'netCDF')
+@util.add_tests_for_attrs('FA', 'GRIB1', 'GRIB2', 'netCDF')
 class Test_mercatorHN(abtc.Test_H2DGeometry):
     fileprefix = 'mercator_HN'
 
 
-@abtc.add_tests_for_attrs('FA', 'GRIB1', 'GRIB2', 'netCDF')
+@util.add_tests_for_attrs('FA', 'GRIB1', 'GRIB2', 'netCDF')
 class Test_mercatorHS(abtc.Test_H2DGeometry):
     fileprefix = 'mercator_HS'
 
 
-@abtc.add_tests_for_attrs('FA', 'GRIB2', 'netCDF')
+@util.add_tests_for_attrs('FA', 'GRIB2', 'netCDF')
 class Test_stereopolHN(abtc.Test_H2DGeometry):
     fileprefix = 'stereopol_HN'
 
 
-@abtc.add_tests_for_attrs('FA', 'GRIB2', 'netCDF')
+@util.add_tests_for_attrs('FA', 'GRIB2', 'netCDF')
 class Test_stereopolHS(abtc.Test_H2DGeometry):
     fileprefix = 'stereopol_HS'
 
 
-@abtc.add_tests_for_attrs('FA', 'GRIB1', 'GRIB2', 'netCDF')
+@util.add_tests_for_attrs('FA', 'GRIB1', 'GRIB2', 'netCDF')
 class Test_regLLsmall(abtc.Test_H2DGeometry):
     fileprefix = 'regLL_small'
 
 
-@abtc.add_tests_for_attrs('FA', 'GRIB1', 'GRIB2', 'netCDF')
+@util.add_tests_for_attrs('FA', 'GRIB1', 'GRIB2', 'netCDF')
 class Test_regLLlarge(abtc.Test_H2DGeometry):
     fileprefix = 'regLL_large'
 
 
 # Special ones
-@abtc.add_tests_for_attrs('gridpoint', 'zonalband')
+@util.add_tests_for_attrs('gridpoint', 'zonalband')
 class Test_DDHLFA_PointGeometry(abtc.Test_DDHLFA_Geometry):
     fid_to_test = 'SVGFS01'
     geom = 'point'
     update_pickle = False  # set to True if necessary to make a new pickle
 
 
-@abtc.add_tests_for_attrs('gridpoint', 'zonalband')
+@util.add_tests_for_attrs('gridpoint', 'zonalband')
 class Test_DDHLFA_V1DGeometry(abtc.Test_DDHLFA_Geometry):
     fid_to_test = 'VCT1'
     geom = 'profile'
@@ -85,8 +90,8 @@ class Test_DDHLFA_V1DGeometry(abtc.Test_DDHLFA_Geometry):
 netCDF_Ndimensions = ['0D', 'V1D', 'V2D', 'H2D', '3D', '4D']  # , '5D']
 
 
-@abtc.add_tests_for_attrs(*netCDF_Ndimensions)
-class Test_netCDF_Ndimensions(abtc.Test_geometrycommonmethods):
+@util.add_tests_for_attrs(*netCDF_Ndimensions)
+class Test_netCDF_Ndimensions(abtc.Test_GeometryInterfaces):
 
     fid_to_test = 'temperature'
     dims = netCDF_Ndimensions
@@ -140,8 +145,8 @@ class Test_netCDF_Ndimensions(abtc.Test_geometrycommonmethods):
         self._test_rwr(filename, self.fid_to_test)
 
 
-@abtc.add_tests_for_attrs('A', 'H', 'P', 'hybridP')
-class Test_netCDF_VGeometries(abtc.Test_geometrycommonmethods):
+@util.add_tests_for_attrs('A', 'H', 'P', 'hybridP')
+class Test_netCDF_VGeometries(abtc.Test_GeometryInterfaces):
 
     fid_to_test = 'temperature'
     vdict = {'A':102,
@@ -167,8 +172,8 @@ class Test_netCDF_VGeometries(abtc.Test_geometrycommonmethods):
         self._test_rwr(filename, self.fid_to_test)
 
 
-@abtc.add_tests_for_attrs('FA', 'GRIB2')
-class Test_VGeometry_hybridP(abtc.Test_geometrycommonmethods):
+@util.add_tests_for_attrs('FA', 'GRIB2')
+class Test_VGeometry_hybridP(abtc.Test_GeometryInterfaces):
 
     fid_to_test = {'FA':'S090TEMPERATURE',
                    'GRIB2':{'shortName':'t',
@@ -188,8 +193,8 @@ class Test_VGeometry_hybridP(abtc.Test_geometrycommonmethods):
         self._test_rwr(filename, self.fid_to_test[fmt])
 
 
-@abtc.add_tests_for_attrs('LAM', 'global')
-class Test_SpectralGeometry(abtc.Test_geometrycommonmethods):
+@util.add_tests_for_attrs('LAM', 'global')
+class Test_SpectralGeometry(abtc.Test_GeometryInterfaces):
 
     fid = 'SPECSURFGEOPOTEN'
 
