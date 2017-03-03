@@ -1,0 +1,347 @@
+### FORMAT: DDHLFA
+
+### IDENTIFIER (INDICE EXPERIENCE): ARPE
+
+################
+### VALIDITY ###
+################
+Validity                                          : 2014-09-12 00:00:00
+Basis                                             : 2014-09-11 00:00:00
+Term                                              :      1 day, 0:00:00
+Duration for cumulative quantities                :      1 day, 0:00:00
+Kind of producting process                        :            forecast
+-----------------------------------------------------------------------
+
+###############
+### DOMAINS ###
+###############
+Domain(s): 22 point
+# 1:
+Longitude                                         :       273.904683228
+Latitude                                          :        80.011011694
+Point index (X)                                   :                  65
+Point index (Y)                                   :                 394
+User Longitude                                    :       -85.940001458
+User Latitude                                     :       79.9900065507
+# 2:
+Longitude                                         :        203.36718865
+Latitude                                          :       71.3923531621
+Point index (X)                                   :                  34
+Point index (Y)                                   :                 488
+User Longitude                                    :      -156.616005442
+User Latitude                                     :       71.3220038302
+# 3:
+Longitude                                         :       26.8176398231
+Latitude                                          :       67.3707610916
+Point index (X)                                   :                1351
+Point index (Y)                                   :                 244
+User Longitude                                    :       26.6499996602
+User Latitude                                     :       67.3699977884
+# 4:
+Longitude                                         :       14.1444953182
+Latitude                                          :        52.191730217
+Point index (X)                                   :                 624
+Point index (Y)                                   :                 100
+User Longitude                                    :       14.1239996281
+User Latitude                                     :       52.1670021861
+# 5:
+Longitude                                         :       4.97534671362
+Latitude                                          :       51.9651802601
+Point index (X)                                   :                 415
+Point index (Y)                                   :                  61
+User Longitude                                    :       4.92700007336
+User Latitude                                     :       51.9710004969
+# 6:
+Longitude                                         :       358.603618823
+Latitude                                          :       51.1195256735
+Point index (X)                                   :                  32
+Point index (Y)                                   :                  57
+User Longitude                                    :      -1.43699997766
+User Latitude                                     :       51.1450004589
+# 7:
+Longitude                                         :       2.24782848934
+Latitude                                          :       48.6842173216
+Point index (X)                                   :                   4
+Point index (Y)                                   :                  24
+User Longitude                                    :       2.20799994875
+User Latitude                                     :       48.7130015618
+# 8:
+Longitude                                         :       359.335104763
+Latitude                                          :       44.8418183835
+Point index (X)                                   :                  84
+Point index (Y)                                   :                  30
+User Longitude                                    :      -0.69199997543
+User Latitude                                     :       44.8319985921
+# 9:
+Longitude                                         :       4.39442887943
+Latitude                                          :       43.8844077177
+Point index (X)                                   :                 139
+Point index (Y)                                   :                  31
+User Longitude                                    :        4.4069998426
+User Latitude                                     :       43.8580021822
+# 10:
+Longitude                                         :       1.41068912848
+Latitude                                          :       43.6074041559
+Point index (X)                                   :                 110
+Point index (Y)                                   :                  32
+User Longitude                                    :       1.37400002031
+User Latitude                                     :       43.5750014889
+# 11:
+Longitude                                         :      0.319600239356
+Latitude                                          :       43.0999079151
+Point index (X)                                   :                 124
+Point index (Y)                                   :                  40
+User Longitude                                    :      0.369999991798
+User Latitude                                     :       43.1280007369
+# 12:
+Longitude                                         :       15.7458502446
+Latitude                                          :       40.5779164189
+Point index (X)                                   :                 541
+Point index (Y)                                   :                 118
+User Longitude                                    :       15.7499995845
+User Latitude                                     :       40.5899992645
+# 13:
+Longitude                                         :       262.463050859
+Latitude                                          :       36.5768303802
+Point index (X)                                   :                 232
+Point index (Y)                                   :                 529
+User Longitude                                    :      -97.5000010056
+User Latitude                                     :       36.6169982267
+# 14:
+Longitude                                         :       2.20050531023
+Latitude                                          :       13.4960162408
+Point index (X)                                   :                 798
+Point index (Y)                                   :                 315
+User Longitude                                    :        2.1760000856
+User Latitude                                     :       13.4769999814
+# 15:
+Longitude                                         :       166.830662629
+Latitude                                          :     -0.363057186189
+Point index (X)                                   :                 603
+Point index (Y)                                   :                 707
+User Longitude                                    :       166.915999012
+User Latitude                                     :     -0.520999975825
+# 16:
+Longitude                                         :       147.279601299
+Latitude                                          :      -1.98476601878
+Point index (X)                                   :                 630
+Point index (Y)                                   :                 694
+User Longitude                                    :       147.425002366
+User Latitude                                     :      -2.00600007878
+# 17:
+Longitude                                         :       131.088911079
+Latitude                                          :       -12.370311634
+Point index (X)                                   :                 583
+Point index (Y)                                   :                 692
+User Longitude                                    :       130.890999518
+User Latitude                                     :      -12.4249998399
+# 18:
+Longitude                                         :       354.205004319
+Latitude                                          :       41.7765663863
+Point index (X)                                   :                 201
+Point index (Y)                                   :                  81
+User Longitude                                    :      -5.78299993439
+User Latitude                                     :       41.8159981446
+# 19:
+Longitude                                         :       24.6029748904
+Latitude                                          :       60.1413848937
+Point index (X)                                   :                1083
+Point index (Y)                                   :                 193
+User Longitude                                    :       24.6500007429
+User Latitude                                     :        60.183000543
+# 20:
+Longitude                                         :       27.4477418496
+Latitude                                          :       62.6075963728
+Point index (X)                                   :                1167
+Point index (Y)                                   :                 217
+User Longitude                                    :       27.4999996269
+User Latitude                                     :       62.6659969841
+# 21:
+Longitude                                         :       25.5764919981
+Latitude                                          :       66.5893945651
+Point index (X)                                   :                1265
+Point index (Y)                                   :                 236
+User Longitude                                    :       25.5660008276
+User Latitude                                     :       66.5499988656
+# 22:
+Longitude                                         :       124.016181892
+Latitude                                          :      -75.2433001325
+Point index (X)                                   :                 280
+Point index (Y)                                   :                 729
+User Longitude                                    :       123.340006825
+User Latitude                                     :       -75.079995068
+-----------------------------------------------------------------------
+
+#########################
+### VERTICAL GEOMETRY ###
+#########################
+Number of vertical levels for variables           :                  70
+Number of vertical levels for fluxes              :                  71
+-----------------------------------------------------------------------
+
+######################
+### LIST OF FIELDS ###
+######################
+Number: 160
+-----------------------------------------------------------------------
+INDICE EXPERIENCE
+DATE
+DOCFICHIER
+ECHEANCE
+DOCD001
+DOCD002
+DOCD003
+DOCD004
+DOCD005
+DOCD006
+DOCD007
+DOCD008
+DOCD009
+DOCD010
+DOCD011
+DOCD012
+DOCD013
+DOCD014
+DOCD015
+DOCD016
+DOCD017
+DOCD018
+DOCD019
+DOCD020
+DOCD021
+DOCD022
+VPP0
+VQV0
+VUU0
+VVV0
+VKK0
+VCT0
+VEP0
+VHR0
+VQL0
+VQN0
+VNT0
+VOM0
+VPP1
+VQV1
+VUU1
+VVV1
+VKK1
+VCT1
+VEP1
+VHR1
+VQL1
+VQN1
+VNT1
+VOM1
+TPPDIVFLUHOR
+TQVDIVFLUHOR
+TUUDIVFLUHOR
+TVVDIVFLUHOR
+TUUFFVGADPSG
+TVVFFUGADPSG
+TKKDIVFLUHOR
+TKKCONVERSI1
+TCTDIVFLUHOR
+TCTCONVERSI2
+TCTCONVERSI3
+TEPDIVFLUHOR
+PPP
+TQLDIVFLUHOR
+TQNDIVFLUHOR
+FPPFLUVERTDYN
+FQVFLUVERTDYN
+FUUFLUVERTDYN
+FVVFLUVERTDYN
+FUUFLUDUAPLUI
+FVVFLUDUAPLUI
+FKKFLUVERTDYN
+FKKFLUDUAPLUI
+FCTFLUVERTDYN
+FEPCONVERSIFL
+FQLFLUVERTDYN
+FQNFLUVERTDYN
+FPPSUMFPL
+FQVTUR
+FQVTURCONV
+FQTPRECISTL
+FQTPRECISTN
+FQTPRECICOL
+FQTPRECICON
+FQVTURQNEGAT
+FUUTUR
+FVVTUR
+FUUTURCONV
+FVVTURCONV
+FUUONDEGREL
+FVVONDEGREL
+FCTTUR
+FCTTURCONV
+FCTRAYSOL1
+FCTRAYTER1
+FCTPRECISTL
+FCTPRECISTN
+FCTPRECICOL
+FCTPRECICON
+FCTPRECCSCOL
+FCTPRECCSCON
+FCTPRECCSSTL
+FCTPRECCSSTN
+FQLTUR
+FQNTUR
+FQLTURCONV
+FQNTURCONV
+FQLTURQNEGAT
+FQNTURQNEGAT
+FQTCONDECOL
+FQTCONDECON
+FQTCONDESTL
+FQTCONDESTN
+FQVEVPL
+FQVEVPN
+FQLFPL
+FQNFPN
+TKKDISSIPTUR
+TKKDISSIPCONV
+TKKDISSIPGREL
+S01_0
+S02_0
+S03_0
+S04_0
+S05_0
+S06_0
+S01_1
+S02_1
+S03_1
+S04_1
+S05_1
+S06_1
+G01
+G02
+G03
+G04
+G05
+G06
+G07
+G08
+G09
+G10
+G11
+G12
+G13
+G14
+G15
+G16
+G17
+SVGFS01
+SVGFS02
+SVGFS03
+SVGFS04
+SVGFS05
+SVGFS06
+SVGFS07
+SVGFS08
+SVGFS09
+SFGFS01
+SFGFS02
+-----------------------------------------------------------------------
