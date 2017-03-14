@@ -59,6 +59,8 @@ class MultiValiditiesResource(Resource):
 
         self.format = "MultiValidities"
         self.lowLevelFormat = self.resources[0].format
+        
+        self.isopen = True #resource always appear to be open
 
 #    def open(self):
 #        """Opens all resources"""
@@ -127,7 +129,7 @@ class MultiValiditiesResource(Resource):
         for r in self.resources:
             with _open_and_close(r):
                 fieldset.append(r.readfield(*args, **kwargs))
-        return self._join_validities(fieldset)
+        return self._join_validities(fieldset, **kwargs)
 
     def writefield(self, *args, **kwargs):
         """Write fields."""
@@ -169,7 +171,7 @@ class MultiValiditiesResource(Resource):
         else:
             raise epygramError("All spectral_geometry are not identical")
 
-    def _join_validities(self, fieldset):
+    def _join_validities(self, fieldset, **kwargs):
         """
         Join the different fields
         """
@@ -202,8 +204,9 @@ class MultiValiditiesResource(Resource):
                 kwargs_geom[k] = dict(v)
         geometry = fpx.geometry(**kwargs_geom)
         kwargs_vcoord = copy.deepcopy(fieldset[0].geometry.vcoordinate.footprint_as_dict())
-        if kwargs_vcoord['grid'].get('gridlevels'):
-            kwargs_vcoord['grid']['gridlevels'] = FPList(kwargs_vcoord['grid']['gridlevels'])
+        kwargs_vcoord['grid'] = dict(kwargs_vcoord['grid'])
+#        if kwargs_vcoord['grid'].get('gridlevels'):
+#            kwargs_vcoord['grid']['gridlevels'] = list(kwargs_vcoord['grid']['gridlevels'])
         kwargs_vcoord['levels'] = []
         vcoordinate = fpx.geometry(**kwargs_vcoord)
         levels = fieldset[0].geometry.vcoordinate.levels
@@ -219,8 +222,9 @@ class MultiValiditiesResource(Resource):
                     kwargs_geom[k] = dict(v)
             geometry_field = fpx.geometry(**kwargs_geom)
             kwargs_vcoord = copy.deepcopy(field.geometry.vcoordinate.footprint_as_dict())
-            if kwargs_vcoord['grid'].get('gridlevels'):
-                kwargs_vcoord['grid']['gridlevels'] = FPList(kwargs_vcoord['grid']['gridlevels'])
+            kwargs_vcoord['grid'] = dict(kwargs_vcoord['grid'])
+#            if kwargs_vcoord['grid'].get('gridlevels'):
+#                kwargs_vcoord['grid']['gridlevels'] = FPList(kwargs_vcoord['grid']['gridlevels'])
             kwargs_vcoord['levels'] = []
             vcoordinate_field = fpx.geometry(**kwargs_vcoord)
             levels_field = field.geometry.vcoordinate.levels
@@ -228,8 +232,8 @@ class MultiValiditiesResource(Resource):
                 raise epygramError("All resources must return fields with the same geometry.")
             if vcoordinate != vcoordinate_field:
                 raise epygramError("All resources must return fields with the same vertical geometry.")
-            if levels != levels_field:
-                if vcoordinate.grid is not None:
+            if numpy.any(numpy.array(levels) != numpy.array(levels_field)):
+                if len(vcoordinate.grid) > 0:
                     raise epygramError("All resources must return fields with the same vertical geometry.")
                 else:
                     if len(levels) != len(levels_field):
@@ -240,22 +244,15 @@ class MultiValiditiesResource(Resource):
         if joinLevels:
             if spectral:
                 raise epygramError("Not sure how to merge vertical levels when spectral")
-            raise NotImplementedError("a revoir")
-            # il faut revoir:
-            #  mettre au clair le nb de dimensions de level
-            #  utiliser get_level
-            if fieldset[0].geometry.datashape['k']:
-                shapeH = fieldset[0].getdata().shape[1:]
-            else:
-                shapeH = fieldset[0].getdata().shape
+            
+            concat = numpy.concatenate
             newLevels = []
-            for k in range(len(levels)):
-                levelValue = numpy.ndarray(tuple([len(fieldset)] + list(shapeH)))
-                for i in range(len(fieldset)):
-                    field = fieldset[validities[sortedValidities[i]]]
-                    levelValue[i] = field.geometry.vcoordinate.levels[k]
-                newLevels.append(levelValue)
-            kwargs_vcoord['levels'] = newLevels
+            for i in range(len(fieldset)):
+                mylevel = fieldset[validities[sortedValidities[i]]].geometry.get_levels(d4=True, nb_validities=len(field.validity))
+                if isinstance(mylevel, numpy.ma.masked_array):
+                    concat = numpy.ma.concatenate
+                newLevels.append(mylevel)
+            kwargs_vcoord['levels'] = list(concat(newLevels, axis=0).swapaxes(0,1).squeeze())
             geometry.vcoordinate = fpx.geometry(**kwargs_vcoord)
         else:
             geometry.vcoordinate = fpx.geometry(**kwargs_vcoord)
@@ -285,23 +282,26 @@ class MultiValiditiesResource(Resource):
         # Returned field
         fieldvaliditylist = FieldValidityList()
         fieldvaliditylist.pop()
+        getdata = kwargs.get('getdata', True)
         for i in range(len(fieldset)):
             field = fieldset[validities[sortedValidities[i]]]
             fieldvaliditylist.extend(field.validity)
-            if i == 0:
-                data = field.getdata(d4=True)
-            else:
-                if isinstance(data, numpy.ma.masked_array):
-                    concat = numpy.ma.concatenate
+            if getdata:
+                if i == 0:
+                    data = field.getdata(d4=True)
                 else:
-                    concat = numpy.concatenate
-                data = concat([data, field.getdata(d4=True)], axis=0)
+                    if isinstance(data, numpy.ma.masked_array):
+                        concat = numpy.ma.concatenate
+                    else:
+                        concat = numpy.concatenate
+                    data = concat([data, field.getdata(d4=True)], axis=0)
         if not sameProcesstype:
             kwargs_field['processtype'] = None
 
         kwargs_field['validity'] = fieldvaliditylist
         kwargs_field['fid'][self.format] = kwargs_field['fid'][fmtfid(self.lowLevelFormat, kwargs_field['fid'])]
         field = fpx.field(**kwargs_field)
-        field.setdata(data)
+        if getdata:
+            field.setdata(data)
 
         return field

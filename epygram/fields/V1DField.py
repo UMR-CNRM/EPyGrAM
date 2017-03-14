@@ -15,28 +15,26 @@ import six
 
 import footprints
 
-from .D3Field import D3Field
+from .D3Field import D3CommonField, D3Field, D3VirtualField
 from epygram import epygramError, config, util
 from epygram.geometries import V1DGeometry
 
 epylog = footprints.loggers.getLogger(__name__)
 
 
-class V1DField(D3Field):
+class V1DCommonField(D3CommonField):
     """
-    Vertical 1-Dimension (column) field class.
+    Vertical 1-Dimension (column) virtual or not field class.
     A field is defined by its identifier 'fid',
     its data, its geometry, and its validity.
     """
 
     _collector = ('field',)
+    _abstract = True
     _footprint = dict(
         attr=dict(
             structure=dict(
                 values=set(['V1D'])),
-            geometry=dict(
-                type=V1DGeometry,
-                access='rwx'),
         )
     )
 
@@ -204,7 +202,9 @@ class V1DField(D3Field):
                                  title=title,
                                  logscale=logscale,
                                  ema=ema,
-                                 zoom=zoom)
+                                 zoom=zoom,
+                                 repeat=repeat,
+                                 interval=interval)
         else:
             raise NotImplementedError("This graphic mode is not implemented")
 
@@ -376,7 +376,7 @@ def plotverticalhovmoller(profile,
         # time
         xmin = mdates.num2date(ax.axis()[0]).replace(tzinfo=None)
         xmax = mdates.num2date(ax.axis()[1]).replace(tzinfo=None)
-        util.set_DateHour_axis(ax, xmax - xmin,
+        util.set_DateHour_axis(ax, xmax - xmin, 'x',
                                showgrid=showgrid, datefmt=datefmt)
         # decoration
         surf = z[-1, :]
@@ -626,7 +626,7 @@ def plotanimation(profile,
                            title=title,
                            **kwargs)
 
-    def update(i, ax=None, profile=None, title_prefix=None):
+    def update(i, ax, profile, title_prefix):
         if i < len(profile.validity):
             ax.lines[0].set_xdata(profile.getdata()[i, ...])
             if title_prefix is not None:
@@ -641,3 +641,36 @@ def plotanimation(profile,
                                    repeat=repeat)
 
     return anim
+
+class V1DField(V1DCommonField, D3Field):
+    """
+    Vertical 1-Dimension (column) real field class.
+    A field is defined by its identifier 'fid',
+    its data, its geometry, and its validity.
+    """
+
+    _collector = ('field',)
+    _footprint = dict(
+        attr=dict(
+            structure=dict(
+                values=set(['V1D'])),
+            geometry=dict(
+                type=V1DGeometry,
+                access='rwx'),
+        )
+    )
+    
+class V1DVirtualField(V1DCommonField, D3VirtualField):
+    """
+    Vertical 1-Dimension (column) virtual field class.
+    A field is defined by its identifier 'fid',
+    its data, its geometry, and its validity.
+    """
+
+    _collector = ('field',)
+    _footprint = dict(
+        attr=dict(
+            structure=dict(
+                values=set(['V1D'])),
+        )
+    )

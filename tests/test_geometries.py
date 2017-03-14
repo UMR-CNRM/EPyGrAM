@@ -15,6 +15,8 @@ import epygram
 from . import abstract_testclasses as abtc
 from . import util
 
+epygram.init_env()
+
 fast = False  # skips some slow tests
 
 

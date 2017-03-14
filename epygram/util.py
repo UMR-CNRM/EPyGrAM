@@ -77,6 +77,7 @@ class RecursiveObject(object):
 
     def __eq__(self, other):
         """Test of equality by recursion on the object's attributes."""
+
         def comp_float(float1, float2):
             # tolerance for floats
             return abs(float1 - float2) <= config.epsilon
@@ -975,14 +976,15 @@ def ifNone_emptydict(arg):
     return arg
 
 
-def set_DateHour_axis(axis, datetimerange,
+def set_DateHour_axis(axis, datetimerange, xy,
                       showgrid=True,
                       datefmt=None,
-                      xtickslabelsrotation=30.):
+                      tickslabelsrotation=30.):
     """
     Set an adequate axis ticks and ticks labels for Date/Hour axis.
 
     *datetimerange* supposed to be a :class:`datetime.timedelta` instance
+    *xy" must be 'x' or 'y'
     """
     import matplotlib.dates as mdates
     import matplotlib.pyplot as plt
@@ -1011,16 +1013,23 @@ def set_DateHour_axis(axis, datetimerange,
         formatter = mdates.AutoDateFormatter(major_locator)
     if datefmt is not None:
         formatter = mdates.DateFormatter(datefmt)
-    axis.xaxis.set_major_locator(major_locator)
-    axis.xaxis.set_major_formatter(formatter)
+    if xy == 'x':
+        myaxis = axis.xaxis
+    else:
+        myaxis = axis.yaxis
+    myaxis.set_major_locator(major_locator)
+    myaxis.set_major_formatter(formatter)
     axis.grid(showgrid)
     if minor_locator is not None:
-        axis.xaxis.set_minor_locator(minor_locator)
-        axis.grid(showgrid, which='minor', axis='x', color='grey')
-    if xtickslabelsrotation != 0.:
+        myaxis.set_minor_locator(minor_locator)
+        axis.grid(showgrid, which='minor', axis=xy, color='grey')
+    if tickslabelsrotation != 0.:
         _ax = plt.gca()
         plt.sca(axis)
-        plt.xticks(rotation=xtickslabelsrotation)
+        if xy == 'x':
+            plt.xticks(rotation=tickslabelsrotation)
+        else:
+            plt.yticks(rotation=tickslabelsrotation)
         plt.sca(_ax)
 
 

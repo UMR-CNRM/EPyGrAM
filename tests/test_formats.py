@@ -8,10 +8,12 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 from unittest import main, skipIf
 
+import epygram
 from epygram import epylog
 
 from . import abstract_testclasses as abtc
 
+epygram.init_env()
 epylog.setLevel('WARNING')
 skip_LFI = True
 
