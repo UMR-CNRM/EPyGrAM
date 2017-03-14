@@ -114,7 +114,8 @@ class D3CommonField(Field):
                 if my_t.size != 1:
                     raise epygramError("validity must be uniq or must have the same length as other indexes")
                 my_t = numpy.array([my_t.item()] * maxsize)
-        if len(self.geometry.vcoordinate.levels) != len(set(self.geometry.vcoordinate.levels)):
+        if len(numpy.array(self.geometry.vcoordinate.levels).shape) == 1 and \
+           len(self.geometry.vcoordinate.levels) != len(set(self.geometry.vcoordinate.levels)):
             raise epygramError('Some levels are represented twice in levels list.')
         if level is None:
             my_k = numpy.zeros(maxsize, dtype=int)
@@ -321,7 +322,7 @@ class D3CommonField(Field):
         geom_builder = fpx.geometry
         vcoord_builer = fpx.geometry
 
-        lons, lats = self.geometry.get_lonlat_grid(subzone=subzone)
+        lons4d, lats4d = self.geometry.get_lonlat_grid(subzone=subzone, d4=True, nb_validities=len(self.validity))
         data4d = self.getdata(d4=True, subzone=subzone)
         levels4d = self.geometry.get_levels(d4=True, nb_validities=len(self.validity), subzone=subzone)
 
@@ -336,11 +337,13 @@ class D3CommonField(Field):
                     geometry = geom_builder(structure='V1D',
                                             dimensions={'X':1, 'Y':1},
                                             vcoordinate=vcoordinate,
-                                            grid={'longitudes':[lons[j, i]],
-                                                  'latitudes':[lats[j, i]],
+                                            grid={'longitudes':[lons4d[t, :, j, i]], #[lons[j, i]], SR
+                                                  'latitudes':[lats4d[t, :, j, i]], #[lats[j, i]], SR
                                                   'LAMzone':None},
-                                            position_on_horizontal_grid='center'
+                                            position_on_horizontal_grid='center',
+                                            name='unstructured'
                                             )
+                    print "SR"
                     profilefield = field_builder(structure='V1D',
                                                  fid=dict(copy.deepcopy(self.fid)),
                                                  geometry=geometry,
@@ -351,7 +354,8 @@ class D3CommonField(Field):
 
     def extract_subdomain(self, geometry, interpolation='nearest',
                           external_distance=None,
-                          exclude_extralevels=True):
+                          exclude_extralevels=True,
+                          getdata=True):
         """
         Extracts a subdomain from a field, given a new geometry.
     
@@ -371,6 +375,7 @@ class D3CommonField(Field):
           distance = |target_value - external_field.data|
         - *exclude_extralevels* if True levels with no physical meaning are
           suppressed.
+        - *getdata* if False returns a field without data
         """
 
         # build subdomain fid
@@ -393,7 +398,7 @@ class D3CommonField(Field):
                     if level < 1 or level > len(self.geometry.vcoordinate.grid['gridlevels']) - 1:
                         kwargs_vcoord['levels'].remove(level)
         elif self.geometry.vcoordinate.typeoffirstfixedsurface in [100, 103, 109, 1, 106, 255]:
-            kwargs_vcoord['levels'] = copy.copy(self.geometry.vcoordinate.levels)
+            kwargs_vcoord['levels'] = list(copy.deepcopy(self.geometry.vcoordinate.levels))
         else:
             raise NotImplementedError("type of first surface level: " + str(self.geometry.vcoordinate.typeoffirstfixedsurface))
         if geometry.vcoordinate.typeoffirstfixedsurface not in [255, kwargs_vcoord['typeoffirstfixedsurface']]:
@@ -487,16 +492,17 @@ class D3CommonField(Field):
 
 
         # Values
-        shp = newgeometry.get_datashape(dimT=len(self.validity), d4=True)
-        data = numpy.ndarray(shp)
-        for t in range(len(self.validity)):
-            for k in range(len(newgeometry.vcoordinate.levels)):
-                level = newgeometry.vcoordinate.levels[k]
-                extracted = self.getvalue_ll(lons, lats, level, self.validity[t],
-                                             interpolation=interpolation,
-                                             external_distance=external_distance,
-                                             one=False)
-                data[t, k, :, :] = newgeometry.reshape_data(extracted)
+        if getdata:
+            shp = newgeometry.get_datashape(dimT=len(self.validity), d4=True)
+            data = numpy.ndarray(shp)
+            for t in range(len(self.validity)):
+                for k in range(len(newgeometry.vcoordinate.levels)):
+                    level = newgeometry.vcoordinate.levels[k]
+                    extracted = self.getvalue_ll(lons, lats, level, self.validity[t],
+                                                 interpolation=interpolation,
+                                                 external_distance=external_distance,
+                                                 one=False)
+                    data[t, k, :, :] = newgeometry.reshape_data(extracted)
 
         # Field
         newfield = fpx.field(fid=FPDict(subdomainfid),
@@ -505,7 +511,8 @@ class D3CommonField(Field):
                              validity=self.validity,
                              processtype=self.processtype,
                              comment=comment)
-        newfield.setdata(data)
+        if getdata:
+            newfield.setdata(data)
 
         return newfield
 
@@ -1289,14 +1296,16 @@ class D3Field(D3CommonField):
         if level != None:
             if level not in self.geometry.vcoordinate.levels:
                 raise epygramError("The requested level does not exist.")
+            my_level = level
             my_k = self.geometry.vcoordinate.levels.index(level)
         else:
             my_k = k
+            my_level = self.geometry.vcoordinate.levels[k]
 
         if self.structure == '3D':
             newstructure = 'H2D'
         elif self.structure == 'V2D':
-            newstructure = 'H2D'
+            newstructure = 'H1D'
         elif self.structure == 'V1D':
             newstructure = 'Point'
         else:
@@ -1305,7 +1314,7 @@ class D3Field(D3CommonField):
         kwargs_vcoord = {'structure': 'V',
                          'typeoffirstfixedsurface': self.geometry.vcoordinate.typeoffirstfixedsurface,
                          'position_on_grid': self.geometry.vcoordinate.position_on_grid,
-                         'levels':[level]
+                         'levels':[my_level]
                         }
         if self.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
             kwargs_vcoord['grid'] = copy.copy(self.geometry.vcoordinate.grid)
@@ -1323,7 +1332,7 @@ class D3Field(D3CommonField):
             kwargs_geom['geoid'] = self.geometry.geoid
         newgeometry = fpx.geometry(**kwargs_geom)
         generic_fid = self.fid.get('generic', {})
-        generic_fid['level'] = level
+        generic_fid['level'] = my_level if not isinstance(my_level, numpy.ndarray) else my_k #to avoid arrays in fid
         kwargs_field = {'structure':newstructure,
                         'validity':self.validity.copy(),
                         'processtype':self.processtype,
@@ -1360,6 +1369,12 @@ class D3Field(D3CommonField):
         newfield = self.deepcopy()
         newfield.validity = validity
         newfield.setdata(self.getdata(d4=True)[index:index + 1, :, :, ])
+        if len(numpy.array(newfield.geometry.vcoordinate.levels).shape) > 1:
+            #levels are, at least, dependent on position
+            levels4d = newfield.geometry.get_levels(d4=True, nb_validities=len(self.validity))
+            kwargs_vcoord = copy.deepcopy(newfield.geometry.vcoordinate.footprint_as_dict())
+            kwargs_vcoord['levels'] = levels4d[index, ...].squeeze()
+            newfield.geometry.vcoordinate = fpx.geometry(**kwargs_vcoord)
 
         return newfield
 
@@ -1403,69 +1418,140 @@ class D3VirtualField(D3CommonField):
 
         super(D3VirtualField, self).__init__(*args, **kwargs)
 
-        if self.fieldset != FieldSet():
+        if len(self.fieldset) != 0:
             if self.resource is not None or self.resource_fids != FPList():
                 raise epygramError("You cannot set fieldset and (resource or resource_fids) at the same time.")
-            raise NotImplementedError("D3VirtualField from a fieldset is not yet implemented")
+
+            def fieldGenerator(getdata):
+                for field in self.fieldset:
+                    yield field.fid, field
+            self._fieldGenerator = fieldGenerator
+            def getFieldByFid(fid, getdata):
+                result = [field for field in self.fieldset if field.fid == fid]
+                if len(result) != 1:
+                    raise epygramError("There is no, or more than one, field(s) matching with this fid.")
+                return result[0]
+            self._getFieldByFid = getFieldByFid
+            self._mode = 'fieldset'
         else:
             if self.resource is None or self.resource_fids == FPList():
                 raise epygramError("If you do not set fieldset, you need to provide resource and resource_fids.")
             fidlist = self.resource.find_fields_in_resource(seed=self.resource_fids,
-                                                            fieldtype=['H2D', '3D'])
+                                                            fieldtype=['point', 'V1D', 'V2D', 'H2D', '3D'])
             if len(fidlist) == 0:
                 raise epygramError("There is no field in resource matching with resource_fids")
-            first = True
-            self._fidList = []
-            levelList = []
-            for fid in fidlist:
-                field = self.resource.readfield(fid, getdata=False)
-                if field.structure != 'H2D':
-                    raise epygramError("3D virtual fields must be build from H2D fields only")
-                if first:
-                    self._geometry = field.geometry.copy()
-                    self._validity = field.validity.copy()
-                    if field.spectral_geometry is not None:
-                        self._spectral_geometry = field.spectral_geometry.copy()
-                    else:
-                        self._spectral_geometry = None
-                    self._processtype = field.processtype
+
+            def fieldGenerator(getdata):
+                for fid in fidlist:
+                    field = self.resource.readfield(fid, getdata=getdata)
+                    yield fid, field
+            self._fieldGenerator = fieldGenerator
+            def getFieldByFid(fid, getdata):
+                return self.resource.readfield(fid, getdata=getdata)
+            self._getFieldByFid = getFieldByFid
+            self._mode = 'resource'
+
+        first = True
+        self._fidList = []
+        levelList = []
+        levelIsArray = False
+
+        for fid, field in self._fieldGenerator(getdata=False):
+            if field.structure not in ['point', 'V1D', 'V2D', 'H1D', 'H2D', '3D']:
+                raise epygramError("3D virtual fields must be build from 'physical' fields only")
+            if first:
+                self._structure = field.structure
+                self._geometry = field.geometry.deepcopy() #We need a deepcopy as we modify it
+                self._validity = field.validity.copy()
+                if field.spectral_geometry is not None:
+                    self._spectral_geometry = field.spectral_geometry.copy()
                 else:
-                    if self._geometry.structure != field.geometry.structure or \
-                       self._geometry.name != field.geometry.name or \
-                       self._geometry.grid != field.geometry.grid or \
-                       self._geometry.dimensions != field.geometry.dimensions or \
-                       self._geometry.position_on_horizontal_grid != field.geometry.position_on_horizontal_grid:
-                        raise epygramError("All H2D fields must share the horizontal geometry")
-                    if self._geometry.projected_geometry or field.geometry.projected_geometry:
-                        if self._geometry.projection != field.geometry.projection or \
-                           self._geometry.geoid != field.geometry.geoid:
-                            raise epygramError("All H2D fields must share the geometry projection")
-                    if self._geometry.vcoordinate.typeoffirstfixedsurface != field.geometry.vcoordinate.typeoffirstfixedsurface or \
-                       self._geometry.vcoordinate.position_on_grid != field.geometry.vcoordinate.position_on_grid:
-                        raise epygramError("All H2D fields must share the vertical geometry")
-                    if self._geometry.vcoordinate.grid is not None or field.geometry.vcoordinate.grid is not None:
-                        if self._geometry.vcoordinate.grid != field.geometry.vcoordinate.grid:
-                            raise epygramError("All H2D fields must share the vertical grid")
-                    if self._validity != field.validity:
-                        raise epygramError("All H2D fields must share the validity")
-                    if self._spectral_geometry != field.spectral_geometry:
-                        raise epygramError("All H2D fields must share the spectral geometry")
-                    if self._processtype != field.processtype:
-                        raise epygramError("All H2D fields must share the sprocesstype")
-                if len(field.geometry.vcoordinate.levels) != 1:
-                    raise epygramError("H2D fields must have only one level")
-                if field.geometry.vcoordinate.levels[0] in levelList:
-                    raise epygramError("This level have already been found")
-                levelList.append(field.geometry.vcoordinate.levels[0])
-                self._fidList.append(fid)
-            kwargs_vcoord = dict(structure='V',
-                                 typeoffirstfixedsurface=self._geometry.vcoordinate.typeoffirstfixedsurface,
-                                 position_on_grid=self._geometry.vcoordinate.position_on_grid)
-            if self._geometry.vcoordinate.grid is not None:
-                kwargs_vcoord['grid'] = self._geometry.vcoordinate.grid
+                    self._spectral_geometry = None
+                self._processtype = field.processtype
+            else:
+                if self._structure != field.structure:
+                    raise epygramError("All fields must share the structure")
+                if self._geometry.structure != field.geometry.structure or \
+                   self._geometry.name != field.geometry.name or \
+                   self._geometry.grid != field.geometry.grid or \
+                   self._geometry.dimensions != field.geometry.dimensions or \
+                   self._geometry.position_on_horizontal_grid != field.geometry.position_on_horizontal_grid:
+                    raise epygramError("All fields must share the horizontal geometry")
+                if self._geometry.projected_geometry or field.geometry.projected_geometry:
+                    if self._geometry.projection != field.geometry.projection or \
+                       self._geometry.geoid != field.geometry.geoid:
+                        raise epygramError("All fields must share the geometry projection")
+                if self._geometry.vcoordinate.typeoffirstfixedsurface != field.geometry.vcoordinate.typeoffirstfixedsurface or \
+                   self._geometry.vcoordinate.position_on_grid != field.geometry.vcoordinate.position_on_grid:
+                    raise epygramError("All fields must share the vertical geometry")
+                if self._geometry.vcoordinate.grid is not None or field.geometry.vcoordinate.grid is not None:
+                    if self._geometry.vcoordinate.grid != field.geometry.vcoordinate.grid:
+                        raise epygramError("All fields must share the vertical grid")
+                if self._validity != field.validity:
+                    raise epygramError("All fields must share the validity")
+                if self._spectral_geometry != field.spectral_geometry:
+                    raise epygramError("All fields must share the spectral geometry")
+                if self._processtype != field.processtype:
+                    raise epygramError("All fields must share the processtype")
+            if len(field.geometry.vcoordinate.levels) != 1:
+                raise epygramError("fields must have only one level")
+            levelIsArray = levelIsArray or isinstance(field.geometry.vcoordinate.levels[0], numpy.ndarray)
+            if (not isinstance(field.geometry.vcoordinate.levels[0], numpy.ndarray)) and field.geometry.vcoordinate.levels[0] in levelList:
+                raise epygramError("This level have already been found")
+            levelList.append(field.geometry.vcoordinate.levels[0])
+            if fid in self._fidList:
+                raise epygramError("fields must have different fids")
+            self._fidList.append(fid)
+
+        kwargs_vcoord = dict(structure='V',
+                             typeoffirstfixedsurface=self._geometry.vcoordinate.typeoffirstfixedsurface,
+                             position_on_grid=self._geometry.vcoordinate.position_on_grid)
+        if self._geometry.vcoordinate.grid is not None:
+            kwargs_vcoord['grid'] = self._geometry.vcoordinate.grid
+        if levelIsArray:
+            kwargs_vcoord['levels'] = levelList
+        else:
             kwargs_vcoord['levels'], self._fidList = (list(t) for t in zip(*sorted(zip(levelList, self._fidList))))  # TOBECHECKED
-            self._geometry.vcoordinate = fpx.geometry(**kwargs_vcoord)
-            self._spgpOpList = []
+        newvcoordinate = fpx.geometry(**kwargs_vcoord)
+
+        newstructure = {'3D': '3D',
+                        'H2D': '3D',
+                        'V1D': 'V1D',
+                        'point': 'V1D',
+                        'V2D': 'V2D',
+                        'H1D': 'V2D'}[field.structure]
+        assert newstructure == self.structure, \
+               "Individual fields structure do not match the field strucuture"
+
+        kwargs_geom = {'structure':newstructure,
+                       'name': self.geometry.name,
+                       'grid': dict(self.geometry.grid),
+                       'dimensions': copy.copy(self.geometry.dimensions),
+                       'vcoordinate': newvcoordinate,
+                       'position_on_horizontal_grid': self.geometry.position_on_horizontal_grid
+                      }
+        if self.geometry.projected_geometry:
+            kwargs_geom['projection'] = copy.copy(self.geometry.projection)
+            kwargs_geom['projtool'] = self.geometry.projtool
+            kwargs_geom['geoid'] = self.geometry.geoid
+        self._geometry = fpx.geometry(**kwargs_geom)
+#        self._geometry.vcoordinate = fpx.geometry(**kwargs_vcoord)
+        self._spgpOpList = []
+
+    def as_real_field(self):
+        field3d = fpx.field(fid=dict(self.fid),
+                            structure={'H2D':'3D',
+                                       'point':'V1D',
+                                       'H1D':'V2D',
+                                       'V1D':'V1D',
+                                       'V2D':'V2D',
+                                       '3D':'3D'}[self._structure],
+                            geometry=self.geometry,
+                            validity=self.validity,
+                            spectral_geometry=self.spectral_geometry,
+                            processtype=self.processtype)
+        field3d.setdata(self.getdata(d4=True))
+        return field3d
 
     @property
     def geometry(self):
@@ -1497,8 +1583,12 @@ class D3VirtualField(D3CommonField):
         The spectral transform subroutine is actually included in the spectral
         geometry's *sp2gp()* method.
         """
-        self._spgpOpList.append(('sp2gp', {}))
         self._spectral_geometry = None
+        if self._mode == 'resource':
+            self._spgpOpList.append(('sp2gp', {}))
+        else:
+            for field in self.fieldset:
+                field.sp2gp()
 
     def gp2sp(self, spectral_geometry):
         """
@@ -1509,7 +1599,12 @@ class D3VirtualField(D3CommonField):
         The spectral transform subroutine is actually included in the spectral
         geometry's *gp2sp()* method.
         """
-        self._spgpOpList.append(('gp2sp', {'spectral_geometry':spectral_geometry}))
+        self._spectral_geometry = spectral_geometry
+        if self._mode == 'resource':
+            self._spgpOpList.append(('gp2sp', {'spectral_geometry':spectral_geometry}))
+        else:
+            for field in self.fieldset:
+                field.gp2sp(spectral_geometry)
 
     def getdata(self, subzone=None, d4=False):
         """
@@ -1535,10 +1630,26 @@ class D3VirtualField(D3CommonField):
         """
 
         dataList = []
+        concat = numpy.concatenate
+        arr = numpy.array
         for k in range(len(self.geometry.vcoordinate.levels)):
-            dataList.append(self.getlevel(k).getdata(subzone=subzone, d4=d4))
-
-        return numpy.array(dataList)
+            data = self.getlevel(k=k).getdata(subzone=subzone, d4=d4)
+            if isinstance(data, numpy.ma.masked_array):
+                concat = numpy.ma.concatenate
+                arr = numpy.ma.array
+            dataList.append(data)
+        if d4:
+            #vertical dimension already exists, and is the second one
+            return concat(dataList, axis=1)
+        else:
+            if len(self.validity) > 1:
+                #vertical dimension does not exist and
+                #must be the second one of the resulting array
+                return numpy.stack(dataList, axis=1)
+            else:
+                #vertical dimension does not exist and
+                #must be the first one of the resulting array
+                return arr(dataList)
 
     def setdata(self, data):
         """
@@ -1635,7 +1746,7 @@ class D3VirtualField(D3CommonField):
         else:
             my_k = k
 
-        result = self.resource.readfield(self._fidList[my_k])
+        result = self._getFieldByFid(self._fidList[my_k], True)
 
         for op, kwargs in self._spgpOpList:
             if op == 'sp2gp':

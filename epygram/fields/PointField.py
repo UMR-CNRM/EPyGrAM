@@ -98,7 +98,7 @@ class PointField(D3Field):
 
         xmin = dates.num2date(ax.axis()[0]).replace(tzinfo=None)
         xmax = dates.num2date(ax.axis()[1]).replace(tzinfo=None)
-        set_DateHour_axis(ax, xmax - xmin,
+        set_DateHour_axis(ax, xmax - xmin, 'x',
                           showgrid=showgrid, datefmt=datefmt)
 
         if title is not None:

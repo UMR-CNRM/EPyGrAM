@@ -11,7 +11,7 @@ import numpy
 
 import footprints
 
-from .D3Field import D3Field
+from .D3Field import D3CommonField, D3Field, D3VirtualField
 from epygram import config, util, epygramError
 from epygram.geometries import V2DGeometry
 
@@ -19,9 +19,9 @@ epylog = footprints.loggers.getLogger(__name__)
 
 
 
-class V2DField(D3Field):
+class V2DCommonField(D3CommonField):
     """
-    Vertical 2-Dimension (section) field class.
+    Vertical 2-Dimension (section) virtual or not field class.
     A field is defined by its identifier 'fid',
     its data, its geometry, and its validity.
 
@@ -30,12 +30,11 @@ class V2DField(D3Field):
     """
 
     _collector = ('field',)
+    _abstract = True
     _footprint = dict(
         attr=dict(
             structure=dict(
                 values=set(['V2D'])),
-            geometry=dict(
-                type=V2DGeometry),
         )
     )
 
@@ -118,6 +117,9 @@ class V2DField(D3Field):
         Warning: requires **matplotlib**.
         """
 
+        if len(self.validity) != 1:
+            raise epygramError("plotfield can handle only field with one validity.")
+        
         import matplotlib.pyplot as plt
         from mpl_toolkits.axes_grid1 import make_axes_locatable
         plt.rc('font', family='serif')
@@ -160,7 +162,8 @@ class V2DField(D3Field):
                                        mask_outside['max'])
         #FIXME: mask_threshold does not produce expected results
         if self.geometry.vcoordinate.typeoffirstfixedsurface in (119, 100):
-            reverseY = True
+            ybot, ytop = ax.get_ylim()
+            reverseY = ybot < ytop
         else:
             reverseY = False
         # min/max
@@ -219,7 +222,8 @@ class V2DField(D3Field):
                 ax.clabel(pf, colors=contourcolor)
         # decoration
         surf = z[-1, :]
-        bottom = max(surf) if reverseY else min(surf)
+        ybot, ytop = ax.get_ylim()
+        bottom = max(surf) if ytop < ybot else min(surf)
         ax.fill_between(x[-1, :], surf, numpy.ones(len(surf)) * bottom,
                         color='k')
         if self.geometry.vcoordinate.typeoffirstfixedsurface == 119:
@@ -301,9 +305,7 @@ class V2DField(D3Field):
             title = title_prefix + '\n' + self.validity[0].get().isoformat(sep=' ')
         else:
             title_prefix = None
-        field0 = self.deepcopy()
-        field0.validity = self.validity[0]
-        field0.setdata(self.getdata()[0, ...])
+        field0 = self.getvalidity(0)
         mindata = self.getdata().min()
         maxdata = self.getdata().max()
 
@@ -320,8 +322,7 @@ class V2DField(D3Field):
         def update(i, ax, myself, fieldi, title_prefix, kwargs):
             if i < len(myself.validity):
                 ax.clear()
-                fieldi.validity = myself.validity[i]
-                fieldi.setdata(myself.getdata()[i, ...])
+                fieldi = myself.getvalidity(i)
                 if title_prefix is not None:
                     title = title_prefix + '\n' + fieldi.validity.get().isoformat(sep=' ')
                 fieldi.plotfield(title=title,
@@ -334,3 +335,38 @@ class V2DField(D3Field):
                                        repeat=repeat)
 
         return anim
+
+class V2DField(V2DCommonField, D3Field):
+    """
+    Vertical 2-Dimension (section) real field class.
+    A field is defined by its identifier 'fid',
+    its data, its geometry, and its validity.
+
+    At least for now, it is designed somehow like a collection of V1DFields.
+    And so is V2DGeometry.
+    """
+
+    _collector = ('field',)
+    _footprint = dict(
+        attr=dict(
+            structure=dict(
+                values=set(['V2D'])),
+            geometry=dict(
+                type=V2DGeometry),
+        )
+    )
+
+class V2DVirtualField(V2DCommonField, D3VirtualField):
+    """
+    Vertical 2-Dimension (section) virtual field class.
+    A field is defined by its identifier 'fid',
+    its data, its geometry, and its validity.
+    """
+
+    _collector = ('field',)
+    _footprint = dict(
+        attr=dict(
+            structure=dict(
+                values=set(['V2D'])),
+        )
+    )

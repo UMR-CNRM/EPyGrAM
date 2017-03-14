@@ -151,7 +151,7 @@ def hybridP2pressure(hybridP_geometry, Psurf, vertical_mean,
     kwargs_vcoord = {'structure':'V',
                      'typeoffirstfixedsurface': 100,
                      'position_on_grid': hybridP_geometry.position_on_grid,
-                     'grid': {'gridlevels':levels},
+#                     'grid': {'gridlevels':levels},
                      'levels': levels
                     }
 
@@ -187,7 +187,7 @@ def hybridH2pressure(hybridH_geometry, P, position):
     kwargs_vcoord = {'structure':'V',
                      'typeoffirstfixedsurface': 100,
                      'position_on_grid': hybridH_geometry.position_on_grid,
-                     'grid':{'gridlevels':levels},
+#                     'grid':{'gridlevels':levels},
                      'levels': levels
                     }
 
@@ -238,7 +238,7 @@ def hybridP2altitude(hybridP_geometry, R, T, Psurf, vertical_mean,
     kwargs_vcoord = {'structure':'V',
                      'typeoffirstfixedsurface': coordinate,
                      'position_on_grid': hybridP_geometry.position_on_grid,
-                     'grid':{'gridlevels':list(levels)},
+#                     'grid':{'gridlevels':list(levels)},
                      'levels': list(levels)
                     }
 
@@ -286,7 +286,7 @@ def hybridH2altitude(hybridH_geometry, Zsurf,
     kwargs_vcoord = {'structure':'V',
                      'typeoffirstfixedsurface': 103 if conv2height else 102,
                      'position_on_grid': hybridH_geometry.position_on_grid,
-                     'grid':{'gridlevels':list(levels)},
+#                     'grid':{'gridlevels':list(levels)},
                      'levels': list(levels)
                     }
 

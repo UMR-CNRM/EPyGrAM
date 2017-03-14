@@ -15,7 +15,7 @@ import sys
 import datetime
 from contextlib import contextmanager
 
-from footprints import FootprintBase
+from footprints import FootprintBase, FPDict, FPList
 
 from epygram import config, epygramError
 
@@ -76,6 +76,7 @@ class RecursiveObject(object):
 
     def __eq__(self, other):
         """Test of equality by recursion on the object's attributes."""
+
         def comp_float(float1, float2):
             # tolerance for floats
             return abs(float1 - float2) <= config.epsilon
@@ -86,7 +87,7 @@ class RecursiveObject(object):
             else:
                 return numpy.all(array1 == array2)
         def comp_dict(dict1, dict2):
-            if dict1.keys() == dict2.keys():
+            if set(dict1.keys()) == set(dict2.keys()):
                 ok = True
                 for k in dict1.keys():
                     if not comp(dict1[k], dict2[k]):
@@ -106,25 +107,36 @@ class RecursiveObject(object):
                         break
                 return ok
         def comp(obj1, obj2):
-            if type(obj1) == type(obj2) == float:
+            if isinstance(obj1, float) and isinstance(obj2, float):
                 return comp_float(obj1, obj2)
-            elif type(obj1) == type(obj2) == numpy.ndarray:
+            elif isinstance(obj1, numpy.ndarray) and isinstance(obj2, numpy.ndarray):
                 return comp_array(obj1, obj2)
-            elif type(obj1) == type(obj2) == dict:
+            elif isinstance(obj1, (dict, FPDict)) and isinstance(obj2, (dict, FPDict)):
                 return comp_dict(obj1, obj2)
-            elif type(obj1) == type(obj2) == list:
+            elif isinstance(obj1, (list, FPList)) and isinstance(obj2, (list, FPList)):
                 return comp_list(obj1, obj2)
             else:
                 return obj1 == obj2
+            #if type(obj1) == type(obj2) == float:
+            #    return comp_float(obj1, obj2)
+            #elif type(obj1) == type(obj2) == numpy.ndarray:
+            #    return comp_array(obj1, obj2)
+            #elif type(obj1) == type(obj2) == dict:
+            #    return comp_dict(obj1, obj2)
+            #elif type(obj1) == type(obj2) == list:
+            #    return comp_list(obj1, obj2)
+            #else:
+            #    return obj1 == obj2
 
         if self.__class__ == other.__class__ and \
-           self.__dict__.keys() == other.__dict__.keys():
+           set(self.__dict__.keys()) == set(other.__dict__.keys()):
             ok = True
             for attr in self.__dict__.keys():
                 if attr in ('_puredict', '_observer'):
                     pass
                 else:
                     if not comp(self.__dict__[attr], other.__dict__[attr]):
+                        print "diff", attr
                         ok = False
                         break
         else:
@@ -964,14 +976,15 @@ def ifNone_emptydict(arg):
         arg = {}
     return arg
 
-def set_DateHour_axis(axis, datetimerange,
+def set_DateHour_axis(axis, datetimerange, xy,
                       showgrid=True,
                       datefmt=None,
-                      xtickslabelsrotation=30.):
+                      tickslabelsrotation=30.):
     """
     Set an adequate axis ticks and ticks labels for Date/Hour axis.
     
     *datetimerange* supposed to be a :class:`datetime.timedelta` instance
+    *xy" must be 'x' or 'y'
     """
     import matplotlib.dates as mdates
     import matplotlib.pyplot as plt
@@ -1000,16 +1013,23 @@ def set_DateHour_axis(axis, datetimerange,
         formatter = mdates.AutoDateFormatter(major_locator)
     if datefmt is not None:
         formatter = mdates.DateFormatter(datefmt)
-    axis.xaxis.set_major_locator(major_locator)
-    axis.xaxis.set_major_formatter(formatter)
+    if xy == 'x':
+        myaxis = axis.xaxis
+    else:
+        myaxis = axis.yaxis
+    myaxis.set_major_locator(major_locator)
+    myaxis.set_major_formatter(formatter)
     axis.grid(showgrid)
     if minor_locator is not None:
-        axis.xaxis.set_minor_locator(minor_locator)
-        axis.grid(showgrid, which='minor', axis='x', color='grey')
-    if xtickslabelsrotation != 0.:
+        myaxis.set_minor_locator(minor_locator)
+        axis.grid(showgrid, which='minor', axis=xy, color='grey')
+    if tickslabelsrotation != 0.:
         _ax = plt.gca()
         plt.sca(axis)
-        plt.xticks(rotation=xtickslabelsrotation)
+        if xy == 'x':
+            plt.xticks(rotation=tickslabelsrotation)
+        else:
+            plt.yticks(rotation=tickslabelsrotation)
         plt.sca(_ax)
 
 def set_figax(figure, ax, figsize=config.plotsizes):

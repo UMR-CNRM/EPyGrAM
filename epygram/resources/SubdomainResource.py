@@ -49,6 +49,10 @@ class SubdomainResource(Resource):
 
         if not self.resource.isopen: self.resource.open()
 
+    @property
+    def isopen(self):
+        return self.resource.isopen
+    
     def close(self):
         """Closes the low level resource."""
         try:
@@ -96,11 +100,14 @@ class SubdomainResource(Resource):
         Read the field in the low level resource and extract subdomain.
         """
 
+        getdata = kwargs.get('getdata', True)
         fieldset = FieldSet()
         for field in self.resource.readfields(*args, **kwargs):
-            if field.spectral:
+            if field.spectral and getdata:
                 field.sp2gp()
-            field_on_subzone = field.extract_subdomain(self.geometry, **self.options)
+            field_on_subzone = field.extract_subdomain(self.geometry,
+                                                       getdata=getdata,
+                                                       **self.options)
             field_on_subzone.fid[self.format] = field_on_subzone.fid[self.lowLevelFormat]
             fieldset.append(field_on_subzone)
 

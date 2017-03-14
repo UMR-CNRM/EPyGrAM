@@ -28,7 +28,12 @@ class CombineLevelsResource(Resource):
                 type=Resource,
                 info="Low level resource"),
             name=dict(
-                values=set(['CombineLevels']))
+                values=set(['CombineLevels'])),
+            virtual=dict(
+                info="Must readfield return a virtual field",
+                type=bool,
+                optional=True,
+                default=False)
         )
     )
 
@@ -46,6 +51,10 @@ class CombineLevelsResource(Resource):
         """Opens the low level resource"""
 
         if not self.resource.isopen: self.resource.open()
+
+    @property
+    def isopen(self):
+        return self.resource.isopen
 
     def close(self):
         """Closes the low level resource."""
@@ -184,111 +193,134 @@ class CombineLevelsResource(Resource):
                     field.fid[self.format] = fid
                     fieldset.append(field)
             else:
-                # We join levels
-
-                # Fields to join
-                fields = self.resource.readfields([original_fid[0] for original_fid in cont[found]['original_fids']])
-
-                if len(fields) == 1:
-                    field = fields[0]
+                fidList = [original_fid[0] for original_fid in cont[found]['original_fids']]
+                
+                if len(fidList) == 1:
+                    field = self.resource.readfield(fidList[0])
                     field.fid[self.format] = fid
                     fieldset.append(field)
                 else:
-                    # Geometry check and level list: part I
-                    levellist = {}
-                    kwargs_geom = copy.deepcopy(fields[0].geometry.footprint_as_dict())
-                    kwargs_vcoord = copy.deepcopy(fields[0].geometry.vcoordinate.footprint_as_dict())
-                    kwargs_vcoord['levels'] = [255]
-                    kwargs_geom['vcoordinate'] = fpx.geometry(**kwargs_vcoord)
-                    for k, v in kwargs_geom.iteritems():
-                        if type(v) == type(FPDict()):
-                            kwargs_geom[k] = dict(v)
-                    ref_geometry = fpx.geometry(**kwargs_geom)
-                    spectral = fields[0].spectral
-                    # Other metadata check: part I
-                    kwargs_field = copy.deepcopy(fields[0].footprint_as_dict())
-                    kwargs_field.pop('data')
-                    kwargs_field['fid'] = {'generic':fid}
-                    kwargs_field['geometry'] = ref_geometry
-                    for k, v in kwargs_field.iteritems():
-                        if type(v) == type(FPDict()):
-                            kwargs_field[k] = dict(v)
-                    ref_field = fpx.field(**kwargs_field)
-                    for i, field in enumerate(fields):
-                        # Geometry check and level list: part II
-                        if spectral != field.spectral:
-                            raise epygramError("All fields must be gridpoint or spectral")
-                        kwargs_geom = copy.deepcopy(field.geometry.footprint_as_dict())
-                        kwargs_vcoord = copy.deepcopy(field.geometry.vcoordinate.footprint_as_dict())
-                        kwargs_vcoord['levels'] = [255]
-                        kwargs_geom['vcoordinate'] = fpx.geometry(**kwargs_vcoord)
-                        for k, v in kwargs_geom.iteritems():
-                            if type(v) == type(FPDict()):
-                                kwargs_geom[k] = dict(v)
-                        geometry_field = fpx.geometry(**kwargs_geom)
-                        levels_field = field.geometry.vcoordinate.levels
-                        if len(levels_field) != 1:
-                            raise NotImplementedError("Cannot join multi-levels fields.")
-                        levellist[i] = field.geometry.vcoordinate.levels[0]
-                        if ref_geometry != geometry_field:
-                            raise epygramError("All resources must return fields with the same geometry.")
-                        # Other metadata check: part II
-                        kwargs_field = copy.deepcopy(field.footprint_as_dict())
-                        kwargs_field.pop('data')
-                        kwargs_field['fid'] = {'generic':fid}
-                        kwargs_field['geometry'] = geometry_field
-                        for k, v in kwargs_field.iteritems():
-                            if type(v) == type(FPDict()):
-                                kwargs_field[k] = dict(v)
-                        myf = fpx.field(**kwargs_field)
-                        if ref_field != myf:
-                            raise epygramError("All fields must be of the same kind")
-
-                    # levels and data of the resulting field
-                    levelsorder = sorted(levellist, key=levellist.get)
-                    levels4d = ref_field.geometry.get_levels(d4=True, nb_validities=len(fields[0].validity))
-                    shape = levels4d.shape  # shape of 4D with only one level
-                    shape = tuple([shape[0], len(fields)] + list(shape[2:]))
-                    levels = numpy.ndarray(shape, dtype=levels4d.dtype)
-                    # data = numpy.ndarray(shape) #TODO: remove
-
-                    # Loop over the fields
-                    first = True
-                    for i in levelsorder:
-                        if fields[i].spectral: fields[i].sp2gp()
-                        if first:
-                            first = False
-                            data = fields[i].getdata(d4=True)[:, 0:1, :, :]
-                        else:
-                            if isinstance(data, numpy.ma.masked_array):
-                                concat = numpy.ma.concatenate
-                            else:
-                                concat = numpy.concatenate
-                            data = concat((data, fields[i].getdata(d4=True)[:, 0:1, :, :]), axis=1)
-                        # data[:, i] = fields[i].getdata(d4=True)[:, 0] #TODO: remove
-                        levels[:, i] = fields[i].geometry.get_levels(d4=True, nb_validities=len(fields[0].validity))[:, 0]
-                    cst_horizontal = True
-                    cst_time = True
-                    for k in range(levels.shape[1]):
-                        for t in range(levels.shape[0]):
-                            cst_time = cst_time and numpy.all(levels[t, k] == levels[0, k])
-                            cst_horizontal = cst_horizontal and \
-                                             cst_time and \
-                                             numpy.all(levels[t, k] == levels[t, k].flatten()[0])
-                    if cst_time:
-                        levels = levels[0]
-                    if cst_horizontal:  # implies cst_time, so levels does not have time dimension
-                        levels = [levels[k].flatten()[0] for k in range(levels.shape[0])]
-                    kwargs_vcoord['levels'] = levels
-                    kwargs_geom['vcoordinate'] = fpx.geometry(**kwargs_vcoord)
-                    kwargs_geom['structure'] = {'H2D':'3D', 'point':'V1D', 'H1D':'V2D', 'V1D':'V1D', 'V2D':'V2D'}[kwargs_geom['structure']]
-                    kwargs_field['geometry'] = fpx.geometry(**kwargs_geom)
-                    kwargs_field['structure'] = kwargs_geom['structure']
-                    kwargs_field['spectral_geometry'] = None
-                    new_field = fpx.field(**kwargs_field)
-                    new_field.setdata(new_field.geometry.reshape_data(data, len(fields[0].validity)))
-                    new_field.fid[self.format] = fid
-                    fieldset.append(new_field)
+                    structure = self.resource.readfield(fidList[0], getdata=False).structure
+                    virtualField = fpx.field(fid={'generic':fid, self.format:fid},
+                                             structure={'H2D':'3D',
+                                                        'point':'V1D',
+                                                        'H1D':'V2D',
+                                                        'V1D':'V1D',
+                                                        'V2D':'V2D',
+                                                        '3D':'3D'}[structure],
+                                             resource=self.resource,
+                                             resource_fids=fidList)
+                    if self.virtual:
+                        fieldset.append(virtualField)
+                    else:
+                        fieldset.append(virtualField.as_real_field())
+                #All the following commented lines are replaced by the use of a virtual field
+                ## We join levels
+                #
+                ## Fields to join
+                #fields = self.resource.readfields([original_fid[0] for original_fid in cont[found]['original_fids']])
+                #
+                #if len(fields) == 1:
+                #    field = fields[0]
+                #    field.fid[self.format] = fid
+                #    fieldset.append(field)
+                #else:
+                #    # Geometry check and level list: part I
+                #    levellist = {}
+                #    kwargs_geom = copy.deepcopy(fields[0].geometry.footprint_as_dict())
+                #    kwargs_vcoord = copy.deepcopy(fields[0].geometry.vcoordinate.footprint_as_dict())
+                #    kwargs_vcoord['levels'] = [255]
+                #    kwargs_geom['vcoordinate'] = fpx.geometry(**kwargs_vcoord)
+                #    for k, v in kwargs_geom.iteritems():
+                #        if type(v) == type(FPDict()):
+                #            kwargs_geom[k] = dict(v)
+                #    ref_geometry = fpx.geometry(**kwargs_geom)
+                #    spectral = fields[0].spectral
+                #    # Other metadata check: part I
+                #    kwargs_field = copy.deepcopy(fields[0].footprint_as_dict())
+                #    kwargs_field.pop('data')
+                #    kwargs_field['fid'] = {'generic':fid}
+                #    kwargs_field['geometry'] = ref_geometry
+                #    for k, v in kwargs_field.iteritems():
+                #        if type(v) == type(FPDict()):
+                #            kwargs_field[k] = dict(v)
+                #    ref_field = fpx.field(**kwargs_field)
+                #    for i, field in enumerate(fields):
+                #        # Geometry check and level list: part II
+                #        if spectral != field.spectral:
+                #            raise epygramError("All fields must be gridpoint or spectral")
+                #        kwargs_geom = copy.deepcopy(field.geometry.footprint_as_dict())
+                #        kwargs_vcoord = copy.deepcopy(field.geometry.vcoordinate.footprint_as_dict())
+                #        kwargs_vcoord['levels'] = [255]
+                #        kwargs_geom['vcoordinate'] = fpx.geometry(**kwargs_vcoord)
+                #        for k, v in kwargs_geom.iteritems():
+                #            if type(v) == type(FPDict()):
+                #                kwargs_geom[k] = dict(v)
+                #        geometry_field = fpx.geometry(**kwargs_geom)
+                #        levels_field = field.geometry.vcoordinate.levels
+                #        if len(levels_field) != 1:
+                #            raise NotImplementedError("Cannot join multi-levels fields.")
+                #        levellist[i] = field.geometry.vcoordinate.levels[0]
+                #        if ref_geometry != geometry_field:
+                #            raise epygramError("All resources must return fields with the same geometry.")
+                #        # Other metadata check: part II
+                #        kwargs_field = copy.deepcopy(field.footprint_as_dict())
+                #        kwargs_field.pop('data')
+                #        kwargs_field['fid'] = {'generic':fid}
+                #        kwargs_field['geometry'] = geometry_field
+                #        for k, v in kwargs_field.iteritems():
+                #            if type(v) == type(FPDict()):
+                #                kwargs_field[k] = dict(v)
+                #        myf = fpx.field(**kwargs_field)
+                #        if ref_field != myf:
+                #            raise epygramError("All fields must be of the same kind")
+                #
+                #    # levels and data of the resulting field
+                #    levelsorder = sorted(levellist, key=levellist.get)
+                #    levels4d = ref_field.geometry.get_levels(d4=True, nb_validities=len(fields[0].validity))
+                #    shape = levels4d.shape  # shape of 4D with only one level
+                #    shape = tuple([shape[0], len(fields)] + list(shape[2:]))
+                #    levels = numpy.ndarray(shape, dtype=levels4d.dtype)
+                #    # data = numpy.ndarray(shape) #TODO: remove
+                #
+                #    # Loop over the fields
+                #    first = True
+                #    for i in levelsorder:
+                #        if fields[i].spectral: fields[i].sp2gp()
+                #        if first:
+                #            first = False
+                #            data = fields[i].getdata(d4=True)[:, 0:1, :, :]
+                #        else:
+                #            if isinstance(data, numpy.ma.masked_array):
+                #                concat = numpy.ma.concatenate
+                #            else:
+                #                concat = numpy.concatenate
+                #            data = concat((data, fields[i].getdata(d4=True)[:, 0:1, :, :]), axis=1)
+                #        # data[:, i] = fields[i].getdata(d4=True)[:, 0] #TODO: remove
+                #        levels[:, i] = fields[i].geometry.get_levels(d4=True, nb_validities=len(fields[0].validity))[:, 0]
+                #    cst_horizontal = True
+                #    cst_time = True
+                #    for k in range(levels.shape[1]):
+                #        for t in range(levels.shape[0]):
+                #            cst_time = cst_time and numpy.all(levels[t, k] == levels[0, k])
+                #            cst_horizontal = cst_horizontal and \
+                #                             cst_time and \
+                #                             numpy.all(levels[t, k] == levels[t, k].flatten()[0])
+                #    if cst_time:
+                #        levels = levels[0]
+                #    if cst_horizontal:  # implies cst_time, so levels does not have time dimension
+                #        levels = [levels[k].flatten()[0] for k in range(levels.shape[0])]
+                #    kwargs_vcoord['levels'] = levels
+                #    kwargs_geom['vcoordinate'] = fpx.geometry(**kwargs_vcoord)
+                #    kwargs_geom['structure'] = {'H2D':'3D', 'point':'V1D', 'H1D':'V2D', 'V1D':'V1D', 'V2D':'V2D'}[kwargs_geom['structure']]
+                #    kwargs_field['geometry'] = fpx.geometry(**kwargs_geom)
+                #    kwargs_field['structure'] = kwargs_geom['structure']
+                #    kwargs_field['spectral_geometry'] = None
+                #    new_field = fpx.field(**kwargs_field)
+                #    #new_field.setdata(new_field.geometry.reshape_data(data, len(fields[0].validity)))
+                #    new_field.setdata(data)
+                #    new_field.fid[self.format] = fid
+                #    fieldset.append(new_field)
         return fieldset
 
     def writefield(self, *args, **kwargs):
@@ -301,14 +333,18 @@ class CombineLevelsResource(Resource):
         Extracts profiles.
         """
 
-        return self.resource.extractprofile(*args, **kwargs)
+        profile = self.resource.extractprofile(*args, **kwargs)
+        profile.fid[self.format] = profile.fid[self.resource.format]
+        return profile
 
     def extractsection(self, *args, **kwargs):
         """
         Extracts sections.
         """
 
-        return self.resource.extractsection(*args, **kwargs)
+        section = self.resource.extractsection(*args, **kwargs)
+        section.fid[self.format] = section.fid[self.resource.format]
+        return section
 
     @property
     def spectral_geometry(self):

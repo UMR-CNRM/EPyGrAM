@@ -12,6 +12,7 @@ from .D3Geometry import D3Geometry
 from .VGeometry import VGeometry
 from .V1DGeometry import V1DGeometry
 from .V2DGeometry import V2DGeometry
+from .H1DGeometry import H1DGeometry
 from .PointGeometry import PointGeometry
 from .SpectralGeometry import SpectralGeometry
 

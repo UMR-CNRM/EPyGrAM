@@ -100,6 +100,8 @@ class D3Geometry(RecursiveObject, FootprintBase):
             return {'k':True, 'j':False, 'i':True}
         elif self.structure == "H2D":
             return {'k':False, 'j':True, 'i':True}
+        elif self.structure == "H1D":
+            return {'k':False, 'j':False, 'i':True}
         elif self.structure == "V1D":
             return {'k':True, 'j':False, 'i':False}
         elif self.structure == "Point":
@@ -116,6 +118,9 @@ class D3Geometry(RecursiveObject, FootprintBase):
         - *nb_validities* is the number of validities represented in data values
         - *subzone*: optional, among ('C', 'CI'), for LAM grids only, extracts
           the levels resp. from the C or C+I zone off the C+I(+E) zone.
+
+        levels are internally stored with the vertical dimension first whereas this
+        method puts the time in first dimension.
         """
 
         if d4:
@@ -150,7 +155,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
             if subzone is not None:
                 levels = self.extract_subzone(levels, subzone)
             if d4 and ((not self.datashape['i']) or (not self.datashape['j'])):
-                shape = levels.shape[-len(h_shape):]  # shape without the horizontal dimensions
+                shape = levels.shape[:-len(h_shape)]  # shape without the horizontal dimensions
                 shape = tuple(list(shape) + list(h_shape2D))  # shape with the new horizontal dimensions
                 levels = levels.reshape(shape)
         # We suppress the vertical dimension if we do not need it
@@ -161,7 +166,8 @@ class D3Geometry(RecursiveObject, FootprintBase):
         if original_has_time:
             if levels.shape[1] != nb_validities:
                 raise epygramError("Shape of self.vcoordinate.levels does not agree with nb_validities")
-            levels = levels.transpose(tuple([1, 0] + list(levels.shape[2:])))
+            shape_range = range(len(levels.shape))
+            levels = levels.transpose(tuple([1, 0] + list(shape_range[2:])))
         elif d4 or nb_validities >= 2:
             shape = tuple(list(levels.shape) + [nb_validities])
             levels = levels.repeat(nb_validities).reshape(shape)
@@ -314,8 +320,11 @@ class D3Geometry(RecursiveObject, FootprintBase):
         """Make lons, lats grids 4D."""
         if nb_validities < 1:
             raise ValueError("nb_validities must be >=1 when d4==True")
-        # We add vertical dimension
-        shape = tuple(list(lons.shape) + [len(self.vcoordinate.levels)])
+        # We add vertical dimension, and missing horizontal dimension
+        shape = list(lons.shape)
+        if len(shape) == 1:
+            shape = [1] + shape
+        shape = tuple(shape + [len(self.vcoordinate.levels)])
         lons = lons.repeat(len(self.vcoordinate.levels)).reshape(shape)
         lats = lats.repeat(len(self.vcoordinate.levels)).reshape(shape)
         shape_range = range(len(shape))
@@ -2099,7 +2108,7 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
     def __eq__(self, other):
         """Test of equality by recursion on the object's attributes."""
         if self.__class__ == other.__class__ and \
-           self.__dict__.keys() == other.__dict__.keys():
+           set(self.__dict__.keys()) == set(other.__dict__.keys()):
             selfcp = self.copy()
             othercp = other.copy()
             for obj in [selfcp, othercp]:
@@ -3043,7 +3052,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
     def __eq__(self, other):
         """Test of equality by recursion on the object's attributes."""
         if self.__class__ == other.__class__ and \
-           self.__dict__.keys() == other.__dict__.keys():
+           set(self.__dict__.keys()) == set(other.__dict__.keys()):
             selfcp = self.deepcopy()
             othercp = other.deepcopy()
             for obj in [selfcp, othercp]:
