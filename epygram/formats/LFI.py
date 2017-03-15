@@ -442,8 +442,6 @@ class LFI(FileResource):
                      Default is *True*.
         """
 
-        if self.openmode == 'w':
-            raise epygramError("cannot read fields in resource if with openmode == 'w'.")
         if self.true3d:
             if not isinstance(fieldidentifier, six.string_types):
                 raise epygramError("fieldidentifier of a LFI field is a string (when resource opened in true3d).")
@@ -1264,7 +1262,10 @@ class LFI(FileResource):
                     'Y_resolution':yhat[1] - yhat[0],
                     'LAMzone':'CIE',
                     'latitude':Angle(lat0, 'degrees'),
-                    'longitude':Angle(lon0, 'degrees')
+                    'longitude':Angle(lon0, 'degrees'),
+                    'input_lon':1,
+                    'input_lat':1,
+                    'input_position':(0, 0)
                     }
             dimensions = {'X':imax + 2,
                           'Y':1 if (cartesian and jmax == 1) else jmax + 2,
@@ -1277,11 +1278,15 @@ class LFI(FileResource):
                           'X_CIoffset':1,
                           'Y_CIoffset':1
                           }
+            projection = {'rotation':Angle(0, 'degrees'),
+                          'reference_dX':grid['X_resolution'],
+                          'reference_dY':grid['X_resolution']}
             geometryname = 'academic'
             kwargs_geom = dict(structure='3D',
                                name=geometryname,
                                grid=grid,
                                dimensions=dimensions,
+                               projection=projection,
                                geoid=config.LFI_default_geoid,
                                )
         else:

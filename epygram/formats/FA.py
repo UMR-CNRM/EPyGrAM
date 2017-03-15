@@ -1656,7 +1656,12 @@ class FA(FileResource):
                         spectral_space = 'fourier'
                         spectral_trunc = {'in_Y':KTRONC,
                                           'in_X':KTYPTR * -1}
-                    projection = None
+                    grid.update({'input_lon':1,
+                                 'input_lat':1,
+                                 'input_position':(0, 0)})
+                    projection = {'rotation':Angle(0, 'degrees'),
+                                  'reference_dX':grid['X_resolution'],
+                                  'reference_dY':grid['X_resolution']}
                     geometryname = 'academic'
             elif not projected_geometry:
                 # regular lat/lon

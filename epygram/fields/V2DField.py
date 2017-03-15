@@ -89,9 +89,8 @@ class V2DCommonField(D3CommonField):
         - *levelsnumber*: number of levels for contours and colorbar.
         - *colormap*: name of the **matplotlib** colormap to use.
         - *center_cmap_on_0*: aligns the colormap center on the value 0.
-        - *colorbar*: if *False*, hide colorbar the plot; else, befines the
-                      colorbar position, among ('bottom', 'right').
-                      Defaults to 'right'.
+        - *colorbar*: if *False*, hide colorbar the plot; else, defines the
+          colorbar position, among ('bottom', 'right'). Defaults to 'right'.
         - *zoom*: a dict containing optional limits to zoom on the plot. \n
           Syntax: e.g. {'ymax':500, ...}.
         - *minmax_in_title*: if True and minmax is not None, adds min and max
