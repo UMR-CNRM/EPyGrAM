@@ -14,6 +14,8 @@ import epygram
 from . import abstract_testclasses as abtc
 from .util import delta_assertAlmostEqual
 
+epygram.init_env()
+
 epsilon = delta_assertAlmostEqual
 fast = True  # skips some slow tests
 basemap_ok = True
