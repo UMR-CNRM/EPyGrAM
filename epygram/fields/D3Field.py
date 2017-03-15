@@ -323,33 +323,34 @@ class D3CommonField(Field):
         geom_builder = fpx.geometry
         vcoord_builer = fpx.geometry
 
-        lons4d, lats4d = self.geometry.get_lonlat_grid(subzone=subzone, d4=True, nb_validities=len(self.validity))
+        lons4d, lats4d = self.geometry.get_lonlat_grid(subzone=subzone, d4=True, nb_validities=1)
         data4d = self.getdata(d4=True, subzone=subzone)
         levels4d = self.geometry.get_levels(d4=True, nb_validities=len(self.validity), subzone=subzone)
 
         result = FieldSet()
         kwargs_vcoord = copy.deepcopy(self.geometry.vcoordinate.footprint_as_dict())
-        for t in range(data4d.shape[0]):
-            validity = self.validity[t]
-            for j in range(data4d.shape[2]):
-                for i in range(data4d.shape[3]):
-                    kwargs_vcoord['levels'] = [levels4d[t, :, j, i]]
-                    vcoordinate = vcoord_builer(**copy.deepcopy(kwargs_vcoord))
-                    geometry = geom_builder(structure='V1D',
-                                            dimensions={'X':1, 'Y':1},
-                                            vcoordinate=vcoordinate,
-                                            grid={'longitudes':[lons4d[t, :, j, i]],
-                                                  'latitudes':[lats4d[t, :, j, i]],
-                                                 },
-                                            position_on_horizontal_grid='center',
-                                            name='unstructured'
-                                            )
-                    profilefield = field_builder(structure='V1D',
-                                                 fid=dict(copy.deepcopy(self.fid)),
-                                                 geometry=geometry,
-                                                 validity=validity.copy())
-                    profilefield.setdata(data4d[t, :, j, i])
-                    result.append(profilefield)
+        for j in range(data4d.shape[2]):
+            for i in range(data4d.shape[3]):
+                if all([numpy.all(levels4d[0, :, j, i]==levels4d[t, :, j, i]) for t in range(len(self.validity))]):
+                    kwargs_vcoord['levels'] = list(levels4d[0, :, j, i])
+                else:
+                    kwargs_vcoord['levels'] = list(levels4d[:, :, j, i].swapaxes(0, 1))
+                vcoordinate = vcoord_builer(**copy.deepcopy(kwargs_vcoord))
+                geometry = geom_builder(structure='V1D',
+                                        dimensions={'X':1, 'Y':1},
+                                        vcoordinate=vcoordinate,
+                                        grid={'longitudes':[lons4d[0, 0, j, i].tolist()],
+                                              'latitudes':[lats4d[0, 0, j, i].tolist()],
+                                             },
+                                        position_on_horizontal_grid='center',
+                                        name='unstructured'
+                                        )
+                profilefield = field_builder(structure='V1D',
+                                             fid=dict(copy.deepcopy(self.fid)),
+                                             geometry=geometry,
+                                             validity=self.validity.copy())
+                profilefield.setdata(data4d[:, :, j, i])
+                result.append(profilefield)
         return result
 
     def extract_subdomain(self, geometry, interpolation='nearest',

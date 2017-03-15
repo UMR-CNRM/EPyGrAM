@@ -199,7 +199,7 @@ class V1DCommonField(D3CommonField):
                                  fidkey=fidkey,
                                  Ycoordinate=Ycoordinate,
                                  unit=unit,
-                                 title=title,
+                                 title='__auto__' if title is None else title,
                                  logscale=logscale,
                                  ema=ema,
                                  zoom=zoom,
@@ -210,7 +210,15 @@ class V1DCommonField(D3CommonField):
 
         if len(useless_args) != 0:
             epylog.warning("Some arguments to plotfield are useless and will not be used: " + str(useless_args))
+            
+    def plotprofiles(self, *args, **kwargs):
+        return plotprofiles(self, *args, **kwargs)
+    
+    def plotverticalhovmoller(self, *args, **kwargs):
+        return plotverticalhovmoller(self, *args, **kwargs)
 
+    def plotanimation(self, *args, **kwargs):
+        return plotanimation(self, *args, **kwargs)
 
 #############
 # FUNCTIONS #
@@ -604,9 +612,7 @@ def plotanimation(profile,
         title = title_prefix + '\n' + profile.validity[0].get().isoformat(sep=b' ')
     else:
         title_prefix = None
-    profile0 = profile.deepcopy()
-    profile0.validity = profile.validity[0]
-    profile0.setdata(profile.getdata()[0, ...])
+    profile0 = profile.getvalidity(0)
     mindata = profile.getdata().min()
     maxdata = profile.getdata().max()
     mindata -= (maxdata - mindata) / 10.
@@ -625,17 +631,21 @@ def plotanimation(profile,
     fig, ax = plotprofiles(profile0,
                            title=title,
                            **kwargs)
-
-    def update(i, ax, profile, title_prefix):
-        if i < len(profile.validity):
-            ax.lines[0].set_xdata(profile.getdata()[i, ...])
+    if kwargs.get('colorbar_over') is None:
+            kwargs['colorbar_over'] = fig.axes[-1]  # the last being created, in plotfield()
+    kwargs['over'] = (fig, ax)
+        
+    def update(i, ax, myself, profilei, title_prefix, kwargs):
+        if i < len(myself.validity):
+            ax.clear()
+            profilei = myself.getvalidity(i)
             if title_prefix is not None:
-                ax.set_title(title_prefix + '\n' + profile.validity[i].get().isoformat(sep=b' '))
-
-        return ax.lines[0],
+                title = title_prefix + '\n' + profilei.validity.get().isoformat(sep=b' ')
+            profilei.plotfield(title=title,
+                             **kwargs)
 
     anim = animation.FuncAnimation(fig, update,
-                                   fargs=[ax, profile, title_prefix],
+                                   fargs=[ax, profile, profile0, title_prefix, kwargs],
                                    frames=list(range(len(profile.validity) + 1)),  # AM: don't really understand why but needed for the last frame to be shown
                                    interval=interval,
                                    repeat=repeat)

@@ -156,12 +156,12 @@ class D3Geometry(RecursiveObject, FootprintBase):
                 original_has_time = True
             else:
                 raise epygramError("Wrong number of dimensions")
-            if levels.shape[-len(h_shape):] != h_shape:
+            if levels.shape[len(levels.shape)-len(h_shape):] != h_shape: #OK for h_shape=tuple()
                 raise epygramError("Shape of self.vcoordinate.levels does not agree with horizontal dimensions")
             if subzone is not None:
                 levels = self.extract_subzone(levels, subzone)
             if d4 and ((not self.datashape['i']) or (not self.datashape['j'])):
-                shape = levels.shape[:-len(h_shape)]  # shape without the horizontal dimensions
+                shape = levels.shape[:len(levels.shape)-len(h_shape)]  # shape without the horizontal dimensions, OK for h_shape=tuple()
                 shape = tuple(list(shape) + list(h_shape2D))  # shape with the new horizontal dimensions
                 levels = levels.reshape(shape)
         # We suppress the vertical dimension if we do not need it

@@ -206,7 +206,7 @@ class H1DField(D3Field):
                                  over=over,
                                  fidkey=fidkey,
                                  unit=unit,
-                                 title=title,
+                                 title='__auto__' if title is None else title,
                                  logscale=logscale,
                                  zoom=zoom,
                                  repeat=repeat,
@@ -217,6 +217,15 @@ class H1DField(D3Field):
 
         if len(useless_args) != 0:
             epylog.warning("Some arguments to plotfield are useless and will not be used: " + str(useless_args))
+
+    def plottransects(self, *args, **kwargs):
+        return plottransects(self, *args, **kwargs)
+
+    def plothorizontalhovmoller(self, *args, **kwargs):
+        return plothorizontalhovmoller(self, *args, **kwargs)
+
+    def plotanimation(self, *args, **kwargs):
+        return plotanimation(self, *args, **kwargs)
 
 #################
 ### FUNCTIONS ###
@@ -571,7 +580,7 @@ def plotanimation(transect,
     - *repeat*: to repeat animation
     - *interval*: number of milliseconds between two validities
     
-    Other kwargs passed to plotprofiles().
+    Other kwargs passed to plottransects().
     """
     import matplotlib.animation as animation
 
@@ -586,9 +595,7 @@ def plotanimation(transect,
         title = title_prefix + '\n' + transect.validity[0].get().isoformat(sep=' ')
     else:
         title_prefix = None
-    transect0 = transect.deepcopy()
-    transect0.validity = transect.validity[0]
-    transect0.setdata(transect.getdata()[0, ...])
+    transect0 = transect.getvalidity(0)
     mindata = transect.getdata().min()
     maxdata = transect.getdata().max()
     mindata -= (maxdata - mindata) / 10
@@ -605,17 +612,22 @@ def plotanimation(transect,
     fig, ax = plottransects(transect0,
                             title=title,
                             **kwargs)
+    if kwargs.get('colorbar_over') is None:
+            kwargs['colorbar_over'] = fig.axes[-1]  # the last being created, in plotfield()
+    kwargs['over'] = (fig, ax)
 
-    def update(i, ax, transect, title_prefix):
-        if i < len(transect.validity):
-            ax.lines[0].set_ydata(transect.getdata()[i, ...])
+    def update(i, ax, myself, transecti, title_prefix, kwargs):
+        print("updating")
+        if i < len(myself.validity):
+            ax.clear()
+            transecti = myself.getvalidity(i)
             if title_prefix is not None:
-                ax.set_title(title_prefix + '\n' + transect.validity[i].get().isoformat(sep=' '))
-
-        return ax.lines[0],
+                title = title_prefix + '\n' + transecti.validity.get().isoformat(sep=b' ')
+            transecti.plotfield(title=title,
+                             **kwargs)
 
     anim = animation.FuncAnimation(fig, update,
-                                   fargs=[ax, transect, title_prefix],
+                                   fargs=[ax, transect, transect0, title_prefix, kwargs],
                                    frames=range(len(transect.validity) + 1),  # AM: don't really understand why but needed for the last frame to be shown
                                    interval=interval,
                                    repeat=repeat)

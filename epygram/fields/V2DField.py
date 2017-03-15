@@ -47,7 +47,7 @@ class V2DCommonField(D3CommonField):
 #  including suggestions/developments by users...]
     def plotfield(self,
                   over=(None, None),
-                  colorbar='vertical',
+                  colorbar='right',
                   colorbar_over=None,
                   graphicmode='colorshades',
                   minmax=None,
@@ -90,8 +90,8 @@ class V2DCommonField(D3CommonField):
         - *colormap*: name of the **matplotlib** colormap to use.
         - *center_cmap_on_0*: aligns the colormap center on the value 0.
         - *colorbar*: if *False*, hide colorbar the plot; else, befines the
-          colorbar orientation, among ('horizontal', 'vertical').
-          Defaults to 'vertical'.
+                      colorbar position, among ('bottom', 'right').
+                      Defaults to 'right'.
         - *zoom*: a dict containing optional limits to zoom on the plot. \n
           Syntax: e.g. {'ymax':500, ...}.
         - *minmax_in_title*: if True and minmax is not None, adds min and max
@@ -192,7 +192,7 @@ class V2DCommonField(D3CommonField):
             vmin = m
             vmax = M
         L = int((levelsnumber - 1) // 15) + 1
-        hlevels = [levels[l] for l in range(len(levels) - L / 3) if
+        hlevels = [levels[l] for l in range(len(levels) - L // 3) if
                    l % L == 0] + [levels[-1]]
         # plot
         if reverseY and not ax.yaxis_inverted():
@@ -203,20 +203,23 @@ class V2DCommonField(D3CommonField):
         if graphicmode == 'colorshades':
             pf = ax.contourf(x, z, data, levels, cmap=colormap,
                              vmin=vmin, vmax=vmax)
+
+
+
             if colorbar:
-                position = 'right' if colorbar == 'vertical' else 'bottom'
-                if colorbar_over is None:
-                    cax = make_axes_locatable(ax).append_axes(position,
-                                                              size="5%",
-                                                              pad=0.2)
-                else:
-                    cax = colorbar_over
-                cb = plt.colorbar(pf,
-                                  orientation=colorbar,
-                                  ticks=hlevels,
-                                  cax=cax)
-                if minmax_in_title:
-                    cb.set_label(minmax_in_title)
+                    if colorbar_over is None:
+                        cax = make_axes_locatable(ax).append_axes(colorbar,
+                                                                  size="5%",
+                                                                  pad=0.2)
+                    else:
+                        cax = colorbar_over
+                    orientation = 'vertical' if colorbar in ('right', 'left') else 'horizontal'
+                    cb = plt.colorbar(pf,
+                                      orientation=orientation,
+                                      ticks=hlevels,
+                                      cax=cax)
+                    if minmax_in_title:
+                        cb.set_label(minmax_in_title)
         elif graphicmode == 'contourlines':
             pf = ax.contour(x, z, data, levels=levels, colors=contourcolor,
                             linewidths=contourwidth)
