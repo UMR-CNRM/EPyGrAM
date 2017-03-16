@@ -469,10 +469,9 @@ class LFI(FileResource):
                                grid=self.geometry.grid,
                                dimensions=self.geometry.dimensions,
                                geoid=config.LFI_default_geoid,
-                               position_on_grid=None
+                               position_on_grid=None,
+                               projection=self.geometry.projection #Also used for academic geometries
                                )
-            if self.geometry.projected_geometry:
-                kwargs_geom['projection'] = self.geometry.projection
 
             if self.geometry.vcoordinate is not None:
                 # vertical geometry

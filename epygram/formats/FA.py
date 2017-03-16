@@ -839,7 +839,8 @@ class FA(FileResource):
                                vcoordinate=vcoordinate,
                                position_on_horizontal_grid=self.geometry.position_on_horizontal_grid,
                                geoid=config.FA_default_geoid)
-            if self.geometry.projected_geometry:
+            
+            if self.geometry.projected_geometry or self.geometry.name == 'academic':
                 kwargs_geom['projection'] = self.geometry.projection
             geometry = fpx.geometry(**kwargs_geom)
 

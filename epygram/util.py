@@ -332,7 +332,7 @@ def find_re_in_list(regexp, a_list):
         for field in a_list:
             if check_string_pattern(regexp, str(field)):
                 found.append(field)
-    elif isinstance(field, tuple):
+    elif isinstance(regexp, tuple):
         for field in a_list:
             if not isinstance(field, tuple):
                 raise epygramError("pattern and elements of the list must be of\

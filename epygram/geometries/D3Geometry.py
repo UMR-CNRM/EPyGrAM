@@ -86,7 +86,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
     @property
     def projected_geometry(self):
         """ Is the geometry a projection ? """
-        return 'projection' in self._attributes
+        return 'projtool' in self._attributes
 
     def __init__(self, *args, **kwargs):
         """Constructor. See its footprint for arguments."""
