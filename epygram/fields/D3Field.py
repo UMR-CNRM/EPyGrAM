@@ -424,8 +424,9 @@ class D3CommonField(Field):
                        'dimensions': copy.copy(geometry.dimensions),
                        'vcoordinate': vcoordinate,
                        'position_on_horizontal_grid': 'center'}
-        if geometry.projected_geometry:
+        if geometry.projected_geometry or geometry.name == 'academic':
             kwargs_geom['projection'] = copy.copy(geometry.projection)
+        if geometry.projected_geometry:
             if geometry.name != 'academic':
                 kwargs_geom['projtool'] = geometry.projtool
             kwargs_geom['geoid'] = geometry.geoid
@@ -1354,8 +1355,9 @@ class D3Field(D3CommonField):
                        'dimensions': copy.copy(self.geometry.dimensions),
                        'vcoordinate': newvcoordinate,
                        'position_on_horizontal_grid': self.geometry.position_on_horizontal_grid}
-        if self.geometry.projected_geometry:
+        if self.geometry.projected_geometry or self.geometry.name == 'academic':
             kwargs_geom['projection'] = copy.copy(self.geometry.projection)
+        if self.geometry.projected_geometry:
             kwargs_geom['projtool'] = self.geometry.projtool
             kwargs_geom['geoid'] = self.geometry.geoid
         newgeometry = fpx.geometry(**kwargs_geom)
@@ -1506,10 +1508,14 @@ class D3VirtualField(D3CommonField):
                    self._geometry.dimensions != field.geometry.dimensions or \
                    self._geometry.position_on_horizontal_grid != field.geometry.position_on_horizontal_grid:
                     raise epygramError("All fields must share the horizontal geometry")
+                if self._geometry.projected_geometry or field.geometry.projected_geometry or \
+                   self._geometry.name == 'academic' or field.geometry.name == 'academic':
+                    if self._geometry.projection != field.geometry.projection:
+                        raise epygramError("All fields must share the geometry projection")
                 if self._geometry.projected_geometry or field.geometry.projected_geometry:
                     if self._geometry.projection != field.geometry.projection or \
                        self._geometry.geoid != field.geometry.geoid:
-                        raise epygramError("All fields must share the geometry projection")
+                        raise epygramError("All fields must share the geometry geoid")
                 if self._geometry.vcoordinate.typeoffirstfixedsurface != field.geometry.vcoordinate.typeoffirstfixedsurface or \
                    self._geometry.vcoordinate.position_on_grid != field.geometry.vcoordinate.position_on_grid:
                     raise epygramError("All fields must share the vertical geometry")
@@ -1559,8 +1565,9 @@ class D3VirtualField(D3CommonField):
                        'vcoordinate': newvcoordinate,
                        'position_on_horizontal_grid': self.geometry.position_on_horizontal_grid
                       }
-        if self.geometry.projected_geometry:
+        if self.geometry.projected_geometry or self.geometry.name == 'academic':
             kwargs_geom['projection'] = copy.copy(self.geometry.projection)
+        if self.geometry.projected_geometry:
             kwargs_geom['projtool'] = self.geometry.projtool
             kwargs_geom['geoid'] = self.geometry.geoid
         self._geometry = fpx.geometry(**kwargs_geom)
