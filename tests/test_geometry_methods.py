@@ -149,7 +149,7 @@ class Test_lambert_HS(abtc.Test_GeometryMethods):
     fid = 'SURFGEOPOTENTIEL'
     basename = 'lambert_HS.fa'
 
-    def test_gauss(self):
+    def test_name(self):
         self.assertTrue('lambert' in self.geo.name)
 
     def test_azimuth(self):
@@ -158,7 +158,9 @@ class Test_lambert_HS(abtc.Test_GeometryMethods):
                                delta=epsilon)
 
     def test_compass_grid(self):
-        self.assertAlmostEqual(self.geo.compass_grid()[0, 0], 6.7197722)
+        self.assertAlmostEqual(self.geo.compass_grid()[0, 0],
+                               6.7197722043960928,
+                               delta=epsilon)
 
     def test_distance(self):
         self.assertAlmostEqual(self.geo.distance((-73, -55), (-72, -54)),
@@ -265,8 +267,260 @@ class Test_lambert_HS(abtc.Test_GeometryMethods):
         self.assertTrue(self.geo.point_is_inside_domain_ll(-73, -55))
 
     def test_resolution_ll(self):
-        self.assertAlmostEqual(self.geo.resolution_ll(73, -55),
-                               7967.900603543073, delta=epsilon)
+        self.assertAlmostEqual(self.geo.resolution_ll(-73, -55),
+                               7967.6821594830908, delta=epsilon)
+
+
+class Test_mercator(abtc.Test_GeometryMethods):
+    fid = 'SURFGEOPOTENTIEL'
+    basename = 'mercator_HN.fa'
+
+    def test_name(self):
+        self.assertTrue('mercator' in self.geo.name)
+
+    def test_azimuth(self):
+        self.assertAlmostEqual(self.geo.azimuth((-61, 16), (-62, 17)),
+                               - 43.795221249130975,
+                               delta=epsilon)
+
+    def test_compass_grid(self):
+        self.assertAlmostEqual(self.geo.compass_grid()[0, 0],
+                               0.,
+                               delta=epsilon)
+
+    def test_distance(self):
+        self.assertAlmostEqual(self.geo.distance((-61, 16), (-62, 17)),
+                               154053.58670729026,
+                               delta=epsilon)
+
+    @skipIf(fast, 'slow test')
+    def test_get_lonlat_grid(self):
+        lons, lats = self.geo.get_lonlat_grid()
+        self.assertAlmostEqual(lons[0, 0],
+                               - 81.51099961956092,
+                               delta=epsilon)
+        self.assertAlmostEqual(lats[0, 0],
+                               - 6.323778282067483,
+                               delta=epsilon)
+
+    def test_gridpoints_number(self):
+        self.assertEqual(self.geo.gridpoints_number,
+                         102400)
+
+    def test_ij2ll(self):
+        self.assertAlmostEqualSeq(self.geo.ij2ll(24, 36),
+                                  (-78.05772877762075, -1.1566717493466303),
+                                  delta=epsilon)
+
+    def test_linspace(self):
+        self.assertAlmostEqualSeq(
+            numpy.array(self.geo.linspace((-61, 16), (-62, 17), 4)).flatten(),
+            numpy.array([(-61, 16),
+                         (-61.333333330000002, 16.333906070000001),
+                         (-61.666666669999998, 16.667242829999999),
+                         (-62, 17)]).flatten(),
+            delta=epsilon)
+
+    def test_ll2ij(self):
+        self.assertAlmostEqualSeq(self.geo.ll2ij(-61, 16),
+                                  (142.55006728429416, 156.71234418713408),
+                                  delta=epsilon)
+
+    @skipIf(fast, 'slow test')
+    @skipIf(not basemap_ok, 'need basemap module')
+    def _test_make_basemap(self, **kwargs):
+        from mpl_toolkits.basemap import Basemap
+        self.assertIsInstance(self.geo.make_basemap(**kwargs),
+                              Basemap)
+
+    def test_make_basemap(self):
+        self._test_make_basemap()
+
+    def test_make_basemap_opts1(self):
+        self._test_make_basemap(specificproj=('nsper', {}))
+
+    def test_make_basemap_opts2(self):
+        self._test_make_basemap(specificproj=('nsper', {'lon':-61.,
+                                                        'lat':16.,
+                                                        'sat_height':600.}))
+
+    def test_make_basemap_opts3(self):
+        self._test_make_basemap(specificproj='ortho')
+
+    def test_make_basemap_opts4(self):
+        self._test_make_basemap(zoom={'lonmin':-65, 'lonmax':-55,
+                                      'latmin':10, 'latmax':20})
+
+    def test_make_point_geometry(self):
+        self.assertIsInstance(self.geo.make_point_geometry(-61, 16),
+                              epygram.geometries.PointGeometry)
+
+    def test_make_profile_geometry(self):
+        self.assertIsInstance(self.geo.make_profile_geometry(-61, 16),
+                              epygram.geometries.V1DGeometry)
+
+    def test_make_section_geometry(self):
+        self.assertIsInstance(self.geo.make_section_geometry((-61, 16), (-62, 17)),
+                              epygram.geometries.V2DGeometry)
+
+    def test_map_factor(self):
+        self.assertAlmostEqual(self.geo.map_factor(16),
+                               1.040299435861602,
+                               delta=epsilon)
+
+    @skipIf(fast, 'slow test')
+    def test_map_factor_field(self):
+        self.assertIsInstance(self.geo.map_factor_field(),
+                              epygram.fields.H2DField)
+
+    def _test_nearest_points(self, request, expected):
+        self.assertEqual(self.geo.nearest_points(-61, 16, request=request),
+                         expected)
+
+    def test_nearest_points1(self):
+        self._test_nearest_points({'n':'1'}, (143, 157))
+
+    def test_nearest_points2(self):
+        self._test_nearest_points({'n':'2*2'}, [(142, 156), (142, 157),
+                                                (143, 156), (143, 157)])
+
+    def test_nearest_points3(self):
+        self._test_nearest_points({'radius':18500}, [(142, 156), (142, 157),
+                                                     (143, 156), (143, 157)])
+
+    def test_point_is_inside_domain_ll(self):
+        self.assertFalse(self.geo.point_is_inside_domain_ll(2, 45))
+        self.assertTrue(self.geo.point_is_inside_domain_ll(-61, 16))
+
+    def test_resolution_ll(self):
+        self.assertAlmostEqual(self.geo.resolution_ll(-61, 16),
+                               15371.771945773886, delta=epsilon)
+
+
+class Test_stereopol(abtc.Test_GeometryMethods):
+    fid = 'SURFGEOPOTENTIEL'
+    basename = 'stereopol_HN.fa'
+
+    def test_name(self):
+        self.assertTrue('polar_stereographic' in self.geo.name)
+
+    def test_azimuth(self):
+        self.assertAlmostEqual(self.geo.azimuth((-40, 80), (-41, 81)),
+                               - 3.8723909400079606,
+                               delta=epsilon)
+
+    def test_compass_grid(self):
+        self.assertAlmostEqual(self.geo.compass_grid()[0, 0],
+                               - 18.423814350311183,
+                               delta=epsilon)
+
+    def test_distance(self):
+        self.assertAlmostEqual(self.geo.distance((-40, 80), (-41, 81)),
+                               112699.14287003415,
+                               delta=epsilon)
+
+    @skipIf(fast, 'slow test')
+    def test_get_lonlat_grid(self):
+        lons, lats = self.geo.get_lonlat_grid()
+        self.assertAlmostEqual(lons[0, 0],
+                               - 53.423814350311183,
+                               delta=epsilon)
+        self.assertAlmostEqual(lats[0, 0],
+                               - 6.323778282067483,
+                               delta=epsilon)
+
+    def test_gridpoints_number(self):
+        self.assertEqual(self.geo.gridpoints_number,
+                         102400)
+
+    def test_ij2ll(self):
+        self.assertAlmostEqualSeq(self.geo.ij2ll(24, 36),
+                                  (-51.28805020370288, 48.00255024785442),
+                                  delta=epsilon)
+
+    def test_linspace(self):
+        self.assertAlmostEqualSeq(
+            numpy.array(self.geo.linspace((-40, 80), (-41, 81), 4)).flatten(),
+            numpy.array([(-40, 80),
+                         (-40.310237149999999, 80.333484839999997),
+                         (-40.642749369999997, 80.666831430000002),
+                         (-41, 81)]).flatten(),
+            delta=epsilon)
+
+    def test_ll2ij(self):
+        self.assertAlmostEqualSeq(self.geo.ll2ij(-40, 80),
+                                  (103.66322735842627, 260.00997643994754),
+                                  delta=epsilon)
+
+    @skipIf(fast, 'slow test')
+    @skipIf(not basemap_ok, 'need basemap module')
+    def _test_make_basemap(self, **kwargs):
+        from mpl_toolkits.basemap import Basemap
+        self.assertIsInstance(self.geo.make_basemap(**kwargs),
+                              Basemap)
+
+    def test_make_basemap(self):
+        self._test_make_basemap()
+
+    def test_make_basemap_opts1(self):
+        self._test_make_basemap(specificproj=('nsper', {}))
+
+    def test_make_basemap_opts2(self):
+        self._test_make_basemap(specificproj=('nsper', {'lon':-61.,
+                                                        'lat':16.,
+                                                        'sat_height':600.}))
+
+    def test_make_basemap_opts3(self):
+        self._test_make_basemap(specificproj='ortho')
+
+    def test_make_basemap_opts4(self):
+        self._test_make_basemap(zoom={'lonmin':-65, 'lonmax':-55,
+                                      'latmin':10, 'latmax':20})
+
+    def test_make_point_geometry(self):
+        self.assertIsInstance(self.geo.make_point_geometry(-40, 80),
+                              epygram.geometries.PointGeometry)
+
+    def test_make_profile_geometry(self):
+        self.assertIsInstance(self.geo.make_profile_geometry(-40, 80),
+                              epygram.geometries.V1DGeometry)
+
+    def test_make_section_geometry(self):
+        self.assertIsInstance(self.geo.make_section_geometry((-40, 80), (-41, 81)),
+                              epygram.geometries.V2DGeometry)
+
+    def test_map_factor(self):
+        self.assertAlmostEqual(self.geo.map_factor(80),
+                               1.0076542662455523,
+                               delta=epsilon)
+
+    @skipIf(fast, 'slow test')
+    def test_map_factor_field(self):
+        self.assertIsInstance(self.geo.map_factor_field(),
+                              epygram.fields.H2DField)
+
+    def _test_nearest_points(self, request, expected):
+        self.assertEqual(self.geo.nearest_points(-40, 80, request=request),
+                         expected)
+
+    def test_nearest_points1(self):
+        self._test_nearest_points({'n':'1'}, (104, 260))
+
+    def test_nearest_points2(self):
+        self._test_nearest_points({'n':'2*2'}, [(103, 260), (103, 261),
+                                                (104, 260), (104, 261)])
+
+    def test_nearest_points3(self):
+        self._test_nearest_points({'radius':19500}, [(103, 260), (103, 261),
+                                                     (104, 260), (104, 261)])
+
+    def test_point_is_inside_domain_ll(self):
+        self.assertFalse(self.geo.point_is_inside_domain_ll(22, 45))
+        self.assertTrue(self.geo.point_is_inside_domain_ll(-40, 80))
+
+    def test_resolution_ll(self):
+        self.assertAlmostEqual(self.geo.resolution_ll(-40, 80),
+                               15876.793533343482, delta=epsilon)
 
 
 if __name__ == '__main__':

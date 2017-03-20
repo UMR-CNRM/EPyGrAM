@@ -34,17 +34,22 @@ class Test_gaussC2p4(abtc.Test_H2DGeometry):
     fileprefix = 'gaussC2.4'
 
 
-@util.add_tests_for_attrs('FA', 'GRIB2', 'netCDF')
+@util.add_tests_for_attrs('FA', 'GRIB2', 'netCDF', 'LFI')
 class Test_lambertHN(abtc.Test_H2DGeometry):
     fileprefix = 'lambert_HN'
 
 
-@util.add_tests_for_attrs('FA', 'GRIB2', 'netCDF')  # , 'LFI')
+@util.add_tests_for_attrs('FA', 'GRIB2', 'netCDF', 'LFI')
 class Test_lambertHS(abtc.Test_H2DGeometry):
     fileprefix = 'lambert_HS'
 
 
-@util.add_tests_for_attrs('FA', 'GRIB1', 'GRIB2', 'netCDF')
+@util.add_tests_for_attrs('LFI')
+class Test_lambertHS_rot_sec(abtc.Test_H2DGeometry):
+    fileprefix = 'lambert_HS_rotated_secant'
+
+
+@util.add_tests_for_attrs('FA', 'GRIB1', 'GRIB2', 'netCDF', 'LFI')
 class Test_mercatorHN(abtc.Test_H2DGeometry):
     fileprefix = 'mercator_HN'
 
@@ -54,14 +59,24 @@ class Test_mercatorHS(abtc.Test_H2DGeometry):
     fileprefix = 'mercator_HS'
 
 
-@util.add_tests_for_attrs('FA', 'GRIB2', 'netCDF')
+@util.add_tests_for_attrs('LFI')
+class Test_mercatorHN_rot_sec(abtc.Test_H2DGeometry):
+    fileprefix = 'mercator_HN_rotated_secant'
+
+
+@util.add_tests_for_attrs('FA', 'GRIB2', 'netCDF', 'LFI')
 class Test_stereopolHN(abtc.Test_H2DGeometry):
     fileprefix = 'stereopol_HN'
 
 
-@util.add_tests_for_attrs('FA', 'GRIB2', 'netCDF')
+@util.add_tests_for_attrs('FA', 'GRIB2', 'netCDF', 'LFI')
 class Test_stereopolHS(abtc.Test_H2DGeometry):
     fileprefix = 'stereopol_HS'
+
+
+@util.add_tests_for_attrs('LFI')
+class Test_stereopolHS_rot_sec(abtc.Test_H2DGeometry):
+    fileprefix = 'stereopol_HS_rotated_secant'
 
 
 @util.add_tests_for_attrs('FA', 'GRIB1', 'GRIB2', 'netCDF')

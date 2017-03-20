@@ -25,6 +25,10 @@ class TestFMT(TestCase):
     basename = ''  # to be redefined in real classes
     len = 0  # to be redefined in real classes
 
+    @property
+    def fmt(self):
+        return self.__class__.__name__[4:]
+
     def setUp(self):
         self.filename = os.path.join(self.datadir, self.basename)
 
@@ -32,11 +36,11 @@ class TestFMT(TestCase):
         del self.filename
 
     def test_listfields(self):
-        with epygram.formats.resource(self.filename, 'r') as r:
+        with epygram.formats.resource(self.filename, 'r', fmt=self.fmt) as r:
             self.assertEqual(len(r.listfields()), self.len)
 
     def test_what(self):
-        with epygram.formats.resource(self.filename, 'r') as r:
+        with epygram.formats.resource(self.filename, 'r', fmt=self.fmt) as r:
             with open('/dev/null', 'ab') as out:
                 r.what(out=out)
 

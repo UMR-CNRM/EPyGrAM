@@ -15,7 +15,7 @@ from . import abstract_testclasses as abtc
 
 epygram.init_env()
 epylog.setLevel('WARNING')
-skip_LFI = True
+skip_LFI = False
 
 
 class TestFA(abtc.TestFMT):
@@ -28,7 +28,7 @@ class TestGRIB(abtc.TestFMT):
     len = 3
 
 
-class TestNetCDF(abtc.TestFMT):
+class TestnetCDF(abtc.TestFMT):
     basename = 'netCDF'
     len = 9
 
@@ -41,7 +41,7 @@ class TestDDHLFA(abtc.TestFMT):
 @skipIf(skip_LFI, "LFI testing not ready yet (and greedy)")
 class TestLFI(abtc.TestFMT):
     basename = 'LFI'
-    len = 1270
+    len = 160
 
 
 if __name__ == '__main__':
