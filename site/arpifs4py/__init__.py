@@ -120,7 +120,7 @@ INOUT = ctypesForFortran.INOUT
 shared_objects_library = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                       _libs4py)
 complete_GRIB_samples_path_from_dynamic_gribapi(shared_objects_library)
-os.unsetenv('GRIB_DEFINITION_PATH')
+os.environ.pop('GRIB_DEFINITION_PATH', None)
 
 so = PyDLL(shared_objects_library)
 ctypesFF = ctypesForFortran.ctypesForFortranFactory(so)
