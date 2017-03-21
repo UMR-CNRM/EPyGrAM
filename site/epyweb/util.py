@@ -27,6 +27,9 @@ def whichFields(fichier):
 
     try:
         resource = epygram.formats.resource(fichier, 'r')
+        import os
+        for k in sorted(os.environ.keys()):
+            print(k, os.environ[k])
         listoffields = resource.listfields()
         resource.close()
         return listoffields

@@ -7,22 +7,15 @@
 from __future__ import print_function, absolute_import, unicode_literals, division
 
 import os
-import json
-import datetime
 import cPickle
-import uuid
-import copy
-import shutil
 import sys
 import socket
 
 import matplotlib
 matplotlib.use("Agg")
-from mpl_toolkits.basemap import Basemap
 
 from . import web
 
-from footprints.util import rangex
 import epygram
 from epygram import epylog
 
