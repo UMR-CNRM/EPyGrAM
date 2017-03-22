@@ -470,7 +470,7 @@ class LFI(FileResource):
                                dimensions=self.geometry.dimensions,
                                geoid=config.LFI_default_geoid,
                                position_on_grid=None,
-                               projection=self.geometry.projection #Also used for academic geometries
+                               projection=self.geometry.projection  #Also used for academic geometries
                                )
 
             if self.geometry.vcoordinate is not None:
@@ -1217,7 +1217,6 @@ class LFI(FileResource):
 ##############
     @staticmethod
     def _get_latin1_latin2_lambert(lat0, rpk):
-        import scipy.optimize as op
         def k(latin2):
             latin1 = lat0
             m1 = math.cos(math.radians(latin1))
@@ -1225,7 +1224,26 @@ class LFI(FileResource):
             t1 = math.tan(math.pi / 4. - math.radians(latin1) / 2.)
             t2 = math.tan(math.pi / 4. - math.radians(latin2) / 2.)
             return (math.log(m1) - math.log(m2)) / (math.log(t1) - math.log(t2)) - rpk
-        return Angle(lat0, 'degrees'), Angle(op.fsolve(k, math.degrees(2 * math.asin(rpk)) - lat0)[0], 'degrees')
+        try:
+            import scipy.optimize as op
+            latin2 = Angle(op.fsolve(k, math.degrees(2 * math.asin(rpk)) - lat0)[0],
+                           'degrees')
+            latin1 = Angle(lat0, 'degrees')
+        except Exception:
+            def solve(function, x0):
+                """A solver adapted to this problem. Do not try to use it elsewhere!"""
+                x1 = x0 + 1.
+                x2 = x0
+                y1 = function(x1)
+                y2 = function(x2)
+                while math.fabs(y2) > 10.E-20 and math.fabs(y2) != math.fabs(y1):
+                    x1, x2 = x2, x2 - (x2 - x1) / (y2 - y1) * y2
+                    y1, y2 = y2, function(x2)
+                return x2
+            latin2 = Angle(solve(k, math.degrees(2 * math.asin(rpk)) - lat0),
+                           'degrees')
+            latin1 = Angle(lat0, 'degrees')
+        return (latin1, latin2)
 
     @FileResource._openbeforedelayed
     def _read_geometry(self):
