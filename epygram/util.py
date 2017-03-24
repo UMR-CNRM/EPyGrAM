@@ -802,15 +802,15 @@ def stretch_array(array):
 def color_scale(cmap, max_val=None):
     """
     Creates a matplotlib.colors.BoundaryNorm object tuned for radar colormaps.
-    If *max_val* is given, eventually replaces the upper bound. 
+    If *max_val* is given, eventually replaces the upper bound.
     """
 
     import matplotlib.colors as colors
     bounds = copy.copy(config.colormaps_scaling.get(cmap, None))
     assert bounds is not None, \
            "unknown colormap" + cmap + "in config.epygram_colormaps_scaling"
-
-    if max_val is not None:
+    
+    if max_val is not None:  # FIXME: pb with rr6h
         if bounds[-2] <= max_val <= bounds[-1]:
             bounds[-1] = max_val
     norm = colors.BoundaryNorm(boundaries=bounds, ncolors=len(bounds) - 1)
@@ -845,8 +845,6 @@ def stdout_redirected(to=os.devnull):
             yield  # allow code to be run with the redirected stdout
         finally:
             _redirect_stdout(to=old_stdout)  # restore stdout.
-                                             # buffering and flags such as
-                                             # CLOEXEC may be different
 
 
 @contextmanager
@@ -873,8 +871,6 @@ def stderr_redirected(to=os.devnull):
             yield  # allow code to be run with the redirected stderr
         finally:
             _redirect_stderr(to=old_stderr)  # restore stderr.
-                                            # buffering and flags such as
-                                            # CLOEXEC may be different
 
 
 def restrain_to_index_i_of_dim_d(a, i, d, n=None):

@@ -386,7 +386,7 @@ def main(filenames,
 
     Mandatory arguments:
     - *filenames*: name(s) of the files to be processed
-    - *output_format_suffix*: among 'grb' (GRIB2), 'nc' (netCDF4), 'geo' (GeoPoints) 
+    - *output_format_suffix*: among 'grb' (GRIB2), 'nc' (netCDF4), 'geo' (GeoPoints)
 
     Technical named (optional) arguments:
     - *threads_number*: parallelisation of files processing

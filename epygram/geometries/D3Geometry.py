@@ -136,7 +136,10 @@ class D3Geometry(RecursiveObject, FootprintBase):
         levels = numpy.array(self.vcoordinate.levels)
 
         # We add the horizontal axis
-        h_shape2D = self.get_datashape(force_dimZ=1, d4=True, subzone=subzone)[-2:]
+        h_shape2D = self.get_datashape(d4=True,
+                                       dimT=nb_validities,
+                                       force_dimZ=1,
+                                       subzone=subzone)[-2:]
         if len(levels.shape) == 1:
             # level values constant over the horizontal domain and time
             # We add the horizontal dimension
@@ -156,12 +159,12 @@ class D3Geometry(RecursiveObject, FootprintBase):
                 original_has_time = True
             else:
                 raise epygramError("Wrong number of dimensions")
-            if levels.shape[len(levels.shape)-len(h_shape):] != h_shape: #OK for h_shape=tuple()
+            if levels.shape[len(levels.shape) - len(h_shape):] != h_shape:  #OK for h_shape=tuple()
                 raise epygramError("Shape of self.vcoordinate.levels does not agree with horizontal dimensions")
             if subzone is not None:
                 levels = self.extract_subzone(levels, subzone)
             if d4 and ((not self.datashape['i']) or (not self.datashape['j'])):
-                shape = levels.shape[:len(levels.shape)-len(h_shape)]  # shape without the horizontal dimensions, OK for h_shape=tuple()
+                shape = levels.shape[:len(levels.shape) - len(h_shape)]  # shape without the horizontal dimensions, OK for h_shape=tuple()
                 shape = tuple(list(shape) + list(h_shape2D))  # shape with the new horizontal dimensions
                 levels = levels.reshape(shape)
         # We suppress the vertical dimension if we do not need it
@@ -1446,7 +1449,7 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
                         - numpy.array(x) * numpy.sin(beta) + numpy.array(y) * numpy.cos(beta))
             else:
                 raise epygramError('Wrong direction of rotation.')
-        
+
     def _consistency_check(self):
         """Check that the geometry is consistent."""
 
@@ -1744,12 +1747,12 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
                       'X_Czone':0, 'Y_Czone':0,
                       'X_CIzone':points_number, 'Y_CIzone':1,
                       'X_CIoffset':0, 'Y_CIoffset':0}
-        
+
         rotation = numpy.arctan2(y2 - y1, x2 - x1)
         projection = {'rotation':Angle(rotation, 'radians'),
                       'reference_dX':self.projection['reference_dX'],
                       'reference_dY':self.projection['reference_dY']}
-        
+
         kwargs_geom = dict(structure='V2D',
                            name=self.name,
                            grid=FPDict(grid),
@@ -3321,11 +3324,13 @@ class D3GaussGeometry(D3Geometry):
         # !!! **useless enables the method to receive arguments specific to
         #     other geometries but useless here ! Do not remove.
 
-        if hasattr(self, '_buffered_gauss_grid') and self._buffered_gauss_grid.get('filled'):
+        if hasattr(self, '_buffered_gauss_grid') and \
+           self._buffered_gauss_grid.get('filled'):
             lons = self._buffered_gauss_grid['lons']
             lats = self._buffered_gauss_grid['lats']
         else:
-            (igrid, jgrid) = self._allocate_colocation_grid(compressed=True, as_float=False)
+            (igrid, jgrid) = self._allocate_colocation_grid(compressed=True,
+                                                            as_float=False)
             (lons, lats) = self.ij2ll(igrid, jgrid, position)
             lons = self.reshape_data(lons)
             lats = self.reshape_data(lats)
@@ -3336,8 +3341,10 @@ class D3GaussGeometry(D3Geometry):
                     # trick: the arrays remain pointers to where they were
                     # created, so that they can be shared by several geometry
                     # objects or fields !
-                    self._buffered_gauss_grid['lons'][...] = lons[...]
-                    self._buffered_gauss_grid['lats'][...] = lats[...]
+                    self._buffered_gauss_grid['lons'].data[...] = lons[...].data
+                    self._buffered_gauss_grid['lons'].mask[...] = lons[...].mask
+                    self._buffered_gauss_grid['lats'].data[...] = lats[...].data
+                    self._buffered_gauss_grid['lats'].mask[...] = lons[...].mask
                 self._buffered_gauss_grid['filled'] = True
 
         if d4:

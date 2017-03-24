@@ -331,7 +331,7 @@ class D3CommonField(Field):
         kwargs_vcoord = copy.deepcopy(self.geometry.vcoordinate.footprint_as_dict())
         for j in range(data4d.shape[2]):
             for i in range(data4d.shape[3]):
-                if all([numpy.all(levels4d[0, :, j, i]==levels4d[t, :, j, i]) for t in range(len(self.validity))]):
+                if all([numpy.all(levels4d[0, :, j, i] == levels4d[t, :, j, i]) for t in range(len(self.validity))]):
                     kwargs_vcoord['levels'] = list(levels4d[0, :, j, i])
                 else:
                     kwargs_vcoord['levels'] = list(levels4d[:, :, j, i].swapaxes(0, 1))
@@ -429,6 +429,8 @@ class D3CommonField(Field):
         if geometry.projected_geometry:
             if geometry.name != 'academic':
                 kwargs_geom['projtool'] = geometry.projtool
+            kwargs_geom['geoid'] = geometry.geoid
+        if geometry.geoid:
             kwargs_geom['geoid'] = geometry.geoid
         if geometry.position_on_horizontal_grid not in [None, '__unknown__', kwargs_geom['position_on_horizontal_grid']]:
             raise epygramError("extract_subdomain cannot deal with position_on_horizontal_grid other than 'center'")
@@ -1362,7 +1364,7 @@ class D3Field(D3CommonField):
             kwargs_geom['geoid'] = self.geometry.geoid
         newgeometry = fpx.geometry(**kwargs_geom)
         generic_fid = self.fid.get('generic', {})
-        generic_fid['level'] = my_level if not isinstance(my_level, numpy.ndarray) else my_k #to avoid arrays in fid
+        generic_fid['level'] = my_level if not isinstance(my_level, numpy.ndarray) else my_k  #to avoid arrays in fid
         kwargs_field = {'structure':newstructure,
                         'validity':self.validity.copy(),
                         'processtype':self.processtype,
@@ -1492,7 +1494,7 @@ class D3VirtualField(D3CommonField):
                 raise epygramError("3D virtual fields must be build from 'physical' fields only")
             if first:
                 self._structure = field.structure
-                self._geometry = field.geometry.deepcopy() #We need a deepcopy as we modify it
+                self._geometry = field.geometry.deepcopy()  # We need a deepcopy as we modify it
                 self._validity = field.validity.copy()
                 if field.spectral_geometry is not None:
                     self._spectral_geometry = field.spectral_geometry.copy()

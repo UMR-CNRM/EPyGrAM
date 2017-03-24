@@ -137,7 +137,7 @@ class GeoPoints(FileResource):
             if other_attributes is not None and self.other_attributes is None:
                 self._attributes['other_attributes'] = other_attributes
             if len(self.other_attributes) > 0:
-                if 'FORMAT' in self.other_attributes.keys:
+                if 'FORMAT' in self.other_attributes.keys():
                     if columns is not None:
                         epylog.warning("Double specification: columns overwritten by FORMAT.")
                     if self.other_attributes['FORMAT'] == 'XYV':
@@ -221,7 +221,9 @@ class GeoPoints(FileResource):
         return n
 
     @FileResource._openbeforedelayed
-    def readfield(self, parameter='*', footprints_builder=False,
+    def readfield(self,
+                  parameter='*',
+                  footprints_builder=False,
                   as_points=False):
         """
         Reads the GeoPoints:\n
@@ -290,7 +292,8 @@ class GeoPoints(FileResource):
             vcoord_builder = VGeometry
 
         if 'LEVEL' in self.columns:
-            specialValues_list['LEVEL'] = [float(level) for level in specialValues_list['LEVEL']]
+            specialValues_list['LEVEL'] = [float(level)
+                                           for level in specialValues_list['LEVEL']]
         vcoordinate = vcoord_builder(structure='V',
                                      typeoffirstfixedsurface=255,
                                      levels=[255] if 'LEVEL' not in self.columns else specialValues_list['LEVEL'])
@@ -353,7 +356,10 @@ class GeoPoints(FileResource):
 
         return field
 
-    def writefield(self, field, parameter='UNKNOWN', order='C',
+    def writefield(self, field,
+                   parameter='UNKNOWN',
+                   fidkey_for_parameter=None,
+                   order='C',
                    llprecision=config.GeoPoints_lonlat_precision,
                    precision=config.GeoPoints_precision,
                    col_width=config.GeoPoints_col_width,
@@ -387,14 +393,20 @@ class GeoPoints(FileResource):
             columns = ['LAT', 'LON', 'LEVEL']
             if isinstance(field, D3Field):
                 if parameter == 'UNKNOWN':
-                    open_kwargs['parameter'] = str(field.fid.get(self.format, field.fid))
+                    if fidkey_for_parameter is None:
+                        open_kwargs['parameter'] = str(field.fid.get(self.format, field.fid))
+                    else:
+                        open_kwargs['parameter'] = str(field.fid[fidkey_for_parameter])
                 if field.validity.get() is not None:
                     columns.extend(['DATE', 'TIME'])
             elif isinstance(field, FieldSet) or isinstance(field, PointField):
                 if isinstance(field, PointField):
                     field = FieldSet([field])
                 if parameter == 'UNKNOWN':
-                    open_kwargs['parameter'] = str(field[0].fid.get(self.format, field[0].fid))
+                    if fidkey_for_parameter is None:
+                        open_kwargs['parameter'] = str(field[0].fid.get(self.format, field[0].fid))
+                    else:
+                        open_kwargs['parameter'] = str(field[0].fid[fidkey_for_parameter])
                 if field[0].validity.get() is not None:
                     columns.extend(['DATE', 'TIME'])
             elif isinstance(field, dict):
@@ -413,25 +425,31 @@ class GeoPoints(FileResource):
             self.open(**open_kwargs)
 
         if isinstance(field, D3Field):
-            (lons, lats) = field.geometry.get_lonlat_grid(nb_validities=len(field.validity), subzone=subzone, d4=True)
+            (lons, lats) = field.geometry.get_lonlat_grid(nb_validities=len(field.validity),
+                                                          subzone=subzone,
+                                                          d4=True)
             if field.geometry.rectangular_grid:
                 lons = lons.flatten(order=order)
                 lats = lats.flatten(order=order)
                 values = field.getdata(subzone=subzone, d4=True).flatten(order=order)
                 if 'LEVEL' in self.columns:
-                    levels = field.geometry.get_levels(nb_validities=len(field.validity), subzone=subzone, d4=True).flatten(order=order)
+                    levels = field.geometry.get_levels(nb_validities=len(field.validity),
+                                                       subzone=subzone,
+                                                       d4=True).flatten(order=order)
             else:
                 lons = lons.compressed()
                 lats = lats.compressed()
                 values = field.getdata(subzone=subzone, d4=True).compressed()
                 if 'LEVEL' in self.columns:
-                    levels = field.geometry.get_levels(nb_validities=len(field.validity), subzone=subzone, d4=True).compressed()
+                    levels = field.geometry.get_levels(nb_validities=len(field.validity),
+                                                       subzone=subzone,
+                                                       d4=True).flatten(order=order)
             if 'DATE' in self.columns or 'TIME' in self.columns:
                 date = field.validity.get(fmt='IntStr')
                 if 'TIME' in self.columns:
-                    hour = int(date[8:10])
+                    hour = date[8:10]
                 if 'DATE' in self.columns:
-                    date = int(date[0:8])
+                    date = date[0:8]
             writebuffer = {'LON':lons, 'LAT':lats, 'VALUE':values}
             if 'LEVEL' in self.columns:
                 # level = field.geometry.vcoordinate.get('level', 0)
@@ -458,9 +476,9 @@ class GeoPoints(FileResource):
                 if 'DATE' in self.columns or 'TIME' in self.columns:
                     date = pt.validity.get(fmt='IntStr')
                     if 'TIME' in self.columns:
-                        writebuffer['TIME'].append(int(date[8:10]))
+                        writebuffer['TIME'].append(date[8:10])
                     if 'DATE' in self.columns:
-                        writebuffer['DATE'].append(int(date[0:8]))
+                        writebuffer['DATE'].append(date[0:8])
                     # others to be implemented here
         elif isinstance(field, dict):
             writebuffer = {k.upper():v for k, v in field.items()}

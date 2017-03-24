@@ -5,11 +5,14 @@ Contains the class that handle a SubdomainResource.
 This resource exposes the low level resource fields on a subdomain.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 from footprints import FPDict
 
 from epygram.base import Resource, FieldSet
 from epygram import epygramError
 from epygram.geometries import D3Geometry
+
 
 class SubdomainResource(Resource):
     """Class implementing a SubdomainResource."""
@@ -47,12 +50,13 @@ class SubdomainResource(Resource):
     def open(self):
         """Opens the low level resource"""
 
-        if not self.resource.isopen: self.resource.open()
+        if not self.resource.isopen:
+            self.resource.open()
 
     @property
     def isopen(self):
         return self.resource.isopen
-    
+
     def close(self):
         """Closes the low level resource."""
         try:
@@ -61,12 +65,9 @@ class SubdomainResource(Resource):
             pass
 
     def find_fields_in_resource(self, *args, **kwargs):
-        """
-        Returns a list of the fields from resource matching the request.
-        """
+        """Returns a list of the fields from resource matching the request."""
 
         return self.resource.find_fields_in_resource(*args, **kwargs)
-
 
     def listfields(self, *args, **kwargs):
         """Lists the available fields."""
@@ -79,16 +80,12 @@ class SubdomainResource(Resource):
         return fidlist
 
     def sortfields(self, *args, **kwargs):
-        """
-        Returns a sorted list of fields.
-        """
+        """Returns a sorted list of fields."""
 
         return self.resource.sortfields(*args, **kwargs)
 
     def readfield(self, *args, **kwargs):
-        """
-        Read the field in the low level resource and extract subdomain.
-        """
+        """Read the field in the low level resource and extract subdomain."""
 
         result = self.readfields(*args, **kwargs)
         if len(result) != 1:
@@ -96,9 +93,7 @@ class SubdomainResource(Resource):
         return result[0]
 
     def readfields(self, *args, **kwargs):
-        """
-        Read the field in the low level resource and extract subdomain.
-        """
+        """Read the field in the low level resource and extract subdomain."""
 
         getdata = kwargs.get('getdata', True)
         fieldset = FieldSet()
@@ -118,9 +113,7 @@ class SubdomainResource(Resource):
         raise AttributeError("writefield does not exist for this resource.")
 
     def extractprofile(self, *args, **kwargs):
-        """
-        Extracts profiles.
-        """
+        """Extracts profiles."""
 
         profile = self.resource.extractprofile(*args, **kwargs)
         lons, lats = profile.geometry.get_lonlat_grid()
@@ -130,9 +123,7 @@ class SubdomainResource(Resource):
         return profile
 
     def extractsection(self, *args, **kwargs):
-        """
-        Extracts sections.
-        """
+        """Extracts sections."""
 
         section = self.resource.extractsection(*args, **kwargs)
         lons, lats = section.geometry.get_lonlat_grid()
@@ -140,11 +131,8 @@ class SubdomainResource(Resource):
             if not self.geometry.point_is_inside_domain_ll(lon, lat):
                 raise epygramError("Section is not in the subdomain geometry.")
         return section
-    
+
     @property
     def spectral_geometry(self):
-        """
-        Returns the spectral_geometry
-        """
-        
+        """Returns the spectral_geometry."""
         return self.resource.spectral_geometry
