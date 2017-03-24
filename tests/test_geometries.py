@@ -14,6 +14,7 @@ import epygram
 
 from . import abstract_testclasses as abtc
 from . import util
+from . import datadir
 
 epygram.init_env()
 
@@ -232,6 +233,16 @@ class Test_SpectralGeometry(abtc.Test_GeometryInterfaces):
             self.assertEqual(f_r.spectral_geometry, f_rwr.spectral_geometry,
                              '\n<>\n'.join([str(f_r.spectral_geometry),
                                             str(f_rwr.spectral_geometry)]))
+
+
+@util.add_tests_for_attrs('gaussC1', 'lambert_HN')
+class Test_GeoPointsFull_WR_fromFA(abtc.Test_GeoPoints_WR_fromFA):
+    llv = False
+
+
+@util.add_tests_for_attrs('gaussC1', 'lambert_HN')
+class Test_GeoPointsLLV_WR_fromFA(abtc.Test_GeoPoints_WR_fromFA):
+    llv = True
 
 
 if __name__ == '__main__':
