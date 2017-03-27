@@ -6,7 +6,7 @@ name:S[0-9][0-9][0-9]CLOUD_FRACTI,type:H2D,typeOfFirstFixedSurface:119,disciplin
 name:S[0-9][0-9][0-9]CLOUD_WATER,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:6,parameterNumber:6
 name:S[0-9][0-9][0-9]EDR,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:19,parameterNumber:28
 name:S[0-9][0-9][0-9]FONC.COURANT,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:2,parameterNumber:4
-name:S[0-9][0-9][0-9]GEOPOTENTIEL,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:3,parameterNumber:5
+name:S[0-9][0-9][0-9]GEOPOTENTIEL,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:3,parameterNumber:4
 name:S[0-9][0-9][0-9]GRAUPEL,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:32
 name:S[0-9][0-9][0-9]HUMI_RELATIV,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:1
 name:S[0-9][0-9][0-9]HUMI.SPECIFI,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:0
@@ -84,7 +84,7 @@ name:P[0-9][0-9][0-9][0-9][0-9]VENT_ZONAL,type:H2D,typeOfFirstFixedSurface:100,d
 name:P[0-9][0-9][0-9][0-9][0-9]VERT.VELOC,type:H2D,typeOfFirstFixedSurface:100,discipline:0,parameterCategory:2,parameterNumber:9
 name:P[0-9][0-9][0-9][0-9][0-9]VITESSE_VE,type:H2D,typeOfFirstFixedSurface:100,discipline:0,parameterCategory:2,parameterNumber:8
 name:V[0-9][0-9][0-9]ABS_VORTICIT,type:H2D,typeOfFirstFixedSurface:109,discipline:0,parameterCategory:2,parameterNumber:10
-name:V[0-9][0-9][0-9]GEOPOTENTIEL,type:H2D,typeOfFirstFixedSurface:109,discipline:0,parameterCategory:3,parameterNumber:5
+name:V[0-9][0-9][0-9]GEOPOTENTIEL,type:H2D,typeOfFirstFixedSurface:109,discipline:0,parameterCategory:3,parameterNumber:4
 name:V[0-9][0-9][0-9]TEMPE_POTENT,type:H2D,typeOfFirstFixedSurface:109,discipline:0,parameterCategory:0,parameterNumber:2
 name:V[0-9][0-9][0-9]VENT_MERIDIE,type:H2D,typeOfFirstFixedSurface:109,discipline:0,parameterCategory:2,parameterNumber:3
 name:V[0-9][0-9][0-9]VENT_ZONAL,type:H2D,typeOfFirstFixedSurface:109,discipline:0,parameterCategory:2,parameterNumber:2
@@ -133,7 +133,7 @@ name:SURFFLU.MEVAP.EA,type:H2D,typeOfFirstFixedSurface:1,discipline:0,parameterC
 name:SURFFLU.MSUBL.NE,type:H2D,typeOfFirstFixedSurface:1,discipline:0,parameterCategory:1,parameterNumber:62,productDefinitionTemplateNumber:8,typeOfStatisticalProcessing:1
 name:SURFFLU.RAY.SOLA,type:H2D,typeOfFirstFixedSurface:1,discipline:0,parameterCategory:4,parameterNumber:9,productDefinitionTemplateNumber:8,typeOfStatisticalProcessing:1
 name:SURFFLU.RAY.THER,type:H2D,typeOfFirstFixedSurface:1,discipline:0,parameterCategory:5,parameterNumber:5,productDefinitionTemplateNumber:8,typeOfStatisticalProcessing:1
-name:SURFGEOPOTENTIEL,type:H2D,typeOfFirstFixedSurface:1,discipline:0,parameterCategory:3,parameterNumber:5
+name:SURFGEOPOTENTIEL,type:H2D,typeOfFirstFixedSurface:1,discipline:0,parameterCategory:3,parameterNumber:4
 name:SURFGZ0.THERM,type:H2D,typeOfFirstFixedSurface:1,discipline:2,parameterCategory:0,parameterNumber:216
 name:SURFIND.FOLIAIRE,type:H2D,typeOfFirstFixedSurface:1,discipline:2,parameterCategory:0,parameterNumber:28
 name:SURFIND.TERREMER,type:H2D,typeOfFirstFixedSurface:1,discipline:2,parameterCategory:0,parameterNumber:0

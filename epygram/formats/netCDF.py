@@ -1029,8 +1029,14 @@ class netCDF(FileResource):
         else:
             write_lonlat_grid = behaviour.get('write_lonlat_grid', True)
         if write_lonlat_grid:
-            lons_var, _status = check_or_add_variable(behaviour.get('X_grid', 'longitude'), vartype, dims_lonlat, fill_value=fill_value)
-            lats_var, _status = check_or_add_variable(behaviour.get('Y_grid', 'latitude'), vartype, dims_lonlat, fill_value=fill_value)
+            lons_var, _status = check_or_add_variable(behaviour.get('X_grid', 'longitude'),
+                                                      config.netCDF_default_variables_dtype,
+                                                      dims_lonlat,
+                                                      fill_value=fill_value)
+            lats_var, _status = check_or_add_variable(behaviour.get('Y_grid', 'latitude'),
+                                                      config.netCDF_default_variables_dtype,
+                                                      dims_lonlat,
+                                                      fill_value=fill_value)
             if _status == 'match':
                 epylog.info('assume lons/lats match.')
             else:
@@ -1038,6 +1044,7 @@ class netCDF(FileResource):
                 lons_var.units = 'degrees'
                 lats_var[...] = lats[...]
                 lats_var.units = 'degrees'
+
         # 3.3 meta-data
         def set_ellipsoid(meta):
             if 'ellps' in field.geometry.geoid:
