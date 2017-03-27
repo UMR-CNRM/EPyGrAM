@@ -1634,7 +1634,7 @@ function ManageUandV(suffixe) {
 function UpdateFields(oneDesc,zoom_spinner) {
     // Arguments : chemin absolu du fichier
     var args_fields = {};
-    args_fields["file"] = oneDesc["local_path"][0]; //path_data + $(this).val();
+    args_fields["file"] = oneDesc["local_path"][oneDesc["local_path"].length-1]; //path_data + $(this).val();
     
     //Cas du clonage avant remplissage des champs : on vérifie que le fichier existe bien! 
     
@@ -2124,8 +2124,8 @@ function giveme_args_minmax(Onedesc) {
                 args_minmax_tmp["operation"] = $("#operation" + Onedesc["suffixe"]).val().split(/,/);
             }
 
-            //JUST ONE FOR THE MOMENT
-            args_minmax_tmp["file"] = Onedesc["local_path"][0]; //path_data + $("#file").val() ;
+            //JUST THE LAST ONE FOR THE MOMENT
+            args_minmax_tmp["file"] = Onedesc["local_path"][Onedesc["local_path"].length-1]; //path_data + $("#file").val() ;
             args_minmax_tmp["subzone"] = subzone;
             args_minmax_tmp["FF"] = $("#FF"+Onedesc["suffixe"]).is(':checked');
             
