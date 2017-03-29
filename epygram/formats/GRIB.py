@@ -1085,7 +1085,9 @@ class GRIBmessage(RecursiveObject, dict):
                                             order='C')[:, ::-1]
                 else:
                     raise NotImplementedError("not yet !")
-            if self['editionNumber'] == 2 and self['bitMapIndicator'] == 0:  # TODO: GRIB1
+            
+            if (self['editionNumber'] == 2 and self['bitMapIndicator'] == 0) \
+            or (self['editionNumber'] == 1 and self['bitmapPresent'] == 1):  # DONE FOR GRIB1 ;-)
                 data2d = numpy.ma.masked_equal(data2d, self['missingValue'])
             field.setdata(data2d)
 

@@ -296,7 +296,7 @@ $(document).ready(function() {
             /*
              *g
              */
-	getGeometries();
+	getGeometries("");
 	var currentday = $.datepicker.formatDate('yymmdd', new Date());
     var prevDiv = $("#graphicplot0") //on garde l'historique du plot précédent pour décaler les dialogues contenant les figures
 
@@ -607,6 +607,14 @@ $(document).ready(function() {
         basemap_pickle_name = generateUUID()+"_bm.cPickle";
     });
     
+    //Si on modifie la description on met en evidence l'incoherence entre la description et ce qui est en mémoire
+    $(".vortex").change(function() {
+    	$('#vortex_existence span').text("Unchecked");;
+    	$('#vortex_get span').text("Current description not fetched");
+    });
+    
+    
+    
     
     //Zones pre-configurees pour zoom
     
@@ -651,13 +659,16 @@ $("#cachesize").click(function() {
     ///////// L E T ' S  P L O T ! ///////// 
 
     //Création d'un graphique (initié par un clic) : calcul, puis affichage du code html de retour dans une boite de dialogue
+    //2DO: on plot le graphique correspondant à l'onglet actif !
 $("#getplot").click(function() {
     
         cleantTooltips();
         
+        //var currentTab = $("#filenfield_tabs").tabs('option', 'selected');
+        //alert(currentTab);
+        
     	console.log("On démarre le plot");
     	
-
         //Validations de base pour éviter des erreurs
         if ($("#field").attr('class') == 'missing') {
             alert("Enter a -relevant- field...");
@@ -732,7 +743,6 @@ $("#getplot").click(function() {
 
                     plot2html(newDiv, prevDiv, response, 1)
 
-
                     $("#getplot").html('Plot');
                     $("#getplot").prop("disabled", false);
                     prevDiv = newDiv
@@ -744,9 +754,6 @@ $("#getplot").click(function() {
                     $("#getplot").prop("disabled", false);
                 }
             });
-
-            //Pas besoin d'un nouveau pickle sauf exceptions listées plus haut
-            //new_pickle = "false";
         }
     });
 
@@ -1140,7 +1147,7 @@ $("#getfile")
                 //UpdateFields(Adesc["local_path"][0],zoom_spinner);
                 UpdateFields(Adesc,zoom_spinner); 
 
-                $('#vortex_get span').text("Transfer done!");
+                $('#vortex_get span').text("Current description fetched!");
                 
                 $("#getplot").prop("disabled", false);
                 $("#getplotboth").prop("disabled", false);
@@ -1197,11 +1204,12 @@ $("#cloneFileField").click(function () {
          //Valeur de la colormap
          currentColorMap = $("#ColorMapList").val()
          
-         //On arrête les select avant clonage
+         //On arrête les select et tabs avant clonage
          $("#vortex_preset_resources" ).selectmenu( "destroy" );
          $("#vortex_preset_providers" ).selectmenu( "destroy" );
          $("#ColorMapList" ).iconselectmenu( "destroy" );
          $("#tabs_plot" ).tabs( "destroy" );
+         $("#modetabs" ).tabs( "destroy" );
          
          //Idem pour les boutons
          $(".boutonlike").buttonset("destroy");
@@ -1272,6 +1280,9 @@ $("#cloneFileField").click(function () {
         VortexPresetInit("");
         VortexPresetInit("_cloned");
 
+        //Auto complétion des geometries
+        getGeometries("_cloned");
+        
         
         //Gestion auto completion grib
         $(".smart_grib_cloned").change(function() {
@@ -1381,7 +1392,7 @@ $("#cloneFileField").click(function () {
             success: function(vortexAnswer) {
                 Bdesc["local_path"] = vortexAnswer["localpath"];
                 UpdateFields(Bdesc,zoom_spinner); 
-                $('#vortex_get_cloned span').text("Transfer done!");
+                $('#vortex_get_cloned span').text("Current description fetched!");
                 //NIOU 2 TEST
                 $("#accordion_vortex_cloned").accordion("option", "active", 1);
                 makeTabTitle(args_vortex_get_cloned_json,"fileB")
@@ -1410,6 +1421,8 @@ $("#cloneFileField").click(function () {
             $(this).attr("href",original + "_cloned");
             //$(this).attr("id",original + "_cloned");
         })
+        
+        
         
         InitColorMapList("",currentColorMap);
         InitColorMapList("_cloned",currentColorMap);
@@ -1464,6 +1477,22 @@ $("#cloneFileField").click(function () {
             });
             });
         */
+        
+
+        //Cloner les tabs c'est vraiment une plaie
+         
+        $( "#modetabs" ).tabs();
+         
+        listTabs2 = $( '#filenfield_tab2 .hardtobecloned2' );
+        listTabsItems2 = listTabs2.find('a');
+        listTabsItems2.each( function(i) {
+            var original = $(this).attr("href") ;
+            $(this).attr("href",original + "_cloned");
+            //$(this).attr("id",original + "_cloned");
+        })
+        
+         $( "#modetabs_cloned" ).tabs();
+        
         
         //On créé la mécanique de chaque tab
         activate_tabs_plot(Adesc);
@@ -1782,7 +1811,7 @@ function updateCacheSize() {
         });
     };
 
-function getGeometries() {
+function getGeometries(suffixe) {
 
         $.ajax({
             type: "POST",
@@ -1794,7 +1823,7 @@ function getGeometries() {
                 //On garde la valeur precedente en memoire
                 //previous_desc = $('#vortex_description' + suffixe + ' span').text()
                 //alert(myAnswer[1]);
-                MakeAutoComplete("#geometry", myAnswer);
+                MakeAutoComplete("#geometry"+suffixe, myAnswer);
                },
             error: function(response) {
                 console.log("Erreur !!" + response.responseText);
@@ -2435,14 +2464,15 @@ function InitColorMapList(suffixe,current) {
         
         
 function setup_render_labels(suffixe) {
-    $("#decumul_label" + suffixe).text("Decumul is off ");
-    $("#update_label" + suffixe).text("AutoUpdate is on ");
-    $("#reverse_colormap_label" + suffixe).text("Reversed colormap is off");
+	//Les défauts sont geres directment dans le code html, evite des incoherences lors du clonage
+    //$("#decumul_label" + suffixe).text("Decumul is off ");
+    //$("#update_label" + suffixe).text("AutoUpdate is on ");
+    //$("#reverse_colormap_label" + suffixe).text("Reversed colormap is off");
     $("#autoupdate" + suffixe).click(function() {
         $("#update_label" + suffixe).text(this.checked ? "AutoUpdate is on " : "AutoUpdate is off");
     });
     $("#reverse_colormap" + suffixe).click(function() {
-        $("#reverse_colormap_label").text(this.checked ? "Reversed colormap is on " : "Reversed colormap is off");
+        $("#reverse_colormap_label" + suffixe).text(this.checked ? "Reversed colormap is on " : "Reversed colormap is off");
     });
     $("#decumul" + suffixe).click(function() {
         $("#decumul_label" + suffixe).text(this.checked ? "Decumul is on " : "Decumul is off");
