@@ -55,10 +55,10 @@ class GetGeometries(object):
     """Return the list of existing geometries"""
     def POST(self):
         import vortex
-        toremove_geoms = ['assmp1', 'assmp1sp',
-                          'assmp2', 'assmp2sp',
-                          'assms1', 'assms1sp',
-                          'assms2', 'assms2sp']
+        #toremove_geoms = ['assmp1', 'assmp1sp',
+        #                  'assmp2', 'assmp2sp',
+        #                  'assms1', 'assms1sp',
+        #                  'assms2', 'assms2sp']
         geoms = copy.copy(vortex.data.geometries.keys())
         for g in toremove_geoms:
             geoms.remove(g)
