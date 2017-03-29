@@ -18,7 +18,6 @@ from . import web
 
 import epygram
 
-# comm
 
 ####################
 # Epyweb functions ############################################################
