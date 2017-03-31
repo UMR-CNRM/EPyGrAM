@@ -364,7 +364,8 @@ class H2DVectorField(Field):
                   quiverkey=None,
                   quiver_options=None,
                   components_are_projected_on='grid',
-                  map_factor_correction=True):
+                  map_factor_correction=True,
+                  mask_threshold=None):
         """
         Makes a simple plot of the field, with a number of options.
 
@@ -437,6 +438,7 @@ class H2DVectorField(Field):
           vector components are projected on ('grid' or 'lonlat').
         - *map_factor_correction*: if True, applies a correction of magnitude
           to vector due to map factor.
+        - *mask_threshold*:   dict with min and/or max value(s) to mask outside.
 
         This method uses (hence requires) 'matplotlib' and 'basemap' libraries.
         """
@@ -501,17 +503,14 @@ class H2DVectorField(Field):
                                 bluemarble=bluemarble,
                                 background=background)
         # 3. Prepare data
-        (lons, lats) = self.geometry.get_lonlat_grid(subzone=subzone)
-        if lons.ndim == 1:  # self.geometry.dimensions['Y'] == 1:
-            lons = lons[::subsampling]
-            lats = lats[::subsampling]
-        else:
-            lons = lons[::subsampling, ::subsampling]
-            lats = lats[::subsampling, ::subsampling]
-        x, y = bm(lons, lats)
+        # mask values
+        mask_outside = {'min':-config.mask_outside,
+                        'max':config.mask_outside}
+        if mask_threshold is not None:
+            mask_outside.update(mask_threshold)
         data = [numpy.ma.masked_outside(data,
-                                        - config.mask_outside,
-                                        config.mask_outside) for data in
+                                        mask_outside['min'],
+                                        mask_outside['max']) for data in
                 self.getdata(subzone=subzone)]
         if data[0].ndim == 1:  # self.geometry.dimensions['Y'] == 1:
             u = data[0][::subsampling]
@@ -519,6 +518,22 @@ class H2DVectorField(Field):
         else:
             u = data[0][::subsampling, ::subsampling]
             v = data[1][::subsampling, ::subsampling]
+        (lons, lats) = self.geometry.get_lonlat_grid(subzone=subzone)
+        if lons.ndim == 1:  # self.geometry.dimensions['Y'] == 1:
+            lons = lons[::subsampling]
+            lats = lats[::subsampling]
+        else:
+            lons = lons[::subsampling, ::subsampling]
+            lats = lats[::subsampling, ::subsampling]
+        if isinstance(u, numpy.ma.masked_array) \
+        or isinstance(v, numpy.ma.masked_array):
+            assert isinstance(u, numpy.ma.masked_array) == isinstance(u, numpy.ma.masked_array)
+            common_mask = u.mask + v.mask
+            u.mask = common_mask
+            v.mask = common_mask
+            lons = numpy.ma.masked_where(common_mask, lons)
+            lats = numpy.ma.masked_where(common_mask, lats)
+        x, y = bm(lons, lats)
 
         # Calculate the orientation of the vectors
         assert components_are_projected_on in ('grid', 'lonlat')

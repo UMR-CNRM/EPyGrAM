@@ -8,6 +8,7 @@ export PYTHONPATH
 # EPyGrAM
 VERSION='current' # or '1.x.x' or 'next'
 EPYGRAM_INSTALL_DIR=/home/gmap/mrpe/mary/public/EPyGrAM.$VERSION
+GRIBAPI_OK_CY42=/opt/softs/libraries/ICC16.1.150/grib_api-1.14.0_mf1.2/lib64/python2.6/site-packages/grib_api
 PYTHONPATH=$EPYGRAM_INSTALL_DIR:$EPYGRAM_INSTALL_DIR/site:$PYTHONPATH
 PYTHONPATH=/home/gmap/mrpe/mary/lib/grib_api-1.14.0_mf1.1/lib64/python2.7/site-packages/grib_api:$PYTHONPATH
 export PYTHONPATH
