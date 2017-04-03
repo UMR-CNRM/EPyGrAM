@@ -2061,15 +2061,16 @@ function ParameterPreset(param,suffixe) {
             $("#" + key  + suffixe2).val(param_presets[param][key]);
         }
     }
-    
-        //$("#field").val(param_presets[param]["field"]);
-        //$("#TypeOfLevel").val("heightAboveGround / 105");
-        //$("#Level").val("2");
-        $("#FF"+suffixe2).prop("checked", param_presets[param]["FF"]);
         
-        //$("#FF"+suffixe).trigger('click');
-
-        $("#Vecteurs"+suffixe2).prop("checked", param_presets[param]["Vecteurs"]);
+        //Cohérence des boutons FF et vecteurs
+        if ($("#FF"+suffixe2).prop("checked") != param_presets[param]["FF"]) {
+        	$("#FF"+suffixe2).trigger('click');
+        }
+        if ($("#Vecteurs"+suffixe2).prop("checked") != param_presets[param]["Vecteurs"]) {
+        	$("#Vecteurs"+suffixe2).trigger('click');
+        }
+        
+        //$("#Vecteurs"+suffixe2).prop("checked", param_presets[param]["Vecteurs"]);
         ManageUandV(suffixe2);
 
 
