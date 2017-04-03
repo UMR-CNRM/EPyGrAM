@@ -347,17 +347,22 @@ class MyPlot(object):
                             if indiceDecumul == 0:
                                 fieldDecumul = field
                                 indiceDecumul = +1
+                                #Lexception = False
                                 continue
                     except Exception:  # Cas des RR @0h : param n'existe pas
                         indiceDecumul = +1
+                        Lexception = True # A garder pour reinitialiser le cumul
                         continue
 
                     if decumul[cle]:
                             waitforme = field
-                            try:  # Cas des RR @0h : param n'erxiste pas
+                            try:  # Cas des RR @0h : param n'existe pas
                                 validity = field.validity
                                 fid = field.fid
-                                field = field - fieldDecumul
+                                if Lexception == False: #cas normal
+                                    field = field - fieldDecumul
+                                else: #cas juste après un champ inexistant : field=field et fin de l'exception
+                                    Lexception = False
                                 field.validity = validity
                                 field.fid = fid
                             except Exception:

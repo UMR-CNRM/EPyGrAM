@@ -975,7 +975,7 @@ $("#getplotboth").click(function() {
             $("#getplotboth").prop("disabled", true);
 
             //Pour entête boite de dialogue
-            label = $("#experiment").val()+ $("#suite_cloned").val() + " (left) vs " + $("#experiment_cloned").val()+ $("#suite").val() + " (right)"; 
+            label = $("#experiment").val()+ $("#suite").val() + " (left) vs " + $("#experiment_cloned").val()+ $("#suite_cloned").val() + " (right)"; 
 
             //Si demandé recherche des min/max
             if ($("#autoupdate").prop('checked') == true) {
