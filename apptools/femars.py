@@ -364,13 +364,13 @@ if __name__ == '__main__':
     # ## 3. Main
     ###########
     if args.diff_to_avg:
-        femars_avg(args.filenames,
+        femars_avg([six.u(f) for f in args.filenames],
                    fieldseed=fieldseed,
                    other_GRIB_options=other_GRIB_options,
                    threads_number=args.threads_number,
                    progressmode=progressmode)
     else:
-        femars_ensemble(args.filenames,
+        femars_ensemble([six.u(f) for f in args.filenames],
                         fieldseed=fieldseed,
                         other_GRIB_options=other_GRIB_options,
                         threads_number=args.threads_number,

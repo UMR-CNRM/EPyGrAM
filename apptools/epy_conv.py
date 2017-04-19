@@ -503,7 +503,7 @@ if __name__ == '__main__':
 
     # ## 3. Main
     ###########
-    main(args.filenames,
+    main([six.u(f) for f in args.filenames],
          args.output_format,
          # technical
          threads_number=threads_number,

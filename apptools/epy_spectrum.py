@@ -6,6 +6,7 @@
 
 from __future__ import print_function, absolute_import, unicode_literals, division
 
+import six
 import numpy
 import argparse
 import copy
@@ -412,7 +413,7 @@ if __name__ == '__main__':
 
     ### 3. Main
     ###########
-    main(args.filename,
+    main(six.u(args.filename),
          fieldseed,
          subzone=subzone,
          refname=refname,

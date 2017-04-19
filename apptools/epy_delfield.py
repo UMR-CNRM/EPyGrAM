@@ -6,6 +6,7 @@
 
 from __future__ import print_function, absolute_import, unicode_literals, division
 
+import six
 import argparse
 
 import epygram
@@ -160,7 +161,7 @@ if __name__ == '__main__':
 
     # ## 3. Main
     ###########
-    main(args.filename, fieldseed,
+    main(six.u(args.filename), fieldseed,
          reverse=args.reverse,
          progressmode=progressmode,
          in_place=args.in_place)

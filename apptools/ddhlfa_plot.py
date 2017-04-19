@@ -6,8 +6,8 @@
 
 from __future__ import print_function, absolute_import, unicode_literals, division
 
-import argparse
 import six
+import argparse
 
 import epygram
 from epygram import epylog
@@ -140,7 +140,7 @@ if __name__ == '__main__':
 
     # ## 3. Main
     ###########
-    main(args.filename,
+    main(six.u(args.filename),
          fieldseed,
          domains,
          refname=args.refname,
