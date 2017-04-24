@@ -705,7 +705,13 @@ class netCDF(FileResource):
                     kwargs_geom['name'] = 'academic'
                     grid = {'LAMzone':None,
                             'X_resolution':abs(Xgrid[0, 1] - Xgrid[0, 0]),
-                            'Y_resolution':abs(Ygrid[1, 0] - Ygrid[0, 0])}
+                            'Y_resolution':abs(Ygrid[1, 0] - Ygrid[0, 0]),
+                            'input_lat':1.,
+                            'input_lon':1.,
+                            'input_position':(0, 0)}
+                    kwargs_geom['projection'] = {'reference_dX':grid['X_resolution'],
+                                                 'reference_dY':grid['Y_resolution'],
+                                                 'rotation': Angle(0, 'degrees')}
         elif V1D or V2D or points:
             var_corresponding_to_X_grid = behaviour.get('X_grid', False)
             if var_corresponding_to_X_grid not in self._listfields():
