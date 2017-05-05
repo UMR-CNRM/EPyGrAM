@@ -296,7 +296,7 @@ $(document).ready(function() {
             /*
              *g
              */
-	getGeometries();
+	getGeometries("");
 	var currentday = $.datepicker.formatDate('yymmdd', new Date());
     var prevDiv = $("#graphicplot0") //on garde l'historique du plot précédent pour décaler les dialogues contenant les figures
 
@@ -607,6 +607,14 @@ $(document).ready(function() {
         basemap_pickle_name = generateUUID()+"_bm.cPickle";
     });
     
+    //Si on modifie la description on met en evidence l'incoherence entre la description et ce qui est en mémoire
+    $(".vortex").change(function() {
+    	$('#vortex_existence span').text("Unchecked");;
+    	$('#vortex_get span').text("Current description not fetched");
+    });
+    
+    
+    
     
     //Zones pre-configurees pour zoom
     
@@ -651,15 +659,27 @@ $("#cachesize").click(function() {
     ///////// L E T ' S  P L O T ! ///////// 
 
     //Création d'un graphique (initié par un clic) : calcul, puis affichage du code html de retour dans une boite de dialogue
+    //2DO: on plot le graphique correspondant à l'onglet actif !
 $("#getplot").click(function() {
     
-        cleantTooltips();
+	console.log("On démarre le plot");
+	
+	cleantTooltips();
         
-    	console.log("On démarre le plot");
+	//Customisation en fonction de l'onglet actif
+    var currentTab = $("#filenfield_tabs").tabs('option', 'active');
+	//alert(currentTab);
+    var activeDesc = Adesc ;
+    var activeSuffixe = "" ;
+    if (currentTab == 1) {
+    	activeDesc = Bdesc ; 
+    	activeSuffixe = "_cloned" ;
+    	} 
+        
     	
-
+    	
         //Validations de base pour éviter des erreurs
-        if ($("#field").attr('class') == 'missing') {
+        if ($("#field").hasClass('fieldnothere')) {  
             alert("Enter a -relevant- field...");
         } else {
             //Mise en attente pour signifier qu'un plot est en création
@@ -669,12 +689,12 @@ $("#getplot").click(function() {
 
             //Pour entête boite de dialogue
             //label = $("#field").val();
-            label = $("#experiment").val() + $("#suite").val() ;
+            label = $("#experiment" + activeSuffixe).val() + $("#suite" + activeSuffixe).val() ;
 
             //Si demandé recherche des min/max
-            if ($("#autoupdate").prop('checked') == true) {
-                var args_minmax_json = JSON.stringify(giveme_args_minmax(Adesc));
-                AutoUpdateMinMax(args_minmax_json,"")
+            if ($("#autoupdate" + activeSuffixe).prop('checked') == true) {
+                var args_minmax_json = JSON.stringify(giveme_args_minmax(activeDesc));
+                AutoUpdateMinMax(args_minmax_json, activeSuffixe)
             } else {};
             //On met le zoom à jour si besoin (cas d'un fichier rapatrié avec zoom activé, et qu'on veut avoir les coordonnees du nouveau fichier)
             //FBI !! GetCoordinates(zoom_spinner)
@@ -687,32 +707,32 @@ $("#getplot").click(function() {
             args_plot["field_v"] = {};
             
             //On utilise .sort() pour avoir les figures dans l'ordre : toutes les échéances d'un réseau se suivent
-            args_plot["file"]["A"] = Adesc["local_path"].sort(); 
+            args_plot["file"]["A"] = activeDesc["local_path"].sort(); 
 
              //Gestion de la lecture des paramètres selon le format de fichier
             //Cas d'un fichier grib
-            if (Adesc["format"] == "grib") {
-                args_plot["field"]["A"] = giveme_grib_handgrip("") ;
+            if (activeDesc["format"] == "grib") {
+                args_plot["field"]["A"] = giveme_grib_handgrip(activeSuffixe) ;
                 //Pour la composante V, tout idem sauf indicatorOfParameter
-                args_plot["field_v"]["A"] = giveme_grib_handgrip("") ;
+                args_plot["field_v"]["A"] = giveme_grib_handgrip(activeSuffixe) ;
                 try {
-                    args_plot["field_v"]["A"]["indicatorOfParameter"] = parseInt(GetGribKey("#field_v",0));                    
+                    args_plot["field_v"]["A"]["indicatorOfParameter"] = parseInt(GetGribKey("#field_v" + activeSuffixe,0));                    
                 }
                 catch (err) {}
             }
                     
             else {
-                args_plot["field"]["A"] = $("#field").val();
-                args_plot["field_v"]["A"] = $("#field_v").val();
+                args_plot["field"]["A"] = $("#field" + activeSuffixe).val();
+                args_plot["field_v"]["A"] = $("#field_v" + activeSuffixe).val();
             }      
             
             //Common args between A and B
             args_plot = get_common_args(args_plot);
             //Specific args between A and B
-            args_plot = get_specific_args(args_plot,"","A");
+            args_plot = get_specific_args(args_plot, activeSuffixe,"A");
 
             args_plot["graphicmode"] = {}
-            args_plot["graphicmode"]["A"] = Adesc["graphicmode"];
+            args_plot["graphicmode"]["A"] = activeDesc["graphicmode"];
             args_plot["basemap_pickle_name"] = basemap_pickle_name;
             
             var args_plot_json = JSON.stringify(args_plot);
@@ -732,7 +752,6 @@ $("#getplot").click(function() {
 
                     plot2html(newDiv, prevDiv, response, 1)
 
-
                     $("#getplot").html('Plot');
                     $("#getplot").prop("disabled", false);
                     prevDiv = newDiv
@@ -744,9 +763,6 @@ $("#getplot").click(function() {
                     $("#getplot").prop("disabled", false);
                 }
             });
-
-            //Pas besoin d'un nouveau pickle sauf exceptions listées plus haut
-            //new_pickle = "false";
         }
     });
 
@@ -759,7 +775,7 @@ $("#overlay").click(function() {
     console.log("On démarre le plot overlay");
 
         //Validations de base pour éviter des erreurs
-        if ($("#field").attr('class') == 'missing') {
+        if ($("#field").hasClass('fieldnothere')) {  
             alert("Enter a -relevant- field...");
         } else {
             //Mise en attente pour signifier qu'un plot est en création
@@ -862,7 +878,7 @@ $("#difference").click(function() {
     	console.log("On démarre la diff");
 
         //Validations de base pour éviter des erreurs
-        if ($("#field").attr('class') == 'missing') {
+    	if ($("#field").hasClass('fieldnothere')) {  
             alert("Enter a -relevant- field...");
         } else {
             //Mise en attente pour signifier qu'un plot est en création
@@ -950,7 +966,7 @@ $("#getplotboth").click(function() {
     	console.log("On démarre le plot both");
 
         //Validations de base pour éviter des erreurs
-        if ($("#field").attr('class') == 'missing') {
+    	if ($("#field").hasClass('fieldnothere')) {  
             alert("Enter a -relevant- field...");
         } else {
             //Mise en attente pour signifier qu'un plot est en création
@@ -959,7 +975,7 @@ $("#getplotboth").click(function() {
             $("#getplotboth").prop("disabled", true);
 
             //Pour entête boite de dialogue
-            label = $("#experiment").val()+ $("#suite_cloned").val() + " (left) vs " + $("#experiment_cloned").val()+ $("#suite").val() + " (right)"; 
+            label = $("#experiment").val()+ $("#suite").val() + " (left) vs " + $("#experiment_cloned").val()+ $("#suite_cloned").val() + " (right)"; 
 
             //Si demandé recherche des min/max
             if ($("#autoupdate").prop('checked') == true) {
@@ -1140,7 +1156,7 @@ $("#getfile")
                 //UpdateFields(Adesc["local_path"][0],zoom_spinner);
                 UpdateFields(Adesc,zoom_spinner); 
 
-                $('#vortex_get span').text("Transfer done!");
+                $('#vortex_get span').text("Current description fetched!");
                 
                 $("#getplot").prop("disabled", false);
                 $("#getplotboth").prop("disabled", false);
@@ -1197,11 +1213,12 @@ $("#cloneFileField").click(function () {
          //Valeur de la colormap
          currentColorMap = $("#ColorMapList").val()
          
-         //On arrête les select avant clonage
+         //On arrête les select et tabs avant clonage
          $("#vortex_preset_resources" ).selectmenu( "destroy" );
          $("#vortex_preset_providers" ).selectmenu( "destroy" );
          $("#ColorMapList" ).iconselectmenu( "destroy" );
          $("#tabs_plot" ).tabs( "destroy" );
+         $("#modetabs" ).tabs( "destroy" );
          
          //Idem pour les boutons
          $(".boutonlike").buttonset("destroy");
@@ -1272,6 +1289,9 @@ $("#cloneFileField").click(function () {
         VortexPresetInit("");
         VortexPresetInit("_cloned");
 
+        //Auto complétion des geometries
+        getGeometries("_cloned");
+        
         
         //Gestion auto completion grib
         $(".smart_grib_cloned").change(function() {
@@ -1381,7 +1401,7 @@ $("#cloneFileField").click(function () {
             success: function(vortexAnswer) {
                 Bdesc["local_path"] = vortexAnswer["localpath"];
                 UpdateFields(Bdesc,zoom_spinner); 
-                $('#vortex_get_cloned span').text("Transfer done!");
+                $('#vortex_get_cloned span').text("Current description fetched!");
                 //NIOU 2 TEST
                 $("#accordion_vortex_cloned").accordion("option", "active", 1);
                 makeTabTitle(args_vortex_get_cloned_json,"fileB")
@@ -1410,6 +1430,8 @@ $("#cloneFileField").click(function () {
             $(this).attr("href",original + "_cloned");
             //$(this).attr("id",original + "_cloned");
         })
+        
+        
         
         InitColorMapList("",currentColorMap);
         InitColorMapList("_cloned",currentColorMap);
@@ -1464,6 +1486,22 @@ $("#cloneFileField").click(function () {
             });
             });
         */
+        
+
+        //Cloner les tabs c'est vraiment une plaie
+         
+        $( "#modetabs" ).tabs();
+         
+        listTabs2 = $( '#filenfield_tab2 .hardtobecloned2' );
+        listTabsItems2 = listTabs2.find('a');
+        listTabsItems2.each( function(i) {
+            var original = $(this).attr("href") ;
+            $(this).attr("href",original + "_cloned");
+            //$(this).attr("id",original + "_cloned");
+        })
+        
+         $( "#modetabs_cloned" ).tabs();
+        
         
         //On créé la mécanique de chaque tab
         activate_tabs_plot(Adesc);
@@ -1782,7 +1820,7 @@ function updateCacheSize() {
         });
     };
 
-function getGeometries() {
+function getGeometries(suffixe) {
 
         $.ajax({
             type: "POST",
@@ -1794,7 +1832,7 @@ function getGeometries() {
                 //On garde la valeur precedente en memoire
                 //previous_desc = $('#vortex_description' + suffixe + ' span').text()
                 //alert(myAnswer[1]);
-                MakeAutoComplete("#geometry", myAnswer);
+                MakeAutoComplete("#geometry"+suffixe, myAnswer);
                },
             error: function(response) {
                 console.log("Erreur !!" + response.responseText);
@@ -1915,22 +1953,21 @@ function SmartGribSelect(oneDesc) {
                 MakeAutoComplete("#field_v" + oneDesc["suffixe"],ListeParam);
                 MakeAutoComplete("#TypeOfLevel" + oneDesc["suffixe"],ListeTypeLevel);
                 MakeAutoComplete("#Level" + oneDesc["suffixe"],ListeLevel);
-                
-                if ($.inArray($("#field" + oneDesc["suffixe"]).val(), ListeParam) == -1)
-                      { $("#field" + oneDesc["suffixe"]).addClass("fieldnothere"); }
-                else  { $("#field" + oneDesc["suffixe"]).removeClass("fieldnothere"); }
+  
+	if ($.inArray($("#field" + oneDesc["suffixe"]).val(), ListeParam) == -1)
+    { $("#field" + oneDesc["suffixe"]).addClass("fieldnothere"); }
+else  { $("#field" + oneDesc["suffixe"]).removeClass("fieldnothere"); }
 
-                if ($.inArray($("#TypeOfLevel" + oneDesc["suffixe"]).val(), ListeTypeLevel) == -1)
-                      { $("#TypeOfLevel" + oneDesc["suffixe"]).addClass("fieldnothere"); }
-                else  { $("#TypeOfLevel" + oneDesc["suffixe"]).removeClass("fieldnothere"); }
+if ($.inArray($("#TypeOfLevel" + oneDesc["suffixe"]).val(), ListeTypeLevel) == -1)
+    { $("#TypeOfLevel" + oneDesc["suffixe"]).addClass("fieldnothere"); }
+else  { $("#TypeOfLevel" + oneDesc["suffixe"]).removeClass("fieldnothere"); }
 
-                if ($.inArray($("#Level" + oneDesc["suffixe"]).val(), ListeLevel) == -1)
-                      { $("#Level" + oneDesc["suffixe"]).addClass("fieldnothere"); }
-                else  { $("#Level" + oneDesc["suffixe"]).removeClass("fieldnothere"); }
-            }
-            
-    
-    
+if ($.inArray($("#Level" + oneDesc["suffixe"]).val(), ListeLevel) == -1)
+    { $("#Level" + oneDesc["suffixe"]).addClass("fieldnothere"); }
+else  { $("#Level" + oneDesc["suffixe"]).removeClass("fieldnothere"); }
+
+	
+}
     
 function Param_Presets_Init(suffixe) {
     
@@ -1959,30 +1996,45 @@ function Param_Presets_Init(suffixe) {
     
     $("#param_hu2m"+suffixe).click(function() {
         ParameterPreset("hu2m",suffixe);
+        if (suffixe == "") {SmartGribSelect(Adesc);}
+        else { SmartGribSelect(Bdesc); }
     })
     
     $("#param_rr"+suffixe).click(function() {
         ParameterPreset("rr",suffixe);
+        if (suffixe == "") {SmartGribSelect(Adesc);}
+        else { SmartGribSelect(Bdesc); }
     })
     
     $("#param_none"+suffixe).click(function() {
         ParameterPreset("none",suffixe);
+        if (suffixe == "") {SmartGribSelect(Adesc);}
+        else { SmartGribSelect(Bdesc); }
     })
     
     $("#param_ff10m"+suffixe).click(function() {
         ParameterPreset("ff10m",suffixe);
+        if (suffixe == "") {SmartGribSelect(Adesc);}
+        else { SmartGribSelect(Bdesc); }
     })
     
     $("#param_isp"+suffixe).click(function() {
         ParameterPreset("isp",suffixe);
+        if (suffixe == "") {SmartGribSelect(Adesc);}
+        else { SmartGribSelect(Bdesc); }
         })
     
     $("#param_tpw850"+suffixe).click(function() {
         ParameterPreset("tpw850",suffixe);
+        if (suffixe == "") {SmartGribSelect(Adesc);}
+        else { SmartGribSelect(Bdesc); }
         })
         
     $("#param_A2B"+suffixe).click(function() {
         ParameterPreset("A2B",suffixe);
+        //Trick !
+        if (suffixe == "") {SmartGribSelect(Bdesc);}
+        else { SmartGribSelect(Adesc); }
         })
     
     
@@ -2009,15 +2061,16 @@ function ParameterPreset(param,suffixe) {
             $("#" + key  + suffixe2).val(param_presets[param][key]);
         }
     }
-    
-        //$("#field").val(param_presets[param]["field"]);
-        //$("#TypeOfLevel").val("heightAboveGround / 105");
-        //$("#Level").val("2");
-        $("#FF"+suffixe2).prop("checked", param_presets[param]["FF"]);
         
-        //$("#FF"+suffixe).trigger('click');
-
-        $("#Vecteurs"+suffixe2).prop("checked", param_presets[param]["Vecteurs"]);
+        //Cohérence des boutons FF et vecteurs
+        if ($("#FF"+suffixe2).prop("checked") != param_presets[param]["FF"]) {
+        	$("#FF"+suffixe2).trigger('click');
+        }
+        if ($("#Vecteurs"+suffixe2).prop("checked") != param_presets[param]["Vecteurs"]) {
+        	$("#Vecteurs"+suffixe2).trigger('click');
+        }
+        
+        //$("#Vecteurs"+suffixe2).prop("checked", param_presets[param]["Vecteurs"]);
         ManageUandV(suffixe2);
 
 
@@ -2435,14 +2488,15 @@ function InitColorMapList(suffixe,current) {
         
         
 function setup_render_labels(suffixe) {
-    $("#decumul_label" + suffixe).text("Decumul is off ");
-    $("#update_label" + suffixe).text("AutoUpdate is on ");
-    $("#reverse_colormap_label" + suffixe).text("Reversed colormap is off");
+	//Les défauts sont geres directment dans le code html, evite des incoherences lors du clonage
+    //$("#decumul_label" + suffixe).text("Decumul is off ");
+    //$("#update_label" + suffixe).text("AutoUpdate is on ");
+    //$("#reverse_colormap_label" + suffixe).text("Reversed colormap is off");
     $("#autoupdate" + suffixe).click(function() {
         $("#update_label" + suffixe).text(this.checked ? "AutoUpdate is on " : "AutoUpdate is off");
     });
     $("#reverse_colormap" + suffixe).click(function() {
-        $("#reverse_colormap_label").text(this.checked ? "Reversed colormap is on " : "Reversed colormap is off");
+        $("#reverse_colormap_label" + suffixe).text(this.checked ? "Reversed colormap is on " : "Reversed colormap is off");
     });
     $("#decumul" + suffixe).click(function() {
         $("#decumul_label" + suffixe).text(this.checked ? "Decumul is on " : "Decumul is off");
