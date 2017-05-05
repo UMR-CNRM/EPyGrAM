@@ -309,12 +309,14 @@ class H2DField(D3Field):
             # handle min/max values
             m = data.min()
             M = data.max()
+            if minmax_in_title and (minmax is not None or colormap in config.colormaps_scaling):
+                minmax_in_title = '(min: ' + \
+                                  '{: .{precision}{type}}'.format(m, type='E', precision=3) + \
+                                  ' // max: ' + \
+                                  '{: .{precision}{type}}'.format(M, type='E', precision=3) + ')'
+            else:
+                minmax_in_title = ''
             if minmax is not None:
-                if minmax_in_title:
-                    minmax_in_title = '(min: ' + \
-                                      '{: .{precision}{type}}'.format(m, type='E', precision=3) + \
-                                      ' // max: ' + \
-                                      '{: .{precision}{type}}'.format(M, type='E', precision=3) + ')'
                 try:
                     m = float(minmax[0])
                 except ValueError:
@@ -323,8 +325,7 @@ class H2DField(D3Field):
                     M = float(minmax[1])
                 except ValueError:
                     M = data.max()
-            else:
-                minmax_in_title = ''
+
             if abs(float(m) - float(M)) < config.epsilon:
                 raise epygramError("cannot plot uniform field.")
             if center_cmap_on_0:
@@ -340,8 +341,9 @@ class H2DField(D3Field):
                            for l in range(len(levels) - (L // 3 + 1))
                            if l % L == 0] + [levels[-1]]
             if colormap in config.colormaps_scaling:
-                (norm, levels) = util.color_scale(colormap, max_val=M)
+                (norm, levels) = util.color_scale(colormap)
                 tick_levels = levels
+                vmin = vmax = None
             else:
                 norm = None
 

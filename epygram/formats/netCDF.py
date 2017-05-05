@@ -500,7 +500,7 @@ class netCDF(FileResource):
                      len(self._variables[var_corresponding_to_Y_grid].dimensions) == 2:
                     Xgrid = self._variables[var_corresponding_to_X_grid][:, :]
                     Ygrid = self._variables[var_corresponding_to_Y_grid][:, :]
-                if Ygrid[0, 0] > Ygrid[-1, 0] and not behaviour.get('reverse_Ygrid'):
+                if Ygrid[0, 0] > Ygrid[-1, 0] and not behaviour.get('reverse_Yaxis'):
                     epylog.warning("Ygrid seems to be reversed; shouldn't behaviour['reverse_Yaxis'] be True ?")
                 elif behaviour.get('reverse_Yaxis'):
                     Ygrid = Ygrid[::-1, :]

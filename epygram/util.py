@@ -809,10 +809,10 @@ def color_scale(cmap, max_val=None):
     bounds = copy.copy(config.colormaps_scaling.get(cmap, None))
     assert bounds is not None, \
            "unknown colormap" + cmap + "in config.epygram_colormaps_scaling"
-    
-    if max_val is not None:  # FIXME: pb with rr6h
+    if max_val is not None:
         if bounds[-2] <= max_val <= bounds[-1]:
             bounds[-1] = max_val
+
     norm = colors.BoundaryNorm(boundaries=bounds, ncolors=len(bounds) - 1)
 
     return (norm, bounds)
