@@ -242,6 +242,8 @@ class netCDF(FileResource):
                 T = netCDF4.num2date(T, time_unit)
                 T = [datetime.datetime(*t.timetuple()[:6]) for t in T]  # FIXME: not sure of that for dates older than julian/gregorian calendar
                 basis = netCDF4.num2date(0, time_unit)
+                if basis.year <= 1582:
+                    epylog.warning('suspicion of inconsistency of julian/gregorian dates')
                 basis = datetime.datetime(*basis.timetuple()[:6])  # FIXME: not sure of that for dates older than julian/gregorian calendar
                 for v in T:
                     validity.append(FieldValidity(date_time=v, basis=basis))
@@ -983,7 +985,7 @@ class netCDF(FileResource):
                         check_or_add_variable('hybrid_coef_B', vartype, ZP1)
                         self._variables['hybrid_coef_B'][:] = [iab[1]['Bi'] for iab in field.geometry.vcoordinate.grid['gridlevels']]
                     elif field.geometry.vcoordinate.typeoffirstfixedsurface == 118:
-                        # TOBECHECKED:
+                        # TOBECHECKED: seb ?
                         zgrid.positive = "up"
                         zgrid.formula_terms = "a: hybrid_coef_A b: hybrid_coef_B orog: orography"
                         check_or_add_variable('hybrid_coef_A', vartype, ZP1)

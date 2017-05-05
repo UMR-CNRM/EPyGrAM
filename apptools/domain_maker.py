@@ -9,6 +9,7 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 import argparse
 import numpy
 import math
+import copy
 
 import footprints
 
@@ -29,15 +30,24 @@ can be tilted ? Open question...
 
 # parameters
 Ezone_minimum_width = 11
-threshold_mercator_lambert = 1.0
+threshold_mercator_lambert = 1.
+threshold_pole_distance_lambert = 1.
 maxdims_security_barrier = 10000
 vkw = {'structure': 'V',
        'typeoffirstfixedsurface': 1,
        'levels': [1]}
 vgeom = footprints.proxy.geometry(**vkw)
+projections_s2g = {'L':'lambert', 'M':'mercator', 'PS':'polar_stereographic'}
+projections_g2p = {'lambert':'Lambert (conformal conic)', 'mercator':'Mercator', 'polar_stereographic':'Polar Stereographic'}
+projections_s2p = {'L':'Lambert (conformal conic)', 'M':'Mercator', 'PS':'Polar Stereographic'}
+projections_g2s = {v:k for k, v in projections_s2g.items()}
 
 
-def nearest_greater_FFTcompliant_int(guess):
+def _default_Iwidth_resolution(resolution):
+    return 16 if resolution < 2000. else 8
+
+
+def nearest_greater_FFT992compliant_int(guess):
     """
     Returns the first integer *n* greater than *guess* that satisfies
     n = 2^(1+i) x 3^j x 5^k, with (i,j,k) being positive integers.
@@ -60,6 +70,407 @@ def nearest_greater_FFTcompliant_int(guess):
     return result
 
 
+def build_geometry(center_lon, center_lat,
+                   Xpoints_CI, Ypoints_CI,
+                   resolution,
+                   Iwidth=8,
+                   tilting=0.,
+                   force_projection=None,
+                   maximize_CI_in_E=False,
+                   interactive=False):
+    """
+    Build an *ad hoc* geometry from the input given parameters.
+
+    :param center_lon: longitude of the domain center
+    :param center_lat: latitude of the domain center
+    :param Xpoints_CI: number of gridpoints in C+I zone, zonal dimension X
+    :param Ypoints_CI: number of gridpoints in C+I zone, meridian dimension Y
+    :param resolution: resolution of the grid
+    :param Iwidth: width of the I-zone
+    :param tilting: optional inclination of the grid, in degrees
+                    (only for 'polar_stereographic' and 'lambert' projections)
+    :param force_projection: force projection among ('polar_stereographic',
+                             'lambert', 'mercator')
+    :param maximize_CI_in_E: extend the C+I zone inside the C+I+E zone, in order
+                             to have a E-zone width of 11 points
+    :param interactive: interactive mode, to fine-tune the projection
+    """
+
+    # begin to build a horizontal geometry
+    Xpoints_CIE = nearest_greater_FFT992compliant_int(Xpoints_CI + Ezone_minimum_width)
+    Ypoints_CIE = nearest_greater_FFT992compliant_int(Ypoints_CI + Ezone_minimum_width)
+    if maximize_CI_in_E:
+        Xpoints_CI = Xpoints_CIE - Ezone_minimum_width
+        Ypoints_CI = Ypoints_CIE - Ezone_minimum_width
+    # dimensions
+    dimensions = {'X':Xpoints_CIE,
+                  'Y':Ypoints_CIE,
+                  'X_CIzone':Xpoints_CI,
+                  'Y_CIzone':Ypoints_CI,
+                  'X_Czone':Xpoints_CI - 2 * Iwidth,
+                  'Y_Czone':Ypoints_CI - 2 * Iwidth,
+                  'X_CIoffset':0,
+                  'Y_CIoffset':0,
+                  'X_Iwidth':Iwidth,
+                  'Y_Iwidth':Iwidth
+                  }
+    # coordinates
+    projection = {'reference_lon':epygram.util.Angle(center_lon + tilting, 'degrees'),
+                  'reference_lat':epygram.util.Angle(center_lat, 'degrees'),
+                  'rotation':epygram.util.Angle(0.0, 'degrees'),
+                  }
+    # grid
+    grid = {'X_resolution':resolution,
+            'Y_resolution':resolution,
+            'LAMzone':'CIE',
+            'input_lon':epygram.util.Angle(center_lon, 'degrees'),
+            'input_lat':epygram.util.Angle(center_lat, 'degrees'),
+            'input_position':(float(dimensions['X_CIzone'] - 1) / 2.,
+                              float(dimensions['Y_CIzone'] - 1) / 2.)
+            }
+
+    # try to guess best projection
+    if abs(center_lat) >= threshold_mercator_lambert:  # lambert or polar stereographic
+        # we make a "first guess" with Lambert Geometry, just to check the pole is not inside the domain
+        geometryname = 'lambert'
+        geometry = footprints.proxy.geometry(structure='H2D',
+                                             name=geometryname,
+                                             grid=footprints.FPDict(grid),
+                                             dimensions=footprints.FPDict(dimensions),
+                                             projection=footprints.FPDict(projection),
+                                             vcoordinate=vgeom,
+                                             position_on_horizontal_grid='center')
+
+        # test if pole in lambert grid
+        pole_in_domain = (geometry.point_is_inside_domain_ll(0, 90) or
+                          geometry.point_is_inside_domain_ll(0, -90))
+        if pole_in_domain:
+            projname = 'polar_stereographic'
+        else:
+            projname = 'lambert'
+    else:
+        projname = 'mercator'
+        pole_in_domain = False
+    if force_projection is not None:
+        projname = force_projection
+    if interactive:
+        if force_projection is not None:
+            print("User-requested projection for this center and these dimensions is:")
+        else:
+            print("Advised projection for this center and these dimensions is:")
+        print("=>", projections_g2p[projname], '(', projections_g2s[projname], ')')
+        print("Other choices:", projections_s2p)
+        force_projection = raw_input("Chosen projection [" + projections_g2s[projname] + "]: ")
+        if force_projection != '':
+            projname = projections_s2g[force_projection]
+    assert (not (pole_in_domain and projname != 'polar_stereographic')), \
+        "requested projection [" + projname + "] is not possible: " + \
+        "a pole is inside domain, the only possible projection is 'polar_stereographic'."
+    assert projname in projections_g2s.keys(), \
+        "unknown projection [" + projname + "]"
+
+    if projname == 'polar_stereographic':
+        reference_lat = math.copysign(90.0, center_lat)
+    elif projname == 'mercator':
+        reference_lat = 0.0
+        projection['reference_lon'] = epygram.util.Angle(center_lon, 'degrees')
+        if tilting != 0.0:
+            epylog.warning("! Tilting ignored: not available for Mercator projection.")
+    elif projname == 'lambert':
+        reference_lat = center_lat
+        if interactive:
+            print("Advised reference latitude for Lambert domain is center latitude:")
+            accepted_lat = raw_input("Reference latitude [" + str(center_lat) + "]: ")
+            if accepted_lat != '':
+                reference_lat = float(accepted_lat)
+    projection['reference_lat'] = epygram.util.Angle(reference_lat, 'degrees')
+    geometry = footprints.proxy.geometry(structure='H2D',
+                                         name=projname,
+                                         grid=footprints.FPDict(grid),
+                                         dimensions=footprints.FPDict(dimensions),
+                                         projection=footprints.FPDict(projection),
+                                         vcoordinate=vgeom,
+                                         position_on_horizontal_grid='center',)
+    return geometry
+
+
+def build_geometry_fromlonlat(lonmin, lonmax,
+                              latmin, latmax,
+                              resolution,
+                              Iwidth=8,
+                              force_projection=None,
+                              maximize_CI_in_E=False,
+                              interactive=False,
+                              write_blocks=False):
+    """
+    Build an *ad hoc* geometry from the input given parameters.
+
+    :param center_lon: longitude of the domain center
+    :param center_lat: latitude of the domain center
+    :param Xpoints_CI: number of gridpoints in C+I zone, zonal dimension X
+    :param Ypoints_CI: number of gridpoints in C+I zone, meridian dimension Y
+    :param resolution: resolution of the grid
+    :param Iwidth: width of the I-zone
+    :param force_projection: force projection among ('polar_stereographic',
+                             'lambert', 'mercator')
+    :param maximize_CI_in_E: extend the C+I zone inside the C+I+E zone, in order
+                             to have a E-zone width of 11 points
+    :param interactive: interactive mode, to fine-tune the projection
+    """
+
+    # begin to build a horizontal geometry
+    if lonmin > lonmax:
+        lonmax += 360.
+    center_lon = (lonmax + lonmin) / 2.
+    if center_lon > 180.:
+        lonmin -= 360.
+        lonmax -= 360.
+    elif center_lon < -180.:
+        lonmin += 360.
+        lonmax += 360.
+    center_lon = (lonmax + lonmin) / 2.
+    center_lat = (latmax + latmin) / 2.
+    if abs(center_lat) >= threshold_mercator_lambert:
+        if latmax < 90. - threshold_pole_distance_lambert and \
+           latmin > -90. + threshold_pole_distance_lambert:
+            projname = 'lambert'
+        else:
+            projname = 'polar_stereographic'
+    else:
+        projname = 'mercator'
+
+    if interactive:
+        print("Advised projection with regards to domain center latitude is:")
+        print("=>", projections_g2p[projname], '(', projections_g2s[projname], ')')
+        print("Other choices:", projections_s2p)
+        accepted_projection = raw_input("Chosen projection [" + projections_g2s[projname] + "]: ")
+        if accepted_projection != '':
+            projname = projections_s2g[accepted_projection]
+    if projname == 'polar_stereographic':
+        reference_lat = math.copysign(90.0, center_lat)
+    elif projname == 'mercator':
+        reference_lat = 0.0
+    elif projname == 'lambert':
+        if interactive:
+            print("Advised center latitude for Lambert domain is mean(Northern, Southern):")
+            accepted_lat = raw_input("Center latitude [" + str(center_lat) + "]: ")
+            if accepted_lat != '':
+                center_lat = float(accepted_lat)
+        reference_lat = center_lat
+        if interactive:
+            print("Advised reference latitude for Lambert domain is center latitude:")
+            accepted_lat = raw_input("Reference latitude [" + str(reference_lat) + "]: ")
+            if accepted_lat != '':
+                reference_lat = float(accepted_lat)
+
+    Xpoints_CI = 2 * Iwidth + 1
+    Ypoints_CI = 2 * Iwidth + 1
+    lonlat_included = False
+    while not lonlat_included:
+        Xpoints_CIE = nearest_greater_FFT992compliant_int(Xpoints_CI + Ezone_minimum_width)
+        Ypoints_CIE = nearest_greater_FFT992compliant_int(Ypoints_CI + Ezone_minimum_width)
+        if maximize_CI_in_E:
+            Xpoints_CI = Xpoints_CIE - Ezone_minimum_width
+            Ypoints_CI = Ypoints_CIE - Ezone_minimum_width
+        # dimensions
+        dimensions = {'X':Xpoints_CIE,
+                      'Y':Ypoints_CIE,
+                      'X_CIzone':Xpoints_CI,
+                      'Y_CIzone':Ypoints_CI,
+                      'X_Czone':Xpoints_CI - 2 * Iwidth,
+                      'Y_Czone':Ypoints_CI - 2 * Iwidth,
+                      'X_CIoffset':0,
+                      'Y_CIoffset':0,
+                      'X_Iwidth':Iwidth,
+                      'Y_Iwidth':Iwidth
+                      }
+        # coordinates
+        projection = {'reference_lon':epygram.util.Angle(center_lon, 'degrees'),
+                      'reference_lat':epygram.util.Angle(reference_lat, 'degrees'),
+                      'rotation':epygram.util.Angle(0.0, 'degrees'),
+                      }
+        # grid
+        grid = {'X_resolution':resolution,
+                'Y_resolution':resolution,
+                'LAMzone':'CIE',
+                'input_lon':epygram.util.Angle(center_lon, 'degrees'),
+                'input_lat':epygram.util.Angle(center_lat, 'degrees'),
+                'input_position':(float(dimensions['X_CIzone'] - 1) / 2.,
+                                  float(dimensions['Y_CIzone'] - 1) / 2.)
+                }
+        # first guess for lambert, to check that pole is not in domain
+        if projname == 'lambert':
+            geometry = footprints.proxy.geometry(structure='H2D',
+                                                 name=projname,
+                                                 grid=footprints.FPDict(grid),
+                                                 dimensions=footprints.FPDict(dimensions),
+                                                 projection=footprints.FPDict(projection),
+                                                 vcoordinate=vgeom,
+                                                 position_on_horizontal_grid='center')
+            pole_in_domain = (geometry.point_is_inside_domain_ll(0, 90) or geometry.point_is_inside_domain_ll(0, -90))
+            if pole_in_domain:
+                epylog.warning("Pole is inside Lambert domain => shifted to Polar Stereographic projection !")
+                projname = 'polar_stereographic'
+                projection['reference_lat'] = epygram.util.Angle(math.copysign(90.0, center_lat), 'degrees')
+
+        # guess
+        geometry = footprints.proxy.geometry(structure='H2D',
+                                             name=projname,
+                                             grid=footprints.FPDict(grid),
+                                             dimensions=footprints.FPDict(dimensions),
+                                             projection=footprints.FPDict(projection),
+                                             vcoordinate=vgeom,
+                                             position_on_horizontal_grid='center')
+        # test whether the lonlat corners are inside domain
+        points_to_test = [(lonmax, latmax), (lonmax, latmin),
+                          (lonmin, latmax), (lonmin, latmin),
+                          (lonmax, (latmin + latmax) / 2.), (lonmin, (latmin + latmax) / 2.),
+                          ((lonmin + lonmax) / 2., latmax), ((lonmin + lonmax) / 2., latmin)]
+        IminC, JminC = geometry.gimme_corners_ij('C')['ll']
+        ImaxC, JmaxC = geometry.gimme_corners_ij('C')['ur']
+        xlonlat_included = all([1. + IminC < geometry.ll2ij(*c)[0] < ImaxC - 1.
+                                for c in points_to_test])
+        ylonlat_included = all([1. + JminC < geometry.ll2ij(*c)[1] < JmaxC - 1.
+                                for c in points_to_test])
+        lonlat_included = xlonlat_included and ylonlat_included
+        if not lonlat_included:
+            if not xlonlat_included:
+                Xpoints_CI = Xpoints_CIE - Ezone_minimum_width + 1
+            if not ylonlat_included:
+                Ypoints_CI = Ypoints_CIE - Ezone_minimum_width + 1
+            if Xpoints_CI > maxdims_security_barrier or \
+               Ypoints_CI > maxdims_security_barrier:
+                raise epygram.epygramError("Domain is too large, > " + str(maxdims_security_barrier) + " points.")
+
+    return geometry
+
+
+def geom2namblocks(geometry):
+    """From the geometry, build the namelist blocks for the necessary namelists."""
+
+    namelists = {}
+
+    # compute additionnal parameters
+    Xtruncation_lin = int(numpy.floor((geometry.dimensions['X'] - 1) / 2))
+    Ytruncation_lin = int(numpy.floor((geometry.dimensions['Y'] - 1) / 2))
+    Xtruncation_quad = int(numpy.floor((geometry.dimensions['X'] - 1) / 3))
+    Ytruncation_quad = int(numpy.floor((geometry.dimensions['Y'] - 1) / 3))
+
+    # PGD namelist
+    namelist_name = 'namel_pre_pgd'
+    namelists[namelist_name] = {'NAM_CONF_PROJ':{},
+                                'NAM_CONF_PROJ_GRID':{}}
+    blocks = namelists[namelist_name]
+    blocks['NAM_CONF_PROJ']['XLON0'] = geometry.projection['reference_lon'].get('degrees')
+    blocks['NAM_CONF_PROJ']['XLAT0'] = geometry.projection['reference_lat'].get('degrees')
+    blocks['NAM_CONF_PROJ']['XRPK'] = geometry.projection['reference_lat'].get('cos_sin')[1]
+    blocks['NAM_CONF_PROJ']['XBETA'] = geometry.projection['reference_lon'].get('degrees') - geometry.getcenter()[0].get('degrees')
+    blocks['NAM_CONF_PROJ_GRID']['XLONCEN'] = geometry.getcenter()[0].get('degrees')
+    blocks['NAM_CONF_PROJ_GRID']['XLATCEN'] = geometry.getcenter()[1].get('degrees')
+    blocks['NAM_CONF_PROJ_GRID']['NIMAX'] = geometry.dimensions['X_CIzone']
+    blocks['NAM_CONF_PROJ_GRID']['NJMAX'] = geometry.dimensions['Y_CIzone']
+    blocks['NAM_CONF_PROJ_GRID']['XDX'] = geometry.grid['X_resolution']
+    blocks['NAM_CONF_PROJ_GRID']['XDY'] = geometry.grid['Y_resolution']
+
+    # quadclim namelist
+    namelist_name = 'namel_mens_quad'
+    namelists[namelist_name] = {'NAMDIM':{},
+                                'NEMGEO':{}}
+    blocks = namelists[namelist_name]
+    blocks['NAMDIM']['NDLON'] = geometry.dimensions['X']
+    blocks['NAMDIM']['NDLUXG'] = geometry.dimensions['X_CIzone']
+    blocks['NAMDIM']['NDGLG'] = geometry.dimensions['Y']
+    blocks['NAMDIM']['NDGUXG'] = geometry.dimensions['Y_CIzone']
+    blocks['NAMDIM']['NMSMAX'] = Xtruncation_quad
+    blocks['NAMDIM']['NSMAX'] = Ytruncation_quad
+    blocks['NEMGEO']['ELON0'] = geometry.projection['reference_lon'].get('degrees')
+    blocks['NEMGEO']['ELAT0'] = geometry.projection['reference_lat'].get('degrees')
+    blocks['NEMGEO']['ELONC'] = geometry.getcenter()[0].get('degrees')
+    blocks['NEMGEO']['ELATC'] = geometry.getcenter()[1].get('degrees')
+    blocks['NEMGEO']['EDELX'] = geometry.grid['X_resolution']
+    blocks['NEMGEO']['EDELY'] = geometry.grid['Y_resolution']
+
+    # linclim namelist
+    namelist_name = 'namel_mens_lin'
+    namelists[namelist_name] = copy.deepcopy(namelists['namel_mens_quad'])
+    blocks = namelists[namelist_name]
+    blocks['NAMDIM']['NMSMAX'] = Xtruncation_lin
+    blocks['NAMDIM']['NSMAX'] = Ytruncation_lin
+
+    # couplingsurf namelist
+    namelist_name = 'namel_e927_surf'
+    namelists[namelist_name] = {'NAMFPD':{},
+                                'NAMFPG':{}}
+    blocks = namelists[namelist_name]
+    blocks['NAMFPD']['NLON'] = geometry.dimensions['X']
+    blocks['NAMFPD']['NFPLUX'] = geometry.dimensions['X_CIzone']
+    blocks['NAMFPD']['NLAT'] = geometry.dimensions['Y']
+    blocks['NAMFPD']['NFPGUX'] = geometry.dimensions['Y_CIzone']
+    blocks['NAMFPD']['RLONC'] = geometry.getcenter()[0].get('degrees')
+    blocks['NAMFPD']['RLATC'] = geometry.getcenter()[1].get('degrees')
+    blocks['NAMFPD']['RDELX'] = geometry.grid['X_resolution']
+    blocks['NAMFPD']['RDELY'] = geometry.grid['Y_resolution']
+    blocks['NAMFPG']['FPLON0'] = geometry.projection['reference_lon'].get('degrees')
+    blocks['NAMFPG']['FPLAT0'] = geometry.projection['reference_lat'].get('degrees')
+    blocks['NAMFPG']['NMFPMAX'] = Xtruncation_lin
+    blocks['NAMFPG']['NFPMAX'] = Ytruncation_lin
+
+    return namelists
+
+
+def format_namelists_blocks(blocks, out=None):
+    """
+    Write out namelists **blocks** given as a dict (coming from output of
+    build_namelists_blocks()).
+    If **out** is given, write all in one file, else in separate files.
+    """
+
+    # output routines
+    def _write_blocks(out, blocks):
+        for b in sorted(blocks.keys()):
+            out.write("&" + b + "\n")
+            for v in sorted(blocks[b].keys()):
+                out.write("  " + v + "=" + str(blocks[b][v]) + "," + "\n")
+            out.write("/\n")
+
+    def _write_namelist(out, name, blocks):
+        out.write("------------------------------" + "\n")
+        out.write(name + "\n")
+        out.write("------------------------------" + "\n")
+        _write_blocks(out, blocks)
+
+    if out is not None:
+        out.write("# Namelists blocks #\n")
+        out.write("  ================\n")
+        for n, b in blocks.items():
+            _write_namelist(out, n, b)
+    else:
+        for n, b in blocks.items():
+            with open(n + '.geoblks', 'w') as out:
+                _write_blocks(out, b)
+
+
+def write_geometry_as_namelist_blocks(geometry, allinone=False):
+    """
+    Write out namelists blocks from a geometry.
+    If **allinone**, write all in one file, else in separate files.
+    """
+
+    namelists_blocks = geom2namblocks(geometry)
+
+    if allinone:
+        outputfilename = "new_domain.namelists_blocks"
+        with open(outputfilename, 'w') as out:
+            out.write(show_geometry(geometry) + '\n')
+            format_namelists_blocks(namelists_blocks, out)
+    else:
+        outputfilename = "new_domain.summary"
+        with open(outputfilename, 'w') as out:
+            out.write(show_geometry(geometry) + '\n')
+        format_namelists_blocks(namelists_blocks, out=None)
+
+
+# TODO: delete after test v2
 def ask_and_build_geometry(defaults,
                            maximize_CI_in_E=False):
     """
@@ -123,8 +534,8 @@ def ask_and_build_geometry(defaults,
         Iwidth = defaults['Iwidth']
 
     # begin to build a horizontal geometry
-    Xpoints_CIE = nearest_greater_FFTcompliant_int(Xpoints_CI + Ezone_minimum_width)
-    Ypoints_CIE = nearest_greater_FFTcompliant_int(Ypoints_CI + Ezone_minimum_width)
+    Xpoints_CIE = nearest_greater_FFT992compliant_int(Xpoints_CI + Ezone_minimum_width)
+    Ypoints_CIE = nearest_greater_FFT992compliant_int(Ypoints_CI + Ezone_minimum_width)
     if maximize_CI_in_E:
             Xpoints_CI = Xpoints_CIE - Ezone_minimum_width
             Ypoints_CI = Ypoints_CIE - Ezone_minimum_width
@@ -179,15 +590,15 @@ def ask_and_build_geometry(defaults,
 
     # proposal
     if not pole_in_domain:
-        print "Advised projection for this center and these dimensions is:"
-        print "=>", print_projections[projname]
-        print "Other choices:", print_projections
+        print("Advised projection for this center and these dimensions is:")
+        print("=>", print_projections[projname])
+        print("Other choices:", print_projections)
         accepted_projection = raw_input("Chosen projection [" + projname + "]: ")
         if accepted_projection == '':
             accepted_projection = projname
     else:
-        print "Pole is inside domain: only available projection for this center and these dimensions is:"
-        print print_projections[projname]
+        print("Pole is inside domain: only available projection for this center and these dimensions is:")
+        print(print_projections[projname])
         accepted_projection = projname
 
     if accepted_projection == 'PS':
@@ -198,7 +609,7 @@ def ask_and_build_geometry(defaults,
         if tilting != 0.0:
             epylog.warning("! Tilting ignored: not available for Mercator projection.")
     elif accepted_projection == 'L':
-        print "Advised reference latitude for Lambert domain is center latitude:"
+        print("Advised reference latitude for Lambert domain is center latitude:")
         accepted_lat = raw_input("Reference latitude [" + str(center_lat) + "]: ")
         if accepted_lat == '':
             reference_lat = center_lat
@@ -214,7 +625,7 @@ def ask_and_build_geometry(defaults,
                                          vcoordinate=vgeom,
                                          position_on_horizontal_grid='center',)
 
-    print "--------------------------------------------------"
+    print("--------------------------------------------------")
     defaults = {'Iwidth':Iwidth,
                  'tilting':tilting,
                  'resolution':resolution,
@@ -222,9 +633,93 @@ def ask_and_build_geometry(defaults,
                  'center_lat':center_lat,
                  'Xpoints_CI':Xpoints_CI,
                  'Ypoints_CI':Ypoints_CI}
+
     return geometry, defaults
 
 
+def ask_and_build_geometry2(defaults,
+                            maximize_CI_in_E=False):
+    """
+    Ask the user for geometry params,
+    then builds a proposal geometry.
+
+    Args:
+        defaults: a dict() containing default values.
+        maximize_CI_in_E: boolean deciding to force the E-zone to be at its
+                          minimum.
+    """
+
+    # ask for geometry
+    try:
+        resolution = float(raw_input("Resolution in m [" + str(defaults['resolution']) + "]: "))
+    except ValueError:
+        if defaults['resolution'] != '':
+            resolution = defaults['resolution']
+        else:
+            raise ValueError("Invalid resolution.")
+    try:
+        center_lon = float(raw_input("Center of domain / longitude in degrees [" + str(defaults['center_lon']) + "]: "))
+    except ValueError:
+        if defaults['center_lon'] != '':
+            center_lon = defaults['center_lon']
+        else:
+            raise ValueError("Invalid longitude.")
+    try:
+        center_lat = float(raw_input("Center of domain / latitude in degrees [" + str(defaults['center_lat']) + "]: "))
+    except ValueError:
+        if defaults['center_lat'] != '':
+            center_lat = defaults['center_lat']
+        else:
+            raise ValueError("Invalid latitude.")
+    try:
+        tilting = float(raw_input("Optional counterclockwise tilting in degrees [" + str(defaults['tilting']) + "]: "))
+    except ValueError:
+        tilting = defaults['tilting']
+
+    # and dimensions
+    try:
+        Xpoints_CI = int(raw_input("C+I zonal (X) dimension in pts [" + str(defaults['Xpoints_CI']) + "]: "))
+    except ValueError:
+        if defaults['Xpoints_CI'] != '':
+            Xpoints_CI = defaults['Xpoints_CI']
+        else:
+            raise ValueError("Invalid dimension.")
+    try:
+        Ypoints_CI = int(raw_input("C+I meridian (Y) dimension in pts [" + str(defaults['Ypoints_CI']) + "]: "))
+    except ValueError:
+        if defaults['Ypoints_CI'] != '':
+            Ypoints_CI = defaults['Ypoints_CI']
+        else:
+            raise ValueError("Invalid dimension.")
+    if defaults['Iwidth'] is None:
+        defaults['Iwidth'] = _default_Iwidth_resolution(resolution)
+    try:
+        Iwidth = int(raw_input("I-zone width in pts [" + str(defaults['Iwidth']) + "]: "))
+    except Exception:
+        Iwidth = defaults['Iwidth']
+
+    geometry = build_geometry(center_lon, center_lat,
+                              Xpoints_CI, Ypoints_CI,
+                              resolution,
+                              Iwidth=Iwidth,
+                              tilting=tilting,
+                              maximize_CI_in_E=maximize_CI_in_E,
+                              interactive=True)
+
+    print("--------------------------------------------------")
+    defaults = {'Iwidth':geometry.dimensions['X_Iwidth'],
+                'tilting':geometry.projection['reference_lon'].get('degrees') -
+                          geometry.grid['input_lon'].get('degrees'),
+                'resolution':geometry.grid['X_resolution'],
+                'center_lon':geometry.grid['input_lon'].get('degrees'),
+                'center_lat':geometry.grid['input_lat'].get('degrees'),
+                'Xpoints_CI':geometry.dimensions['X_CIzone'],
+                'Ypoints_CI':geometry.dimensions['Y_CIzone']}
+
+    return geometry, defaults
+
+
+# TODO: delete after test v2
 def ask_lonlat_and_build_geometry(defaults,
                                   maximize_CI_in_E=False):
     """
@@ -248,7 +743,7 @@ def ask_lonlat_and_build_geometry(defaults,
             resolution = defaults['resolution']
         else:
             raise ValueError("Invalid resolution.")
-    print "Min/Max longitudes & latitudes that must be included in domain:"
+    print("Min/Max longitudes & latitudes that must be included in domain:")
     ll_boundaries = ask_lonlat(defaults)
     lonmin = ll_boundaries['lonmin']
     lonmax = ll_boundaries['lonmax']
@@ -277,9 +772,9 @@ def ask_lonlat_and_build_geometry(defaults,
         projname = 'M'
 
     # proposal
-    print "Advised projection with regards to domain center latitude is:"
-    print "=>", print_projections[projname]
-    print "Other choices:", print_projections
+    print("Advised projection with regards to domain center latitude is:")
+    print("=>", print_projections[projname])
+    print("Other choices:", print_projections)
     accepted_projection = raw_input("Chosen projection [" + projname + "]: ")
     if accepted_projection == '':
         accepted_projection = projname
@@ -288,11 +783,11 @@ def ask_lonlat_and_build_geometry(defaults,
     elif accepted_projection == 'M':
         reference_lat = 0.0
     elif accepted_projection == 'L':
-        print "Advised center latitude for Lambert domain is mean(Northern, Southern):"
+        print("Advised center latitude for Lambert domain is mean(Northern, Southern):")
         accepted_lat = raw_input("Center latitude [" + str(center_lat) + "]: ")
         if accepted_lat != '':
             center_lat = float(accepted_lat)
-        print "Advised reference latitude for Lambert domain is center latitude:"
+        print("Advised reference latitude for Lambert domain is center latitude:")
         accepted_lat = raw_input("Reference latitude [" + str(center_lat) + "]: ")
         if accepted_lat != '':
             reference_lat = float(accepted_lat)
@@ -303,8 +798,8 @@ def ask_lonlat_and_build_geometry(defaults,
     Ypoints_CI = 2 * Iwidth + 1
     lonlat_included = False
     while not lonlat_included:
-        Xpoints_CIE = nearest_greater_FFTcompliant_int(Xpoints_CI + Ezone_minimum_width)
-        Ypoints_CIE = nearest_greater_FFTcompliant_int(Ypoints_CI + Ezone_minimum_width)
+        Xpoints_CIE = nearest_greater_FFT992compliant_int(Xpoints_CI + Ezone_minimum_width)
+        Ypoints_CIE = nearest_greater_FFT992compliant_int(Ypoints_CI + Ezone_minimum_width)
         if maximize_CI_in_E:
             Xpoints_CI = Xpoints_CIE - Ezone_minimum_width
             Ypoints_CI = Ypoints_CIE - Ezone_minimum_width
@@ -363,9 +858,11 @@ def ask_lonlat_and_build_geometry(defaults,
                           (lonmin, latmax), (lonmin, latmin),
                           (lonmax, (latmin + latmax) / 2.), (lonmin, (latmin + latmax) / 2.),
                           ((lonmin + lonmax) / 2., latmax), ((lonmin + lonmax) / 2., latmin)]
-        xlonlat_included = all([1.0 + dimensions['X_Iwidth'] < geometry.ll2ij(*c)[0] < dimensions['X_Czone'] - 1.0
+        IminC, JminC = geometry.gimme_corners_ij('C')['ll']
+        ImaxC, JmaxC = geometry.gimme_corners_ij('C')['ur']
+        xlonlat_included = all([1. + IminC < geometry.ll2ij(*c)[0] < ImaxC - 1.
                                 for c in points_to_test])
-        ylonlat_included = all([1.0 + dimensions['Y_Iwidth'] < geometry.ll2ij(*c)[1] < dimensions['Y_Czone'] - 1.0
+        ylonlat_included = all([1. + JminC < geometry.ll2ij(*c)[1] < JmaxC - 1.
                                 for c in points_to_test])
         lonlat_included = xlonlat_included and ylonlat_included
         if not lonlat_included:
@@ -377,7 +874,59 @@ def ask_lonlat_and_build_geometry(defaults,
                Ypoints_CI > maxdims_security_barrier:
                 raise epygram.epygramError("Domain is too large, > " + str(maxdims_security_barrier) + " points.")
 
-    print "--------------------------------------------------"
+    print("--------------------------------------------------")
+    defaults = {'Iwidth':Iwidth,
+                'lonmax':lonmax,
+                'lonmin':lonmin,
+                'latmax':latmax,
+                'latmin':latmin,
+                'resolution':resolution}
+
+    return geometry, defaults
+
+
+def ask_lonlat_and_build_geometry2(defaults,
+                                   maximize_CI_in_E=False):
+    """
+    Ask the user for lonlat-included geometry params,
+    then builds a proposal geometry.
+
+    Args:
+        defaults: a dict() containing default values.
+        maximize_CI_in_E: boolean deciding to force the E-zone to be at its
+                          minimum.
+    """
+
+    # ask for geometry
+    try:
+        resolution = float(raw_input("Model resolution in m [" + str(defaults['resolution']) + "]: "))
+    except ValueError:
+        if defaults['resolution'] != '':
+            resolution = defaults['resolution']
+        else:
+            raise ValueError("Invalid resolution.")
+    print("Min/Max longitudes & latitudes that must be included in domain:")
+    ll_boundaries = ask_lonlat(defaults)
+    lonmin = ll_boundaries['lonmin']
+    lonmax = ll_boundaries['lonmax']
+    latmin = ll_boundaries['latmin']
+    latmax = ll_boundaries['latmax']
+    if defaults['Iwidth'] is None:
+        defaults['Iwidth'] = _default_Iwidth_resolution(resolution)
+    try:
+        Iwidth = int(raw_input("I-zone width in pts [" + str(defaults['Iwidth']) + "]: "))
+    except Exception:
+        Iwidth = defaults['Iwidth']
+
+    geometry = build_geometry_fromlonlat(lonmin, lonmax,
+                                         latmin, latmax,
+                                         resolution,
+                                         Iwidth=Iwidth,
+                                         force_projection=None,
+                                         maximize_CI_in_E=maximize_CI_in_E,
+                                         interactive=True)
+
+    print("--------------------------------------------------")
     defaults = {'Iwidth':Iwidth,
                 'lonmax':lonmax,
                 'lonmin':lonmin,
@@ -461,7 +1010,10 @@ def show_geometry(geometry):
 
 
 def compute_lonlat_included(geometry):
-    """Computes a lon/lat domain included in the C zone of the model domain."""
+    """
+    Computes a lon/lat domain included in the C zone of the model domain,
+    with a 1 gridpoint margin.
+    """
 
     (longrid, latgrid) = geometry.get_lonlat_grid(subzone='C')
     lonmin = max(longrid[:, 1])
@@ -538,7 +1090,7 @@ def build_lonlat_field(ll_boundaries, fid={'lon/lat':'template'}):
 
 # MAIN #######################################################################
 def main(mode,
-         no_display=False,
+         display=True,
          maximize_CI_in_E=False,
          gisquality='i',
          bluemarble=0.0,
@@ -547,7 +1099,7 @@ def main(mode,
     Args:
         mode: 'center_dims' to build domain given its center and dimensions;
               'lonlat_included' to build domain given an included lon/lat area.
-        no_display: if True, activates the display of domain.
+        display: if False, deactivates the display of domain.
         maximize_CI_in_E: boolean deciding to force the E-zone to be at its
                           minimum.
         gisquality: quality of coastlines and countries boundaries.
@@ -556,12 +1108,12 @@ def main(mode,
         background: if True, set a background color to continents and oceans.
     """
 
-    print "################"
-    print "# DOMAIN MAKER #"
-    print "################"
+    print("################")
+    print("# DOMAIN MAKER #")
+    print("################")
 
     if mode == 'center_dims':
-        defaults = {'Iwidth':8,
+        defaults = {'Iwidth':None,
                     'tilting':0.0,
                     'resolution':'',
                     'center_lon':'',
@@ -572,10 +1124,10 @@ def main(mode,
         retry = True
         while retry:
             # ask and build
-            (geometry, defaults) = ask_and_build_geometry(defaults, maximize_CI_in_E)
-            print "Compute domain..."
-            print show_geometry(geometry)
-            if not no_display:
+            (geometry, defaults) = ask_and_build_geometry2(defaults, maximize_CI_in_E)
+            print("Compute domain...")
+            print(show_geometry(geometry))
+            if display:
                 # plot
                 CIEdomain = footprints.proxy.field(structure='H2D',
                                                    geometry=geometry,
@@ -585,7 +1137,7 @@ def main(mode,
                 data[geometry.dimensions['Y_Iwidth']:geometry.dimensions['Y_CIzone'] - geometry.dimensions['Y_Iwidth'],
                      geometry.dimensions['X_Iwidth']:geometry.dimensions['X_CIzone'] - geometry.dimensions['X_Iwidth']] = 0.0
                 CIEdomain.setdata(data)
-                print "Plot domain..."
+                print("Plot domain...")
                 bm = CIEdomain.geometry.make_basemap(specificproj=('nsper', {'sat_height':5000}))
                 fig, ax = CIEdomain.plotfield(use_basemap=bm,
                                               levelsnumber=6,
@@ -604,7 +1156,7 @@ def main(mode,
                     plot_lonlat_included = False
                 if plot_lonlat_included:
                     proposed = compute_lonlat_included(geometry)
-                    print "Min/Max longitudes & latitudes of the lon/lat domain (defaults to that proposed above):"
+                    print("Min/Max longitudes & latitudes of the lon/lat domain (defaults to that proposed above):")
                     ll_boundaries = ask_lonlat(proposed)
                     ll_domain = build_lonlat_field(ll_boundaries)
                     ll_domain.plotfield(over=(fig, ax),
@@ -626,7 +1178,7 @@ def main(mode,
                 retry = False
 
     elif mode == 'lonlat_included':
-        defaults = {'Iwidth':8,
+        defaults = {'Iwidth':None,
                     'lonmax':'',
                     'lonmin':'',
                     'latmax':'',
@@ -636,9 +1188,9 @@ def main(mode,
         retry = True
         while retry:
             # ask and build
-            (geometry, defaults) = ask_lonlat_and_build_geometry(defaults, maximize_CI_in_E)
-            print show_geometry(geometry)
-            if not no_display:
+            (geometry, defaults) = ask_lonlat_and_build_geometry2(defaults, maximize_CI_in_E)
+            print(show_geometry(geometry))
+            if display:
                 # plot
                 CIEdomain = footprints.proxy.field(structure='H2D',
                                                    geometry=geometry,
@@ -648,7 +1200,7 @@ def main(mode,
                 data[geometry.dimensions['Y_Iwidth']:geometry.dimensions['Y_CIzone'] - geometry.dimensions['Y_Iwidth'],
                      geometry.dimensions['X_Iwidth']:geometry.dimensions['X_CIzone'] - geometry.dimensions['X_Iwidth']] = 0.0
                 CIEdomain.setdata(data)
-                print "Plot domain..."
+                print("Plot domain...")
                 bm = CIEdomain.geometry.make_basemap(specificproj=('nsper', {'sat_height':5000}))
                 fig, ax = CIEdomain.plotfield(use_basemap=bm,
                                               levelsnumber=6,
@@ -676,97 +1228,7 @@ def main(mode,
             else:
                 retry = False
 
-    # output routines
-    def write_blocks(out, blocks):
-        for b in blocks.keys():
-            out.write("&" + b + "\n")
-            for v in sorted(blocks[b].keys()):
-                out.write("  " + v + "=" + str(blocks[b][v]) + "," + "\n")
-            out.write("/\n")
-
-    def write_namelist(out, name, blocks):
-        out.write("------------------------------" + "\n")
-        out.write(name + "\n")
-        out.write("------------------------------" + "\n")
-        write_blocks(out, blocks)
-
-    # compute additionnal parameters
-    Xtruncation_lin = int(numpy.floor((geometry.dimensions['X'] - 1) / 2))
-    Ytruncation_lin = int(numpy.floor((geometry.dimensions['Y'] - 1) / 2))
-    Xtruncation_quad = int(numpy.floor((geometry.dimensions['X'] - 1) / 3))
-    Ytruncation_quad = int(numpy.floor((geometry.dimensions['Y'] - 1) / 3))
-
-    # open output
-    outputfilename = "new_domain.namelists_blocks"
-    out = open(outputfilename, 'w')
-    out.write(show_geometry(geometry) + '\n')
-    out.write("# Namelists blocks #\n")
-    out.write("  ================\n")
-
-    # PGD namelist
-    namelist_name = 'namel_pre_pgd'
-    blocks = {'NAM_CONF_PROJ':{}, 'NAM_CONF_PROJ_GRID':{}}
-    blocks['NAM_CONF_PROJ']['XLON0'] = geometry.projection['reference_lon'].get('degrees')
-    blocks['NAM_CONF_PROJ']['XLAT0'] = geometry.projection['reference_lat'].get('degrees')
-    blocks['NAM_CONF_PROJ']['XRPK'] = geometry.projection['reference_lat'].get('cos_sin')[1]
-    blocks['NAM_CONF_PROJ']['XBETA'] = geometry.projection['reference_lon'].get('degrees') - geometry.getcenter()[0].get('degrees')
-
-    blocks['NAM_CONF_PROJ_GRID']['XLONCEN'] = geometry.getcenter()[0].get('degrees')
-    blocks['NAM_CONF_PROJ_GRID']['XLATCEN'] = geometry.getcenter()[1].get('degrees')
-    blocks['NAM_CONF_PROJ_GRID']['NIMAX'] = geometry.dimensions['X_CIzone']
-    blocks['NAM_CONF_PROJ_GRID']['NJMAX'] = geometry.dimensions['Y_CIzone']
-    blocks['NAM_CONF_PROJ_GRID']['XDX'] = geometry.grid['X_resolution']
-    blocks['NAM_CONF_PROJ_GRID']['XDY'] = geometry.grid['Y_resolution']
-
-    write_namelist(out, namelist_name, blocks)
-
-    # quadclim namelist
-    namelist_name = 'namel_mens_quad'
-    blocks = {'NAMDIM':{}, 'NEMGEO':{}}
-    blocks['NAMDIM']['NDLON'] = geometry.dimensions['X']
-    blocks['NAMDIM']['NDLUXG'] = geometry.dimensions['X_CIzone']
-    blocks['NAMDIM']['NDGLG'] = geometry.dimensions['Y']
-    blocks['NAMDIM']['NDGUXG'] = geometry.dimensions['Y_CIzone']
-    blocks['NAMDIM']['NMSMAX'] = Xtruncation_quad
-    blocks['NAMDIM']['NSMAX'] = Ytruncation_quad
-
-    blocks['NEMGEO']['ELON0'] = geometry.projection['reference_lon'].get('degrees')
-    blocks['NEMGEO']['ELAT0'] = geometry.projection['reference_lat'].get('degrees')
-    blocks['NEMGEO']['ELONC'] = geometry.getcenter()[0].get('degrees')
-    blocks['NEMGEO']['ELATC'] = geometry.getcenter()[1].get('degrees')
-    blocks['NEMGEO']['EDELX'] = geometry.grid['X_resolution']
-    blocks['NEMGEO']['EDELY'] = geometry.grid['Y_resolution']
-
-    write_namelist(out, namelist_name, blocks)
-
-    # linclim namelist
-    namelist_name = 'namel_mens_lin'
-    blocks['NAMDIM']['NMSMAX'] = Xtruncation_lin
-    blocks['NAMDIM']['NSMAX'] = Ytruncation_lin
-
-    write_namelist(out, namelist_name, blocks)
-
-    # couplingsurf namelist
-    namelist_name = 'namel_e927_surf'
-    blocks = {'NAMFPD':{}, 'NAMFPG':{}}
-
-    blocks['NAMFPD']['NLON'] = geometry.dimensions['X']
-    blocks['NAMFPD']['NFPLUX'] = geometry.dimensions['X_CIzone']
-    blocks['NAMFPD']['NLAT'] = geometry.dimensions['Y']
-    blocks['NAMFPD']['NFPGUX'] = geometry.dimensions['Y_CIzone']
-    blocks['NAMFPD']['RLONC'] = geometry.getcenter()[0].get('degrees')
-    blocks['NAMFPD']['RLATC'] = geometry.getcenter()[1].get('degrees')
-    blocks['NAMFPD']['RDELX'] = geometry.grid['X_resolution']
-    blocks['NAMFPD']['RDELY'] = geometry.grid['Y_resolution']
-
-    blocks['NAMFPG']['FPLON0'] = geometry.projection['reference_lon'].get('degrees')
-    blocks['NAMFPG']['FPLAT0'] = geometry.projection['reference_lat'].get('degrees')
-    blocks['NAMFPG']['NMFPMAX'] = Xtruncation_lin
-    blocks['NAMFPG']['NFPMAX'] = Ytruncation_lin
-
-    write_namelist(out, namelist_name, blocks)
-
-    out.close()
+    write_geometry_as_namelist_blocks(geometry, allinone=True)
 # end of main() ###############################################################
 
 
@@ -798,8 +1260,9 @@ if __name__ == '__main__':
 
     ### 3. Main
     ###########
+    print('args.no_display', args.no_display)
     main(args.mode,
-         no_display=args.no_display,
+         display=not args.no_display,
          maximize_CI_in_E=args.maximize_CI_in_E,
          gisquality=args.gisquality,
          bluemarble=args.bluemarble,
