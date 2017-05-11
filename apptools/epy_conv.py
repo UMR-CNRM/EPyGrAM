@@ -282,6 +282,11 @@ class NetCDFWriter(Converter):
                 optional=True,
                 default=epygram.config.netCDF_default_compression,
                 access='rwx'),
+            flatten_horizontal_grids=dict(
+                info="flatten 2D horizontal grids to 1D.",
+                optional=True,
+                type=bool,
+                default=False),
         )
     )
 
@@ -290,6 +295,7 @@ class NetCDFWriter(Converter):
         def get_write_kwargs_for_netCDF(input_resource, field, kwargs):
             write_kwargs = {}
             write_kwargs['compression'] = kwargs['compression']
+            write_kwargs['adhoc_behaviour'] = {'flatten_horizontal_grids':kwargs['flatten_horizontal_grids']}
             return write_kwargs
 
         done = convert(self.filename,
@@ -300,7 +306,8 @@ class NetCDFWriter(Converter):
                        progressmode=self.progressmode,
                        # format specific
                        grib_short_fid=self.grib_short_fid,
-                       compression=self.compression)
+                       compression=self.compression,
+                       flatten_horizontal_grids=self.flatten_horizontal_grids)
 
         return done
 
@@ -444,6 +451,8 @@ if __name__ == '__main__':
     add_arg_to_parser(parser, output_options['GRIB_other_options'])
     # GeoPoints specific
     add_arg_to_parser(parser, misc_options['array_flattening_order'])
+    # netCDF
+    add_arg_to_parser(parser, misc_options['flatten_horizontal_grids'])
     # others
     add_arg_to_parser(parser, output_options['GRIB_short_fid'])
     add_arg_to_parser(parser, runtime_options['threads_number'])
@@ -519,6 +528,7 @@ if __name__ == '__main__':
          other_grib_options=other_GRIB_options,
          # netCDF specifics
          compression=args.nc_comp,
+         flatten_horizontal_grids=args.flatten,
          # GeoPoints specifics
          order=args.order,
          lonlat_precision=args.lonlat_precision,

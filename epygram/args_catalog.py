@@ -403,6 +403,11 @@ misc_options = {
         dict(help="for LAM arrays, whether to flatten in C (row-major) or\
                    Fortran (column-major) order 2D arrays. Default = 'C'.",
              default='C')],
+    'flatten_horizontal_grids':[
+        '--flatten',
+        dict(help="for netCDF, flatten 2D horizontal grids to 1D.",
+             action='store_true',
+             default=False)],
     'operation_on_field':[
         '-x', '--operation',
         dict(help="do the requested operation on field right after reading it. \
