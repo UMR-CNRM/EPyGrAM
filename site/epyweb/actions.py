@@ -277,14 +277,14 @@ class MyPlot(object):
             champ_v = getAjaxArgSmart('field_v')
 
             # string vs unicode problems...
-            for cle, val in champ.iteritems():
+            for cle, val in champ.items():
                 try:
                     champ[cle]['typeOfLevel'] = val['typeOfLevel'].encode()
                     champ[cle] = {str(k):champ[cle][k] for k in val.keys()}
                 except Exception:
                     print("Warning unicode")
 
-            for cle, val in champ_v.iteritems():
+            for cle, val in champ_v.items():
                 try:
                     champ_v[cle]['typeOfLevel'] = val['typeOfLevel'].encode()
                     champ_v[cle] = {str(k):champ_v[cle][k] for k in val.keys()}
@@ -320,7 +320,7 @@ class MyPlot(object):
             out = {}
 
             # for fichier in files:
-            for cle, val in files.iteritems():
+            for cle, val in files.items():
                 indiceDecumul = 0
                 liste_tmp = []
                 myplot_args = get_common_args(cle)
@@ -334,6 +334,7 @@ class MyPlot(object):
                 except Exception:
                     print("Warning unicode")
 
+                Lexception = False
                 for fichier in val:
                     resource = epygram.formats.resource(fichier, 'r')
                     print("FICHIER : " + fichier)
@@ -347,11 +348,10 @@ class MyPlot(object):
                             if indiceDecumul == 0:
                                 fieldDecumul = field
                                 indiceDecumul = +1
-                                #Lexception = False
                                 continue
                     except Exception:  # Cas des RR @0h : param n'existe pas
                         indiceDecumul = +1
-                        Lexception = True # A garder pour reinitialiser le cumul
+                        Lexception = True  # A garder pour reinitialiser le cumul
                         continue
 
                     if decumul[cle]:
@@ -359,9 +359,9 @@ class MyPlot(object):
                             try:  # Cas des RR @0h : param n'existe pas
                                 validity = field.validity
                                 fid = field.fid
-                                if Lexception == False: #cas normal
+                                if Lexception:  # cas normal
                                     field = field - fieldDecumul
-                                else: #cas juste après un champ inexistant : field=field et fin de l'exception
+                                else:  # cas juste après un champ inexistant : field=field et fin de l'exception
                                     Lexception = False
                                 field.validity = validity
                                 field.fid = fid
@@ -389,7 +389,7 @@ class MyPlot(object):
 
                     # Utilisation d'un nom unique par image, dans un répertoire fixe
                     try:
-                        myunikname = os.path.basename(fichier) + "." + ".".join("=".join((str(k), str(v))) for k, v in champ[cle].iteritems())
+                        myunikname = os.path.basename(fichier) + "." + ".".join("=".join((str(k), str(v))) for k, v in champ[cle].items())
                     except Exception:
                         myunikname = os.path.basename(fichier) + "." + str(champ[cle].replace(' ', '_'))
 
@@ -446,14 +446,14 @@ class MyPlotOverlay(object):
             champ_v = getAjaxArgSmart('field_v')
 
             # string vs unicode problems...
-            for cle, val in champ.iteritems():
+            for cle, val in champ.items():
                 try:
                     champ[cle]['typeOfLevel'] = val['typeOfLevel'].encode()
                     champ[cle] = {str(k):champ[cle][k] for k in val.keys()}
                 except:
                     print("Warning unicode")
 
-            for cle, val in champ_v.iteritems():
+            for cle, val in champ_v.items():
                 try:
                     champ_v[cle]['typeOfLevel'] = val['typeOfLevel'].encode()
                     champ_v[cle] = {str(k):champ_v[cle][k] for k in val.keys()}
@@ -527,7 +527,7 @@ class MyPlotOverlay(object):
                                       myplot_args)
 
                 try:
-                    myunikname = os.path.basename(fichier) + "." + ".".join("=".join((str(k), str(v))) for k, v in champ[cle].iteritems())
+                    myunikname = os.path.basename(fichier) + "." + ".".join("=".join((str(k), str(v))) for k, v in champ[cle].items())
                 except Exception:
                     myunikname = str(uuid.uuid4())
 
@@ -569,14 +569,14 @@ class MyPlotDiff(object):
             champ_v = getAjaxArgSmart('field_v')
 
             # string vs unicode problems...
-            for cle, val in champ.iteritems():
+            for cle, val in champ.items():
                 try:
                     champ[cle]['typeOfLevel'] = val['typeOfLevel'].encode()
                     champ[cle] = {str(k):champ[cle][k] for k in val.keys()}
                 except Exception:
                     print("Warning unicode")
 
-            for cle, val in champ_v.iteritems():
+            for cle, val in champ_v.items():
                 try:
                     champ_v[cle]['typeOfLevel'] = val['typeOfLevel'].encode()
                     champ_v[cle] = {str(k):champ_v[cle][k] for k in val.keys()}
@@ -677,7 +677,7 @@ class MyPlotDiff(object):
 
                 # Utilisation d'un nom unique par image, dans un répertoire fixe
                 try:
-                    myunikname = os.path.basename(fichier) + "." + ".".join("=".join((str(k), str(v))) for k, v in champ[cle].iteritems())
+                    myunikname = os.path.basename(fichier) + "." + ".".join("=".join((str(k), str(v))) for k, v in champ[cle].items())
                 except Exception:
                     myunikname = str(uuid.uuid4())
                 # On rajoute un petit uuid en cas de rafraichissement d'image

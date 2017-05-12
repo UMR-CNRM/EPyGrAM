@@ -43,7 +43,6 @@ def getAjaxArg(sArg, sDefault=''):
         if data:
             dic = json.loads(data)
         else:
-            # maybe it was a GET?  check web.input() #TOBECHECKED: Ghis
             dic = dict(web.input())
         if dic:
             if sArg in dic:
@@ -72,9 +71,6 @@ def getAjaxArgSmart(sArg, sDefault=''):
         if data:
             dic = json.loads(data)
         else:
-            # Trick for grib
-            # dic = json.loads(data, separators=(',',':')) #TOBECHECKED: Ghis
-            # maybe it was a GET?  check web.input()
             dic = dict(web.input())
         if dic:
             if sArg in dic:
@@ -142,7 +138,6 @@ def get_common_args(fileid):
     myplot_args["meridians"] = getAjaxArgSmart('meridians')  # nombre/slidebar
     myplot_args["parallels"] = getAjaxArgSmart('parallels')
     myplot_args["bluemarble"] = getAjaxArgSmart('bluemarble')
-    # myplot_args["minmax_in_title"] = True  # getAjaxArg('minmax_in_title') # TOBECHECKED: Ghis
     myplot_args["departments"] = getAjaxArgSmart('departments')  # checkbox
 
     return myplot_args
