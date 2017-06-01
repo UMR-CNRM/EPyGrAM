@@ -862,7 +862,7 @@ class netCDF(FileResource):
         def check_or_add_variable(varname, vartype,
                                   dimensions=(),
                                   **kwargs):
-            if six.text_type(varname) not in self._listfields():  # TOBECHECKED:
+            if six.text_type(varname) not in self._listfields():
                 var = self._nc.createVariable(varname, vartype,
                                               dimensions=dimensions,
                                               **kwargs)
@@ -913,7 +913,7 @@ class netCDF(FileResource):
             if field.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
                 Z_gridsize -= 1
         else:
-            Z_gridsize = 1
+            Z_gridsize = len(field.geometry.vcoordinate.levels)  # 1
         if Z_gridsize > 1:
             check_or_add_dim(Z, size=Z_gridsize)
         # horizontal
@@ -995,7 +995,8 @@ class netCDF(FileResource):
                 else:
                     epylog.info('assume 118/119 type vertical grid matches.')
             else:
-                if len(numpy.shape(field.geometry.vcoordinate.grid['gridlevels'])) > 1:
+                #if len(numpy.shape(field.geometry.vcoordinate.grid['gridlevels'])) > 1:
+                if len(numpy.shape(field.geometry.vcoordinate.levels)) > 1:  # TOBECHECKED:
                     dims_Z = [d for d in [Z, Y, X, G, N] if d is not None]
                 else:
                     dims_Z = Z
@@ -1004,9 +1005,11 @@ class netCDF(FileResource):
                 if u is not None:
                     zgrid.units = u
                 if _status == 'created':
-                    zgrid[:] = field.geometry.vcoordinate.grid['gridlevels']
+                    # zgrid[:] = field.geometry.vcoordinate.grid['gridlevels']
+                    zgrid[:] = field.geometry.vcoordinate.levels  # TOBECHECKED:
                 else:
-                    assert zgrid[:].all() == numpy.array(field.geometry.vcoordinate.grid['gridlevels']).all(), \
+                    # assert zgrid[:].all() == numpy.array(field.geometry.vcoordinate.grid['gridlevels']).all(), \# TOBECHECKED:
+                    assert zgrid[:].all() == numpy.array(field.geometry.vcoordinate.levels).all(), \
                            ' '.join(['variable', zgrid, 'mismatch.'])
             if _typeoffirstfixedsurface_short_dict_inv.get(field.geometry.vcoordinate.typeoffirstfixedsurface, False):
                 zgrid.short_name = _typeoffirstfixedsurface_short_dict_inv[field.geometry.vcoordinate.typeoffirstfixedsurface]

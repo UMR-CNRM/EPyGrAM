@@ -513,7 +513,7 @@ class D3CommonField(Field):
         newfield = fpx.field(fid=FPDict(subdomainfid),
                              structure=newgeometry.structure,
                              geometry=newgeometry,
-                             validity=self.validity,
+                             validity=self.validity.deepcopy(),
                              processtype=self.processtype,
                              comment=comment)
         if getdata:
