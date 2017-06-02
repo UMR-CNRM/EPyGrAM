@@ -238,7 +238,7 @@ class netCDF(FileResource):
             if len(self._variables[T_varname].dimensions) == 0:
                 T = [T]
             time_unit = getattr(self._variables[T_varname], 'units', '')
-            if re.match('hours|seconds|days|minutes\s+since.+$', time_unit):
+            if re.match('(hours|seconds|days|minutes)\s+since.+$', time_unit):
                 T = netCDF4.num2date(T, time_unit)
                 T = [datetime.datetime(*t.timetuple()[:6]) for t in T]  # FIXME: not sure of that for dates older than julian/gregorian calendar
                 basis = netCDF4.num2date(0, time_unit)
@@ -401,7 +401,7 @@ class netCDF(FileResource):
                                      "in $HOME/.epygram/userconfig.py"])
         # 3.3.2 vertical part
         if D3 or V1D or V2D:
-            var_corresponding_to_Z_grid = behaviour.get('Z_grid', False)
+            var_corresponding_to_Z_grid = behaviour.get('Z_grid', dims_dict_e2n['Z_dimension'])
             # assert var_corresponding_to_Z_grid in self._variables.keys(), \
             #        'unable to find Z_grid in variables.'
             levels = None

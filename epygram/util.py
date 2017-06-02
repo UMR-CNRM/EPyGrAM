@@ -921,6 +921,19 @@ def restrain_to_index_i_of_dim_d(a, i, d, n=None):
             ra = a[:, :, :, [i], :]
         else:
             ra = a[:, :, :, :, [i]]
+    elif n == 6:
+        if d == 0:
+            ra = a[[i], :, :, :, :, :]
+        elif d == 1:
+            ra = a[:, [i], :, :, :, :]
+        elif d == 2:
+            ra = a[:, :, [i], :, :, :]
+        elif d == 3:
+            ra = a[:, :, :, [i], :, :]
+        elif d == 4:
+            ra = a[:, :, :, :, [i], :]
+        else:
+            ra = a[:, :, :, :, :, [i]]
     else:
         raise NotImplementedError("more than 5 dimensions in array.")
 

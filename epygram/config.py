@@ -175,6 +175,8 @@ sensors_local_GRIB2 = {'MVIRI':192,
                        'IMAGER':194}
 #: GRIB: errors while setting packing are fatal
 GRIB_packing_fatal = True
+#: GRIB: ignore errors while trying to decode validity
+GRIB_ignore_validity_decoding_errors = False
 
 #: LFI field dictionaries
 LFI_field_dictionaries_csv = {'default':os.path.join(installdir,
@@ -201,8 +203,10 @@ netCDF_usualnames_for_standard_dimensions = {'N_dimension':('N', 'n', 'transect'
                                              'Y_dimension':('Y', 'y', 'yy',
                                                             'LAT', 'lat', 'Nbre_lat', 'latitude',
                                                             'lat_number'),
-                                             'Z_dimension':('Z', 'z', 'zz', 'level',
-                                                            'pressure', 'hybrid-pressure', 'height', 'altitude')}
+                                             'Z_dimension':('Z', 'z', 'zz',
+                                                            'level', 'nlev', 'nlevp1',
+                                                            'pressure', 'hybrid-pressure',
+                                                            'height', 'altitude')}
 #: netCDF usual names for storing lon, lat grids
 netCDF_usualnames_for_lonlat_grids = {'X':['LON', 'lon', 'lons', 'longitude', 'longitudes'],
                                       'Y':['LAT', 'lat', 'lats', 'latitude', 'latitudes']}

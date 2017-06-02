@@ -1027,7 +1027,13 @@ class GRIBmessage(RecursiveObject, dict):
 
         field_kwargs = {}
         field_kwargs['fid'] = self.genfid()
-        field_kwargs['validity'] = self._read_validity()
+        try:
+            field_kwargs['validity'] = self._read_validity()
+        except (epygramError, NotImplementedError):
+            if config.GRIB_ignore_validity_decoding_errors:
+                field_kwargs['validity'] = FieldValidity()
+            else:
+                raise
         field_kwargs['spectral_geometry'] = None
         field_kwargs['processtype'] = self['generatingProcessIdentifier']
         geometry = self._read_geometry()
@@ -1085,9 +1091,9 @@ class GRIBmessage(RecursiveObject, dict):
                                             order='C')[:, ::-1]
                 else:
                     raise NotImplementedError("not yet !")
-            
-            if (self['editionNumber'] == 2 and self['bitMapIndicator'] == 0) \
-            or (self['editionNumber'] == 1 and self['bitmapPresent'] == 1):  # DONE FOR GRIB1 ;-)
+
+            if ((self['editionNumber'] == 2 and self['bitMapIndicator'] == 0) or
+                (self['editionNumber'] == 1 and self['bitmapPresent'] == 1)):
                 data2d = numpy.ma.masked_equal(data2d, self['missingValue'])
             field.setdata(data2d)
 
@@ -1749,7 +1755,14 @@ class GRIB(FileResource):
                 m = self.iter_messages()
                 if m is None:
                     break
-                if m._read_validity().get() != onefield.validity.get():
+                try:
+                    v = m._read_validity().get()
+                except (epygramError, NotImplementedError):
+                    if config.GRIB_ignore_validity_decoding_errors:
+                        v = FieldValidity()
+                    else:
+                        raise
+                if v.get() != onefield.validity.get():
                     epylog.error(str(m._read_validity()))
                     epylog.error(str(onefield.validity))
                     raise epygramError("all fields do not share their" +
