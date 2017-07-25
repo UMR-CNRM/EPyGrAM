@@ -456,7 +456,7 @@ class FieldSet(RecursiveObject, list):
 
     def index(self, fid):
         """
-        Returns the index of the first field of the FieldSet whose fid 
+        Returns the index of the first field of the FieldSet whose fid
         matches **fid**, **fid** being a dict.
         """
 

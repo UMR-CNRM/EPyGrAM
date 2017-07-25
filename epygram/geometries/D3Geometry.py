@@ -1453,7 +1453,8 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
     def _consistency_check(self):
         """Check that the geometry is consistent."""
 
-        grid_keys = ['LAMzone', 'X_resolution', 'Y_resolution', 'input_lat', 'input_lon', 'input_position']
+        grid_keys = ['LAMzone', 'X_resolution', 'Y_resolution',
+                     'input_lat', 'input_lon', 'input_position']
         if set(self.grid.keys()) != set(grid_keys) and \
            set(self.grid.keys()) != set(grid_keys + ['longitude', 'latitude']):
             raise epygramError("grid attribute must consist in keys: " +

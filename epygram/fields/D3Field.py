@@ -15,8 +15,8 @@ import sys
 
 import footprints
 from footprints import FPDict, FPList, proxy as fpx
-from epygram import epygramError
-from epygram.util import write_formatted, stretch_array, Angle
+from epygram import epygramError, config
+from epygram.util import write_formatted, stretch_array, Angle, set_figax
 from epygram.base import Field, FieldSet, FieldValidity, FieldValidityList, Resource
 from epygram.geometries import D3Geometry, SpectralGeometry
 
@@ -341,7 +341,7 @@ class D3CommonField(Field):
                                         vcoordinate=vcoordinate,
                                         grid={'longitudes':[lons4d[0, 0, j, i].tolist()],
                                               'latitudes':[lats4d[0, 0, j, i].tolist()],
-                                             },
+                                              },
                                         position_on_horizontal_grid='center',
                                         name='unstructured'
                                         )
@@ -695,11 +695,15 @@ class D3CommonField(Field):
         """
         return super(D3CommonField, self).nonzero(subzone=subzone)
 
-    def dctspectrum(self, level_index=None, validity_index=None, subzone=None):
+    def dctspectrum(self, subzone=None, level_index=None, validity_index=None):
         """
         Returns the DCT spectrum of the field, as a
         :class:`epygram.spectra.Spectrum` instance.
-        *k* is the level index to use to compute de DCT
+
+        :param subzone: LAM zone on which to compute the DCT,
+                        among (None, 'C', 'CI', 'CIE'). Defaults to 'C'.
+        :param level_index: the level index on which to compute the DCT
+        :param validity_index: the validity index on which to compute the DCT
         """
         import epygram.spectra as esp
 
@@ -726,6 +730,8 @@ class D3CommonField(Field):
             field2dt0 = field2d.getvalidity(validity_index)
         else:
             field2dt0 = field2d
+        if subzone is None and self.geometry.grid.get('LAMzone', None) is not None:
+            subzone = 'C'
         variances = esp.dctspectrum(field2dt0.getdata(subzone=subzone))
         spectrum = esp.Spectrum(variances[1:],
                                 name=str(self.fid),
@@ -733,6 +739,143 @@ class D3CommonField(Field):
                                 mean2=variances[0])
 
         return spectrum
+
+    def histogram(self,
+                  subzone=None,
+                  over=(None, None),
+                  title=None,
+                  get_n_bins_patches=False,
+                  together_with=[],
+                  mask_threshold=None,
+                  center_hist_on_0=False,
+                  minmax_in_title=True,
+                  **hist_kwargs):
+        """
+        Build an histogram of the field data.
+
+        :param subzone: LAM zone on which to compute the DCT,
+                        among (None, 'C', 'CI', 'CIE').
+        :param over: any existing figure and/or ax to be used for the
+                     plot, given as a tuple (fig, ax), with None for
+                     missing objects. *fig* is the frame of the
+                     matplotlib figure, containing eventually several
+                     subplots (axes); *ax* is the matplotlib axes on
+                     which the drawing is done. When given (is not None),
+                     these objects must be coherent, i.e. ax being one of
+                     the fig axes.
+        :param title: title for the plot
+        :param get_n_bins_patches: if True, returns n, bins, patches
+                                   (cf. matplotlib hist()) in addition
+        :param together_with: another field or list of fields to plot on the
+                              same histogram
+        :param mask_threshold: dict with min and/or max value(s) to mask outside.
+        :param center_hist_on_0: to center the histogram on 0.
+        :param minmax_in_title: if True and **range** is not None,
+                                adds min and max values in title.
+        :param hist_kwargs: any keyword argument to be passed to
+                            matplotlib's hist()
+        """
+        # 0. Initializations
+        #####################
+        # 0.1 matplotlib initializations
+        import matplotlib.pyplot as plt
+        plt.rc('font', family='serif')
+        plt.rc('figure', figsize=config.plotsizes)
+
+        # 0.2 checkings
+        if self.spectral:
+            raise epygramError("please convert to gridpoint with sp2gp()" +
+                               " method before plotting.")
+        #
+        mask_outside = {'min':-config.mask_outside,
+                        'max':config.mask_outside}
+        if mask_threshold is not None:
+            mask_outside.update(mask_threshold)
+        data1d = numpy.ma.masked_outside(self.getdata(subzone=subzone),
+                                         mask_outside['min'],
+                                         mask_outside['max'])
+        data1d = [stretch_array(data1d)]
+        fig, ax = set_figax(*over)
+        if together_with != []:
+            if isinstance(together_with, D3Field):
+                together_with = [together_with]
+            data1d = data1d + [stretch_array(numpy.ma.masked_outside(f.getdata(subzone=subzone),
+                                                                     mask_outside['min'],
+                                                                     mask_outside['max']))
+                               for f in together_with]
+        if title is None:
+            if len(data1d) == 1:
+                ax.set_title("\n".join([str(self.fid[sorted(self.fid.keys())[0]]),
+                                        str(self.validity.get())]))
+        else:
+            ax.set_title(title)
+        if 'rwidth' not in hist_kwargs.keys():
+            hist_kwargs['rwidth'] = 0.9
+        if 'label' not in hist_kwargs.keys() and len(data1d) > 1:
+            hist_kwargs['label'] = [self.fid[sorted(self.fid.keys())[0]]] + \
+                                   [f.fid[sorted(f.fid.keys())[0]]
+                                    for f in together_with]
+        if hist_kwargs.get('range') is not None:
+            try:
+                m = float(hist_kwargs['range'][0])
+            except ValueError:
+                m = min([d.min() for d in data1d])
+            try:
+                M = float(hist_kwargs['range'][1])
+            except ValueError:
+                M = max([d.max() for d in data1d])
+            hist_kwargs['range'] = (m, M)
+            if minmax_in_title:
+                minmax_in_title = '(min: ' + \
+                    '{: .{precision}{type}}'.format(min([d.min() for d in data1d]),
+                                                    type='E', precision=3) + \
+                    ' // max: ' + \
+                    '{: .{precision}{type}}'.format(max([d.max() for d in data1d]),
+                                                    type='E', precision=3) + ')'
+        else:
+            minmax_in_title = ''
+        if hist_kwargs.get('range') is None:
+            if hist_kwargs.get('bins') is None or \
+               isinstance(hist_kwargs.get('bins'), int):
+                hist_kwargs['range'] = (min([d.min() for d in data1d]),
+                                        max([d.max() for d in data1d]))
+        if isinstance(hist_kwargs.get('bins'), list):
+            if hist_kwargs['bins'][0] == 'min':
+                hist_kwargs['bins'][0] = min([d.min() for d in data1d])
+            if hist_kwargs['bins'][-1] == 'min':
+                hist_kwargs['bins'][-1] = max([d.max() for d in data1d])
+        n, bins, patches = ax.hist(data1d, **hist_kwargs)
+        if len(bins) > 8:
+            step = len(bins) // 7
+            ticks = [b for b in bins[::step]]
+            if bins[-1] != ticks[-1]:
+                ticks.append(bins[-1])
+        else:
+            ticks = bins
+        ax.get_xaxis().set_tick_params(which='both', direction='out')
+        ax.set_xticks(bins, minor=True)
+        ax.set_xticks(ticks)
+        ax.set_xticklabels(['{:.3E}'.format(t) for t in ticks],
+                           rotation=27.5,
+                           horizontalalignment='right')
+        if center_hist_on_0:
+            M = max(abs(ticks[0]), abs(ticks[-1]))
+            ax.set_xlim(-M, M)
+            ax.axvline(0., linestyle='-', color='k')  # vertical lines
+        else:
+            ax.set_xlim(ticks[0], ticks[-1])
+        ax.set_ylabel('Number of gridpoints')
+        xlabel = 'Gridpoint values'
+        if minmax_in_title:
+            xlabel += '\n' + minmax_in_title
+        ax.set_xlabel(xlabel)
+        if 'label' in hist_kwargs.keys():
+            ax.legend()
+        ax.grid()
+        if get_n_bins_patches:
+            return fig, ax, n, bins, patches
+        else:
+            return fig, ax
 
     def global_shift_center(self, longitude_shift):
         """
@@ -1364,7 +1507,7 @@ class D3Field(D3CommonField):
             kwargs_geom['geoid'] = self.geometry.geoid
         newgeometry = fpx.geometry(**kwargs_geom)
         generic_fid = self.fid.get('generic', {})
-        generic_fid['level'] = my_level if not isinstance(my_level, numpy.ndarray) else my_k  #to avoid arrays in fid
+        generic_fid['level'] = my_level if not isinstance(my_level, numpy.ndarray) else my_k  # to avoid arrays in fid
         kwargs_field = {'structure':newstructure,
                         'validity':self.validity.copy(),
                         'processtype':self.processtype,
@@ -1402,7 +1545,7 @@ class D3Field(D3CommonField):
         newfield.validity = validity
         newfield.setdata(self.getdata(d4=True)[index:index + 1, :, :, ])
         if len(numpy.array(newfield.geometry.vcoordinate.levels).shape) > 1:
-            #levels are, at least, dependent on position
+            # levels are, at least, dependent on position
             levels4d = newfield.geometry.get_levels(d4=True, nb_validities=len(self.validity))
             kwargs_vcoord = copy.deepcopy(newfield.geometry.vcoordinate.footprint_as_dict())
             kwargs_vcoord['levels'] = levels4d[index, ...].squeeze()
@@ -1459,6 +1602,7 @@ class D3VirtualField(D3CommonField):
                 for field in self.fieldset:
                     yield field.fid, field
             self._fieldGenerator = fieldGenerator
+
             def getFieldByFid(fid, getdata):
                 result = [field for field in self.fieldset if field.fid == fid]
                 if len(result) != 1:
@@ -1479,6 +1623,7 @@ class D3VirtualField(D3CommonField):
                     field = self.resource.readfield(fid, getdata=getdata)
                     yield fid, field
             self._fieldGenerator = fieldGenerator
+
             def getFieldByFid(fid, getdata):
                 return self.resource.readfield(fid, getdata=getdata)
             self._getFieldByFid = getFieldByFid
@@ -1566,7 +1711,7 @@ class D3VirtualField(D3CommonField):
                        'dimensions': copy.copy(self.geometry.dimensions),
                        'vcoordinate': newvcoordinate,
                        'position_on_horizontal_grid': self.geometry.position_on_horizontal_grid
-                      }
+                       }
         if self.geometry.projected_geometry or self.geometry.name == 'academic':
             kwargs_geom['projection'] = copy.copy(self.geometry.projection)
         if self.geometry.projected_geometry:
@@ -1674,16 +1819,16 @@ class D3VirtualField(D3CommonField):
                 arr = numpy.ma.array
             dataList.append(data)
         if d4:
-            #vertical dimension already exists, and is the second one
+            # vertical dimension already exists, and is the second one
             return concat(dataList, axis=1)
         else:
             if len(self.validity) > 1:
-                #vertical dimension does not exist and
-                #must be the second one of the resulting array
+                # vertical dimension does not exist and
+                # must be the second one of the resulting array
                 return numpy.stack(dataList, axis=1)
             else:
-                #vertical dimension does not exist and
-                #must be the first one of the resulting array
+                # vertical dimension does not exist and
+                # must be the first one of the resulting array
                 return arr(dataList)
 
     def setdata(self, data):

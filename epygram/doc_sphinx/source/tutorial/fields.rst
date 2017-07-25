@@ -40,10 +40,10 @@ between GRIB1 \& GRIB2), e.g.
 
 >>> field.fid
 {'FA':'S058WIND.U.PHYS',
- 'GRIB':{'indicatorOfParameter':33,
-         'indicatorOfTypeOfLevel':109,
-         'level':58,
-         'table2Version':1,}
+ 'GRIB1':{'indicatorOfParameter':33,
+          'indicatorOfTypeOfLevel':109,
+          'level':58,
+          'table2Version':1,}
  'GRIB2':{'discipline':0,
           'parameterCategory':3,
           'parameterNumber':2,

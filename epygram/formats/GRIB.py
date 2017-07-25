@@ -608,13 +608,14 @@ class GRIBmessage(RecursiveObject, dict):
             if self['editionNumber'] == 2:
                 self['bitMapIndicator'] = 0
                 self['bitmapPresent'] = 1
-                self['missingValue'] = values.fill_value
                 if 'gauss' in field.geometry.name:
                     values = field.geometry.fill_maskedvalues(values)  # TOBECHECKED:
                 else:
                     values = values.filled(values.fill_value)
+                self['missingValue'] = values.fill_value
             else:
-                pass  # TODO: bitmap in GRIB1 ?
+                # bitmap in GRIB1 ?
+                raise NotImplementedError("didn't succeed to make this work")
         values = values.squeeze()
         if not field.spectral:
             # is it necessary to pre-write values ? (packingType != from sample)
@@ -680,7 +681,6 @@ class GRIBmessage(RecursiveObject, dict):
                 data1d = values[:, :].compressed()
             else:
                 data1d = values[::-1, :].flatten(order='C')
-            gribapi.grib_set_values(self._gid, data1d)
         elif self['iScansNegatively'] == 0 and \
              self['jScansPositively'] == 1 and \
              self['jPointsAreConsecutive'] == 0:
@@ -688,7 +688,6 @@ class GRIBmessage(RecursiveObject, dict):
                 data1d = values[::-1, :].compressed()
             else:
                 data1d = values[:, :].flatten(order='C')
-            gribapi.grib_set_values(self._gid, data1d)
         elif self['iScansNegatively'] == 1 and \
              self['jScansPositively'] == 0 and \
              self['jPointsAreConsecutive'] == 0:
@@ -696,7 +695,6 @@ class GRIBmessage(RecursiveObject, dict):
                 data1d = values[:, ::-1].compressed()
             else:
                 data1d = values[::-1, ::-1].flatten(order='C')
-            gribapi.grib_set_values(self._gid, data1d)
         elif self['iScansNegatively'] == 1 and \
              self['jScansPositively'] == 1 and \
              self['jPointsAreConsecutive'] == 0:
@@ -704,9 +702,9 @@ class GRIBmessage(RecursiveObject, dict):
                 data1d = values[::-1, ::-1].compressed()
             else:
                 data1d = values[:, ::-1].flatten(order='C')
-            gribapi.grib_set_values(self._gid, data1d)
         else:
             raise NotImplementedError('this ordering: not yet.')
+        gribapi.grib_set_values(self._gid, data1d)
 
     def _read_geometry(self):
         """

@@ -57,7 +57,7 @@ def main(filename,
          composition=None,
          mask_threshold=None,
          quiverkey=None,
-         global_shift_center=None
+         global_shift_center=None,
          ):
     """
     Args:
@@ -142,6 +142,11 @@ def main(filename,
     if not diffmode:
         if not computewind:
             field = resource.readfield(fieldseed)
+            assert isinstance(field, epygram.fields.H2DField), \
+                   ' '.join(['Oops ! Looks like',
+                             str(fieldseed),
+                             'is not known as a horizontal 2D Field by epygram.',
+                             'Add it to ~/.epygram/user_Field_Dict_FA.csv ?'])
             if not field.geometry.grid.get('LAMzone', False):
                 subzone = None
             if field.spectral:
@@ -156,6 +161,11 @@ def main(filename,
                 else:
                     toreadin = resource
                 composefield = toreadin.readfield(composition['fid'])
+                assert isinstance(composefield, epygram.fields.H2DField), \
+                       ' '.join(['Oops ! Looks like',
+                                 str(fieldseed),
+                                 'is not known as a horizontal 2D Field by epygram.',
+                                 'Add it to ~/.epygram/user_Field_Dict_FA.csv ?'])
                 if 'file' in composition:
                     del toreadin
                 if 'preset' in composition:
@@ -198,6 +208,11 @@ def main(filename,
             (Ufid, Vfid) = fieldseed
             U = resource.readfield(Ufid)
             field = U
+            assert isinstance(field, epygram.fields.H2DField), \
+                   ' '.join(['Oops ! Looks like',
+                             str(fieldseed),
+                             'is not known as a horizontal 2D Field by epygram.',
+                             'Add it to ~/.epygram/user_Field_Dict_FA.csv ?'])
             if not field.geometry.grid.get('LAMzone', False):
                 subzone = None
             if U.spectral:
@@ -252,6 +267,11 @@ def main(filename,
                 plt.show()
     else:
         field = resource.readfield(fieldseed)
+        assert isinstance(field, epygram.fields.H2DField), \
+               ' '.join(['Oops ! Looks like',
+                         str(fieldseed),
+                         'is not known as a horizontal 2D Field by epygram.',
+                         'Add it to ~/.epygram/user_Field_Dict_FA.csv ?'])
         if not field.geometry.grid.get('LAMzone', False):
             subzone = None
         if field.spectral:

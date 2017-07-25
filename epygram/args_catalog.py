@@ -500,7 +500,7 @@ graphical_options = {
              default='colorshades')],
     'minmax':[
         '-m', '--minmax',
-        dict(help="min and max values for the plot colorbar.\
+        dict(help="min and max values for the plot.\
                    Syntax: 'min, max'. '0.0, max' also works.\
                    Default is the field min/max values.\
                    In diff mode, this is valuable for resource and reference\
@@ -511,7 +511,7 @@ graphical_options = {
              default=None)],
     'diffminmax':[
         '-M', '--diffminmax',
-        dict(help="min and max values for the difference plot colorbar.\
+        dict(help="min and max values for the difference plot.\
                    Syntax: 'min, max'. '0.0, max' also works.\
                    Default is the difference field min/max values.\
                    For negative values, use short-name option -M without\
@@ -693,6 +693,31 @@ graphical_options = {
                    a [-180,180] grid, for instance (with -180 argument).",
              type=float,
              default=None)],
+    'bins':[
+        '-b', '--bins',
+        dict(help="number of bins or bins edges (separated by commas). \
+                   'range(0,100,12.5)' also works. Default is 50.",
+             type=str,
+             default='50')],
+    'diffbins':[
+        '-B', '--diffbins',
+        dict(help="number of bins or bins edges (separated by commas) \
+                   for diff plot. \
+                   'range(0,100,12.5)' also works. Default is 50.",
+             type=str,
+             default='50')],
+    'center_hist_on_0':[
+        '-t', '--center_hist_on_0',
+        dict(action='store_true',
+             help="to center the histogram on the value 0. Can be useful\
+                   for wind plots for instance.",
+             default=False)],
+    'diff_center_hist_on_0':[
+        '-T', '--diffcenter_hist_on_0',
+        dict(action='store_false',
+             help="NOT to center the histogram of diff on the value 0.\
+                   May be useful for fluxes decumulation.",
+             default=True)],
                      }
 
 # : Arguments dealing with extraction stuff
