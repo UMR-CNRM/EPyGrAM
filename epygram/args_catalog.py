@@ -591,7 +591,7 @@ graphical_options = {
                    - a grid step, e.g. 5 to plot each 5 degree\
                    - None: no one is plot\
                    - 'equator' // 'polarcircles' // 'tropics' or any\
-                     combination will plot only these.",
+                     combination (,) will plot only these.",
              type=str,
              default='auto')],
     'meridians':[

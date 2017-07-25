@@ -186,7 +186,7 @@ class H2DField(D3Field):
                          - a grid step, e.g. 5 to plot each 5 degree.
                          - None: no one is plot
                          - *meridians* == 'greenwich' // 'datechange' //
-                           'greenwich+datechange' or any combination (+)
+                           'greenwich+datechange' or any combination (,)
                            will plot only these.
         parallels        cf. meridians doc, with specific ones being
                          *parallels* == 'equator' // 'polarcircles' //

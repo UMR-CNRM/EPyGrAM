@@ -656,7 +656,7 @@ def add_meridians_and_parallels_to(bm, meridians='auto', parallels='auto', ax=No
       - None: no one is plot
       - *meridian* == 'greenwich' // 'datechange' // 'greenwich+datechange'
         *parallel* == 'equator' // 'polarcircles' // 'tropics' or any
-        combination (+) will plot only these.
+        combination (,) will plot only these.
     """
 
     try:
@@ -683,7 +683,7 @@ def add_meridians_and_parallels_to(bm, meridians='auto', parallels='auto', ax=No
         parallels = numpy.arange(latmin, latmax, delta_lat)
     elif parallels == 'default':
         parallels = numpy.arange(-90, 90, 10)
-    elif isinstance(parallels, six.string_types):
+    elif isinstance(parallels, six.string_types) or isinstance(parallels, list):
         pl = []
         if 'equator' in parallels:
             pl.append(0.)
@@ -691,6 +691,12 @@ def add_meridians_and_parallels_to(bm, meridians='auto', parallels='auto', ax=No
             pl.extend([-66.5628, 66.5628])
         if 'tropics' in parallels:
             pl.extend([-23.4372, 23.4372])
+        if isinstance(parallels, list):
+            for p in parallels:
+                try:
+                    pl.append(float(p))
+                except (ValueError, TypeError):
+                    pass
         pl.sort()
         parallels = pl
 
@@ -709,12 +715,18 @@ def add_meridians_and_parallels_to(bm, meridians='auto', parallels='auto', ax=No
         meridians = numpy.arange(lonmin, lonmax, delta_lon)
     elif meridians == 'default':
         meridians = numpy.arange(0, 360, 10)
-    elif isinstance(meridians, six.string_types):
+    elif isinstance(meridians, six.string_types) or isinstance(meridians, list):
         ml = []
         if 'greenwich' in meridians:
             ml.append(0.)
         if 'datechange' in meridians:
-            pl.append(180.)
+            ml.append(180.)
+        if isinstance(meridians, list):
+            for m in meridians:
+                try:
+                    ml.append(float(m))
+                except (ValueError, TypeError):
+                    pass
         ml.sort()
         meridians = ml
 

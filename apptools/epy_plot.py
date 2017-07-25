@@ -527,11 +527,17 @@ if __name__ == '__main__':
     if args.parallels == 'None':
         parallels = None
     else:
-        parallels = args.parallels
+        if ',' in args.parallels:
+            parallels = args.parallels.split(',')
+        else:
+            parallels = args.parallels
     if args.meridians == 'None':
         meridians = None
     else:
-        meridians = args.meridians
+        if ',' in args.meridians:
+            meridians = args.meridians.split(',')
+        else:
+            meridians = args.meridians
     if args.mask_threshold is not None:
         mask_threshold = epygram.util.parse_str2dict(args.mask_threshold, float)
     else:
