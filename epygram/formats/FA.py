@@ -1174,6 +1174,7 @@ class FA(FileResource):
           as named in FA.
         - *lon* is the longitude of the desired point.
         - *lat* is the latitude of the desired point.
+          If both None, extract a horizontally-averaged profile.
         - *geometry* is the geometry on which extract data. If None, it is built from
           lon/lat.
         - *vertical_coordinate* defines the requested vertical coordinate of the
@@ -1197,7 +1198,21 @@ class FA(FileResource):
 
         if geometry is None:
             if None in [lon, lat]:
-                raise epygramError("You must give a geometry or lon *and* lat")
+                # mean profile, vertical_coordinate is forgotten
+                field3d = self._mk_3dvirtuelfield(pseudoname)
+                if field3d.spectral:
+                    field3d.sp2gp()
+                profG = self.geometry.make_profile_geometry(lon, lat)
+                profG.vcoordinate = field3d.geometry.vcoordinate.deepcopy()
+                profile = fpx.field(fid=field3d.fid,
+                                    structure='V1D',
+                                    validity=self.validity.deepcopy(),
+                                    geometry=profG,
+                                    comment='horizontally-averaged profile')
+                data3d = field3d.getdata(d4=True)
+                data1d = [data3d[:, i, :, :].mean() for i in range(len(profG.vcoordinate.levels))]
+                profile.setdata(data1d)
+                return profile
             if self.geometry is None:
                 self._read_geometry()
             pointG = self.geometry.make_profile_geometry(lon, lat)
@@ -1311,30 +1326,7 @@ class FA(FileResource):
           taking hydrometeors into account (in R computation) nor NH Pressure
           departure (Non-Hydrostatic data). Computation therefore faster.
         """
-        fidlist = self.find_fields_in_resource(seed=pseudoname,
-                                               fieldtype=['H2D', '3D'],
-                                               generic=True)
-        if fidlist == []:
-            raise epygramError("cannot find profile for " + str(pseudoname) +
-                               " in resource.")
-        # find the prevailing type of level
-        leveltypes = [f[1]['typeOfFirstFixedSurface'] for f in fidlist]
-        if len(set(leveltypes)) > 1:
-            leveltypes_num = {t:0 for t in set(leveltypes)}
-            for t in leveltypes:
-                leveltypes_num[t] += 1
-            leveltypes = [k for k, v in leveltypes_num.items() if
-                          v == max(leveltypes_num.values())]
-            if len(leveltypes) > 1:
-                raise epygramError("unable to determine type of level" +
-                                   " to select.")
-        leveltype = leveltypes[0]
-        # filter by type of level
-        fidlist = [f[0] for f in fidlist if f[1]['typeOfFirstFixedSurface'] == leveltype]
-
-        field3d = fpx.field(fid={'FA':pseudoname},
-                            structure='3D',
-                            resource=self, resource_fids=fidlist)
+        field3d = self._mk_3dvirtuelfield(pseudoname)
         if field3d.spectral:
             field3d.sp2gp()
         subdomain = field3d.extract_subdomain(geometry,
@@ -1436,6 +1428,34 @@ class FA(FileResource):
                                           " conversion.")
 
         return subdomain
+
+    def _mk_3dvirtuelfield(self, pseudoname):
+        """Return a D3VirtualField from pseudoname."""
+        fidlist = self.find_fields_in_resource(seed=pseudoname,
+                                               fieldtype=['H2D', '3D'],
+                                               generic=True)
+        if fidlist == []:
+            raise epygramError("cannot find profile for " + str(pseudoname) +
+                               " in resource.")
+        # find the prevailing type of level
+        leveltypes = [f[1]['typeOfFirstFixedSurface'] for f in fidlist]
+        if len(set(leveltypes)) > 1:
+            leveltypes_num = {t:0 for t in set(leveltypes)}
+            for t in leveltypes:
+                leveltypes_num[t] += 1
+            leveltypes = [k for k, v in leveltypes_num.items() if
+                          v == max(leveltypes_num.values())]
+            if len(leveltypes) > 1:
+                raise epygramError("unable to determine type of level" +
+                                   " to select.")
+        leveltype = leveltypes[0]
+        # filter by type of level
+        fidlist = [f[0] for f in fidlist if f[1]['typeOfFirstFixedSurface'] == leveltype]
+
+        field3d = fpx.field(fid={'FA':pseudoname},
+                            structure='3D',
+                            resource=self, resource_fids=fidlist)
+        return field3d
 
 ###########
 # pre-app #

@@ -48,6 +48,7 @@ def main(filename,
         fieldseed: either a string or a list of strings, used as a seed for
                    generating the list of fields to be processed.
         coordinates: (lon, lat) coordinates (in °) of the point to be extracted.
+                     If None, make horizontally-averaged profile.
         interpolation: kind of interpolation from grid to coordinates, among
                        ('nearest', 'linear', 'cubic').
         refname: name of the reference file to be compared to.
@@ -110,7 +111,7 @@ def main(filename,
                       'height':103}
         vertical_coordinate = map_vcoord.get(vertical_coordinate, vertical_coordinate)
         profile = r.extractprofile(fieldseed,
-                                   coordinates[0], coordinates[1],
+                                   *coordinates,
                                    vertical_coordinate=vertical_coordinate,
                                    interpolation=interpolation,
                                    cheap_height=cheap_height,
@@ -205,7 +206,10 @@ def main(filename,
 
     # Text Output
     parameter = epygram.util.linearize2str(profile.fid.get(resource.format, profile.fid))
-    position = str(coordinates[0]) + "E" + str(coordinates[1]) + "N"
+    if None in coordinates:
+        position = 'mean'
+    else:
+        position = str(coordinates[0]) + "E" + str(coordinates[1]) + "N"
     suffix = "profile.out"
     if not diffmode:
         filename = '.'.join([resource.container.abspath,
@@ -267,7 +271,10 @@ if __name__ == '__main__':
 
     add_arg_to_parser(parser, files_management['principal_file'])
     add_arg_to_parser(parser, fields_management['vertical_field'])
-    add_arg_to_parser(parser, extraction_options['point_coordinates'])
+    add_arg_to_parser(parser, extraction_options['point_coordinates'],
+                      required=False, default=None,
+                      help=(extraction_options['point_coordinates'][-1]['help'] +
+                            'If not given, make horizontally-averaged profile.'))
     add_arg_to_parser(parser, extraction_options['horizontal_interpolation'])
     add_arg_to_parser(parser, extraction_options['external_distance'])
     diffmodes = parser.add_mutually_exclusive_group()
@@ -308,8 +315,11 @@ if __name__ == '__main__':
     else:
         refname = args.refname
         diffonly = False
-    coordinates = args.coordinates.split(',')
-    coordinates = tuple([float(i) for i in coordinates])
+    if args.coordinates is not None:
+        coordinates = args.coordinates.split(',')
+        coordinates = tuple([float(i) for i in coordinates])
+    else:
+        coordinates = (None, None)
     if args.zoom is not None:
         zoom = dict()
         for limit in args.zoom.split(','):
