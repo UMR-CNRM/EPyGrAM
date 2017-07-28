@@ -237,8 +237,10 @@ def main(filename,
             else:
                 title = str(fieldseed) + "\n" + str(U.validity.get())
             if field.geometry.name != 'academic':
-                bm = U.geometry.make_basemap(subzone=subzone, specificproj=specificproj,
-                                             zoom=zoom, gisquality=gisquality)
+                bm = U.geometry.make_basemap(subzone=subzone,
+                                             specificproj=specificproj,
+                                             zoom=zoom,
+                                             gisquality=gisquality)
             fig, _ = vectwind.plotfield(subzone=subzone,
                                         use_basemap=bm,
                                         title=title,
@@ -528,14 +530,14 @@ if __name__ == '__main__':
         parallels = None
     else:
         if ',' in args.parallels:
-            parallels = args.parallels.split(',')
+            parallels = [p.strip() for p in args.parallels.split(',')]
         else:
             parallels = args.parallels
     if args.meridians == 'None':
         meridians = None
     else:
         if ',' in args.meridians:
-            meridians = args.meridians.split(',')
+            meridians = [m.strip() for m in args.meridians.split(',')]
         else:
             meridians = args.meridians
     if args.mask_threshold is not None:

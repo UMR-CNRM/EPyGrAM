@@ -273,6 +273,7 @@ class H2DVectorField(Field):
         """
 
         (lon, lat) = self.geometry.get_lonlat_grid()
+        assert not self.spectral
         u = self.components[0].getdata()
         v = self.components[1].getdata()
         if self.geometry.name == 'rotated_reduced_gauss':
@@ -282,12 +283,12 @@ class H2DVectorField(Field):
                                                             lat.compressed(),
                                                             map_factor_correction=map_factor_correction,
                                                             reverse=reverse)
+            u = self.geometry.reshape_data(u, first_dimension='T')
+            v = self.geometry.reshape_data(v, first_dimension='T')
         else:
             (u, v) = self.geometry.reproject_wind_on_lonlat(u, v, lon, lat,
                                                             map_factor_correction=map_factor_correction,
                                                             reverse=reverse)
-        u = self.geometry.reshape_data(u, first_dimension='T')
-        v = self.geometry.reshape_data(v, first_dimension='T')
         self.setdata([u, v])
 
     def map_factorize(self, reverse=False):

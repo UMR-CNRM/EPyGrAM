@@ -9,6 +9,8 @@ Contains the class to for Point (0D == 1 value) fields.
 
 from __future__ import print_function, absolute_import, unicode_literals, division
 
+import numpy
+
 from footprints import proxy as fpx
 
 from .D3Field import D3Field
@@ -153,5 +155,7 @@ def gimme_one_point(longitude, latitude,
                     'fid':{}}
     kwargs_field.update(field_args)
     field = fpx.field(**kwargs_field)
+    zeros = numpy.zeros(len(field.validity))
+    field.setdata(zeros)
 
     return field

@@ -784,8 +784,10 @@ def parse_str2dict(string, try_convert=None):
     Parse a *string* (of syntax 'key1:value1,key2=value2') to a dict.
     If *try_convert* is not None, try to convert values as type *try_convert*.
     """
-
-    d = {i.replace('=', ':').split(':')[0].strip():i.replace('=', ':').split(':')[1].strip() for i in string.split(',')}
+    if ':' not in string and '=' not in string:
+        raise SyntaxError("string: '{}' is not convertible to a dict".format(string))
+    d = {i.replace('=', ':').split(':')[0].strip():i.replace('=', ':').split(':')[1].strip()
+         for i in string.split(',')}
     if try_convert is not None:
         for k, v in d.items():
             try:

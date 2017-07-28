@@ -74,7 +74,7 @@ class H2DField(D3Field):
                  for i in range(len(self.validity))]
 
         pt = gimme_one_point(lon, lat,
-                             field_args={'validity':self.validity,
+                             field_args={'validity':self.validity.deepcopy(),
                                          'fid':self.fid},
                              geometry_args={'vcoordinate':self.geometry.vcoordinate},
                              vertical_geometry_args=None)
@@ -458,7 +458,9 @@ class H2DField(D3Field):
                 ax.set_title(title)
         else:
             # zoom: create zoom_field and plot it
-            zoom_field = self.extract_zoom(zoom)
+            zoom_field = self.extract_zoom(zoom,
+                                           # in regLL case, to be sure gridpoints of the border are included
+                                           extra_10th=use_basemap is not None)
             # get args
             import inspect
             frame = inspect.currentframe()

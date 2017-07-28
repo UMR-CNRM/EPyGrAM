@@ -733,7 +733,6 @@ class D3RectangularGridGeometry(D3Geometry):
         else:
             shp = self.get_datashape(dimT=nb_validities, force_dimZ=nb_levels,
                                      subzone=subzone)
-
         return data.reshape(shp)
 
     def horizontally_flattened(self, data):
@@ -2068,8 +2067,9 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
         """
 
         corners = self.gimme_corners_ll()
-        if abs(abs(degrees_nearest_mod(corners['ur'][0] - corners['ul'][0], 0.)) - self.grid['X_resolution'].get('degrees')) \
-           < config.epsilon:
+        if abs(abs(degrees_nearest_mod(corners['ur'][0] -
+                                       corners['ul'][0], 0.)) -
+               self.grid['X_resolution'].get('degrees')) < config.epsilon:
             if abs(longitude_shift % self.grid['X_resolution'].get('degrees')) > config.epsilon:
                 raise epygramError("*longitude_shift* has to be a multiple" +
                                    " of the grid's resolution in longitude.")

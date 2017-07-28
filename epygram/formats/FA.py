@@ -38,6 +38,31 @@ __all__ = ['FA', 'inquire_field_dict']
 epylog = footprints.loggers.getLogger(__name__)
 
 
+def find_wind_pair(fieldname):
+    """For a wind fieldname, find and return the pair."""
+    pairs = {'U':'V', 'V':'U',
+             'ZONAL':'MERIDIEN', 'MERIDIEN':'ZONAL', 'MERID':'ZONAL'}
+    patterns = ['S\d+WIND\.(?P<d>[U,V])\.PHYS',
+                '[P,H,V]\d+VENT_(?P<d>(ZONAL)|(MERID)|(MERIDIEN))',
+                'CLSVENTNEUTRE.(?P<d>[U,V])',
+                'CLSVENT.(?P<d>(ZONAL)|(MERIDIEN))',
+                'CLS(?P<d>[U,V]).RAF.MOD.XFU']
+    axes = {'U':'x', 'ZONAL':'x',
+            'V':'y', 'MERIDIEN':'y', 'MERID':'y'}
+    pair = None
+    for pattern in patterns:
+        re_ok = re.match(pattern, fieldname)
+        if re_ok:
+            pair = (axes[pairs[re_ok.group(1)]],
+                    fieldname.replace(re_ok.group('d'),
+                                      pairs[re_ok.group('d')]))
+            break
+    if pair is None:
+        raise epygramError('not a wind field')
+    else:
+        return pair
+
+
 def inquire_field_dict(fieldname):
     """
     Returns the info contained in the FA _field_dict for the requested field.
@@ -839,7 +864,7 @@ class FA(FileResource):
                                vcoordinate=vcoordinate,
                                position_on_horizontal_grid=self.geometry.position_on_horizontal_grid,
                                geoid=config.FA_default_geoid)
-            
+
             if self.geometry.projected_geometry or self.geometry.name == 'academic':
                 kwargs_geom['projection'] = self.geometry.projection
             geometry = fpx.geometry(**kwargs_geom)

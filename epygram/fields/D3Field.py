@@ -16,7 +16,8 @@ import sys
 import footprints
 from footprints import FPDict, FPList, proxy as fpx
 from epygram import epygramError, config
-from epygram.util import write_formatted, stretch_array, Angle, set_figax
+from epygram.util import write_formatted, stretch_array, Angle, set_figax, \
+    degrees_nearest_mod
 from epygram.base import Field, FieldSet, FieldValidity, FieldValidityList, Resource
 from epygram.geometries import D3Geometry, SpectralGeometry
 
@@ -521,10 +522,12 @@ class D3CommonField(Field):
 
         return newfield
 
-    def extract_zoom(self, zoom):
+    def extract_zoom(self, zoom, extra_10th=False):
         """
         Extract an unstructured field with the gridpoints contained in *zoom*,
         *zoom* being a dict(lonmin=, lonmax=, latmin=, latmax=).
+        If **extra_10th**, add 1/10th of the X/Y extension of the zoom
+        (regular_lonlat grid case only).
         """
 
         assert not self.spectral, \
@@ -536,12 +539,33 @@ class D3CommonField(Field):
                            'position_on_horizontal_grid':self.geometry.position_on_horizontal_grid,
                            'geoid':self.geometry.geoid}
         if self.geometry.name == 'regular_lonlat':
+            if extra_10th:
+                dx = (degrees_nearest_mod(zoom['lonmax'], 0.) -
+                      degrees_nearest_mod(zoom['lonmin'], 0.)) / 10.
+                dy = (zoom['latmax'] - zoom['latmin']) / 10.
+                zoom = {'lonmin':zoom['lonmin'] - dx,
+                        'lonmax':zoom['lonmax'] + dx,
+                        'latmin':zoom['latmin'] - dy,
+                        'latmax':zoom['latmax'] + dy}
             imin, jmin = self.geometry.ll2ij(zoom['lonmin'], zoom['latmin'])
             imax, jmax = self.geometry.ll2ij(zoom['lonmax'], zoom['latmax'])
-            imin = int(numpy.ceil(imin))
-            imax = int(numpy.floor(imax))
-            jmin = int(numpy.ceil(jmin))
-            jmax = int(numpy.floor(jmax))
+            if imin >= imax:
+                gridmin = self.geometry.gimme_corners_ll()['ll'][0]
+                diff_lonmin = (gridmin - degrees_nearest_mod(zoom['lonmin'],
+                                                             gridmin))
+                Xres = self.geometry.grid['X_resolution'].get('degrees')
+                shift = (diff_lonmin // Xres + 1) * Xres
+                shifted_self = self.deepcopy()
+                shifted_self.global_shift_center(-shift)
+                return shifted_self.extract_zoom(zoom)
+            imin = max(int(numpy.ceil(imin)),
+                       0)
+            imax = min(int(numpy.floor(imax)),
+                       self.geometry.dimensions['X'] - 1)
+            jmin = max(int(numpy.ceil(jmin)),
+                       0)
+            jmax = min(int(numpy.floor(jmax)),
+                       self.geometry.dimensions['Y'] - 1)
             kwargs_zoomgeom['dimensions'] = {'X':imax - imin + 1,
                                              'Y':jmax - jmin + 1}
             lonmin, latmin = self.geometry.ij2ll(imin, jmin)
@@ -638,6 +662,24 @@ class D3CommonField(Field):
         d = numpy.concatenate([d1, d2], axis=0)
         self.validity.extend(another.validity)
         self.setdata(d)
+
+    def decumulate(self, center=False):
+        """
+        Decumulate cumulated fields (for a field with temporal dimension !).
+        If **center** is False, values at t are mean values between t-1 and t,
+        except at t=0 where it remains untouched.
+        If **center** is True, values at t are then (v[t-1, t] + v[t,t+1])/2.,
+        except for t=0 where it becomes v[0, 1]
+        and t=last where it remains the same.
+        """
+        if len(self.validity) > 1:
+            data = self.getdata(d4=True)
+            data[1:, ...] = data[1:, ...] - data[0:-1, ...]
+            if center:
+                data[0, ...] = data[1, ...]  # the actual mean between 0 and 1
+                if len(self.validity) > 2:
+                    data[1:-1, ...] = (data[1:-1, ...] + data[2:, ...]) / 2.
+            self.setdata(data)
 
 ###################
 # PRE-APPLICATIVE #
