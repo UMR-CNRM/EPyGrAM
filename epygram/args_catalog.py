@@ -387,6 +387,13 @@ output_options = {
                    in fields).",
              dest='reproject_wind',
              default=False)],
+    'only_maxdiff':[
+        '--oxd', '--only_maxdiff',
+        dict(action='store_true',
+             help='if diffonly and activated, only print the maximum absolute\
+                   difference (and min/max values of fields for magnitude',
+             dest='only_maxdiff',
+             default=False)]
                   }
 
 # : Miscellaneous arguments

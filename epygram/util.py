@@ -584,7 +584,9 @@ def write_formatted_table(dest, table, alignments=['<', '^'], precision=6, float
     array = numpy.array(table, dtype=str)
     columns_dimension = [len(c) + 2 for c in array[0, :]]
     columns_dimension[0] = max([len(c) + 1 for c in array[:, 0]])
-    float_len = len(float_style.format(2. / 3., type=float_type, precision=precision))
+    float_len = len(float_style.format(2. / 3.,
+                                       type=float_type,
+                                       precision=precision)) + 1  # +1 for x < 1E-100
     columns_dimension[1:] = [max(float_len, c) for c in columns_dimension[1:]]
 
     for i in range(array.shape[0]):

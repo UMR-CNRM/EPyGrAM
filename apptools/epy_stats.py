@@ -9,22 +9,24 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 import six
 import argparse
 import sys
+import os
 
 from footprints import FPDict
 
 import epygram
 from epygram import epylog
 from epygram.util import printstatus, write_formatted_table
-from epygram.args_catalog import add_arg_to_parser, \
-                                 files_management, fields_management, \
-                                 misc_options, runtime_options, \
-                                 output_options
+from epygram.args_catalog import (add_arg_to_parser,
+                                  files_management, fields_management,
+                                  misc_options, runtime_options,
+                                  output_options)
 
 
 def main(filename,
          fieldseed,
          refname=None,
          diffonly=False,
+         only_maxdiff=False,
          subzone=None,
          pressure_unit_hpa=False,
          operation=None,
@@ -41,6 +43,8 @@ def main(filename,
                    generating the list of fields to be processed.
         refname: name of the reference file to be compared to.
         diffonly: if True, only prints the difference statistics.
+        only_maxdiff: if diffonly and True, only print the maximum absolute
+                      difference (and min/max values of fields for magnitude
         subzone: LAM zone among ('C', 'CI', 'CIE').
         pressure_unit_hpa: for FA, converts log(pressure) fields to hPa.
         operation: makes the requested operation
@@ -84,10 +88,10 @@ def main(filename,
                 field.sp2gp()
             if operation is not None:
                 field.operation(**operation)
-            if pressure_unit_hpa and \
-               (field.fid['generic'].get('discipline') == 0 and
-                field.fid['generic'].get('parameterCategory') == 3 and
-                field.fid['generic'].get('parameterNumber') in (0, 1, 2, 8, 11, 25)):
+            if (pressure_unit_hpa and
+                (field.fid['generic'].get('discipline') == 0 and
+                 field.fid['generic'].get('parameterCategory') == 3 and
+                 field.fid['generic'].get('parameterNumber') in (0, 1, 2, 8, 11, 25))):
                 field.scalar_operation('/', 100.)
             stats[f] = field.stats(subzone=subzone)
     else:
@@ -118,10 +122,10 @@ def main(filename,
                     field.sp2gp()
                 if operation is not None:
                     field.operation(**operation)
-                if pressure_unit_hpa and \
-                   (field.fid['generic'].get('discipline') == 0 and
-                    field.fid['generic'].get('parameterCategory') == 3 and
-                    field.fid['generic'].get('parameterNumber') in (0, 1, 2, 8, 11, 25)):
+                if (pressure_unit_hpa and
+                    (field.fid['generic'].get('discipline') == 0 and
+                     field.fid['generic'].get('parameterCategory') == 3 and
+                     field.fid['generic'].get('parameterNumber') in (0, 1, 2, 8, 11, 25))):
                     field.scalar_operation('/', 100.)
                 stats[f] = field.stats(subzone=subzone)
             if f in reffidlist:
@@ -132,10 +136,10 @@ def main(filename,
                     reffield.sp2gp()
                 if operation is not None:
                     reffield.operation(**operation)
-                if pressure_unit_hpa and \
-                   (reffield.fid['generic'].get('discipline') == 0 and
-                    reffield.fid['generic'].get('parameterCategory') == 3 and
-                    reffield.fid['generic'].get('parameterNumber') in (0, 1, 2, 8, 11, 25)):
+                if (pressure_unit_hpa and
+                    (reffield.fid['generic'].get('discipline') == 0 and
+                     reffield.fid['generic'].get('parameterCategory') == 3 and
+                     reffield.fid['generic'].get('parameterNumber') in (0, 1, 2, 8, 11, 25))):
                     reffield.scalar_operation('/', 100.)
                 refstats[f] = reffield.stats(subzone=subzone)
             if f in intersectionfidlist:
@@ -148,8 +152,11 @@ def main(filename,
     single_params = ['min', 'max', 'mean', 'std', 'quadmean', 'nonzero']
     diffonly_params = ['min', 'max', 'bias', 'rmsd', 'nonzero']
     diff_params = ['min', 'max', 'mean', 'std', 'bias', 'rmsd', 'nonzero']
-    singlemap = {'min':'min', 'max':'max', 'mean':'mean', 'std':'std', 'bias':None, 'rmsd':None, 'quadmean':'quadmean', 'nonzero':'nonzero'}
-    diffmap = {'min':'min', 'max':'max', 'mean':None, 'std':None, 'bias':'mean', 'rmsd':'quadmean', 'nonzero':'nonzero'}
+    singlemap = {'min':'min', 'max':'max', 'mean':'mean', 'std':'std',
+                 'bias':None, 'rmsd':None,
+                 'quadmean':'quadmean', 'nonzero':'nonzero'}
+    diffmap = {'min':'min', 'max':'max', 'mean':None, 'std':None,
+               'bias':'mean', 'rmsd':'quadmean', 'nonzero':'nonzero'}
     suffix = "stats.out"
     if not diffmode:
         printlist = fidlist
@@ -180,17 +187,17 @@ def main(filename,
             filename = outputfilename
         else:
             if noutfields == 1:
-                filename = resource.container.absdir + \
-                           '.'.join(['diff',
-                                     resource.container.basename + '-' + reference.container.basename,
-                                     parameter,
-                                     suffix])
+                filename = os.path.join(resource.container.absdir,
+                                        '.'.join(['diff',
+                                                  resource.container.basename + '-' + reference.container.basename,
+                                                  parameter,
+                                                  suffix]))
             else:
-                filename = resource.container.absdir + \
-                           '.'.join(['diff',
-                                     resource.container.basename + '-' + reference.container.basename,
-                                     str(noutfields) + "fields",
-                                     suffix])
+                filename = os.path.join(resource.container.absdir,
+                                        '.'.join(['diff',
+                                                  resource.container.basename + '-' + reference.container.basename,
+                                                  str(noutfields) + "fields",
+                                                  suffix]))
         head = "-diff-"
     if stdoutput:
         out = sys.stdout
@@ -209,7 +216,10 @@ def main(filename,
             output.append([fid] + [stats[f].get(singlemap[k], None) for k in single_params])
         write_formatted_table(out, output, precision=precision)
     elif diffonly:
-        output.extend(diffonly_params)
+        if only_maxdiff:
+            output.extend(['min_flds', 'max_flds', 'abs_max_diff', 'magnitude'])
+        else:
+            output.extend(diffonly_params)
         output = [output]
         for f in printlist:
             if resource.format == 'GRIB' and grib_short_fid:
@@ -217,8 +227,22 @@ def main(filename,
                 fid = '/'.join([str(fid[k]) for k in sorted(fid.keys())])
             else:
                 fid = str(f).strip()
-            output.append([fid] + [diffstats[f].get(diffmap[k], None) for k in diffonly_params])
-        write_formatted_table(out, output, precision=precision)
+            if only_maxdiff:
+                mini = min(stats[f].get('min'),
+                           refstats[f].get('min'))
+                maxi = max(stats[f].get('max'),
+                           refstats[f].get('max'))
+                diffmax = max(abs(diffstats[f].get('max')),
+                              abs(diffstats[f].get('min')))
+                magnitude = (diffmax /  # diffmax / max value
+                             max([abs(mini), abs(maxi), epygram.config.epsilon]))
+                magnitude = '{:.1f}%'.format(magnitude * 100.)
+                output.append([fid] + [mini, maxi, diffmax, magnitude])
+            else:
+                output.append([fid] + [diffstats[f].get(diffmap[k], None)
+                                       for k in diffonly_params])
+        write_formatted_table(out, output, precision=precision,
+                              alignments=['<', '>'] if only_maxdiff else ['<', '^'])
     else:
         for f in printlist:
             if resource.format == 'GRIB' and grib_short_fid:
@@ -261,6 +285,7 @@ if __name__ == '__main__':
     diffmodes = parser.add_mutually_exclusive_group()
     add_arg_to_parser(diffmodes, files_management['file_to_refer_in_diff'])
     add_arg_to_parser(diffmodes, files_management['file_to_refer_in_diffonly'])
+    add_arg_to_parser(parser, output_options['only_maxdiff'])
     add_arg_to_parser(parser, misc_options['LAMzone'])
     add_arg_to_parser(parser, misc_options['pressure_unit_hpa'])
     add_arg_to_parser(parser, misc_options['operation_on_field'])
@@ -333,6 +358,7 @@ if __name__ == '__main__':
          fieldseed,
          refname=refname,
          diffonly=diffonly,
+         only_maxdiff=args.only_maxdiff,
          subzone=subzone,
          pressure_unit_hpa=args.pressure_unit_hpa,
          operation=operation,
