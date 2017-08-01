@@ -648,7 +648,9 @@ class D3CommonField(Field):
         return newfield
 
     def resample(self, target_geometry,
-                 resample_type='nearest',
+                 weighting='nearest',
+                 subzone=None,
+                 neighbour_info=None,
                  # neighbouring options
                  radius_of_influence=None,
                  neighbours=8,
@@ -658,13 +660,23 @@ class D3CommonField(Field):
                  segments=None,
                  # resampling options
                  fill_value=None,
+                 sigma=None,
                  with_uncert=False):
         """
-        Resample data (interpolate) on a target geometry, using pyresample.
+        Resample data (interpolate) on a **target geometry**, using pyresample.
 
-        :param resample_type: among ['nearest',
-                                     lambda r:1/r**2 (or other function)
-                                     'gauss:sigma=2000']
+        :param weighting: among ['nearest',
+                                 'gauss' (in which case sigma can be specified,
+                                          cf. sigma option below),
+                                 lambda r:1/r**2 (or other function, r in m)]
+        :param subzone: restrain source field to LAMzone in LAM geometry case
+        :param neighbour_info: - if True: skips the resampling, only compute
+                                          neighbours and return this
+                                          information as a tuple;
+                               - if given as a tuple, skips the computation of
+                                 neighbours, taking those information
+                                 given in argument (from a former call with
+                                 neighbour_info=True)
 
         //Options from pyresample//
         Neighbouring options:
@@ -684,28 +696,63 @@ class D3CommonField(Field):
         :param fill_value: Set undetermined pixels to this value.
                            If fill_value is None a masked array is returned
                            with undetermined pixels masked
+        :param sigma: sigma (in m) to use for the gauss weighting
+                      w = exp(-dist^2/sigma^2)
+                      Default is twice the resolution.
         :param with_uncert: Calculate uncertainty estimates (returned as side
                             fields)
         """
         assert not self.spectral, "field must be gridpoint"
-        from pyresample.geometry import GridDefinition
-        from pyresample.kd_tree import (get_neighbour_info,
-                                        get_sample_from_neighbour_info)
-        source_geo = GridDefinition(*self.geometry.get_lonlat_grid())
+        try:
+            from pyresample.geometry import GridDefinition
+            from pyresample.kd_tree import (get_neighbour_info,
+                                            get_sample_from_neighbour_info)
+        except ImportError:
+            raise ImportError("""pyresample is not installed.
+                                 You can install it locally using:\n
+                                 'pip install --user pyresample'""")
+        # PART 0: computation of parameters for PARTS 1 & 2
         target_geo = GridDefinition(*target_geometry.get_lonlat_grid())
-        if radius_of_influence is None:
-            if 'gauss' in self.geometry.name:
-                # gauss grid case
-                resolution = self.geometry.resolution_ij(0, self.geometry.dimensions['lat_number'])
-            elif self.geometry.name == 'regular_lonlat':
-                resolution = self.geometry.resolution_ij(self.geometry.dimensions['X'] / 2,
-                                                         self.geometry.dimensions['Y'] / 2)
-            else:
-                resolution = (self.geometry.grid.get('X_resolution') +
-                              self.geometry.grid.get('Y_resolution')) / 2.
-            radius_of_influence = 5. * resolution  # get enough for bilinear
-
-        source_data = self.getdata(d4=True)
+        if 'gauss' in self.geometry.name:
+            # gauss grid case
+            resolution = self.geometry.resolution_j(self.geometry.dimensions['lat_number'] - 1)
+        elif self.geometry.name == 'regular_lonlat':
+            resolution = self.geometry.resolution_ij(self.geometry.dimensions['X'] / 2,
+                                                     self.geometry.dimensions['Y'] / 2)
+        else:
+            resolution = (self.geometry.grid.get('X_resolution') +
+                          self.geometry.grid.get('Y_resolution')) / 2.
+        # PART 1: computation of neighbours
+        if neighbour_info in (True, None, False):
+            source_geo = GridDefinition(*self.geometry.get_lonlat_grid(subzone=subzone))
+            if radius_of_influence is None:
+                radius_of_influence = 4. * resolution
+            if weighting == 'nearest':
+                neighbours = 1
+            (valid_input_index,
+             valid_output_index,
+             index_array,
+             distance_array) = get_neighbour_info(source_geo,
+                                                  target_geo,
+                                                  radius_of_influence=radius_of_influence,
+                                                  neighbours=neighbours,
+                                                  epsilon=epsilon,
+                                                  reduce_data=reduce_data,
+                                                  nprocs=nprocs,
+                                                  segments=segments)
+            if neighbour_info is True:
+                return (valid_input_index,
+                        valid_output_index,
+                        index_array,
+                        distance_array)
+        else:  # neighbour_info is given: tuple of information about neighbours
+            assert len(neighbour_info) == 4
+            (valid_input_index,
+             valid_output_index,
+             index_array,
+             distance_array) = neighbour_info
+        # PART 2: computation of resampling
+        source_data = self.getdata(d4=True, subzone=subzone)
         resampled_data = numpy.ma.zeros((source_data.shape[0],  # t
                                          source_data.shape[1],  # z
                                          target_geo.shape[0],  # y
@@ -719,35 +766,26 @@ class D3CommonField(Field):
                                      source_data.shape[1],  # z
                                      target_geo.shape[0],  # y
                                      target_geo.shape[1]))  # x
-        if resample_type == 'nearest':
-            neighbours = 1
-        (valid_input_index,
-         valid_output_index,
-         index_array,
-         distance_array) = get_neighbour_info(source_geo,
-                                              target_geo,
-                                              radius_of_influence=radius_of_influence,
-                                              neighbours=neighbours,
-                                              epsilon=epsilon,
-                                              reduce_data=reduce_data,
-                                              nprocs=nprocs,
-                                              segments=segments)
-        if callable(resample_type):  # custom: weighting function
-            weight_funcs = resample_type
-            resample_type = 'custom'
-        elif resample_type == 'nearest':
-            resample_type = 'nn'
+        if callable(weighting):  # custom: weighting function
+            weight_funcs = weighting
+            weighting = 'custom'
+        elif weighting == 'nearest':
+            weighting = 'nn'
             weight_funcs = None
-            neighbours = 1
-        elif resample_type.startswith('gauss:sigma='):
-            def gauss(sigma):
-                return lambda r: numpy.exp(-r ** 2 / float(sigma) ** 2)
-            sigma = resample_type.replace('gauss:sigma=', '')
+        elif weighting == 'gauss':
+            def gauss(s):
+                return lambda r: numpy.exp(-r ** 2 / s ** 2)
+            weighting = 'custom'
+            if sigma is None:
+                sigma = 2. * resolution
+            else:
+                sigma = float(sigma)
             weight_funcs = gauss(sigma)
-            resample_type = 'custom'
+        else:
+            raise epygramError("unknown weighting='" + str(weighting))
         for t in range(source_data.shape[0]):
             for z in range(source_data.shape[1]):
-                rdata = get_sample_from_neighbour_info(resample_type,
+                rdata = get_sample_from_neighbour_info(weighting,
                                                        target_geo.shape,
                                                        source_data[t, z, :, :],
                                                        valid_input_index,
