@@ -647,6 +647,139 @@ class D3CommonField(Field):
 
         return newfield
 
+    def resample(self, target_geometry,
+                 resample_type='nearest',
+                 # neighbouring options
+                 radius_of_influence=None,
+                 neighbours=8,
+                 epsilon=0,
+                 reduce_data=True,
+                 nprocs=1,
+                 segments=None,
+                 # resampling options
+                 fill_value=None,
+                 with_uncert=False):
+        """
+        Resample data (interpolate) on a target geometry, using pyresample.
+
+        :param resample_type: among ['nearest',
+                                     lambda r:1/r**2 (or other function)
+                                     'gauss:sigma=2000']
+
+        //Options from pyresample//
+        Neighbouring options:
+        :param radius_of_influence: Cut off distance in meters, default value
+                                    computed from geometry
+        :param neighbours: The number of neigbours to consider for each grid
+                           point
+        :param epsilon: Allowed uncertainty in meters. Increasing uncertainty
+                        reduces execution time
+        :param reduce_data: Perform initial coarse reduction of source dataset
+                            in order to reduce execution time
+        :param nprocs: Number of processor cores to be used
+        :param segments: Number of segments to use when resampling.
+                         If set to None an estimate will be calculated
+
+        Resampling options:
+        :param fill_value: Set undetermined pixels to this value.
+                           If fill_value is None a masked array is returned
+                           with undetermined pixels masked
+        :param with_uncert: Calculate uncertainty estimates (returned as side
+                            fields)
+        """
+        assert not self.spectral, "field must be gridpoint"
+        from pyresample.geometry import GridDefinition
+        from pyresample.kd_tree import (get_neighbour_info,
+                                        get_sample_from_neighbour_info)
+        source_geo = GridDefinition(*self.geometry.get_lonlat_grid())
+        target_geo = GridDefinition(*target_geometry.get_lonlat_grid())
+        if radius_of_influence is None:
+            if 'gauss' in self.geometry.name:
+                # gauss grid case
+                resolution = self.geometry.resolution_ij(0, self.geometry.dimensions['lat_number'])
+            elif self.geometry.name == 'regular_lonlat':
+                resolution = self.geometry.resolution_ij(self.geometry.dimensions['X'] / 2,
+                                                         self.geometry.dimensions['Y'] / 2)
+            else:
+                resolution = (self.geometry.grid.get('X_resolution') +
+                              self.geometry.grid.get('Y_resolution')) / 2.
+            radius_of_influence = 5. * resolution  # get enough for bilinear
+
+        source_data = self.getdata(d4=True)
+        resampled_data = numpy.ma.zeros((source_data.shape[0],  # t
+                                         source_data.shape[1],  # z
+                                         target_geo.shape[0],  # y
+                                         target_geo.shape[1]))  # x
+        if with_uncert:
+            stddev = numpy.ma.zeros((source_data.shape[0],  # t
+                                     source_data.shape[1],  # z
+                                     target_geo.shape[0],  # y
+                                     target_geo.shape[1]))  # x
+            counts = numpy.ma.zeros((source_data.shape[0],  # t
+                                     source_data.shape[1],  # z
+                                     target_geo.shape[0],  # y
+                                     target_geo.shape[1]))  # x
+        if resample_type == 'nearest':
+            neighbours = 1
+        (valid_input_index,
+         valid_output_index,
+         index_array,
+         distance_array) = get_neighbour_info(source_geo,
+                                              target_geo,
+                                              radius_of_influence=radius_of_influence,
+                                              neighbours=neighbours,
+                                              epsilon=epsilon,
+                                              reduce_data=reduce_data,
+                                              nprocs=nprocs,
+                                              segments=segments)
+        if callable(resample_type):  # custom: weighting function
+            weight_funcs = resample_type
+            resample_type = 'custom'
+        elif resample_type == 'nearest':
+            resample_type = 'nn'
+            weight_funcs = None
+            neighbours = 1
+        elif resample_type.startswith('gauss:sigma='):
+            def gauss(sigma):
+                return lambda r: numpy.exp(-r ** 2 / float(sigma) ** 2)
+            sigma = resample_type.replace('gauss:sigma=', '')
+            weight_funcs = gauss(sigma)
+            resample_type = 'custom'
+        for t in range(source_data.shape[0]):
+            for z in range(source_data.shape[1]):
+                rdata = get_sample_from_neighbour_info(resample_type,
+                                                       target_geo.shape,
+                                                       source_data[t, z, :, :],
+                                                       valid_input_index,
+                                                       valid_output_index,
+                                                       index_array,
+                                                       distance_array,
+                                                       weight_funcs=weight_funcs,
+                                                       fill_value=fill_value,
+                                                       with_uncert=with_uncert)
+                if with_uncert:
+                    resampled_data[t, z, :, :] = rdata[0][:, :]
+                    stddev[t, z, :, :] = rdata[1][:, :]
+                    counts[t, z, :, :] = rdata[2][:, :]
+                else:
+                    resampled_data[t, z, :, :] = rdata[:, :]
+
+        # build final field
+        field_kwargs = copy.deepcopy(self._attributes)
+        field_kwargs['geometry'] = target_geometry
+        newfield = fpx.field(**field_kwargs)
+        newfield.setdata(resampled_data)
+        if with_uncert:
+            stddev_field = newfield.deepcopy()
+            stddev_field.setdata(stddev)
+            stddev_field.comment += ':stddev_from_resampling'
+            counts_field = newfield.deepcopy()
+            counts_field.setdata(counts)
+            stddev_field.comment += ':number_of_points_from_resampling'
+            return newfield, stddev_field, counts_field
+        else:
+            return newfield
+
     def extend(self, another_field_with_time_dimension):
         """
         Extend the field with regard to time dimension with the field given as
