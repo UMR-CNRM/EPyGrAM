@@ -1,6 +1,12 @@
 #!/bin/bash
 
 # Script de deploiement d'EPyGrAM sur /home/common/epygram et BULL
+if [ "$1" == "-h" ]; then
+    echo "Usage: deploy.sh version [mkdoc]"
+    echo "version being e.g. 'dev' or '1.1.8'"
+    echo "if mkdoc is present, build doc before deployment"
+    exit
+fi
 
 # Parse args
 version=$1

@@ -1845,6 +1845,10 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
             if set(self.grid.keys()) != set(grid_keys):
                 raise epygramError("grid attribute must consist in keys: " +
                                    str(grid_keys))
+            assert isinstance(self.grid['input_lon'], Angle)
+            assert isinstance(self.grid['input_lat'], Angle)
+            assert isinstance(self.grid['X_resolution'], Angle)
+            assert isinstance(self.grid['Y_resolution'], Angle)
             dimensions_keys = ['X', 'Y']
             if set(self.dimensions.keys()) != set(dimensions_keys):
                 raise epygramError("dimensions attribute must consist in keys: " + str(dimensions_keys))
@@ -2456,6 +2460,8 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         if set(self.grid.keys()) != set(grid_keys):
             raise epygramError("grid attribute must consist in keys: " +
                                str(grid_keys))
+        assert isinstance(self.grid['input_lon'], Angle)
+        assert isinstance(self.grid['input_lat'], Angle)
         LAMzone_values = [None, 'CI', 'CIE']
         if self.grid['LAMzone'] not in LAMzone_values:
             raise epygramError("grid['LAMzone'] must be among " +
@@ -3237,7 +3243,8 @@ class D3GaussGeometry(D3Geometry):
         if isinstance(i, list) or isinstance(i, tuple) or\
            isinstance(i, numpy.ndarray):
             lat = [self.grid['latitudes'][n].get('degrees') for n in j]
-            lon = [(numpy.pi * 2 * i[n]) / self.dimensions['lon_number_by_lat'][j[n]] for n in range(len(j))]
+            lon = [(numpy.pi * 2 * i[n]) / self.dimensions['lon_number_by_lat'][j[n]]
+                   for n in range(len(j))]
         else:
             lat = self.grid['latitudes'][j].get('degrees')
             lon = (numpy.pi * 2. * i) / self.dimensions['lon_number_by_lat'][j]
@@ -3593,18 +3600,61 @@ class D3GaussGeometry(D3Geometry):
 
     def resolution_ll(self, lon, lat):
         """
+        Returns the average meridian resolution (worst directional resolution)
+        at point position.
+        *point* must be a tuple (lon, lat).
+        """
+        return self.resolution_j(self.ll2ij(lon, lat)[1])
+
+    def meridian_resolution_j(self, j):
+        """
+        Returns the average meridian resolution at longitude circle number j.
+        """
+        jint = numpy.rint(j).astype('int')
+        jm1 = jint - 1
+        jp1 = jint + 1
+        # row 0 (first), we take the row 1 (twice then) instead of the row -1
+        if jm1 == -1:
+            dist = self.distance(self.ij2ll(0, jint),
+                                 self.ij2ll(0, jp1))
+        elif jp1 == self.dimensions['lat_number']:
+            dist = self.distance(self.ij2ll(0, jint),
+                                 self.ij2ll(0, jm1))
+        else:
+            dist = (self.distance(self.ij2ll(0, jint),
+                                  self.ij2ll(0, jp1)) +
+                    self.distance(self.ij2ll(0, jint),
+                                  self.ij2ll(0, jm1))) / 2.
+        return dist
+
+    def zonal_resolution_j(self, j):
+        """
+        Returns the average zonal resolution at longitude circle number j.
+        """
+        jint = numpy.rint(j).astype('int')
+        return self.distance(self.ij2ll(0, jint),
+                             self.ij2ll(1, jint))
+
+    def resolution_j(self, j):
+        """
+        Returns the average meridian resolution at longitude circle number j.
+        """
+        return self.meridian_resolution_j(j)
+
+    def distance_to_nearest_neighbour_ll(self, lon, lat):
+        """
         Returns the local resolution at the nearest point of lon/lat.
         It's the distance between this point and its closest neighbour.
         *point* must be a tuple (lon, lat).
         """
-        return self.resolution_ij(*self.ll2ij(lon, lat))
+        return self.distance_to_nearest_neighbour_ij(*self.ll2ij(lon, lat))
 
-    def resolution_ij(self, i, j):
+    def distance_to_nearest_neighbour_ij(self, i, j):
         """
         Returns the distance to the nearest point of (i,j) point.
         (*i, j*) being the coordinates in the 2D matrix of gridpoints.
         """
-
+         # FIXME: not sure this is exactly computed
         (iint, jint) = (numpy.rint(i).astype('int'),
                         numpy.rint(j).astype('int'))
         points_list = []

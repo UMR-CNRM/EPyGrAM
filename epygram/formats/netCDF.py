@@ -239,7 +239,7 @@ class netCDF(FileResource):
                 T = [T]
             time_unit = getattr(self._variables[T_varname], 'units', '')
             if re.match('(hours|seconds|days|minutes)\s+since.+$', time_unit):
-                T = netCDF4.num2date(T, time_unit)
+                T = netCDF4.num2date(T, time_unit).squeeze().reshape((len(T),))
                 T = [datetime.datetime(*t.timetuple()[:6]) for t in T]  # FIXME: not sure of that for dates older than julian/gregorian calendar
                 basis = netCDF4.num2date(0, time_unit)
                 if basis.year <= 1582:
