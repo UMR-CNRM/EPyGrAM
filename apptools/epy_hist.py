@@ -5,17 +5,17 @@
 # http://www.cecill.info
 
 from __future__ import print_function, absolute_import, unicode_literals, division
-
 import six
+
 import argparse
 import numpy
 
 import epygram
 from epygram import epylog, epygramError
-from epygram.args_catalog import add_arg_to_parser, \
-                                 files_management, fields_management, \
-                                 misc_options, output_options, \
-                                 runtime_options, graphical_options
+from epygram.args_catalog import (add_arg_to_parser,
+                                  files_management, fields_management,
+                                  misc_options, output_options,
+                                  runtime_options, graphical_options)
 
 import matplotlib.pyplot as plt
 
@@ -42,33 +42,33 @@ def main(filename,
          mask_threshold=None
          ):
     """
-    Args:
-        filename: name of the file to be processed.
-        fieldseed: field identifier.
-        refname: name of the reference file to be compared to.
-        diffonly: if True, only plots the difference histogram.
-        computewind: from fieldseed, gets U and V components of wind, and
+    Build histograms.
+
+    :param filename: name of the file to be processed.
+    :param fieldseed: field identifier.
+    :param refname: name of the reference file to be compared to.
+    :param diffonly: if True, only plots the difference histogram.
+    :param computewind: from fieldseed, gets U and V components of wind, and
                      computes the module; plots barbs and module together.
-        subzone: LAM zone among ('C', 'CI', None).
-        operation: makes the requested operation
+    :param subzone: LAM zone among ('C', 'CI', None).
+    :param operation: makes the requested operation
                    (e.g. {'operation':'-','operand':273.15} or
                    {'operation':'exp'}) on the field before hist.
-        diffoperation: makes the requested operation
+    :param diffoperation: makes the requested operation
                        (e.g. {'operation':'-','operand':273.15} or
                        {'operation':'exp'}) on the difference field before hist.
-        legend: legend to be written over plot.
-        output: output format, among ('png', 'pdf', False).
-        outputfilename: specify an output filename for the plot
+    :param legend: legend to be written over plot.
+    :param output: output format, among ('png', 'pdf', False).
+    :param outputfilename: specify an output filename for the plot
                         (completed by output format).
-        minmax: tuple giving (or not) min and max fields values to be selected.
-        diffminmax: idem for difference fields.
-        bins: number of bins or bins edges.
-        diffbins: idem for difference fields.
-        zoom: a dict(lonmin, lonmax, latmin, latmax) on which to build the hist.
-        figures_dpi: quality of saved figures.
-        mask_threshold: dict with min and/or max value(s) to mask outside.
+    :param minmax: tuple giving (or not) min and max fields values to be selected.
+    :param diffminmax: idem for difference fields.
+    :param bins: number of bins or bins edges.
+    :param diffbins: idem for difference fields.
+    :param zoom: a dict(lonmin, lonmax, latmin, latmax) on which to build the hist.
+    :param figures_dpi: quality of saved figures.
+    :param mask_threshold: dict with min and/or max value(s) to mask outside.
     """
-
     if outputfilename and not output:
         raise epygramError('*output* format must be defined if outputfilename is supplied.')
 
@@ -232,8 +232,8 @@ def main(filename,
 
 if __name__ == '__main__':
 
-    # ## 1. Parse arguments
-    ######################
+    # 1. Parse arguments
+    ####################
     parser = argparse.ArgumentParser(description='An EPyGrAM tool for making histograms \
                                                   of meteorological fields from a resource.',
                                      epilog='End of help for: %(prog)s (EPyGrAM v' + epygram.__version__ + ')')
@@ -264,8 +264,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # ## 2. Initializations
-    ######################
+    # 2. Initializations
+    ####################
     epygram.init_env()
     # 2.0 logs
     epylog.setLevel('WARNING')
@@ -286,8 +286,8 @@ if __name__ == '__main__':
         subzone = None
     if args.bins is not None:
         if 'range' in args.bins:
-            bins = list(numpy.arange(*[float(b)
-                for b in args.bins.strip('range').strip('(').strip(')').split(',')]))
+            bins = list(numpy.arange(
+                *[float(b) for b in args.bins.strip('range').strip('(').strip(')').split(',')]))
         else:
             bins = [float(b) for b in args.bins.split(',')]
         if len(bins) == 1:
@@ -296,8 +296,8 @@ if __name__ == '__main__':
         bins = None
     if args.diffbins is not None:
         if 'range' in args.diffbins:
-            diffbins = list(numpy.arange(*[float(b)
-                for b in args.diffbins.strip('range').strip('(').strip(')').split(',')]))
+            diffbins = list(numpy.arange(
+                *[float(b) for b in args.diffbins.strip('range').strip('(').strip(')').split(',')]))
         else:
             diffbins = [float(b) for b in args.diffbins.split(',')]
         if len(diffbins) == 1:
@@ -349,8 +349,8 @@ if __name__ == '__main__':
     else:
         raise epygramError("Need to specify a field (-f) or two wind fields (--wU/--wV).")
 
-    # ## 3. Main
-    ###########
+    # 3. Main
+    #########
     main(six.u(args.filename),
          fieldseed,
          refname=refname,
@@ -371,7 +371,3 @@ if __name__ == '__main__':
          zoom=zoom,
          figures_dpi=args.figures_dpi,
          mask_threshold=mask_threshold)
-
-###########
-### END ###
-###########

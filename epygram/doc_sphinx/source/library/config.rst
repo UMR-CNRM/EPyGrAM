@@ -4,6 +4,8 @@
 .. automodule:: epygram.config
    :synopsis: Configuration: parameters, options used throughout the package.
 
+-----------------------------------------------------------
+
 Installation
 -------------
 
@@ -12,6 +14,8 @@ Installation
 .. autodata:: userconfigfile
 .. autodata:: epygram_colormaps
 .. autodata:: epygram_colormaps_scaling
+
+-----------------------------------------------------------
 
 Parameters
 ----------
@@ -26,6 +30,8 @@ Parameters
 .. autodata:: plotsizes
 .. autodata:: noninteractive_backend
 .. autodata:: default_graphical_output
+
+-----------------------------------------------------------
 
 Formats Specifications
 ----------------------
@@ -103,13 +109,17 @@ Options
 .. autodata:: spectral_coeff_order
 .. autodata:: init_at_import
 
+-----------------------------------------------------------
+
 User modules
 ------------
 
 .. autodata:: usermodules
 
-User colormaps
---------------
+-----------------------------------------------------------
+
+Colormaps
+---------
 
 .. autodata:: usercolormaps
 .. autodata:: usercolormaps_scaling

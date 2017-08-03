@@ -96,7 +96,6 @@ def build_geometry(center_lon, center_lat,
                              to have a E-zone width of 11 points
     :param interactive: interactive mode, to fine-tune the projection
     """
-
     # begin to build a horizontal geometry
     Xpoints_CIE = nearest_greater_FFT992compliant_int(Xpoints_CI + Ezone_minimum_width)
     Ypoints_CIE = nearest_greater_FFT992compliant_int(Ypoints_CI + Ezone_minimum_width)
@@ -218,7 +217,6 @@ def build_geometry_fromlonlat(lonmin, lonmax,
                              to have a E-zone width of 11 points
     :param interactive: interactive mode, to fine-tune the projection
     """
-
     # begin to build a horizontal geometry
     if lonmin > lonmax:
         lonmax += 360.
@@ -348,7 +346,6 @@ def build_geometry_fromlonlat(lonmin, lonmax,
 
 def geom2namblocks(geometry):
     """From the geometry, build the namelist blocks for the necessary namelists."""
-
     namelists = {}
 
     # compute additionnal parameters
@@ -421,11 +418,12 @@ def geom2namblocks(geometry):
 
 def format_namelists_blocks(blocks, out=None):
     """
-    Write out namelists **blocks** given as a dict (coming from output of
-    build_namelists_blocks()).
-    If **out** is given, write all in one file, else in separate files.
-    """
+    Write out namelists blocks.
 
+    :param blocks: dict of blocks (coming from output of
+                   build_namelists_blocks())
+    :param out: if given, write all in one file, else in separate files.
+    """
     # output routines
     def _write_blocks(out, blocks):
         for b in sorted(blocks.keys()):
@@ -454,9 +452,9 @@ def format_namelists_blocks(blocks, out=None):
 def write_geometry_as_namelist_blocks(geometry, allinone=False):
     """
     Write out namelists blocks from a geometry.
-    If **allinone**, write all in one file, else in separate files.
-    """
 
+    :param allinone: if True, write all in one file, else in separate files.
+    """
     namelists_blocks = geom2namblocks(geometry)
 
     if allinone:
@@ -477,12 +475,10 @@ def ask_and_build_geometry(defaults,
     Ask the user for geometry params,
     then builds a proposal geometry.
 
-    Args:
-        defaults: a dict() containing default values.
-        maximize_CI_in_E: boolean deciding to force the E-zone to be at its
-                          minimum.
+    :param defaults: a dict() containing default values.
+    :param maximize_CI_in_E: boolean deciding to force the E-zone to be at its
+                             minimum.
     """
-
     # ask for geometry
     try:
         resolution = float(raw_input("Resolution in m [" + str(defaults['resolution']) + "]: "))
@@ -559,12 +555,10 @@ def ask_lonlat_and_build_geometry(defaults,
     Ask the user for lonlat-included geometry params,
     then builds a proposal geometry.
 
-    Args:
-        defaults: a dict() containing default values.
-        maximize_CI_in_E: boolean deciding to force the E-zone to be at its
-                          minimum.
+    :param defaults: a dict() containing default values.
+    :param maximize_CI_in_E: boolean deciding to force the E-zone to be at its
+                             minimum.
     """
-
     # ask for geometry
     try:
         resolution = float(raw_input("Model resolution in m [" + str(defaults['resolution']) + "]: "))
@@ -609,10 +603,8 @@ def show_geometry(geometry):
     """
     Returns a summary of geometry as a character string.
 
-    Args:
-        geometry: a H2DGeometry instance
+    :param geometry: a H2DGeometry instance
     """
-
     invprojections = {'lambert':'L', 'mercator':'M', 'polar_stereographic':'PS'}
     print_projections = {'L':'Lambert (conformal conic)', 'M':'Mercator', 'PS':'Polar Stereographic'}
 
@@ -682,7 +674,6 @@ def compute_lonlat_included(geometry):
     Computes a lon/lat domain included in the C zone of the model domain,
     with a 1 gridpoint margin.
     """
-
     (longrid, latgrid) = geometry.get_lonlat_grid(subzone='C')
     lonmin = max(longrid[:, 1])
     lonmax = min(longrid[:, -2])
@@ -694,7 +685,6 @@ def compute_lonlat_included(geometry):
 
 def ask_lonlat(defaults):
     """Ask a lon/lat geometry."""
-
     try:
         lonmin = float(raw_input("Minimum (Western) longitude in degrees [" + str(defaults['lonmin']) + "]: "))
     except ValueError:
@@ -731,7 +721,6 @@ def build_lonlat_field(ll_boundaries, fid={'lon/lat':'template'}):
     """
     Build a lonlat field empty except on the border, given lon/lat boundaries.
     """
-
     llwidth = 1000
     llgrid = {'input_lon':epygram.util.Angle(ll_boundaries['lonmin'], 'degrees'),
               'input_lat':epygram.util.Angle(ll_boundaries['latmin'], 'degrees'),
@@ -764,16 +753,17 @@ def main(mode,
          bluemarble=0.0,
          background=True):
     """
-    Args:
-        mode: 'center_dims' to build domain given its center and dimensions;
-              'lonlat_included' to build domain given an included lon/lat area.
-        display: if False, deactivates the display of domain.
-        maximize_CI_in_E: boolean deciding to force the E-zone to be at its
-                          minimum.
-        gisquality: quality of coastlines and countries boundaries.
-        bluemarble: if >0., displays NASA's "blue marble" as background with
-        given transparency.
-        background: if True, set a background color to continents and oceans.
+    Domain maker.
+
+    :param mode: 'center_dims' to build domain given its center and dimensions;
+                 'lonlat_included' to build domain given an included lon/lat area.
+    :param display: if False, deactivates the display of domain.
+    :param maximize_CI_in_E: boolean deciding to force the E-zone to be at its
+                             minimum.
+    :param gisquality: quality of coastlines and countries boundaries.
+    :param bluemarble: if >0., displays NASA's "blue marble" as background with
+                       given transparency.
+    :param background: if True, set a background color to continents and oceans.
     """
 
     print("################")
@@ -904,8 +894,8 @@ def main(mode,
 
 if __name__ == '__main__':
 
-    ### 1. Parse arguments
-    ######################
+    # 1. Parse arguments
+    ####################
     epygramstr = 'EPyGrAM'
     parser = argparse.ArgumentParser(description='An interactive ' + epygramstr + " tool for defining a LAM domain, visualize it, \
                                                   and generate the needed namelist blocks.",
@@ -921,23 +911,18 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    ### 2. Initializations
-    ######################
+    # 2. Initializations
+    ####################
     # 2.0 logs
     epylog.setLevel('WARNING')
     if args.verbose:
         epylog.setLevel('INFO')
 
-    ### 3. Main
-    ###########
-    print('args.no_display', args.no_display)
+    # 3. Main
+    #########
     main(args.mode,
          display=not args.no_display,
          maximize_CI_in_E=args.maximize_CI_in_E,
          gisquality=args.gisquality,
          bluemarble=args.bluemarble,
          background=args.background)
-
-###########
-### END ###
-###########

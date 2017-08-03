@@ -37,13 +37,17 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
               spectral_coeff_order=config.spectral_coeff_order):
         """
         Makes the transform of the spectral data contained in *data* (assumed
-        this spectral geometry is that of 'data') to gridpoint space, defined
+        this spectral geometry is that of *data*) to gridpoint space, defined
         by its dimensions contained in *gpdims*, and returns the gridpoint data.
+
+        :param data: spectral data
+        :param dict gpdims: gridpoints dimensions
+        :param spectral_coeff_order: among 'model' or 'FA',
+          cf. default and description in config.spectral_coeff_order
 
         Input and output data are both 1D.
         """
         from arpifs4py import wtransforms
-
         if self.space == 'bi-fourier':
             gpdata = wtransforms.w_spec2gpt_lam(gpdims['X'],
                                                 gpdims['Y'],
@@ -79,7 +83,6 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
                 gpdata = numpy.ones(gpdims['Y']) * data[0]
         else:
             raise epygramError("unknown spectral space:" + self.space + ".")
-
         return gpdata
 
     def gp2sp(self, data, gpdims,
@@ -89,10 +92,14 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
         to the spectral space and truncation of this object, and returns
         the spectral data.
 
+        :param data: gridpoint data
+        :param dict gpdims: gridpoints dimensions
+        :param spectral_coeff_order: among 'model' or 'FA',
+          cf. default and description in config.spectral_coeff_order
+
         Input and output data are both 1D.
         """
         from arpifs4py import wtransforms
-
         if self.space == 'bi-fourier':
             SPdatasize = wtransforms.w_etrans_inq(gpdims['X'],
                                                   gpdims['Y'],
@@ -149,7 +156,6 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
                                           " transform.")
         else:
             raise epygramError("unknown spectral space:" + self.space + ".")
-
         return spdata
 
     def compute_xy_spderivatives(self, data, gpdims,
@@ -160,12 +166,16 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
         return it in gridpoint space, defined by its dimensions contained in
         *gpdims*.
 
+        :param data: spectral data
+        :param dict gpdims: gridpoints dimensions
+        :param spectral_coeff_order: among 'model' or 'FA',
+          cf. default and description in config.spectral_coeff_order
+
         Returns: (dz/dx, dz/dy)
 
         Input and output data are both 1D.
         """
         from arpifs4py import wtransforms
-
         if self.space == 'bi-fourier':
             gpdata = wtransforms.w_spec2gpt_lam(gpdims['X'],
                                                 gpdims['Y'],
@@ -197,5 +207,4 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
             raise NotImplementedError('fourier(1D): not yet !')
         else:
             raise epygramError("unknown spectral space:" + self.space + ".")
-
         return gpdata

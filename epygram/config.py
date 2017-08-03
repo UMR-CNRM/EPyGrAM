@@ -22,8 +22,8 @@ import footprints
 from . import __version__
 
 
-
-### INSTALL ###
+# INSTALL #
+###########
 #: Directory of epygram package install
 installdir = __file__[:-(len(os.path.basename(__file__)) + 1)]
 home = os.getenv('HOME')
@@ -47,8 +47,8 @@ epygram_colormaps_scaling = {'radar':[0., 0.1, 1., 3., 5., 7., 10., 15., 20., 30
                              }
 
 
-
-### PARAMETERS ###
+# PARAMETERS #
+##############
 #: gravity constant
 g0 = 9.80665
 #: Cp dry air
@@ -78,8 +78,8 @@ if os.getenv('DISPLAY', '') == '' or \
     default_graphical_output = 'png'
 
 
-
-### FORMATS ###
+# FORMATS #
+###########
 #: List of implemented/activated formats
 #: for the formats_factory, the list is ordered by specificity for those of the
 #: same family (e.g. FA before LFI, DDHLFA before LFA...)
@@ -150,7 +150,7 @@ GRIB_default_ordering = {'iScansNegatively':0,
 #: - grid_ieee (100% // 12%)
 GRIB_default_packing = {1:{'packingType':'grid_second_order',
                            # 'complexPacking':1,
-                           #'boustrophedonicOrdering':0,
+                           # 'boustrophedonicOrdering':0,
                            'bitsPerValue':16,
                            # 'additionalFlagPresent':1,
                            },
@@ -231,7 +231,8 @@ netCDF_default_global_attributes = {'Conventions':'CF-1.6',
 netCDF_default_variables_dtype = 'f8'
 
 
-### OPTIONS ###
+# OPTIONS #
+###########
 #: Use home-made projection formulas (:mod:`epygram.myproj`) vs of *pyproj*.
 default_projtool = 'pyproj'
 #: arpifs geoid for :mod:`epygram.myproj`
@@ -249,7 +250,7 @@ hide_footprints_warnings = True
 prevent_swapping_legendre = 0.75
 #: Use footprints.proxy builder to generate a field.
 #: True: more flexible, False: faster
-footprints_proxy_as_builder = True  #TODO: remove this, less useful since fasttrack ?
+footprints_proxy_as_builder = True  # TODO: remove this, less useful since fasttrack ?
 #: Vector graphical symbol
 vector_symbol = 'barbs'
 #: Default quality for figures
@@ -264,8 +265,8 @@ spectral_coeff_order = 'model'
 init_at_import = False
 
 
-
-### USER CUSTOMIZATION ###
+# USER CUSTOMIZATION #
+######################
 # user modules: actually should remain empty here !
 #: In userconfig, this should be a list of dict containing two keys:
 #: the module name and the source absolute path;
@@ -284,8 +285,8 @@ usercolormaps = {}
 usercolormaps_scaling = {}
 
 
-
-### OVERWRITE WITH USER CONFIG ###
+# OVERWRITE WITH USER CONFIG #
+##############################
 if os.path.exists(userconfigfile):
     if sys.version_info.major == 3 and sys.version_info.minor >= 4:
         import importlib.util as imputil
@@ -307,8 +308,8 @@ colormaps_scaling = copy.copy(epygram_colormaps_scaling)
 colormaps_scaling.update(usercolormaps_scaling)
 
 
-
-### FURTHER INITIALIZATIONS ###
+# FURTHER INITIALIZATIONS #
+###########################
 if hide_footprints_warnings:
     footprints.logger.setLevel(footprints.loggers.logging.ERROR)
 

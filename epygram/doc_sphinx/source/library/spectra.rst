@@ -12,9 +12,13 @@ Classes
    :members:
    :member-order: alphabetical
 
+
+-----------------------------------------------------------
+
 Functions
 ---------
 
+.. autofunction:: read_Spectrum
 .. autofunction:: dctspectrum
 .. autofunction:: sort
 .. autofunction:: plotspectra

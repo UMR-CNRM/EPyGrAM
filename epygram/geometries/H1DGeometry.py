@@ -7,13 +7,14 @@
 Contains the classes for Horizontal 1D geometries of fields.
 """
 
-import sys
+from __future__ import print_function, absolute_import, unicode_literals, division
+
+# import sys
 
 from epygram import epygramError
-from epygram.util import separation_line, write_formatted
-from .D3Geometry import D3Geometry, D3RectangularGridGeometry, \
-                        D3UnstructuredGeometry, D3ProjectedGeometry
-
+# from epygram.util import separation_line, write_formatted
+from .D3Geometry import (D3Geometry, D3RectangularGridGeometry,
+                         D3UnstructuredGeometry, D3ProjectedGeometry)
 
 
 class H1DGeometry(D3Geometry):
@@ -30,8 +31,7 @@ class H1DGeometry(D3Geometry):
                 values=set(['H1D'])),
         )
     )
-    
-    
+
     def _consistency_check(self):
         """Check that the geometry is consistent."""
         if self.dimensions['Y'] != 1:
@@ -59,7 +59,7 @@ class H1DGeometry(D3Geometry):
 #        out.write("\n")
 #
 #        self.vcoordinate.what(out)
-#    
+#
 #    def _what_grid(self, out):
 #        """
 #        Writes in file a summary of the grid of the field.
@@ -90,7 +90,7 @@ class H1DRectangularGridGeometry(H1DGeometry, D3RectangularGridGeometry):
     _footprint = dict(
         attr=dict(
             structure=dict(
-                values=set(['H1D'])),  #inheritance priority problem
+                values=set(['H1D'])),  # inheritance priority problem
             name=dict(
                 values=set(['lambert', 'mercator', 'polar_stereographic', 'space_view', 'unstructured']))
         )
@@ -104,7 +104,7 @@ class H1DUnstructuredGeometry(H1DRectangularGridGeometry, D3UnstructuredGeometry
     _footprint = dict(
         attr=dict(
             structure=dict(
-                values=set(['H1D'])),  #inheritance priority problem
+                values=set(['H1D'])),  # inheritance priority problem
             name=dict(
                 values=set(['unstructured']))
         )
@@ -118,7 +118,7 @@ class H1DProjectedGeometry(H1DRectangularGridGeometry, D3ProjectedGeometry):
     _footprint = dict(
         attr=dict(
             structure=dict(
-                values=set(['H1D'])),  #inheritance priority problem
+                values=set(['H1D'])),  # inheritance priority problem
             name=dict(
                 values=set(['lambert', 'mercator', 'polar_stereographic', 'space_view']))
         )

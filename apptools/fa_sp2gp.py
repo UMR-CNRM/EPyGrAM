@@ -5,14 +5,14 @@
 # http://www.cecill.info
 
 from __future__ import print_function, absolute_import, unicode_literals, division
-
 import six
+
 import argparse
 
 import epygram
 from epygram import epylog
-from epygram.args_catalog import add_arg_to_parser, files_management, \
-                                 fields_management, runtime_options
+from epygram.args_catalog import (add_arg_to_parser, files_management,
+                                  fields_management, runtime_options)
 from epygram.util import printstatus
 
 
@@ -21,13 +21,13 @@ def main(filename,
          compression=None,
          in_place=False):
     """
-    Args:
-        filename: name of the file to be processed.
-        progressmode: among ('verbose', 'percentage', None).
-        compression: number of bits for gridpoint-converted fields to be
+    Converts spectral fields to gridpoint.
+
+    :param filename: name of the file to be processed.
+    :param progressmode: among ('verbose', 'percentage', None).
+    :param compression: number of bits for gridpoint-converted fields to be
                      encoded on.
     """
-
     source = epygram.formats.resource(filename, openmode='a', fmt='FA')
     if in_place:
         output = source
@@ -69,8 +69,8 @@ def main(filename,
 
 if __name__ == '__main__':
 
-    ### 1. Parse arguments
-    ######################
+    # 1. Parse arguments
+    ####################
     parser = argparse.ArgumentParser(description="An EPyGrAM tool for transforming spectral fields from a FA to gridpoint.",
                                      epilog='End of help for: %(prog)s (EPyGrAM v' + epygram.__version__ + ')')
 
@@ -83,8 +83,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    ### 2. Initializations
-    ######################
+    # 2. Initializations
+    ####################
     epygram.init_env()
     # 2.0 logs
     epylog.setLevel('WARNING')
@@ -99,13 +99,9 @@ if __name__ == '__main__':
     else:
         progressmode = None
 
-    ### 3. Main
-    ###########
+    # 3. Main
+    #########
     main(six.u(args.filename),
          progressmode=progressmode,
          compression=args.kompression,
          in_place=args.in_place)
-
-###########
-### END ###
-###########

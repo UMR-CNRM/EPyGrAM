@@ -9,6 +9,8 @@ Contains the class that handle a FileResource.
 
 from __future__ import print_function, absolute_import, unicode_literals, division
 
+import os
+
 import footprints
 
 from epygram.base import Resource
@@ -50,11 +52,7 @@ class FileResource(Resource):
     _openbeforedelayed = staticmethod(_openbeforedelayed)
 
     def __init__(self, *args, **kwargs):
-        """Constructor. See its footprint for arguments."""
-        import os
-
         super(Resource, self).__init__(*args, **kwargs)
-
         self.container = footprints.proxy.container(filename=self.filename)
 
         if self.openmode in ('r', 'a') and\
@@ -91,13 +89,12 @@ class FileResource(Resource):
     def open(self, openmode=None):
         """
         Opens the resource properly.
-        *openmode*: to open with a specific openmode, eventually different from
+
+        :param openmode: to open with a specific openmode, eventually different from
         the one specified at initialization.
         """
-
         if openmode is not None:
             self._attributes['openmode'] = openmode
-
 
 footprints.collectors.get(tag='epyresources').fasttrack = ('format',)
 footprints.collectors.get(tag='dataformats').fasttrack = ('format',)

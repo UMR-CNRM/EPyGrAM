@@ -99,7 +99,7 @@ intersphinx_mapping = {'mpl_toolkits.basemap': ('http://matplotlib.org/basemap',
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'default'
+html_theme = 'sphinxdoc'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -248,3 +248,6 @@ texinfo_documents = [
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
+
+# Concatenate the class docstring and the __init__ docstring
+autoclass_content = 'both'

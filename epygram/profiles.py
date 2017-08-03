@@ -24,20 +24,18 @@ Rd = config.Rd
 Rv = config.Rv
 
 
-################
-### FORMULAS ###
-################
+# FORMULAS #
+############
 def hybridP2fluxpressure(A, B, Psurf):
     """
-    Computes the pressure at flux levels defined by hybrid-pressure
+    Computes and returns the pressure at flux levels defined by hybrid-pressure
     coefficients. Coefficients are assumed to define flux levels.
 
-    - *A* = table of A coefficients \n
-    - *B* = table of B coefficients \n
-    - *Psurf* = surface pressure in Pa. \n
-    A and B must not contain the first coefficient (A=B=0.)
+    :param A: table of A coefficients
+    :param B: table of B coefficients
+    :param Psurf: surface pressure in Pa.
 
-    Returns a table of pressure.
+    A and B must not contain the first coefficient (A=B=0.)
     """
 
     if not len(A) == len(B):
@@ -61,16 +59,15 @@ def hybridP2fluxpressure(A, B, Psurf):
 
 def hybridP2masspressure(A, B, Psurf, vertical_mean):
     """
-    Computes the pressure at mass levels defined by hybrid-pressure
+    Computes and returns the pressure at mass levels defined by hybrid-pressure
     coefficients. Coefficients are assumed to define flux levels.
 
-    - *A* = table of A coefficients \n
-    - *B* = table of B coefficients \n
-    - *Psurf* = surface pressure in Pa. \n
-    - *vertical_mean* = kind of vertical averaging
-    A and B must not contain the first coefficient (A=B=0.)
+    :param A: table of A coefficients
+    :param B: table of B coefficients
+    :param Psurf: surface pressure in Pa.
+    :param vertical_mean: kind of vertical averaging
 
-    Returns a table of pressure.
+    A and B must not contain the first coefficient (A=B=0.)
     """
 
     pi_tilde = hybridP2fluxpressure(A, B, Psurf)
@@ -84,16 +81,15 @@ def hybridP2masspressure(A, B, Psurf, vertical_mean):
 
 def hybridH2fluxheight(A, B, Zsurf, conv2height=False):
     """
-    Computes the altitude at flux levels defined by hybrid-height coefficients.
-    Coefficients are assumed to define flux levels.
+    Computes and returns the altitude at flux levels defined by hybrid-height
+    coefficients. Coefficients are assumed to define flux levels.
 
-    - *A* = table of A coefficients \n
-    - *B* = table of B coefficients \n
-    - *Zsurf* = surface altitude in m. \n
-    - *conv2height* True to compute height instead of altitude
+    :param A: table of A coefficients
+    :param B: table of B coefficients
+    :param Zsurf: surface altitude in m.
+    :param conv2height: True to compute height instead of altitude
+
     A and B must include the underground level
-
-    Returns a table of altitudes.
     """
 
     if not len(A) == len(B):
@@ -120,16 +116,15 @@ def hybridH2fluxheight(A, B, Zsurf, conv2height=False):
 
 def hybridH2massheight(A, B, Zsurf, conv2height=False):
     """
-    Computes the altitude at mass levels defined by hybrid-height
+    Computes and returns the altitude at mass levels defined by hybrid-height
     coefficients. Coefficients are assumed to define flux levels.
 
-    - *A* = table of A coefficients \n
-    - *B* = table of B coefficients \n
-    - *Zsurf* = surface altitude in m. \n
-    - *conv2height* True to compute height instead of altitude
-    A and B must include the underground level
+    :param A: table of A coefficients
+    :param B: table of B coefficients
+    :param Zsurf: surface altitude in m.
+    :param conv2height: True to compute height instead of altitude
 
-    Returns a table of altitudes.
+    A and B must include the underground level
     """
 
     if not len(A) == len(B):
@@ -226,7 +221,7 @@ def mass2fluxheights(H):
     if not numpy.all(H[1:] >= H[:-1]):
         raise ValueError('H array must be in ascending order.')
 
-    L = len(H)
+    # L = len(H)
     if not isinstance(H, numpy.ndarray):
         H = numpy.array(H)
 
@@ -251,13 +246,15 @@ def pressure2altitude(R, T, vertical_mean,
     The pressure can be given at mass levels (*pi*) or flux levels (*pi_tilde*),
     or both (assuming they are consistent), with unit: Pa.
 
-    - *R* = table of R = specific gas constant (J/kg/K) \n
-    - *T* = table of Temperature (K) \n
-    - *vertical_mean* = kind of vertical averaging
-    - *Pdep* = table of Pressure departure: P-Pi, where P is the hydrostatic
-      pressure and Pi the Non-Hydrostatic pressure (Pa). \n
-      0. if Hydrostatic (default) \n
-    - *Phi_surf* = surface geopotential (J/kg)
+    :param pi: mass levels pressure
+    :param pi_tilde: flux levels pressure
+    :param R: table of R = specific gas constant (J/kg/K)
+    :param T: table of Temperature (K)
+    :param vertical_mean: kind of vertical averaging
+    :param Pdep: table of Pressure departure: P-Pi, where P is the hydrostatic
+                 pressure and Pi the Non-Hydrostatic pressure (Pa).
+                 0. if Hydrostatic (default)
+    :param Phi_surf: surface geopotential (J/kg)
     """
 
     # get full pressures
@@ -336,16 +333,17 @@ def hybridP2altitude(A, B, R, T, Psurf, vertical_mean,
     Computes the altitude of mass levels defined by hybrid-pressure
     coefficients. (= height above ground if *Phi_surf == 0*).
 
-    - *A* = table of A coefficients \n
-    - *B* = table of B coefficients \n
-    - *Psurf* = surface pressure in Pa. \n
-    - *R* = table of R = specific gas constant (J/kg/K) \n
-    - *T* = table of Temperature (K) \n
-    - *vertical_mean* = kind of vertical averaging
-    - *Pdep* = table of Pressure departure: P-Pi, where P is the hydrostatic
-      pressure and Pi the Non-Hydrostatic pressure (Pa). \n
-      0. if Hydrostatic (default) \n
-    - *Phi_surf* = surface geopotential (J/kg)
+    :param A: table of A coefficients
+    :param B: table of B coefficients
+    :param Psurf: surface pressure in Pa.
+    :param R: table of R = specific gas constant (J/kg/K)
+    :param T: table of Temperature (K)
+    :param vertical_mean: kind of vertical averaging
+    :param Pdep: table of Pressure departure: P-Pi, where P is the hydrostatic
+                 pressure and Pi the Non-Hydrostatic pressure (Pa).
+                 0. if Hydrostatic (default)
+    :param Phi_surf: surface geopotential (J/kg)
+
     A and B must not contain the first coefficient (A=B=0.)
     """
 

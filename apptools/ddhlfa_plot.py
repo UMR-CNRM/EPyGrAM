@@ -5,15 +5,15 @@
 # http://www.cecill.info
 
 from __future__ import print_function, absolute_import, unicode_literals, division
-
 import six
+
 import argparse
 
 import epygram
 from epygram import epylog
-from epygram.args_catalog import add_arg_to_parser, files_management, \
-                                 fields_management, graphical_options, \
-                                 runtime_options
+from epygram.args_catalog import (add_arg_to_parser, files_management,
+                                  fields_management, graphical_options,
+                                  runtime_options)
 from epygram.fields.V1DField import plotprofiles
 
 import matplotlib.pyplot as plt
@@ -27,17 +27,17 @@ def main(filename,
          unit='SI',
          logscale=False):
     """
-    Args:
-        filename: name of the file to be processed.
-        fieldseed: either a string or a list of strings, used as a seed for
-                   generating the list of fields to be processed.
-        domains: list of domains number within the DDHLFA.
-        refname: name of the reference file to be compared to.
-        legend: legend of plot.
-        unit: scientifical unit of plot.
-        logscale: if True, sets vertical logscale.
-    """
+    Plot DDHLFA.
 
+    :param filename: name of the file to be processed.
+    :param fieldseed: either a string or a list of strings, used as a seed for
+                   generating the list of fields to be processed.
+    :param domains: list of domains number within the DDHLFA.
+    :param refname: name of the reference file to be compared to.
+    :param legend: legend of plot.
+    :param unit: scientifical unit of plot.
+    :param logscale: if True, sets vertical logscale.
+    """
     diffmode = refname is not None
     resource = epygram.formats.resource(filename, openmode='r', fmt='DDHLFA')
     if diffmode:
@@ -147,9 +147,3 @@ if __name__ == '__main__':
          legend=args.legend,
          unit=args.unit,
          logscale=args.logscale)
-
-
-
-###########
-### END ###
-###########

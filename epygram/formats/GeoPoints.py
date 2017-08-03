@@ -19,7 +19,8 @@ from footprints import FPList, FPDict, proxy as fpx
 from epygram import config, epygramError
 from epygram.base import FieldSet, FieldValidity
 from epygram.resources import FileResource
-from epygram.geometries import H2DUnstructuredGeometry, PointGeometry, VGeometry
+from epygram.geometries import PointGeometry, VGeometry
+from epygram.geometries.H2DGeometry import H2DUnstructuredGeometry
 from epygram.fields import H2DField, PointField, D3Field
 
 __all__ = ['GeoPoints']
@@ -68,32 +69,27 @@ class GeoPoints(FileResource):
     )
 
     def __init__(self, *args, **kwargs):
-        """
-        Constructor. See its footprint for arguments.
-        """
-
         self.isopen = False
-
         super(GeoPoints, self).__init__(*args, **kwargs)
-
         if not self.fmtdelayedopen:
             self.open()
 
-    def open(self, parameter=None, columns=None, openmode=None,
+    def open(self,
+             parameter=None,
+             columns=None,
+             openmode=None,
              other_attributes=None):
         """
         Opens a GeoPoint.
 
-        Args:\n
-        - *parameter*: name of the parameter in header (openmode='w').
-        - *columns*: list of all the items to be written for each point
+        :param parameter: name of the parameter in header (openmode='w').
+        :param columns: list of all the items to be written for each point
           (openmode='w').
-        - *openmode*: optional, to open with a specific openmode, eventually
+        :param openmode: optional, to open with a specific openmode, eventually
           different from the one specified at initialization.
-        - *other_attributes*: other key:value pairs to be written in header
+        :param other_attributes: other key:value pairs to be written in header
           (openmode='w').
         """
-
         super(GeoPoints, self).open(openmode=openmode)
 
         if self.openmode in ('r', 'a'):
@@ -167,7 +163,6 @@ class GeoPoints(FileResource):
         """
         Closes a GeoPoints.
         """
-
         if hasattr(self, '_file'):
             self._file.close()
         self.isopen = False
@@ -183,11 +178,9 @@ class GeoPoints(FileResource):
         """
         Actual listfields() method for GeoPoints.
 
-        Args: \n
-        - *complete*: if True method returns a list of {'GeoPoints':GeoPoints_fid, 'generic':generic_fid}
-                      if False method return a list of GeoPoints_fid
+        :param complete: - if True method returns a list of {'GeoPoints':GeoPoints_fid, 'generic':generic_fid}
+                         - if False method return a list of GeoPoints_fid
         """
-
         if complete:
             return [{'GeoPoints':self.parameter, 'generic':{}}]
         else:
@@ -201,7 +194,6 @@ class GeoPoints(FileResource):
         """
         Counts and returns the number of points in the resource.
         """
-
         if self.isopen:
             self._file.close()
             self.isopen = False
@@ -226,15 +218,15 @@ class GeoPoints(FileResource):
                   footprints_builder=False,
                   as_points=False):
         """
-        Reads the GeoPoints:\n
-        - *parameter* is the name of the parameter to read
+        Reads the GeoPoints.
+
+        :param parameter: is the name of the parameter to read
           (it exists only for compatibility with other formats)
-        - *footprints_builder*: if *True*, uses footprints.proxy to build
+        :param footprints_builder: if *True*, uses footprints.proxy to build
           fields. Defaults to False for performance reasons.
-        - *as_points*: if *True*, returns a collection of points instead
+        :param *as_points*: if *True*, returns a collection of points instead
           of a single field.
         """
-
         if self.openmode in ('w', 'a'):
             raise epygramError("cannot read fields in resource if with" +
                                " openmode == 'w' or 'a'.")
@@ -367,24 +359,23 @@ class GeoPoints(FileResource):
         """
         Write a field in the resource.
 
-        Args: \n
-        - *field*: a :class:`epygram.fields.D3Field` or a
+        :param field: a :class:`epygram.fields.D3Field` or a
           :class:`epygram.base.FieldSet` of :class:`epygram.fields.PointField`,
           or a dict {'lon':[...], 'lat':[...], 'value':[...], ...}. The keys
           of field that are not in the *columns* are ignored. The keys of the
           columns that are not in the field are filled by zeros.
           At least 'lon' and 'lat' are necessary.
-        - *parameter*: the name of the parameter, to be given if *field* is a
+        :param parameter: the name of the parameter, to be given if *field* is a
           dict and if it has not been given at opening.
-        - *order*: optional, for a rectangular D3Field, whether to flatten
+        :param order: optional, for a rectangular D3Field, whether to flatten
           2D arrays in 'C' (row-major) or 'F' (Fortran, column-major) order.
-        - *llprecision*: precision (number of digits) in write for lon/lat.
-        - *precision*: precision (number of digits) in write for other floats.
-        - *subzone*: optional, among ('C', 'CI'). Only if *field* is a LAM
-          :class:`epygram.fields.H2DField`, extracts the points of the
+        :param llprecision: precision (number of digits) in write for lon/lat.
+        :param precision: precision (number of digits) in write for other floats.
+        :param subzone: optional, among ('C', 'CI').
+          Only if *field* is a LAM :class:`epygram.fields.H2DField`,
+          extracts the points of the
           resp. C or C+I zone. Default is no subzone, i.e. the whole field.
         """
-
         if self.openmode == 'r':
             raise IOError("cannot write field in a GeoPoints with openmode 'r'.")
 
@@ -519,11 +510,8 @@ class GeoPoints(FileResource):
         """
         Writes in file-like a summary of the contents of the GeoPoints.
 
-        Args: \n
-        - *out*: the output open file-like object (duck-typing: *out*.write()
-          only is needed).
+        :param out: the output open file-like object.
         """
-
         points_number = self.countpoints()
         out.write("### FORMAT: " + self.format + "\n")
         out.write("\n")

@@ -69,7 +69,6 @@ class Field(RecursiveObject, FootprintBase):
 
     def setdata(self, data):
         """Sets or overwrites the field data as a numpy array."""
-
         if not isinstance(data, numpy.ndarray):
             data = numpy.array(data)
         self._data = data
@@ -84,7 +83,6 @@ class Field(RecursiveObject, FootprintBase):
         """
         Sets or overwrites the field fid given as a dict.
         """
-
         if not isinstance(fid, dict):
             raise epygramError("**fid** must be a dict.")
         self._attributes['fid'] = fid
@@ -93,7 +91,6 @@ class Field(RecursiveObject, FootprintBase):
         """
         Returns a cloned field, optionally with a new **fid** given as a dict.
         """
-
         clone = self.deepcopy()
         if fid is not None:
             clone.setfid(fid)
@@ -112,7 +109,6 @@ class Field(RecursiveObject, FootprintBase):
         Optional arguments can be passed, depending on the inheriting class,
         passed to getdata().
         """
-
         return {'min':self.min(**kwargs),
                 'max':self.max(**kwargs),
                 'mean':self.mean(**kwargs),
@@ -173,12 +169,12 @@ class Field(RecursiveObject, FootprintBase):
         """
         Makes the requested operation on the field.
 
-        Implemented *operation* :
-        '+', '-', '*', '/',
-        'normalize', 'ceil', 'exp', 'log'... and you can try with every other
-        **numpy** function.
+        :param operation: any of '+', '-', '*', '/',
+                          or 'normalize', 'ceil', 'exp', 'log'...
+                          and you can try with every other **numpy** function.
+        :param operand: operand for the 4 basic operations, may be a scalar or
+                        another field with according geometry.
         """
-
         if operand is not None:
             if isinstance(operand, self.__class__):
                 self.operation_with_other(operation, operand)
@@ -197,10 +193,11 @@ class Field(RecursiveObject, FootprintBase):
 
     def operation_with_other(self, operation, other):
         """
-        Makes a field-with-other operation, among:
-        ('+', '-', '*', '/').
-        """
+        Makes an in-place operation with another field.
 
+        :param operation: among ('+', '-', '*', '/')
+        :param other: another field, with according dimensions
+        """
         self._check_operands(other)
 
         if operation == '+':
@@ -214,13 +211,11 @@ class Field(RecursiveObject, FootprintBase):
 
     def scalar_operation(self, operation, scalar):
         """
-        Makes a scalar operation on field:
+        Makes an in-place scalar operation on field.
 
-        *operation* being one of ('+', '-', '*', '/')
-
-        *scalar* being a float or int.
+        :param operation: among ('+', '-', '*', '/')
+        :param scalar: a float or int.
         """
-
         self._check_operands(scalar)
 
         if operation == '+':
@@ -237,7 +232,10 @@ class Field(RecursiveObject, FootprintBase):
         Internal method to check compatibility of terms in operations on fields.
         """
 
-        if not isinstance(other, self.__class__):
+        if isinstance(other, self.__class__) or isinstance(self, other.__class__):
+            if numpy.shape(self._data) != numpy.shape(other._data):
+                raise epygramError("dimensions mismatch.")
+        else:
             try:
                 other = float(other)
             except Exception:
@@ -245,9 +243,6 @@ class Field(RecursiveObject, FootprintBase):
                                  " must involve either scalars " +
                                  "(integer/float) or " +
                                  self.__class__.__name__ + ".")
-        else:
-            if numpy.shape(self._data) != numpy.shape(other._data):
-                raise epygramError("dimensions mismatch.")
 
     def _add(self, other, **kwargs):
         """
@@ -257,7 +252,6 @@ class Field(RecursiveObject, FootprintBase):
         Returns a new Field whose data is the resulting operation,
         with 'fid' = {'op':'+'} and null validity.
         """
-
         self._check_operands(other)
         if isinstance(other, self.__class__):
             rhs = other._data
@@ -278,7 +272,6 @@ class Field(RecursiveObject, FootprintBase):
         Returns a new Field whose data is the resulting operation,
         with 'fid' = {'op':'*'} and null validity.
         """
-
         self._check_operands(other)
         if isinstance(other, self.__class__):
             rhs = other._data
@@ -299,7 +292,6 @@ class Field(RecursiveObject, FootprintBase):
         Returns a new Field whose data is the resulting operation,
         with 'fid' = {'op':'-'} and null validity.
         """
-
         self._check_operands(other)
         if isinstance(other, self.__class__):
             rhs = other._data
@@ -320,7 +312,6 @@ class Field(RecursiveObject, FootprintBase):
         Returns a new Field whose data is the resulting operation,
         with 'fid' = {'op':'-'} and null validity.
         """
-
         self._check_operands(other)
         if isinstance(other, self.__class__):
             rhs = other._data
@@ -341,7 +332,6 @@ class Field(RecursiveObject, FootprintBase):
         Returns a new Field whose data is the resulting operation,
         with 'fid' = {'op':'/'} and null validity.
         """
-
         self._check_operands(other)
         if isinstance(other, self.__class__):
             rhs = other._data
@@ -362,7 +352,6 @@ class Field(RecursiveObject, FootprintBase):
         Returns a new Field whose data is the resulting operation,
         with 'fid' = {'op':'/'} and null validity.
         """
-
         self._check_operands(other)
         if isinstance(other, self.__class__):
             rhs = other._data
@@ -414,7 +403,6 @@ class FieldSet(RecursiveObject, list):
         Checks that optional 'fields' argument is actually iterable and
         contains Field instances, or is a single Field.
         """
-
         if fields == ():
             pass
         elif isinstance(fields, Field):
@@ -449,7 +437,6 @@ class FieldSet(RecursiveObject, list):
         """
         Checks that *field* is a :class:`Field` instance before appending it.
         """
-
         if not isinstance(field, Field):
             raise epygramError("A FieldSet can contain only Field instances.")
         super(FieldSet, self).append(field)
@@ -459,7 +446,6 @@ class FieldSet(RecursiveObject, list):
         Returns the index of the first field of the FieldSet whose fid
         matches **fid**, **fid** being a dict.
         """
-
         if not isinstance(fid, dict):
             raise ValueError("'fid' must be a dict.")
 
@@ -475,7 +461,6 @@ class FieldSet(RecursiveObject, list):
         Checks that **fieldset** is a :class:`FieldSet` instance before extending
         with it.
         """
-
         if not isinstance(fieldset, FieldSet):
             raise epygramError("'fieldset' argument must be of kind FieldSet.")
         super(FieldSet, self).extend(fieldset)
@@ -485,7 +470,6 @@ class FieldSet(RecursiveObject, list):
         Checks that **field** is a :class:`Field` instance before inserting it
         at the **position**.
         """
-
         if not isinstance(field, Field):
             raise epygramError("A FieldSet can contain only Field instances.")
         super(FieldSet, self).insert(position, field)
@@ -495,7 +479,6 @@ class FieldSet(RecursiveObject, list):
         Removes from the FieldSet the first field whose fid matches **fid**,
         **fid** being a dict.
         """
-
         try:
             idx = self.index(fid)
             del self[idx]
@@ -514,48 +497,57 @@ class FieldSet(RecursiveObject, list):
 
         If *reverse* is *True*, sorts by decreasing order.
         """
-
         if isinstance(attribute, six.string_types):
             if key is None:
-                cmpfct = lambda x, y: cmp(x._attributes[attribute],
-                                          y._attributes[attribute])
+                def cmpfct(x, y):
+                    cmp(x._attributes[attribute],
+                        y._attributes[attribute])
             else:
-                cmpfct = lambda x, y: cmp(x._attributes[attribute][key],
-                                          y._attributes[attribute][key])
+                def cmpfct(x, y):
+                    cmp(x._attributes[attribute][key],
+                        y._attributes[attribute][key])
         elif isinstance(attribute, list):
             a = attribute
             if isinstance(self[0]._attributes[a[0]], FootprintBase):
                 if len(attribute) == 2:
                     if key is None:
-                        cmpfct = lambda x, y: cmp(x._attributes[a[0]]._attributes[a[1]],
-                                                  y._attributes[a[0]]._attributes[a[1]])
+                        def cmpfct(x, y):
+                            cmp(x._attributes[a[0]]._attributes[a[1]],
+                                y._attributes[a[0]]._attributes[a[1]])
                     else:
-                        cmpfct = lambda x, y: cmp(x._attributes[a[0]]._attributes[a[1]][key],
-                                                  y._attributes[a[0]]._attributes[a[1]][key])
+                        def cmpfct(x, y):
+                            cmp(x._attributes[a[0]]._attributes[a[1]][key],
+                                y._attributes[a[0]]._attributes[a[1]][key])
                 elif len(attribute) == 3:
                     if key is None:
-                        cmpfct = lambda x, y: cmp(x._attributes[a[0]]._attributes[a[1]].__dict__[a[2]],
-                                                  y._attributes[a[0]]._attributes[a[1]].__dict__[a[2]])
+                        def cmpfct(x, y):
+                            cmp(x._attributes[a[0]]._attributes[a[1]].__dict__[a[2]],
+                                y._attributes[a[0]]._attributes[a[1]].__dict__[a[2]])
                     else:
-                        cmpfct = lambda x, y: cmp(x._attributes[a[0]]._attributes[a[1]].__dict__[a[2]][key],
-                                                  y._attributes[a[0]]._attributes[a[1]].__dict__[a[2]][key])
+                        def cmpfct(x, y):
+                            cmp(x._attributes[a[0]]._attributes[a[1]].__dict__[a[2]][key],
+                                y._attributes[a[0]]._attributes[a[1]].__dict__[a[2]][key])
                 else:
                     raise NotImplementedError("len(attribute) > 3.")
             else:
                 if len(attribute) == 2:
                     if key is None:
-                        cmpfct = lambda x, y: cmp(x._attributes[a[0]].__dict__[a[1]],
-                                                  y._attributes[a[0]].__dict__[a[1]])
+                        def cmpfct(x, y):
+                            cmp(x._attributes[a[0]].__dict__[a[1]],
+                                y._attributes[a[0]].__dict__[a[1]])
                     else:
-                        cmpfct = lambda x, y: cmp(x._attributes[a[0]].__dict__[a[1]][key],
-                                                  y._attributes[a[0]].__dict__[a[1]][key])
+                        def cmpfct(x, y):
+                            cmp(x._attributes[a[0]].__dict__[a[1]][key],
+                                y._attributes[a[0]].__dict__[a[1]][key])
                 elif len(attribute) == 3:
                     if key is None:
-                        cmpfct = lambda x, y: cmp(x._attributes[a[0]].__dict__[a[1]].__dict__[a[2]],
-                                                  y._attributes[a[0]].__dict__[a[1]].__dict__[a[2]])
+                        def cmpfct(x, y):
+                            cmp(x._attributes[a[0]].__dict__[a[1]].__dict__[a[2]],
+                                y._attributes[a[0]].__dict__[a[1]].__dict__[a[2]])
                     else:
-                        cmpfct = lambda x, y: cmp(x._attributes[a[0]].__dict__[a[1]].__dict__[a[2]][key],
-                                                  y._attributes[a[0]].__dict__[a[1]].__dict__[a[2]][key])
+                        def cmpfct(x, y):
+                            cmp(x._attributes[a[0]].__dict__[a[1]].__dict__[a[2]][key],
+                                y._attributes[a[0]].__dict__[a[1]].__dict__[a[2]][key])
                 else:
                     raise NotImplementedError("len(attribute) > 3.")
 
@@ -570,7 +562,6 @@ class FieldSet(RecursiveObject, list):
         If *fidkey* is supplied, the list contains only **fid[*fidkey*]**,
         and not whole fid.
         """
-
         if fidkey is None:
             fieldslist = [f.fid for f in self]
         else:
@@ -595,7 +586,6 @@ class FieldSet(RecursiveObject, list):
         - by='id', criteria={typefmt:identifier} will return only fields whose
           id[typefmt] match value...
         """
-
         # TODO: id=, fieldtype=, spectral, (...)
         raise NotImplementedError("not yet...")
 
@@ -657,14 +647,11 @@ class Resource(RecursiveObject, FootprintBase):
         Returns a :class:`FieldSet` containing requested fields read in the
         resource.
 
-        Args:
-
-        - *requestedfields*: a field identifier of the resource format, or a
-          list of.
-        - *getdata*: optional, if *False*, only metadata are read, the fields
-          do not contain data. Default is *True*.
+        :param requestedfields: a field identifier of the resource format, or a
+                                list of.
+        :param getdata: optional, if *False*, only metadata are read, the fields
+                        do not contain data. Default is *True*.
         """
-
         fieldset = FieldSet()
         if isinstance(requestedfields, list):
             for f in requestedfields:
@@ -679,7 +666,6 @@ class Resource(RecursiveObject, FootprintBase):
         Write the fields of the 'fieldset' in the resource;
         *fieldset* must be a :class:`FieldSet` instance.
         """
-
         if not isinstance(fieldset, FieldSet):
             raise epygramError("'fieldset' argument must be a FieldSet " +
                                "instance.")
@@ -693,7 +679,6 @@ class Resource(RecursiveObject, FootprintBase):
 
         (Generic wrapper with buffering if openmode == 'r'.)
         """
-
         if self.openmode == 'r' and not hasattr(self, '_bufferedlistfields'):
             self._bufferedlistfields = []
         elif self.openmode in ('w', 'a'):
@@ -725,7 +710,6 @@ class Resource(RecursiveObject, FootprintBase):
         Find in resource the fields whose generic fid (if the resource is able
         to give one) matches the *handgrip*.
         """
-
         fieldslist = self.listfields(complete=True)
         found = []
         for f in fieldslist:
@@ -737,7 +721,7 @@ class Resource(RecursiveObject, FootprintBase):
 
 class FieldValidity(RecursiveObject):
     """
-    This class handles a uniq temporal validity for a meteorological field:
+    This class handles a unique temporal validity for a meteorological field:
     its date and time of validity (*date_time*), as well as the validity of
     its origin (*basis*, i.e. for a forecast field for instance, the beginning
     of the forecast) and its *term*.
@@ -751,20 +735,23 @@ class FieldValidity(RecursiveObject):
     Constructor arguments: cf. *set()* method.
     """
 
-    def __init__(self, date_time=None, basis=None, term=None,
+    def __init__(self,
+                 date_time=None,
+                 basis=None,
+                 term=None,
                  cumulativeduration=None,
                  statistical_process_on_duration=None):
         """
         Constructor.
-        Args:
-        - date_time: has to be of type datetime.datetime;
-        - basis: has to be of type datetime.datetime;
-        - term: has to be of type datetime.timedelta;
-        - cumulativeduration: has to be of type datetime.timedelta;
-        - statistical_process_on_duration: kind of statistical process
-          that runs over the cumulative duration.
-        """
 
+        :param date_time: has to be of type datetime.datetime;
+        :param basis: has to be of type datetime.datetime;
+        :param term: has to be of type datetime.timedelta;
+        :param cumulativeduration: has to be of type datetime.timedelta;
+        :param statistical_process_on_duration: kind of statistical process
+                                                that runs over the cumulative
+                                                duration.
+        """
         self._basis = None
         self._date_time = None
         self._cumulativeduration = None
@@ -789,7 +776,6 @@ class FieldValidity(RecursiveObject):
         Coded versions of *fmt*: 'IntHours', 'IntSeconds', and that's all for
         now...
         """
-
         if fmt is None:
             out = self._date_time - self._basis
         elif fmt == 'IntHours':
@@ -816,7 +802,6 @@ class FieldValidity(RecursiveObject):
         Coded versions of *fmt*: 'IntHours', 'IntSeconds', and that's all for
         now...
         """
-
         if fmt is None:
             out = self._cumulativeduration
         elif fmt == 'IntHours':
@@ -859,7 +844,6 @@ class FieldValidity(RecursiveObject):
         'IntStr' (e.g. '20140731104812' = 2014 july 31th at 10h, 48m, 12s).
         And that's all for now...
         """
-
         if fmt is None:
             out = self._date_time
         elif fmt == 'IntStr':
@@ -886,7 +870,6 @@ class FieldValidity(RecursiveObject):
         'IntStr' (e.g. '20140731104812' = 2014 july 31th at 10h, 48m, 12s).
         And that's all for now...
         """
-
         if fmt is None:
             out = self._basis
         elif fmt == 'IntStr':
@@ -902,7 +885,10 @@ class FieldValidity(RecursiveObject):
 
         return out
 
-    def set(self, date_time=None, basis=None, term=None,
+    def set(self,
+            date_time=None,
+            basis=None,
+            term=None,
             cumulativeduration=None,
             statistical_process_on_duration=None):
         """
@@ -918,7 +904,6 @@ class FieldValidity(RecursiveObject):
         - *statistical_process_on_duration*: kind of statistical process
           that runs over the cumulative duration.
         """
-
         if isinstance(date_time, datetime.datetime):
             self._date_time = date_time
         elif date_time is not None:
@@ -977,7 +962,6 @@ class FieldValidityList(RecursiveObject, list):
         - other kwargs: same as :class:`FieldValidity` constructor.
 
         """
-
         super(list, self).__init__([])
 
         if validity_instance is not None:
@@ -1039,42 +1023,36 @@ class FieldValidityList(RecursiveObject, list):
 
     def term(self, one=True, **kwargs):
         """This method returns the terms of all the validities"""
-
         length = len(self)
         result = [self[i].term(**kwargs) for i in range(length)]
         return result[0] if (one and length == 1) else result
 
     def cumulativeduration(self, one=True, **kwargs):
         """This method returns the cumulative duration of all the validities."""
-
         length = len(self)
         result = [self[i].cumulativeduration(**kwargs) for i in range(length)]
         return result[0] if (one and length == 1) else result
 
     def statistical_process_on_duration(self, one=True, **kwargs):
         """This method returns the statistical process on duration of all the validities."""
-
         length = len(self)
         result = [self[i].statistical_process_on_duration(**kwargs) for i in range(length)]
         return result[0] if (one and length == 1) else result
 
     def get(self, one=True, **kwargs):
         """Returns the date and time of all the validities."""
-
         length = len(self)
         result = [self[i].get(**kwargs) for i in range(length)]
         return result[0] if (one and length == 1) else result
 
     def getbasis(self, one=True, **kwargs):
         """Returns the date and time of origin (basis) of all the validities."""
-
         length = len(self)
         result = [self[i].getbasis(**kwargs) for i in range(length)]
         return result[0] if (one and length == 1) else result
 
     def set(self, **kwargs):
         """Sets validity objects"""
-
         # Check that all lengths are equal
         length = None
         mykwargs = {}
@@ -1100,12 +1078,9 @@ class FieldValidityList(RecursiveObject, list):
         """
         Writes in file a summary of the validity.
 
-        Args: \n
-        - *out*: the output open file-like object (duck-typing: *out*.write()
-          only is needed).
-        - *cumulativeduration*: if False, not written.
+        :param out: the output open file-like object.
+        :param cumulativeduration: if False, not written.
         """
-
         out.write("################\n")
         out.write("### VALIDITY ###\n")
         out.write("################\n")

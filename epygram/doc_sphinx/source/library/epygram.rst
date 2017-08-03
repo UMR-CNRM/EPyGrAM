@@ -12,7 +12,11 @@ Miscellaneous
    :members:
    :member-order: alphabetical
 
+-----------------------------------------------------------
+
 .. autofunction:: init_env
+
+-----------------------------------------------------------
 
 .. autofunction:: showconfig
 

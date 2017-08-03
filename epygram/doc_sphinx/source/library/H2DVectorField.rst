@@ -4,7 +4,11 @@
 .. automodule:: epygram.fields.H2DVectorField
    :synopsis: Horizontal 2-D Vector Field class
 
+-----------------------------------------------------------
+
 .. autofunction:: make_vector_field
+
+-----------------------------------------------------------
 
 .. autoclass:: H2DVectorField
    :show-inheritance:

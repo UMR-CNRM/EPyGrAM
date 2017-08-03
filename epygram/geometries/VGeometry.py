@@ -63,15 +63,12 @@ class VGeometry(RecursiveObject, FootprintBase):
         )
     )
 
-    def what(self, out=sys.stdout,
-             levels=True):
+    def what(self, out=sys.stdout, levels=True):
         """
         Writes in file a summary of the geometry.
 
-        Args: \n
-        - *out*: the output open file-like object (duck-typing: *out*.write()
-          only is needed).
-        - *levels*: if True, writes the levels of the geometry
+        :param out: the output open file-like object
+        :param levels: if True, writes the levels of the geometry
         """
         out.write("#########################\n")
         out.write("### VERTICAL GEOMETRY ###\n")
@@ -119,16 +116,13 @@ def hybridP2pressure(hybridP_geometry, Psurf, vertical_mean,
     """
     Converts a 'hybrid_pressure' VGeometry to a 'pressure' VGeometry.
 
-    *Psurf* is the surface pressure in Pa, needed for integration of Ai and Bi.
-
-    *gridposition* (= 'mass' or 'flux') is the target grid position. By
-    default the data position in the origin geometry is taken.
-
-    *vertical_mean* defines the kind of averaging done on the vertical
-    to compute half-levels from full-levels, or inverse: 'geometric' or
-    'arithmetic'.
+    :param Psurf: the surface pressure in Pa, needed for integration of Ai and Bi.
+    :param gridposition: (= 'mass' or 'flux') is the target grid position. By
+      default the data position in the origin geometry is taken.
+    :param vertical_mean: defines the kind of averaging done on the vertical
+      to compute half-levels from full-levels, or inverse: 'geometric' or
+      'arithmetic'.
     """
-
     assert isinstance(hybridP_geometry, VGeometry), "*hybridP_geometry* must be of type VGeometry."
     if hybridP_geometry.typeoffirstfixedsurface != 119:
         raise epygramError("*hybridP_geometry.typeoffirstfixedsurface* must be 119.")
@@ -150,20 +144,19 @@ def hybridP2pressure(hybridP_geometry, Psurf, vertical_mean,
     kwargs_vcoord = {'structure':'V',
                      'typeoffirstfixedsurface': 100,
                      'position_on_grid': hybridP_geometry.position_on_grid,
-#                     'grid': {'gridlevels':levels},
+                     # 'grid': {'gridlevels':levels},
                      'levels': levels
                      }
-
     return fpx.geometry(**kwargs_vcoord)
 
 
 def hybridH2pressure(hybridH_geometry, P, position):
     """
     Converts a hybrid_height coordinate grid into pressure.
-    - *P* is the vertical profile of pressure to use
-    - *position* is the position of P values on the grid ('mass' or 'flux')
-    """
 
+    :param P: the vertical profile of pressure to use
+    :param position: the position of P values on the grid ('mass' or 'flux')
+    """
     assert isinstance(hybridH_geometry, VGeometry), "*hybridH_geometry* must be of type VGeometry."
     if hybridH_geometry.typeoffirstfixedsurface != 118:
         raise epygramError("*hybridH_geometry.typeoffirstfixedsurface* must be 118.")
@@ -187,10 +180,9 @@ def hybridH2pressure(hybridH_geometry, P, position):
     kwargs_vcoord = {'structure':'V',
                      'typeoffirstfixedsurface': 100,
                      'position_on_grid': hybridH_geometry.position_on_grid,
-#                     'grid':{'gridlevels':levels},
+                     # 'grid':{'gridlevels':levels},
                      'levels': levels
                      }
-
     return fpx.geometry(**kwargs_vcoord)
 
 
@@ -199,22 +191,20 @@ def hybridP2altitude(hybridP_geometry, R, T, Psurf, vertical_mean,
     """
     Converts a hybrid_pressure coordinate grid into altitude of mass levels.
 
-    - *R* is the profile of specific gas constant (J/kg/K).
-    - *T* is the profile of temperature (K).
-    - *Psurf* is the surface pressure, needed for integration of Ai and Bi.
-    - *Pdep* is the optional profile of NH pressure departures.
-    - *Phi_surf* is the optional surface geopotential.
+    :param R: the profile of specific gas constant (J/kg/K).
+    :param T: the profile of temperature (K).
+    :param Psurf: the surface pressure, needed for integration of Ai and Bi.
+    :param Pdep: the optional profile of NH pressure departures.
+    :param Phi_surf: the optional surface geopotential.
       If given, the final coordinate is altitude above sea level,
       else height above ground surface.
-    - *vertical_mean* defines the kind of averaging done on the vertical
+    :param vertical_mean: defines the kind of averaging done on the vertical
       to compute half-levels from full-levels, or inverse: 'geometric' or
       'arithmetic'.
     """
-
     assert isinstance(hybridP_geometry, VGeometry), "*hybridP_geometry* must be of type VGeometry."
     if hybridP_geometry.typeoffirstfixedsurface != 119:
         raise epygramError("*hybridP_geometry.typeoffirstfixedsurface* must be 119.")
-
     A = [level[1]['Ai'] for level in hybridP_geometry.grid['gridlevels']][1:]
     B = [level[1]['Bi'] for level in hybridP_geometry.grid['gridlevels']][1:]
     if hybridP_geometry.grid['ABgrid_position'] == 'flux':
@@ -237,10 +227,9 @@ def hybridP2altitude(hybridP_geometry, R, T, Psurf, vertical_mean,
     kwargs_vcoord = {'structure':'V',
                      'typeoffirstfixedsurface': coordinate,
                      'position_on_grid': hybridP_geometry.position_on_grid,
-#                     'grid':{'gridlevels':list(levels)},
+                     # 'grid':{'gridlevels':list(levels)},
                      'levels': list(levels)
                      }
-
     return fpx.geometry(**kwargs_vcoord)
 
 
@@ -249,19 +238,16 @@ def hybridH2altitude(hybridH_geometry, Zsurf,
     """
     Converts a hybrid_height coordinate grid into altitude.
 
-    *Zsurf* is the surface pressure, needed for integration of Ai and Bi.
-
-    If *gridposition* is given ('mass' or 'flux'), the target grid is
-    computed accordingly.
-    By default the data position in the origin geometry is taken.
-    If conv2height is True, conversion into height is performed instead of
-    altitude.
+    :param Zsurf: the surface pressure, needed for integration of Ai and Bi.
+    :param gridposition: if given ('mass' or 'flux'), the target grid is
+      computed accordingly.
+      By default the data position in the origin geometry is taken.
+    :param conv2height: if True, conversion into height is performed instead of
+      altitude.
     """
-
     assert isinstance(hybridH_geometry, VGeometry), "*hybridH_geometry* must be of type VGeometry."
     if hybridH_geometry.typeoffirstfixedsurface != 118:
         raise epygramError("*hybridH_geometry.cooridnate* must be 118.")
-
     if hybridH_geometry.grid['ABgrid_position'] != 'flux':
         raise NotImplementedError('A and B must define flux levels')
     if gridposition is None:
@@ -280,16 +266,13 @@ def hybridH2altitude(hybridH_geometry, Zsurf,
                                              conv2height=conv2height)
     else:
         raise epygramError("gridposition != 'mass' or 'flux'.")
-
     levels = levels[numpy.array(hybridH_geometry.levels) - 1]
-
     kwargs_vcoord = {'structure':'V',
                      'typeoffirstfixedsurface': 103 if conv2height else 102,
                      'position_on_grid': hybridH_geometry.position_on_grid,
-#                     'grid':{'gridlevels':list(levels)},
+                     # 'grid':{'gridlevels':list(levels)},
                      'levels': list(levels)
                      }
-
     return fpx.geometry(**kwargs_vcoord)
 
 
@@ -299,13 +282,13 @@ def pressure2altitude(pressure_geometry, R, T, vertical_mean,
     Converts a pressure coordinate grid (on mass or flux levels) to
     altitude on mass levels).
 
-    - *R* is the profile of specific gas constant (J/kg/K).
-    - *T* is the profile of temperature (K).
-    - *Pdep* is the optional profile of NH pressure departures.
-    - *Phi_surf* is the optional surface geopotential.
+    :param R: the profile of specific gas constant (J/kg/K).
+    :param T: the profile of temperature (K).
+    :param Pdep: the optional profile of NH pressure departures.
+    :param Phi_surf: the optional surface geopotential.
       If given, the final coordinate is altitude above sea level,
       else height above ground surface.
-    - *vertical_mean* defines the kind of averaging done on the vertical
+    :param vertical_mean: defines the kind of averaging done on the vertical
       to compute half-levels from full-levels, or inverse: 'geometric' or
       'arithmetic'.
     """
@@ -335,12 +318,10 @@ def pressure2altitude(pressure_geometry, R, T, vertical_mean,
     grid = pressure_geometry.grid.copy()
     grid.update({'gridposition':pressure_geometry.gridposition,
                  'levels':list(levels)})
-
     return fpx.geometry(structure='V1D',
                         coordinate=coordinate,
                         grid=grid,
                         hlocation=pressure_geometry.hlocation,
                         position_on_grid=pressure_geometry.position_on_grid)
-
 
 footprints.collectors.get(tag='geometrys').fasttrack = ('format',)

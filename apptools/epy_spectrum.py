@@ -5,8 +5,8 @@
 # http://www.cecill.info
 
 from __future__ import print_function, absolute_import, unicode_literals, division
-
 import six
+
 import numpy
 import argparse
 import copy
@@ -16,10 +16,10 @@ from footprints import FPDict
 import epygram
 from epygram import epylog, epygramError
 import epygram.spectra as esp
-from epygram.args_catalog import add_arg_to_parser, \
-                                 files_management, fields_management, \
-                                 misc_options, output_options, \
-                                 runtime_options, graphical_options
+from epygram.args_catalog import (add_arg_to_parser,
+                                  files_management, fields_management,
+                                  misc_options, output_options,
+                                  runtime_options, graphical_options)
 import matplotlib.pyplot as plt
 
 
@@ -40,36 +40,36 @@ def main(filename,
          outputfilename=None,
          figures_dpi=epygram.config.default_figures_dpi):
     """
-    Args:
-        filename: name of the file to be processed.
-        fieldseed: either a fid or a list of fid, used as a seed for
+    Computes and plots spectra.
+
+    :param filename: name of the file to be processed.
+    :param fieldseed: either a fid or a list of fid, used as a seed for
                    generating the list of fields to be processed.
-        subzone: LAM zone among ('C', 'CI', 'CIE').
-        refname: name of the reference file to be compared to.
-        diffonly: if True, only plots the difference field.
-        computewind: from fieldseed, gets U and V components of wind, and
+    :param subzone: LAM zone among ('C', 'CI', 'CIE').
+    :param refname: name of the reference file to be compared to.
+    :param diffonly: if True, only plots the difference field.
+    :param computewind: from fieldseed, gets U and V components of wind, and
                      computes the module and the module's spectrum.
-        verbose: if True, verbose mode on.
-        noplot: if True, disable the plot of profiles.
-        legend: legend of plot.
-        superposeplots: if True, superpose fields spectra on one plot.
-        slopes: list of dict(exp=x where x is exposant of a A*k**-x slope
+    :param verbose: if True, verbose mode on.
+    :param noplot: if True, disable the plot of profiles.
+    :param legend: legend of plot.
+    :param superposeplots: if True, superpose fields spectra on one plot.
+    :param slopes: list of dict(exp=x where x is exposant of a A*k**-x slope
                              offset=A where A is logscale offset in a A*k**-x
                                       slope; an offset=1 is fitted to intercept
                                       the first spectra at wavenumber = 2.
                              label=(optional label) appearing 'k = label' in
                                                     legend)
-        zoom: a dict(xmin=,xmax=,ymin=,ymax=) to restrain the plot.
-        interpolation: kind of interpolation from grid to coordinates, among
+    :param zoom: a dict(xmin=,xmax=,ymin=,ymax=) to restrain the plot.
+    :param interpolation: kind of interpolation from grid to coordinates, among
                        ('nearest', 'linear', 'cubic').
-        unit: scientifical unit of plot.
-        output: output format for graphics, among ('png', 'pdf', False).
-        outputfilename: specify an output filename for the profile.
+    :param unit: scientifical unit of plot.
+    :param output: output format for graphics, among ('png', 'pdf', False).
+    :param outputfilename: specify an output filename for the profile.
                         The graphical output, if requested, will be completed
                         by the requested output format.
-        figures_dpi: quality of saved figures.
+    :param figures_dpi: quality of saved figures.
     """
-
     resource = epygram.formats.resource(filename, openmode='r')
     diffmode = refname is not None
     if diffmode:
@@ -305,8 +305,8 @@ def main(filename,
 
 if __name__ == '__main__':
 
-    ### 1. Parse arguments
-    ######################
+    # 1. Parse arguments
+    ####################
     parser = argparse.ArgumentParser(description="An EPyGrAM tool for computing DCT spectrum of \
                                                   meteorological fields (or difference of fields) from a resource.",
                                      epilog='End of help for: %(prog)s (EPyGrAM v' + epygram.__version__ + ')')
@@ -334,8 +334,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    ### 2. Initializations
-    ######################
+    # 2. Initializations
+    ####################
     epygram.init_env()
     # 2.0 logs
     epylog.setLevel('WARNING')
@@ -411,8 +411,8 @@ if __name__ == '__main__':
     else:
         fieldseed = None
 
-    ### 3. Main
-    ###########
+    # 3. Main
+    #########
     main(six.u(args.filename),
          fieldseed,
          subzone=subzone,
@@ -429,7 +429,3 @@ if __name__ == '__main__':
          output=args.output,
          outputfilename=args.outputfilename,
          figures_dpi=args.figures_dpi)
-
-###########
-### END ###
-###########

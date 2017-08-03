@@ -4,10 +4,14 @@
 .. automodule:: epygram.geometries.VGeometry
    :synopsis: Vertical Geometry class
 
+-----------------------------------------------------------
+
 .. autoclass:: VGeometry
    :show-inheritance:
    :members:
    :member-order: alphabetical
+
+-----------------------------------------------------------
 
 Functions
 ---------

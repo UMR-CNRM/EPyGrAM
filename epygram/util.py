@@ -8,6 +8,7 @@ Some useful utilities...
 """
 
 from __future__ import print_function, absolute_import, division  # , unicode_literals
+import six
 
 import os
 import math
@@ -16,7 +17,6 @@ import numpy
 import sys
 import datetime
 from contextlib import contextmanager
-import six
 
 from footprints import FootprintBase
 
@@ -77,16 +77,19 @@ class RecursiveObject(object):
 
     def __eq__(self, other):
         """Test of equality by recursion on the object's attributes."""
-
         def comp_float(float1, float2):
             # tolerance for floats
             return abs(float1 - float2) <= config.epsilon
+
         def comp_array(array1, array2):
-            if array1.dtype == array2.dtype and array1.dtype in [numpy.dtype(d) for d in ['float16', 'float32', 'float64']]:
+            if (array1.dtype == array2.dtype and
+                array1.dtype in [numpy.dtype(d)
+                                 for d in ['float16', 'float32', 'float64']]):
                 # tolerance for floats
                 return (abs(array1 - array2) <= config.epsilon).all()
             else:
                 return numpy.all(array1 == array2)
+
         def comp_dict(dict1, dict2):
             if set(dict1.keys()) == set(dict2.keys()):
                 ok = True
@@ -97,6 +100,7 @@ class RecursiveObject(object):
                 return ok
             else:
                 return False
+
         def comp_list(list1, list2):
             if len(list1) != len(list2):
                 return False
@@ -107,6 +111,7 @@ class RecursiveObject(object):
                         ok = False
                         break
                 return ok
+
         def comp(obj1, obj2):
             if isinstance(obj1, float) and isinstance(obj2, float):
                 return comp_float(obj1, obj2)
@@ -172,7 +177,6 @@ class Angle(RecursiveObject):
         - 'radians',
         - 'cos_sin' - in which case, value is a tuple (cos, sin).
         """
-
         if unit in Angle.units:
             self.__dict__['_' + unit] = value
             if unit in ('degrees', 'radians'):
@@ -194,7 +198,6 @@ class Angle(RecursiveObject):
         """
         Redefinition because of dynamism of buffering new computed values...
         """
-
         if not isinstance(other, Angle):
             raise ValueError("cannot compare instances of different classes.")
         if abs(self.get('radians') - other.get('radians')) <= config.epsilon:
@@ -211,7 +214,6 @@ class Angle(RecursiveObject):
         Returns the angle in the requested unit.
         If no unit is supplied, the origin unit is used.
         """
-
         if unit is None:
             unit = self._origin_unit  # or a default one ?
         elif unit in Angle.units:
@@ -227,16 +229,18 @@ class Angle(RecursiveObject):
         Compute the angle in the requested unit, from the original one.
         See constructor for more details about units.
         """
-
         # conversion to degrees
         if unit == Angle.deg:
             if self._origin_unit == Angle.rad:
                 self.__dict__['_' + unit] = math.degrees(self._origin_value)
             elif self._origin_unit == Angle.trig:
-                self.__dict__['_' + unit] = math.degrees(math.copysign(math.acos(self._origin_value[0]),
-                                                                       self._origin_value[1]))
+                self.__dict__['_' + unit] = math.degrees(
+                    math.copysign(math.acos(self._origin_value[0]),
+                                            self._origin_value[1]))
             elif self._origin_unit == Angle.dms:
-                self.__dict__['_' + unit] = self._origin_value[0] + self._origin_value[1] / 60. + self._origin_value[2] / 3600.
+                self.__dict__['_' + unit] = (self._origin_value[0] +
+                                             self._origin_value[1] / 60. +
+                                             self._origin_value[2] / 3600.)
             else:
                 raise NotImplementedError("conversion from this unit (" +
                                           self._origin_unit +
@@ -247,10 +251,13 @@ class Angle(RecursiveObject):
             if self._origin_unit == Angle.deg:
                 self.__dict__['_' + unit] = math.radians(self._origin_value)
             elif self._origin_unit == Angle.trig:
-                self.__dict__['_' + unit] = math.copysign(math.acos(self._origin_value[0]),
-                                                          self._origin_value[1])
+                self.__dict__['_' + unit] = math.copysign(
+                    math.acos(self._origin_value[0]),
+                    self._origin_value[1])
             elif self._origin_unit == Angle.dms:
-                self.__dict__['_' + unit] = math.radians(self._origin_value[0] + self._origin_value[1] / 60. + self._origin_value[2] / 3600.)
+                self.__dict__['_' + unit] = math.radians(self._origin_value[0] +
+                                                         self._origin_value[1] / 60. +
+                                                         self._origin_value[2] / 3600.)
             else:
                 raise NotImplementedError("conversion from this unit (" +
                                           self._origin_unit +
@@ -265,7 +272,9 @@ class Angle(RecursiveObject):
                 self.__dict__['_' + unit] = (math.cos(self._origin_value),
                                              math.sin(self._origin_value))
             elif self._origin_unit == Angle.dms:
-                anglerad = math.radians(self._origin_value[0] + self._origin_value[1] / 60. + self._origin_value[2] / 3600.)
+                anglerad = math.radians(self._origin_value[0] +
+                                        self._origin_value[1] / 60. +
+                                        self._origin_value[2] / 3600.)
                 self.__dict__['_' + unit] = (math.cos(anglerad),
                                              math.sin(anglerad))
             else:
@@ -299,9 +308,8 @@ class Angle(RecursiveObject):
                                       ") is not coded.")
 
 
-#################
-### FUNCTIONS ###
-#################
+# FUNCTIONS #
+#############
 def find_re_in_list(regexp, a_list):
     """
     Finds all elements from a list that match a regular expression.
@@ -311,7 +319,6 @@ def find_re_in_list(regexp, a_list):
     - tuples with the same length
     - dictionnaries: all regexp keys must be keys of the list
     """
-
     def check_string_pattern(pattern, element):
         import re
         if not isinstance(pattern, six.string_types) or \
@@ -371,7 +378,6 @@ def nicedeco(decorator):
 
 def degrees_nearest_mod(d, ref):
     """Returns the angle(s) **d** in the modulo nearest to **ref**."""
-
     try:
         n = len(d)
         scalar = False
@@ -400,7 +406,6 @@ def degrees_nearest_mod(d, ref):
 
 def positive_longitude(lon, unit='degrees'):
     """Returns *lon* shifted in [0;360[ or [0;2pi[ (depending on *unit*)."""
-
     if lon < 0.:
         if unit == 'degrees':
             lon += 360.
@@ -464,11 +469,12 @@ def add_cmap(cmap):
 
 def printstatus(step, end, refresh_freq=1):
     """
-    Print percentage of the loop it is in, with 'step' being the current
-    loopstep, 'end' the final loopstep and 'refresh_freq' the frequency
-    in % at which reprinting status.
-    """
+    Print percentage of the loop it is in.
 
+    :param step: the current loop step
+    :param end: the final loop step
+    :param refresh_freq: the frequency in % at which reprinting status.
+    """
     status = step * 100. / end
     if status % refresh_freq == 0:
         sys.stdout.write('{:>{width}}%'.format(int(status), width=3))
@@ -513,7 +519,6 @@ def gfl2R(q, ql=0., qi=0., qr=0., qs=0., qg=0.):
     Computes air specific gas constant R according to specific humidity,
     and hydrometeors if present.
     """
-
     # Constants
     Rd = config.Rd
     Rv = config.Rv
@@ -607,7 +612,8 @@ def linearize(s, quotes=False):
     """
     Returns string *s* linearized, i.e. without special characters that may
     be forbidden in filenames.
-    - quotes: must we also remove quotes?
+
+    :param quotes: must we also remove quotes?
     """
     replacements = [(' ', '_'), ('{', ''), ('}', ''), ("'", ''), ('*', '')]
     if quotes:
@@ -628,7 +634,6 @@ def str_or_int_to_datetime(dt):
     """
     Creates a datetime.datetime from a string or int YYYYMMDDHHMMSS...
     """
-
     dt = str(dt)
     year = int(dt[0:4])
     month = int(dt[4:6])
@@ -645,7 +650,10 @@ def str_or_int_to_datetime(dt):
     return dt
 
 
-def add_meridians_and_parallels_to(bm, meridians='auto', parallels='auto', ax=None):
+def add_meridians_and_parallels_to(bm,
+                                   meridians='auto',
+                                   parallels='auto',
+                                   ax=None):
     """
     Adds meridians and parallels to a basemap instance *bm*.
 
@@ -660,7 +668,6 @@ def add_meridians_and_parallels_to(bm, meridians='auto', parallels='auto', ax=No
         *parallel* == 'equator' // 'polarcircles' // 'tropics' or any
         combination (,) will plot only these.
     """
-
     try:
         parallels = float(parallels)
     except (TypeError, ValueError):
@@ -804,7 +811,6 @@ def stretch_array(array):
     Return array.flatten() or compressed(), whether the array is
     masked or not.
     """
-
     if isinstance(array, numpy.ma.masked_array):
         array = array.compressed()
     elif isinstance(array, numpy.ndarray):
@@ -820,7 +826,6 @@ def color_scale(cmap, max_val=None):
     Creates a matplotlib.colors.BoundaryNorm object tuned for radar colormaps.
     If *max_val* is given, eventually replaces the upper bound.
     """
-
     import matplotlib.colors as colors
     bounds = copy.copy(config.colormaps_scaling.get(cmap, None))
     assert bounds is not None, \
@@ -837,6 +842,7 @@ def color_scale(cmap, max_val=None):
 @contextmanager
 def stdout_redirected(to=os.devnull):
     '''
+    Usage:
     import os
 
     with stdout_redirected(to=filename):
@@ -866,6 +872,7 @@ def stdout_redirected(to=os.devnull):
 @contextmanager
 def stderr_redirected(to=os.devnull):
     '''
+    Usage:
     import os
 
     with stderr_redirected(to=filename):
@@ -891,8 +898,8 @@ def stderr_redirected(to=os.devnull):
 
 def restrain_to_index_i_of_dim_d(a, i, d, n=None):
     """
-    Of an array a[d1, d2, d3, ... dn], returns the array restricted to index i
-    of the dimension d.
+    Of an array a[d1, d2, d3, ... dn], returns the array restricted to
+    index **i** of the dimension **d**.
 
     A more elegant solution would have been the following, except that it does
     not work when accessing netCDF variable (for which it was necessary).
@@ -902,7 +909,6 @@ def restrain_to_index_i_of_dim_d(a, i, d, n=None):
         indexes[variable.dimensions.index(k)] = [only[k]] # restrain to the "only" give
     return array[numpy.ix_(*indexes)]
     """
-
     if n is None:
         n = a.shape
     if n == 2:
@@ -961,12 +967,11 @@ def datetimes2fieldvaliditylist(datetimes, basis=None):
     Return a FieldValidityList from a list of datetime.datetime instances
     (or a single datetime.datetime).
 
-    *basis* can be either
-      - None (default): basis = validity
-      - a single datetime.datetime
-      - a list of the same length as datetimes
+    :param basis: can be either
+                  - None (default): basis = validity
+                  - a single datetime.datetime
+                  - a list of the same length as datetimes
     """
-
     from epygram.base import FieldValidityList
 
     if isinstance(datetimes, datetime.datetime):
@@ -1008,8 +1013,11 @@ def set_DateHour_axis(axis, datetimerange, xy,
     """
     Set an adequate axis ticks and ticks labels for Date/Hour axis.
 
-    *datetimerange* supposed to be a :class:`datetime.timedelta` instance
-    *xy" must be 'x' or 'y'
+    :param datetimerange: supposed to be a :class:`datetime.timedelta` instance
+    :param xy: must be 'x' or 'y'
+    :param showgrid: to set the grid or not
+    :param datefmt: format for date
+    :param tickslabelsrotation: angle in degrees, anti-clockwise order
     """
     import matplotlib.dates as mdates
     import matplotlib.pyplot as plt
@@ -1062,6 +1070,8 @@ def set_figax(figure, ax, figsize=config.plotsizes):
     """
     Given existing matplotlib *figure* and an *ax* (or None),
     check consistency or generate a consistent (figure, ax) duet.
+
+    :param figsize: size of the figure, if generated on the fly
     """
     import matplotlib.pyplot as plt
 
@@ -1092,7 +1102,6 @@ def set_map_up(bm, ax,
                bluemarble=0.0,
                background=False):
     """Cf. :meth:`H2DField.plotfield` documentation."""
-
     if background:
         bm.drawmapboundary(fill_color='lightskyblue', ax=ax)
         bm.fillcontinents(color='wheat', lake_color='skyblue',
@@ -1126,19 +1135,17 @@ def datetimerange(start, stop=None, step=1, stepunit='h', tzinfo=None):
     A generator of datetime.datetime objects ranging from *start* to *stop*
     (included) by *step*.
 
-    Arguments syntax:\n
-    - *start* and *stop* being either:\n
+    *start* and *stop* being either:\n
       - a string: 'YYYYMMDDhhmmssx', hh, mm, ss and x being optional (x = microseconds)
                   or a date/time in ISO 8601 format (cf. datetime.datetime.isoformat())
       - a tuple or list: (year, month, day[, hour[, minute[, seconde[, microsecond]]]])
       - a datetime.datetime instance
       if *stop* is None, returns [datetime(start)]
-    - *step* being either an integer, which unit is specified in *stepunit*
-      or a datetime.timedelta instance
-    - *stepunit* among ('D', 'h', 'm', 's', 'x')
-    - *tzinfo*: time zone info, cf. datetime.datetime
+    :param step: either an integer, which unit is specified in *stepunit*
+                 or a datetime.timedelta instance
+    :param stepunit: among ('D', 'h', 'm', 's', 'x')
+    :param tzinfo: time zone info, cf. datetime.datetime
     """
-
     def parse_iterable(i):
         return datetime.datetime(*i, tzinfo=tzinfo)
 

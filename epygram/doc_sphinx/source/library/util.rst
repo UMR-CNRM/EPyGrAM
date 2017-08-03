@@ -37,6 +37,8 @@ Functions
 .. autofunction:: datetimerange
 .. autofunction:: fmtfid
 
+-----------------------------------------------------------
+
 Classes
 -------
 

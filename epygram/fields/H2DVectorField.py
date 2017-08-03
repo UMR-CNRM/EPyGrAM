@@ -27,7 +27,6 @@ def make_vector_field(fX, fY):
     :class:`epygram.H2DField` *fX, fY* representing resp.
     the X and Y components of the vector in the field geometry.
     """
-
     if not isinstance(fX, H2DField) or not isinstance(fY, H2DField):
         raise epygramError("'fX', 'fY' must be H2DField.")
     if fX.geometry.dimensions != fY.geometry.dimensions:
@@ -45,7 +44,6 @@ def make_vector_field(fX, fY):
                   processtype=fX.processtype,
                   vector=True,
                   components=[fX, fY])
-
     return f
 
 
@@ -54,7 +52,6 @@ def psikhi2uv(psi, khi):
     Compute wind (on the grid) as a H2DVectorField from streamfunction
     **psi** and velocity potential **khi**.
     """
-
     (dpsidx, dpsidy) = psi.compute_xy_spderivatives()
     (dkhidx, dkhidy) = khi.compute_xy_spderivatives()
     u = dkhidx - dpsidy
@@ -63,7 +60,6 @@ def psikhi2uv(psi, khi):
     v.fid = {'derivative':'v-wind'}
     u.validity = psi.validity
     v.validity = psi.validity
-
     return make_vector_field(u, v)
 
 
@@ -124,7 +120,6 @@ class H2DVectorField(Field):
         Attach components of the vector to the VectorField.
         *components* must be a series of H2DField.
         """
-
         for f in components:
             if not isinstance(f, H2DField):
                 raise epygramError("*components* must be H2DField(s).")
@@ -139,20 +134,19 @@ class H2DVectorField(Field):
         The spectral transform subroutine is actually included in the spectral
         geometry's *sp2gp()* method.
         """
-
         for f in self.components:
             f.sp2gp()
 
     def gp2sp(self, spectral_geometry=None):
         """
         Transforms the gridpoint field into spectral space, according to the
-        spectral geometry mandatorily passed as argument. Replaces data in
+        *spectral_geometry* mandatorily passed as argument. Replaces data in
         place.
 
-        The spectral transform subroutine is actually included in the spectral
-        geometry's *gp2sp()* method.
+        :param spectral_geometry: instance of SpectralGeometry, actually
+                                  containing spectral transform subroutine (in
+                                  in its own *gp2sp()* method).
         """
-
         for f in self.components:
             f.gp2sp(spectral_geometry=spectral_geometry)
 
@@ -161,7 +155,7 @@ class H2DVectorField(Field):
         Returns the field data, with 2D shape if the field is not spectral,
         1D if spectral, as a tuple with data for each component.
 
-        - subzone: optional, among ('C', 'CI'), for LAM fields only, returns
+        :param subzone: optional, among ('C', 'CI'), for LAM fields only, returns
           the data resp. on the C or C+I zone.
           Default is no subzone, i.e. the whole field.
 
@@ -179,9 +173,9 @@ class H2DVectorField(Field):
     def setdata(self, data):
         """
         Sets data to its components.
-        *data* = (data_i for i components)
-        """
 
+        :param data: [data_i for i components]
+        """
         if len(data) != len(self.components):
             raise epygramError("data must have as many components as VectorField.")
         for i in range(len(self.components)):
@@ -199,7 +193,6 @@ class H2DVectorField(Field):
         Returns a :class:`epygram.H2DField` whose data is the module of the
         Vector field.
         """
-
         if self.spectral:
             fieldcopy = self.deepcopy()
             fieldcopy.sp2gp()
@@ -227,7 +220,6 @@ class H2DVectorField(Field):
         Returns a :class:`epygram.H2DField` whose data is the direction of the
         Vector field, in degrees.
         """
-
         if self.spectral:
             fieldcopy = self.deepcopy()
             fieldcopy.sp2gp()
@@ -266,12 +258,10 @@ class H2DVectorField(Field):
         Reprojects a wind vector (u, v) from the grid axes onto real
         sphere, i.e. with components on true zonal/meridian axes.
 
-        If *map_factor_correction*, applies a
-        correction of magnitude due to map factor.
-
-        If *reverse*, apply the reverse reprojection.
+        :param map_factor_correction: if True, apply a correction of magnitude
+                                      due to map factor.
+        :param reverse: if True, apply the reverse reprojection.
         """
-
         (lon, lat) = self.geometry.get_lonlat_grid()
         assert not self.spectral
         u = self.components[0].getdata()
@@ -292,7 +282,11 @@ class H2DVectorField(Field):
         self.setdata([u, v])
 
     def map_factorize(self, reverse=False):
-        """Multiply the field by its map factor. If *reverse, divide."""
+        """
+        Multiply the field by its map factor.
+
+        :param reverse: if True, divide.
+        """
         if self.spectral:
             spgeom = self.spectral_geometry
             self.sp2gp()
@@ -313,10 +307,9 @@ class H2DVectorField(Field):
         """
         Compute vorticity and divergence fields from the vector field.
 
-        If *divide_by_m* is True, apply f = f/m beforehand, where m is the map
-        factor.
+        :param divide_by_m: if True, apply f = f/m beforehand, where m is the
+                            map factor.
         """
-
         if divide_by_m:
             field = self.deepcopy()
             field.map_factorize(reverse=True)
@@ -370,8 +363,7 @@ class H2DVectorField(Field):
         """
         Makes a simple plot of the field, with a number of options.
 
-        Options: \n
-        - *over*: to plot the vectors over an existing figure
+        :param over: to plot the vectors over an existing figure
           (e.g. colorshades).
           Any existing figure and/or ax to be used for the
           plot, given as a tuple (fig, ax), with None for
@@ -381,65 +373,73 @@ class H2DVectorField(Field):
           which the drawing is done. When given (is not None),
           these objects must be coherent, i.e. ax being one of
           the fig axes.
-        - *subzone*: among ('C', 'CI'), for LAM fields only, plots the data
+        :param subzone: among ('C', 'CI'), for LAM fields only, plots the data
           resp. on the C or C+I zone. \n
           Default is no subzone, i.e. the whole field.
-        - *gisquality*: among ('c', 'l', 'i', 'h', 'f') -- by increasing
+        :param gisquality: among ('c', 'l', 'i', 'h', 'f') -- by increasing
           quality. Defines the quality for GIS elements (coastlines, countries
           boundaries...). Default is 'i'. Cf. 'basemap' doc for more details.
-        - *specificproj*: enables to make basemap on the specified projection,
+        :param specificproj: enables to make basemap on the specified projection,
           among: 'kav7', 'cyl', 'ortho', ('nsper', {...}) (cf. Basemap doc). \n
           In 'nsper' case, the {} may contain:\n
           - 'sat_height' = satellite height in km;
           - 'lon' = longitude of nadir in degrees;
           - 'lat' = latitude of nadir in degrees. \n
           Overwritten by *zoom*.
-        - *zoom*: specifies the lon/lat borders of the map, implying hereby
+        :param zoom: specifies the lon/lat borders of the map, implying hereby
           a 'cyl' projection.
           Must be a dict(lonmin=, lonmax=, latmin=, latmax=).\n
           Overwrites *specificproj*.
-        - *use_basemap*: a basemap.Basemap object used to handle the
+        :param use_basemap: a basemap.Basemap object used to handle the
           projection of the map. If given, the map projection
           options (*specificproj*, *zoom*, *gisquality* ...)
           are ignored, keeping the properties of the
           *use_basemap* object. (because making Basemap is the most
           time-consuming step).
-        - *drawrivers*: to add rivers on map.
-        - *departments*: if True, adds the french departments on map (instead
+        :param drawrivers: to add rivers on map.
+        :param departments: if True, adds the french departments on map (instead
           of countries).
-        - *boundariescolor*: color of lines for boundaries (countries,
+        :param boundariescolor: color of lines for boundaries (countries,
           departments, coastlines)
-        - *drawcoastlines*: to add coast lines on map.
-        - *drawcountries*: to add countries on map.
-        - *title*: title for the plot. Default is field identifier.
-        - *meridians* and *parallels* enable to fine-tune the choice of lines to
+        :param drawcoastlines: to add coast lines on map.
+        :param drawcountries: to add countries on map.
+        :param title: title for the plot. Default is field identifier.
+        :param meridians: enable to fine-tune the choice of lines to
           plot, with either:\n
           - 'auto': automatic scaling to the basemap extents
-          - 'default': range(0,360,10) and range(-90,90,10)
+          - 'default': range(0,360,10)
           - a list of values
           - a grid step, e.g. 5 to plot each 5 degree.
           - None: no one is plot
           - *meridian* == 'greenwich' // 'datechange' // 'greenwich+datechange'
-            *parallel* == 'equator' // 'polarcircles' // 'tropics' or any
-            combination (+) will plot only these.
-        - *subsampling*: to subsample the number of gridpoints to plot.
+            combination (,) will plot only these.
+        :param parallels: enable to fine-tune the choice of lines to
+          plot, with either:\n
+          - 'auto': automatic scaling to the basemap extents
+          - 'default': range(-90,90,10)
+          - a list of values
+          - a grid step, e.g. 5 to plot each 5 degree.
+          - None: no one is plot
+          - 'equator' // 'polarcircles' // 'tropics' or any
+            combination (,) will plot only these.
+        :param subsampling: to subsample the number of gridpoints to plot.
           Ex: *subsampling* = 10 will only plot one gridpoint upon 10.
-        - *symbol*: among ('barbs', 'arrows', 'stream')
-        - *symbol_options*: a dict of options to be passed to **barbs** or
+        :param symbol: among ('barbs', 'arrows', 'stream')
+        :param symbol_options: a dict of options to be passed to **barbs** or
           **quiver** method.
-        - *plot_module*: to plot module as colorshades behind vectors.
-        - *plot_module_options*: options (dict) to be passed to module.plotfield().
-        - *bluemarble*: if > 0.0 (and <=1.0), displays NASA's "blue marble"
+        :param plot_module: to plot module as colorshades behind vectors.
+        :param plot_module_options: options (dict) to be passed to module.plotfield().
+        :param bluemarble: if > 0.0 (and <=1.0), displays NASA's "blue marble"
           as background. The numerical value sets its transparency.
-        - *background*: if True, set a background color to
+        :param background: if True, set a background color to
           continents and oceans.
-        - *quiverkey*: to activate quiverkey; must contain arguments to be
+        :param quiverkey: to activate quiverkey; must contain arguments to be
           passed to pyplot.quiverkey(), as a dict.
-        - *components_are_projected_on*: inform the plot on which axes the
+        :param components_are_projected_on: inform the plot on which axes the
           vector components are projected on ('grid' or 'lonlat').
-        - *map_factor_correction*: if True, applies a correction of magnitude
+        :param map_factor_correction: if True, applies a correction of magnitude
           to vector due to map factor.
-        - *mask_threshold*:   dict with min and/or max value(s) to mask outside.
+        :param mask_threshold: dict with min and/or max value(s) to mask outside.
 
         This method uses (hence requires) 'matplotlib' and 'basemap' libraries.
         """
@@ -588,7 +588,11 @@ class H2DVectorField(Field):
 
         return (fig, ax)
 
-    def plotanimation(self, title='__auto__', repeat=False, interval=1000, **kwargs):
+    def plotanimation(self,
+                      title='__auto__',
+                      repeat=False,
+                      interval=1000,
+                      **kwargs):
         """
         Plot the field with animation with regards to time dimension.
         Returns a :class:`matplotlib.animation.FuncAnimation`.
@@ -596,13 +600,11 @@ class H2DVectorField(Field):
         In addition to those specified below, all :meth:`plotfield` method
         arguments can be provided.
 
-        Args:\n
-        - *title* = title for the plot. '__auto__' (default) will print
+        :param title: title for the plot. '__auto__' (default) will print
           the current validity of the time frame.
-        - *repeat*: to repeat animation
-        - *interval*: number of milliseconds between two validities
+        :param repeat: to repeat animation
+        :param interval: number of milliseconds between two validities
         """
-
         import matplotlib.animation as animation
 
         if len(self.validity) == 1:
@@ -709,12 +711,12 @@ class H2DVectorField(Field):
 
     def global_shift_center(self, longitude_shift):
         """
-        For global RegLLGeometry grids only !
         Shifts the center of the geometry (and the data accordingly) by
         *longitude_shift* (in degrees). *longitude_shift* has to be a multiple
         of the grid's resolution in longitude.
-        """
 
+        For global RegLLGeometry grids only.
+        """
         if self.geometry.name != 'regular_lonlat':
             raise epygramError("only for regular lonlat geometries.")
         for f in self.components:
@@ -726,10 +728,9 @@ class H2DVectorField(Field):
         """
         Writes in file a summary of the field.
 
-        Args: \n
-        - *out*: the output open file-like object (duck-typing: *out*.write()
+        :param out: the output open file-like object (duck-typing: *out*.write()
           only is needed).
-        - *vertical_geometry*: if True, writes the vertical geometry of the
+        :param vertical_geometry: if True, writes the vertical geometry of the
           field.
         """
         for f in self.components:
@@ -745,7 +746,6 @@ class H2DVectorField(Field):
         """
         Internal method to check compatibility of terms in operations on fields.
         """
-
         if 'vector' not in other._attributes:
             raise epygramError("cannot operate a Vector field with a" +
                                " non-Vector one.")
@@ -764,7 +764,6 @@ class H2DVectorField(Field):
         Returns a new Field whose data is the resulting operation,
         with 'fid' = {'op':'+'} and null validity.
         """
-
         if isinstance(other, self.__class__):
             newcomponents = [self.components[i] + other.components[i] for i in range(len(self.components))]
         else:
@@ -788,7 +787,6 @@ class H2DVectorField(Field):
         Returns a new Field whose data is the resulting operation,
         with 'fid' = {'op':'*'} and null validity.
         """
-
         if isinstance(other, self.__class__):
             newcomponents = [self.components[i] * other.components[i] for i in range(len(self.components))]
         else:
@@ -810,7 +808,6 @@ class H2DVectorField(Field):
         Returns a new Field whose data is the resulting operation,
         with 'fid' = {'op':'-'} and null validity.
         """
-
         if isinstance(other, self.__class__):
             newcomponents = [self.components[i] - other.components[i] for i in range(len(self.components))]
         else:
@@ -832,7 +829,6 @@ class H2DVectorField(Field):
         Returns a new Field whose data is the resulting operation,
         with 'fid' = {'op':'/'} and null validity.
         """
-
         if isinstance(other, self.__class__):
             newcomponents = [self.components[i] / other.components[i] for i in range(len(self.components))]
         else:
@@ -857,7 +853,6 @@ class H2DVectorField(Field):
         Returns a new Field whose data is the resulting operation,
         with 'fid' = {'op':'-'} and null validity.
         """
-
         if isinstance(other, self.__class__):
             newcomponents = [other.components[i] - self.components[i] for i in range(len(self.components))]
         else:
@@ -879,7 +874,6 @@ class H2DVectorField(Field):
         Returns a new Field whose data is the resulting operation,
         with 'fid' = {'op':'/'} and null validity.
         """
-
         if isinstance(other, self.__class__):
             newcomponents = [other.components[i] / self.components[i] for i in range(len(self.components))]
         else:

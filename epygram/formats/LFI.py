@@ -20,6 +20,7 @@ import six
 
 import footprints
 from footprints import FPDict, proxy as fpx
+
 from arpifs4py import wlfi
 
 from epygram import config, epygramError, util
@@ -47,7 +48,6 @@ gridIndicatorDict = {0:('__unknown__', '__unknown__'),
 
 def parse_LFIstr_totuple(strfid):
     """Parse and return a tuple LFI fid from a string."""
-
     fid = strfid
     if fid[0] != '(':
         raise epygramError("LFI fid must begin with '('")
@@ -71,7 +71,6 @@ def inquire_field_dict(fieldname):
     """
     Returns the info contained in the LFI _field_dict for the requested field.
     """
-
     matching_field = None
     for fd in LFI._field_dict:
         dictitem = fd['name']
@@ -92,10 +91,9 @@ def inquire_field_dict(fieldname):
 
 def _complete_generic_fid_from_fid(generic_fid, fieldidentifier):
     """Complete a generic fid with information of fieldidentifier."""
-
     # 'level'
     if 'level' not in generic_fid:
-        if type(fieldidentifier) == type(tuple()):
+        if isinstance(fieldidentifier, tuple):
             fieldname, level = fieldidentifier
             haslevel = True
         else:
@@ -146,20 +144,13 @@ class LFI(FileResource):
 
     @classmethod
     def _LFIsoft_init(cls):
-        """
-        Initialize the LFI software maximum dimensions.
-        """
-
+        """Initialize the LFI software maximum dimensions."""
         cls._LFIsoftware_cst = {'JPXKRK':100}
 
     @classmethod
     def _read_field_dict(cls, fd_abspath):
-        """
-        Reads the CSV fields dictionary of the format.
-        """
-
+        """Reads the CSV fields dictionary of the format."""
         field_dict, file_priority = util.read_CSV_as_dict(fd_abspath)
-
         if file_priority == 'main':
             cls._field_dict = field_dict
         elif file_priority == 'underwrite':
@@ -183,10 +174,6 @@ class LFI(FileResource):
             cls._field_dict = field_dict
 
     def __init__(self, *args, **kwargs):
-        """
-        Constructor. See its footprint for arguments.
-        """
-
         self.isopen = False
         self.geometry = None
         self.validity = None
@@ -244,10 +231,7 @@ class LFI(FileResource):
             self.empty = True
 
     def close(self):
-        """
-        Closes a LFI with ifsaux' LFIFER.
-        """
-
+        """Closes a LFI with ifsaux' LFIFER."""
         if self.isopen:
             try:
                 wlfi.wlfifer(self._unit, 'KEEP')
@@ -263,7 +247,6 @@ class LFI(FileResource):
 ################
     def _get_generic_fid(self, fieldidentifier):
         """Return a generic fid from fieldidentifier (via Field Dict)."""
-
         if self.true3d:
             fieldname = fieldidentifier
         else:
@@ -283,20 +266,18 @@ class LFI(FileResource):
         """
         Returns a list of the fields from resource whose identifier match the given seed.
 
-        Args: \n
-        - *seed*: might be:
+        :param seed: might be:\n
           - a tuple of regular expressions,
           - a string meant to be converted to a tuple
           - a list of regular expressions tuples
           - *None*. If *None* (default), returns the list of all fields in resource.
           If self.true3d: tuples are replaced by string
-        - *fieldtype*: optional, among ('H2D', 'Misc') or a list of these strings.
+        :param fieldtype: optional, among ('H2D', 'Misc') or a list of these strings.
           If provided, filters out the fields not of the given types.
-        - *generic*: if True, returns a list of tuples (fieldname, generic fid) of
+        :param generic: if True, returns a list of tuples (fieldname, generic fid) of
           the fields.
         """
-
-        if type(fieldtype) == type(list()):
+        if isinstance(fieldtype, list):
             fieldtypeslist = list(fieldtype)
         else:
             fieldtypeslist = [fieldtype]
@@ -341,7 +322,8 @@ class LFI(FileResource):
 
     def listfields(self, **kwargs):
         """
-        Returns a list containing the LFI identifiers of all the fields of the resource.
+        Returns a list containing the LFI identifiers of all the fields of the
+        resource.
         """
         return super(LFI, self).listfields(**kwargs)
 
@@ -350,9 +332,9 @@ class LFI(FileResource):
         """
         Actual listfields() method for LFI.
 
-        Args: \n
-        - *complete*: if True method returns a list of {'LFI':LFI_fid, 'generic':generic_fid}
-                      if False method return a list of LFI_fid
+        :param complete: - if True method returns a list of {'LFI':LFI_fid,
+                           'generic':generic_fid}
+                         - if False method return a list of LFI_fid
         """
         fieldslist = []
         for fieldname in self._listLFInames():
@@ -384,9 +366,7 @@ class LFI(FileResource):
 
     @FileResource._openbeforedelayed
     def _listLFInames(self):
-        """
-        List of LFI article names contained in file.
-        """
+        """List of LFI article names contained in file."""
         if self._listLFInamesCache is None:
             records_number = wlfi.wlfinaf(self._unit)[0]
             wlfi.wlfipos(self._unit)  # rewind
@@ -401,7 +381,6 @@ class LFI(FileResource):
         Returns a sorted list of fields with regards to their name and nature,
         as a dict of lists.
         """
-
         listMisc = []
         list3D = []
         list2D = []
@@ -436,12 +415,10 @@ class LFI(FileResource):
         Reads one field, given its identifier (tuple (LFI name, level)), and returns a Field instance.
         Interface to Fortran routines from 'ifsaux'.
 
-        Args: \n
-        - *fieldidentifier*: "LFI fieldname" if true3d, else (LFI fieldname, level).
-        - *getdata*: optional, if *False*, only metadata are read, the field do not contain data.
-                     Default is *True*.
+        :param fieldidentifier: "LFI fieldname" if true3d, else (LFI fieldname, level).
+        :param getdata: optional, if *False*, only metadata are read, the field do not contain data.
+                        Default is *True*.
         """
-
         if self.true3d:
             if not isinstance(fieldidentifier, six.string_types):
                 raise epygramError("fieldidentifier of a LFI field is a string (when resource opened in true3d).")
@@ -470,7 +447,7 @@ class LFI(FileResource):
                                dimensions=self.geometry.dimensions,
                                geoid=config.LFI_default_geoid,
                                position_on_grid=None,
-                               projection=self.geometry.projection  #Also used for academic geometries
+                               projection=self.geometry.projection  # Also used for academic geometries
                                )
 
             if self.geometry.vcoordinate is not None:
@@ -616,13 +593,12 @@ class LFI(FileResource):
         """
         Returns a :class:`epygram.base.FieldSet` containing requested fields read in the resource.
 
-        Args: \n
-        - *requestedfields*: might be \n
+        :param requestedfields: might be \n
           - a tuple of regular expressions (e.g. ('RVT', '?')) or a regular expression (e.g. 'R?T') if true3d
           - a list of LFI fields identifiers with regular expressions (e.g. [('COVER???', 0), ('RVT', '*')])
           - if not specified, interpretated as all fields that will be found in resource
-        - *getdata*: optional, if *False*, only metadata are read, the fields do not contain data.
-                     Default is *True*.
+        :param getdata: optional, if *False*, only metadata are read, the fields do not contain data.
+                        Default is *True*.
         """
 
         requestedfields = self.find_fields_in_resource(requestedfields)
@@ -635,10 +611,8 @@ class LFI(FileResource):
         """
         Write a field in the resource.
 
-        Args: \n
-        - *field*: a :class:`epygram.base.Field` instance or :class:`epygram.H2DField`.
+        :param field: a :class:`epygram.base.Field` instance or :class:`epygram.H2DField`.
         """
-
         if not isinstance(field, Field):
             raise epygramError("*field* must be a Field instance.")
 
@@ -650,8 +624,7 @@ class LFI(FileResource):
         """
         Write the fields of the *fieldset* in the resource.
 
-        Args: \n
-        - *fieldset*: must be a :class:`epygram.base.FieldSet` instance.
+        :param fieldset: must be a :class:`epygram.base.FieldSet` instance.
         """
         self._listLFInamesCache = None
 
@@ -799,9 +772,9 @@ class LFI(FileResource):
                             myFieldset.append(f)
                 if record in ['LAT0', 'LON0', 'LATOR', 'LATORI', 'LONOR', 'LONORI', 'RPK', 'BETA', 'ZHAT']:
                     # Float comparisons
-                    special_rpk = record == 'RPK' and \
-                                  field.geometry.secant_projection and \
-                                  field.geometry.name not in ['mercator', 'polar_stereographic']
+                    special_rpk = (record == 'RPK' and
+                                   field.geometry.secant_projection and
+                                   field.geometry.name not in ['mercator', 'polar_stereographic'])
                     if special_rpk:
                         # In geometries, when seant, we store latin1 and latin2 which are computed from RPK
                         # Computation is not exact computing back RPK from latin1 and latin2 does not give exactly the same result
@@ -902,15 +875,11 @@ class LFI(FileResource):
                     self.empty = False
 
     def rename_field(self, fid, new_fid):
-        """
-        Renames a field "in place".
-        """
+        """Renames a field "in place"."""
         wlfi.wlfiren(self._unit, fid if self.true3d else fid[0], new_fid if self.true3d else new_fid[0])
 
     def delfield(self, fid):
-        """
-        Deletes a field from file "in place".
-        """
+        """Deletes a field from file "in place"."""
         wlfi.wlfisup(self._unit, fid if self.true3d else fid[0])
 
     @FileResource._openbeforedelayed
@@ -924,31 +893,29 @@ class LFI(FileResource):
         Extracts a vertical profile from the LFI resource, given its fid
         and the geographic location (*lon*/*lat*) of the profile.
 
-        Args: \n
-        - *fid* must have syntax: ('PARAMETER', '\*') if not true3d, else 'PARAMETER',
+        :param fid: must have syntax: ('PARAMETER', '\*') if not true3d, else 'PARAMETER',
           \* being a true star character,
           and PARAMETER being the name of the parameter requested, as named in LFI.
-        - *lon* is the longitude of the desired point.
-        - *lat* is the latitude of the desired point.
-        - *geometry* is the geometry on which extract data. If None, it is built from
+        :param lon: the longitude of the desired point.
+        :param lat: the latitude of the desired point.
+        :param geometry: the geometry on which extract data. If None, it is built from
           lon/lat.
-        - *vertical_coordinate* defines the requested vertical coordinate of the
+        :param vertical_coordinate: defines the requested vertical coordinate of the
           V1DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
           possible values).
-        - *interpolation* defines the interpolation function used to compute
-          the profile at requested lon/lat from the fields grid:
+        :param interpolation: defines the interpolation function used to compute
+          the profile at requested lon/lat from the fields grid:\n
           - if 'nearest' (default), extracts profile at the horizontal nearest neighboring gridpoint;
           - if 'linear', computes profile with horizontal linear spline interpolation;
           - if 'cubic', computes profile with horizontal cubic spline interpolation.
-        - *external_distance* can be a dict containing the target point value
+        :param external_distance: can be a dict containing the target point value
           and an external field on the same grid as self, to which the distance
           is computed within the 4 horizontally nearest points; e.g.
           {'target_value':4810, 'external_field':an_H2DField_with_same_geometry}.
           If so, the nearest point is selected with
           distance = |target_value - external_field.data|
-        - *cheap_height* has no effect (compatibity with FA format)
+        :param cheap_height: has no effect (compatibity with FA format)
         """
-
         if geometry is None:
             if None in [lon, lat]:
                 raise epygramError("You must give a geometry or lon *and* lat")
@@ -970,8 +937,10 @@ class LFI(FileResource):
 
     @FileResource._openbeforedelayed
     def extractsection(self, fid, end1=None, end2=None,
-                       geometry=None, points_number=None,
-                       resolution=None, vertical_coordinate=None,
+                       geometry=None,
+                       points_number=None,
+                       resolution=None,
+                       vertical_coordinate=None,
                        interpolation='linear',
                        cheap_height=None):
         """
@@ -979,23 +948,22 @@ class LFI(FileResource):
         and the geographic (lon/lat) coordinates of its ends.
         The section is returned as a V2DField.
 
-        Args: \n
-        - *fid* must have syntax: ('PARAMETER', '\*') if not true3d else 'PARAMETER',
+        :param fid: must have syntax: ('PARAMETER', '\*') if not true3d else 'PARAMETER',
           \* being a true star character,
           and PARAMETER being the name of the parameter requested, as named in LFI.
-        - *end1* must be a tuple (lon, lat).
-        - *end2* must be a tuple (lon, lat).
-        - *geometry* is the geometry on which extract data. If None, defaults to
+        :param end1: must be a tuple (lon, lat).
+        :param end2: must be a tuple (lon, lat).
+        :param geometry: the geometry on which extract data. If None, defaults to
           linearily spaced positions computed from  *points_number*.
-        - *points_number* defines the total number of horizontal points of the
+        :param points_number: defines the total number of horizontal points of the
           section (including ends). If None, defaults to a number computed from
           the *ends* and the *resolution*.
-        - *resolution* defines the horizontal resolution to be given to the
+        :param resolution: defines the horizontal resolution to be given to the
           field. If None, defaults to the horizontal resolution of the field.
-        - *vertical_coordinate* defines the requested vertical coordinate of the
+        :param vertical_coordinate: defines the requested vertical coordinate of the
           V2DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
           possible values).
-        - *interpolation* defines the interpolation function used to compute
+        :param interpolation: defines the interpolation function used to compute
           the profile points locations from the fields grid: \n
           - if 'nearest', each horizontal point of the section is
             taken as the horizontal nearest neighboring gridpoint;
@@ -1003,9 +971,8 @@ class LFI(FileResource):
             computed with linear spline interpolation;
           - if 'cubic', each horizontal point of the section is
             computed with linear spline interpolation.
-        - *cheap_height* has no effect (compatibity with FA format)
+        :param cheap_height: has no effect (compatibity with FA format)
         """
-
         if geometry is None:
             if None in [end1, end2]:
                 raise epygramError("You must give a geometry or end1 *and* end2")
@@ -1028,22 +995,23 @@ class LFI(FileResource):
         return section
 
     @FileResource._openbeforedelayed
-    def extract_subdomain(self, fid, geometry, vertical_coordinate=None,
-                          interpolation='linear', exclude_extralevels=True,
+    def extract_subdomain(self, fid, geometry,
+                          vertical_coordinate=None,
+                          interpolation='linear',
+                          exclude_extralevels=True,
                           cheap_height=None):
         """
         Extracts a subdomain from the LFI resource, given its fid
         and the geometry to use.
 
-        Args: \n
-        - *fid* must have syntax: ('PARAMETER', '\*') if not true3d else 'PARAMETER',
+        :param fid: must have syntax: ('PARAMETER', '\*') if not true3d else 'PARAMETER',
           \* being a true star character,
           and PARAMETER being the name of the parameter requested, as named in LFI.
-        - *geometry* is the geometry on which extract data.
-        - *vertical_coordinate* defines the requested vertical coordinate of the
+        :param geometry: the geometry on which extract data.
+        :param vertical_coordinate: defines the requested vertical coordinate of the
           V2DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
           possible values).
-        - *interpolation* defines the interpolation function used to compute
+        :param interpolation defines the interpolation function used to compute
           the profile points locations from the fields grid: \n
           - if 'nearest', each horizontal point of the section is
             taken as the horizontal nearest neighboring gridpoint;
@@ -1051,9 +1019,8 @@ class LFI(FileResource):
             computed with linear spline interpolation;
           - if 'cubic', each horizontal point of the section is
             computed with linear spline interpolation.
-        - *cheap_height* has no effect (compatibity with FA format)
+        :param cheap_height: has no effect (compatibity with FA format)
         """
-
         if self.true3d:
             field3d = self.readfield(fid)
         else:
@@ -1114,10 +1081,8 @@ class LFI(FileResource):
         """
         Writes in file a summary of the contents of the LFI.
 
-        Args: \n
-        - *out*: the output open file-like object (duck-typing: *out*.write()
-          only is needed).
-        - *sortfields*: **True** if the fields have to be sorted by type.
+        :param out: the output open file-like object
+        :param sortfields: **True** if the fields have to be sorted by type.
         """
         firstcolumn_width = 50
         secondcolumn_width = 16
@@ -1212,9 +1177,8 @@ class LFI(FileResource):
                 done.append(f)
         out.write(sepline)
 
-##############
 # the LFI WAY #
-##############
+###############
     @staticmethod
     def _get_latin1_latin2_lambert(lat0, rpk):
         def k(latin2):
@@ -1402,9 +1366,7 @@ class LFI(FileResource):
 
     @FileResource._openbeforedelayed
     def _read_validity(self):
-        """
-        Reads the validity in the LFI articles.
-        """
+        """Reads the validity in the LFI articles."""
         def s(name, level):
             if self.true3d:
                 return name
@@ -1438,9 +1400,7 @@ class LFI(FileResource):
 
     @FileResource._openbeforedelayed
     def _read_compression(self):
-        """
-        Reads the compression.
-        """
+        """Reads the compression."""
         if self._compressed is None:
             if 'LFI_COMPRESSED' in self._listLFInames():
                 self._compressed = self.readfield('LFI_COMPRESSED' if self.true3d else ('LFI_COMPRESSED', None)).getdata()

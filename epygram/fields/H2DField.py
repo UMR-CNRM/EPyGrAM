@@ -13,11 +13,11 @@ import numpy
 
 import footprints
 
-from .D3Field import D3Field
-from .PointField import PointField
 from epygram import config, util, epygramError
 from epygram.geometries import H2DGeometry
 from . import gimme_one_point
+from .D3Field import D3Field
+from .PointField import PointField
 
 epylog = footprints.loggers.getLogger(__name__)
 
@@ -49,7 +49,6 @@ class H2DField(D3Field):
 ##############
     def getlevel(self, level=None, k=None):
         """Returns self. Useless but for compatibility reasons."""
-
         if k is None and level is None:
             raise epygramError("You must give k or level.")
         if k is not None and level is not None:
@@ -67,7 +66,6 @@ class H2DField(D3Field):
 
         Cf. getvalue_ll() doc for other arguments.
         """
-
         value = [self.getvalue_ll(lon, lat, validity=self.validity[i],
                                   interpolation=interpolation,
                                   external_distance=external_distance)
@@ -79,7 +77,6 @@ class H2DField(D3Field):
                              geometry_args={'vcoordinate':self.geometry.vcoordinate},
                              vertical_geometry_args=None)
         pt.setdata(value)
-
         return pt
 
 
@@ -124,30 +121,23 @@ class H2DField(D3Field):
         """
         Makes a simple plot of the field, with a number of options.
 
-        Requires :mod:`matplotlib`
-
-        .. tabularcolumns:: |l|L|
-
-        ==============   ====================================================
-        Keywords         Description
-        ==============   ====================================================
-        subzone          among ('C', 'CI'), for LAM fields only, plots the
-                         data resp. on the C or C+I zone. \n
-                         Default is no subzone, i.e. the whole field.
-        gisquality       among ('c', 'l', 'i', 'h', 'f') -- by increasing
-                         quality. Defines the quality for GIS elements
-                         (coastlines, countries boundaries...).
-        specificproj     enables to make basemap on the specified projection,
+        :param subzone: among ('C', 'CI'), for LAM fields only, plots the
+                        data resp. on the C or C+I zone.
+                        Default is no subzone, i.e. the whole field.
+        :param gisquality: among ('c', 'l', 'i', 'h', 'f') -- by increasing
+                           quality. Defines the quality for GIS elements
+                           (coastlines, countries boundaries...).
+        :param specificproj: enables to make basemap on the specified projection,
                          among: 'kav7', 'cyl', 'ortho', ('nsper', {...})
                          (cf. Basemap doc). \n
                          In 'nsper' case, the {} may contain: ('sat_height' =
                          satellite height in km; 'lon' = longitude of nadir
                          in degrees; 'lat' = latitude of nadir in degrees.
-        zoom             specifies the lon/lat borders of the map, implying
+        :param zoom: specifies the lon/lat borders of the map, implying
                          hereby a 'cyl' projection. Must be a dict(lonmin=,
                          lonmax=, latmin=, latmax=).\n
                          Overwrites *specificproj*.
-        over             any existing figure and/or ax to be used for the
+        :param over: any existing figure and/or ax to be used for the
                          plot, given as a tuple (fig, ax), with None for
                          missing objects. *fig* is the frame of the
                          matplotlib figure, containing eventually several
@@ -155,72 +145,75 @@ class H2DField(D3Field):
                          which the drawing is done. When given (is not None),
                          these objects must be coherent, i.e. ax being one of
                          the fig axes.
-        colorbar_over    an optional existing ax to plot the colorbar on.
-        use_basemap      a basemap.Basemap object used to handle the
+        :param colorbar_over: an optional existing ax to plot the colorbar on.
+        :param use_basemap: a basemap.Basemap object used to handle the
                          projection of the map. If given, the map projection
                          options (*specificproj*, *zoom*, *gisquality* ...)
                          are ignored, keeping the properties of the
                          *use_basemap* object.
-        title            title for the plot. Default is field identifier.
-        minmax           defines the min and max values for the plot
+        :param title: title for the plot. Default is field identifier.
+        :param minmax: defines the min and max values for the plot
                          colorbar. \n
                          Syntax: [min, max]. [0.0, max] also works. Default
                          is min/max of the field.
-        graphicmode      among ('colorshades', 'contourlines', 'points').
-        levelsnumber     number of levels for contours and colorbar.
-        colormap         name of the ``matplotlib`` colormap to use (or an
+        :param graphicmode: among ('colorshades', 'contourlines', 'points').
+        :param levelsnumber: number of levels for contours and colorbar.
+        :param colormap: name of the ``matplotlib`` colormap to use (or an
                          ``epygram`` one, or a user-defined one, cf.
                          config.usercolormaps).
-        center_cmap_on_0 aligns the colormap center on the value 0.
-        drawrivers       to add rivers on map.
-        drawcoastlines   to add coast lines on map.
-        drawcountries    to add countries on map.
-        colorbar         if *False*, hide colorbar the plot; else, defines the
+        :param center_cmap_on_0: aligns the colormap center on the value 0.
+        :param drawrivers: to add rivers on map.
+        :param drawcoastlines: to add coast lines on map.
+        :param drawcountries: to add countries on map.
+        :param colorbar: if *False*, hide colorbar the plot; else, defines the
                          colorbar position, among ('bottom', 'right').
                          Defaults to 'right'.
-        meridians        enable to fine-tune the choice of lines to
+        :param meridians: enable to fine-tune the choice of lines to
                          plot, with either:\n
                          - 'auto': automatic scaling to the basemap extents
-                         - 'default': range(0,360,10) and range(-90,90,10)
+                         - 'default': range(0,360,10)
                          - a list of values
                          - a grid step, e.g. 5 to plot each 5 degree.
                          - None: no one is plot
                          - *meridians* == 'greenwich' // 'datechange' //
                            'greenwich+datechange' or any combination (,)
                            will plot only these.
-        parallels        cf. meridians doc, with specific ones being
-                         *parallels* == 'equator' // 'polarcircles' //
-                         'tropics'
-        minmax_in_title  if True and minmax is not None, adds min and max
+        :param parallels: enable to fine-tune the choice of lines to
+                         plot, with either:\n
+                         - 'auto': automatic scaling to the basemap extents
+                         - 'default': range(-90,90,10)
+                         - a list of values
+                         - a grid step, e.g. 5 to plot each 5 degree.
+                         - None: no one is plot
+                         - 'equator' // 'polarcircles' // 'tropics'
+                           or any combination (,) will plot only these.
+        :param minmax_in_title: if True and minmax is not None, adds min and max
                          values in title.
-        departments      if True, adds the french departments on map (instead
+        :param departments: if True, adds the french departments on map (instead
                          of countries).
-        boundariescolor  color of lines for boundaries (countries,
+        :param boundariescolor: color of lines for boundaries (countries,
                          departments, coastlines)
-        pointsize        size of points for *graphicmode* == 'points'.
-        contourcolor     color or colormap to be used for 'contourlines'
+        :param pointsize: size of points for *graphicmode* == 'points'.
+        :param contourcolor: color or colormap to be used for 'contourlines'
                          graphicmode. It can be either a legal html color
                          name, or a colormap name.
-        contourwidth     width of contours for 'contourlines' graphicmode.
-        contourlabel     displays labels on contours.
-        bluemarble       if > 0.0 (and <=1.0), displays NASA's "blue marble"
+        :param contourwidth: width of contours for 'contourlines' graphicmode.
+        :param contourlabel: displays labels on contours.
+        :param bluemarble: if > 0.0 (and <=1.0), displays NASA's "blue marble"
                          as background. The numerical value sets its
                          transparency.
-        background       if True, set a background color to
+        :param background: if True, set a background color to
                          continents and oceans.
-        mask_threshold   dict with min and/or max value(s) to mask outside.
-        contourlabelfmt  format of the contour labels: e.g. 273.15 will
+        :param mask_threshold: dict with min and/or max value(s) to mask outside.
+        :param contourlabelfmt: format of the contour labels: e.g. 273.15 will
                          appear: '%0i' => 273, '%0f' => 273.150000,
                          '%0.2f' => 273.15, '%04i' => 0273,
                          '%0.5e' => 2.731500e+02
-        pointsmarker     shape of the points if graphicmode='points'.
+        :param pointsmarker: shape of the points if graphicmode='points'.
                          Cf. matplotlib.scatter() for possible markers.
-
-        ==============   ====================================================
 
         This method uses (hence requires) 'matplotlib' and 'basemap' libraries.
         """
-
         # 0. Initializations
         #####################
         # 0.1 matplotlib initializations
@@ -473,7 +466,11 @@ class H2DField(D3Field):
 
         return (fig, ax)
 
-    def plotanimation(self, title='__auto__', repeat=False, interval=1000, **kwargs):
+    def plotanimation(self,
+                      title='__auto__',
+                      repeat=False,
+                      interval=1000,
+                      **kwargs):
         """
         Plot the field with animation with regards to time dimension.
         Returns a :class:`matplotlib.animation.FuncAnimation`.
@@ -481,13 +478,11 @@ class H2DField(D3Field):
         In addition to those specified below, all :meth:`plotfield` method
         arguments can be provided.
 
-        Args:\n
-        - *title* = title for the plot. '__auto__' (default) will print
+        :param title: title for the plot. '__auto__' (default) will print
           the current validity of the time frame.
-        - *repeat*: to repeat animation
-        - *interval*: number of milliseconds between two validities
+        :param repeat: to repeat animation
+        :param interval: number of milliseconds between two validities
         """
-
         import matplotlib.animation as animation
 
         if len(self.validity) == 1:
@@ -544,17 +539,19 @@ class H2DField(D3Field):
 
         return anim
 
-    def morph_with_points(self, points, alpha=1., morphing='nearest',
+    def morph_with_points(self, points,
+                          alpha=1.,
+                          morphing='nearest',
                           increment=False,
                           **kwargs):
         """
         Perturb the field values with the values of a set of points.
 
-        *points* meant to be a list/fieldset of PointField.
-        *alpha* is the blending value, ranging from 0. to 1.:
+        :param points: a list/fieldset of PointField.
+        :param alpha: is the blending value, ranging from 0. to 1.:
           e.g. with 'nearest' morphing, the final value of the point is
           alpha*point.value + (1-alpha)*original_field.value
-        *morphing* is the way the point modify the field:
+        :param morphing: is the way the point modify the field:\n
           - 'nearest': only the nearest point is modified
           - 'exp_decay': modifies the surrounding points with an isotrop
             exponential decay weighting
@@ -562,10 +559,9 @@ class H2DField(D3Field):
             gaussian weighting. Its standard deviation *sigma* must then
             be passed as argument, in meters. Weightingassumed to be 0. from
             3*sigma.
-        *increment*: if True, the final value of the point is
+        :param increment: if True, the final value of the point is
           original_field.value + point.value
         """
-
         assert isinstance(points, list)
         assert all([isinstance(p, PointField) for p in points])
         if len(self.validity) != 1:
@@ -607,7 +603,6 @@ class H2DField(D3Field):
         """
         Internal method to check compatibility of terms in operations on fields.
         """
-
         if isinstance(other, self.__class__):
             if self.spectral != other.spectral:
                 raise epygramError("cannot operate a spectral field with a" +

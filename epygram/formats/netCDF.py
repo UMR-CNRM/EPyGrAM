@@ -15,7 +15,6 @@ import sys
 import numpy
 from collections import OrderedDict
 import datetime
-from dateutil import parser as dt_parser
 import six
 import re
 
@@ -68,11 +67,8 @@ class netCDF(FileResource):
     )
 
     def __init__(self, *args, **kwargs):
-        """Constructor. See its footprint for arguments."""
-
         self.isopen = False
         super(netCDF, self).__init__(*args, **kwargs)
-
         if self.openmode in ('r', 'a'):
             try:
                 guess = netCDF4.Dataset(self.container.abspath, self.openmode)
@@ -90,10 +86,9 @@ class netCDF(FileResource):
         """
         Opens a netCDF and initializes some attributes.
 
-        - *openmode*: optional, to open with a specific openmode, eventually
+        :param openmode: optional, to open with a specific openmode, eventually
           different from the one specified at initialization.
         """
-
         super(netCDF, self).open(openmode=openmode)
         self._nc = netCDF4.Dataset(self.container.abspath, self.openmode)
         self.isopen = True
@@ -101,10 +96,7 @@ class netCDF(FileResource):
             self.set_default_global_attributes()
 
     def close(self):
-        """
-        Closes a netCDF.
-        """
-
+        """Closes a netCDF."""
         if hasattr(self, '_nc') and self._nc._isopen:
             self._nc.close()
         self.isopen = False
@@ -118,13 +110,12 @@ class netCDF(FileResource):
         Returns a list of the fields from resource whose name match the given
         seed.
 
-        Args: \n
-        - *seed*: might be a regular expression, a list of regular expressions
+        :param seed: might be a regular expression, a list of regular expressions
           or *None*. If *None* (default), returns the list of all fields in
           resource.
-        - *fieldtype*: optional, among ('H2D', 'Misc') or a list of these strings.
+        :param fieldtype: optional, among ('H2D', 'Misc') or a list of these strings.
           If provided, filters out the fields not of the given types.
-        - *generic*: if True, returns complete fid's,
+        :param generic: if True, returns complete fid's,
           union of {'FORMATname':fieldname} and the according generic fid of
           the fields.
         """
@@ -155,10 +146,8 @@ class netCDF(FileResource):
         """
         Get info about the field (dimensions and meta-data of the netCDF variable).
 
-        Args: \n
-        - *fid*: netCDF field identifier
+        :param fid: netCDF field identifier
         """
-
         assert fid in self.listfields(), 'field: ' + fid + ' not in resource.'
         dimensions = OrderedDict()
         for d in self._variables[fid].dimensions:
@@ -176,16 +165,14 @@ class netCDF(FileResource):
         """
         Reads one field, given its netCDF name, and returns a Field instance.
 
-        Args: \n
-        - *fid*: netCDF field identifier
-        - *getdata*: if *False*, only metadata are read, the field do not
+        :param fid: netCDF field identifier
+        :param getdata: if *False*, only metadata are read, the field do not
           contain data.
-        - *only*: to specify indexes [0 ... n-1] of specific dimensions,
+        :param only: to specify indexes [0 ... n-1] of specific dimensions,
           e.g. {'time':5,} to select only the 6th term of time dimension.
-        - *adhoc_behaviour*: to specify "on the fly" a behaviour (usual
+        :param adhoc_behaviour: to specify "on the fly" a behaviour (usual
           dimensions or grids, ...).
         """
-
         # 0. initialization
         assert self.openmode != 'w', \
                "cannot read fields in resource if with openmode == 'w'."
@@ -289,18 +276,18 @@ class netCDF(FileResource):
                               if variable_dimensions[k] != 1]
         H2D = set(squeezed_variables) == set(['X_dimension',
                                               'Y_dimension']) \
-              or (set(squeezed_variables) == set(['N_dimension'])
-                  and all([d in all_dimensions_e2n for d in ['X_dimension',  # flattened grids
-                                                             'Y_dimension']])) \
+              or (set(squeezed_variables) == set(['N_dimension']) and
+                  all([d in all_dimensions_e2n for d in ['X_dimension',  # flattened grids
+                                                         'Y_dimension']])) \
               or (set(squeezed_variables) == set(['N_dimension']) \
                   and behaviour.get('H1D_is_H2D_unstructured', False))  # or 2D unstructured grids
         D3 = set(squeezed_variables) == set(['X_dimension',
                                              'Y_dimension',
                                              'Z_dimension']) \
              or (set(squeezed_variables) == set(['N_dimension',
-                                                 'Z_dimension'])
-                 and all([d in all_dimensions_e2n for d in ['X_dimension',  # flattened grids
-                                                            'Y_dimension']])) \
+                                                 'Z_dimension']) and
+                 all([d in all_dimensions_e2n for d in ['X_dimension',  # flattened grids
+                                                        'Y_dimension']])) \
              or (set(squeezed_variables) == set(['N_dimension',
                                                  'Z_dimension']) \
                  and behaviour.get('H1D_is_H2D_unstructured', False))  # or 2D unstructured grids
@@ -832,15 +819,15 @@ class netCDF(FileResource):
                    adhoc_behaviour=None):
         """
         Write a field in resource.
-        Args:\n
-        - *compression* ranges from 1 (low compression, fast writing)
+
+        :param field: the :class:`~epygram.base.Field` object to write
+        :param compression ranges from 1 (low compression, fast writing)
           to 9 (high compression, slow writing). 0 is no compression.
-        - *metadata*: dict, can be filled by any meta-data, that will be stored
+        :param metadata: dict, can be filled by any meta-data, that will be stored
           as attribute of the netCDF variable.
-        - *adhoc_behaviour*: to specify "on the fly" a behaviour (usual
+        :param adhoc_behaviour: to specify "on the fly" a behaviour (usual
           dimensions or grids, ...).
         """
-
         metadata = util.ifNone_emptydict(metadata)
         vartype = 'f8'
         fill_value = -999999.9
@@ -995,7 +982,7 @@ class netCDF(FileResource):
                 else:
                     epylog.info('assume 118/119 type vertical grid matches.')
             else:
-                #if len(numpy.shape(field.geometry.vcoordinate.grid['gridlevels'])) > 1:
+                # if len(numpy.shape(field.geometry.vcoordinate.grid['gridlevels'])) > 1:
                 if len(numpy.shape(field.geometry.vcoordinate.levels)) > 1:  # TOBECHECKED:
                     dims_Z = [d for d in [Z, Y, X, G, N] if d is not None]
                 else:

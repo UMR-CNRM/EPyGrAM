@@ -5,16 +5,16 @@
 # http://www.cecill.info
 
 from __future__ import print_function, absolute_import, unicode_literals, division
-
 import six
+
 import argparse
 
 import epygram
 from epygram import epylog, epygramError
-from epygram.args_catalog import add_arg_to_parser, \
-                                 files_management, fields_management, \
-                                 misc_options, output_options, \
-                                 runtime_options, graphical_options
+from epygram.args_catalog import (add_arg_to_parser,
+                                  files_management, fields_management,
+                                  misc_options, output_options,
+                                  runtime_options, graphical_options)
 
 import matplotlib.pyplot as plt
 
@@ -60,40 +60,41 @@ def main(filename,
          global_shift_center=None,
          ):
     """
-    Args:
-        filename: name of the file to be processed.
-        fieldseed: field identifier.
-        refname: name of the reference file to be compared to.
-        diffonly: if True, only plots the difference field.
-        computewind: from fieldseed, gets U and V components of wind, and
+    Plot fields.
+    
+    :param filename: name of the file to be processed.
+    :param fieldseed: field identifier.
+    :param refname: name of the reference file to be compared to.
+    :param diffonly: if True, only plots the difference field.
+    :param computewind: from fieldseed, gets U and V components of wind, and
                      computes the module; plots barbs and module together.
-        subzone: LAM zone among ('C', 'CI', None).
-        operation: makes the requested operation
+    :param subzone: LAM zone among ('C', 'CI', None).
+    :param operation: makes the requested operation
                    (e.g. {'operation':'-','operand':273.15} or
                    {'operation':'exp'}) on the field before plot.
-        diffoperation: makes the requested operation
+    :param diffoperation: makes the requested operation
                        (e.g. {'operation':'-','operand':273.15} or
                        {'operation':'exp'}) on the difference field before plot.
-        pressure_unit_hpa: converts FA log(pressure) fields to hPa.
-        legend: legend to be written over plot.
-        output: output format, among ('png', 'pdf', False). Overwritten by
+    :param pressure_unit_hpa: converts FA log(pressure) fields to hPa.
+    :param legend: legend to be written over plot.
+    :param output: output format, among ('png', 'pdf', False). Overwritten by
                 outputfilename.
-        outputfilename: specify an output filename for the plot
+    :param outputfilename: specify an output filename for the plot
                         (completed by output format).
-        specificproj: specific projection name (cf.
+    :param specificproj: specific projection name (cf.
                       :mod:`epygram.fields.H2DField`.plotfield() doc).
-        gisquality: quality of coastlines and countries boundaries.
-        graphicmode: graphical display, among ('colorshades', 'contourlines',
+    :param gisquality: quality of coastlines and countries boundaries.
+    :param graphicmode: graphical display, among ('colorshades', 'contourlines',
                      'points').
-        minmax: tuple giving (or not) min and max fields values to be plotted.
-        diffminmax: idem for difference fields.
-        levelsnumber: number of color discretization/isolines for fields plots.
-        difflevelsnumber: idem for difference fields.
-        colormap: name of the colormap for fields plots.
-        diffcolormap: idem for difference fields.
-        center_cmap_on_0: to center the colormap on 0.
-        diffcenter_cmap_on_0: NOT to center the diffcolormap on 0.
-        meridians and parallels: enable to fine-tune the choice of lines to
+    :param minmax: tuple giving (or not) min and max fields values to be plotted.
+    :param diffminmax: idem for difference fields.
+    :param levelsnumber: number of color discretization/isolines for fields plots.
+    :param difflevelsnumber: idem for difference fields.
+    :param colormap: name of the colormap for fields plots.
+    :param diffcolormap: idem for difference fields.
+    :param center_cmap_on_0: to center the colormap on 0.
+    :param diffcenter_cmap_on_0: NOT to center the diffcolormap on 0.
+    :param meridians and parallels: enable to fine-tune the choice of lines to
                                  plot, with either:
                                  - 'auto': automatic scaling to the basemap extents
                                  - 'default': range(0,360,10) and range(-90,90,10)
@@ -103,27 +104,26 @@ def main(filename,
                                  - *meridian* == 'greenwich' // 'datechange' // 'greenwich+datechange'
                                    *parallel* == 'equator' // 'polarcircles' // 'tropics' or any
                                    combination (+) will plot only these.
-        french_depts: draws french departments instead of countries boundaries.
-        drawrivers: draw rivers.
-        vectors_subsampling: subsampling ratio of vectors plots.
-        zoom: a dict(lonmin, lonmax, latmin, latmax) on which to build the plot.
-        pointsize: size of the point, case graphicmode='points'.
-        symbol: among ('barbs', 'arrows', 'stream') for vector plots.
-        figures_dpi: quality of saved figures.
-        wind_components_are_projected_on: inform the plot on which axes the
+    :param french_depts: draws french departments instead of countries boundaries.
+    :param drawrivers: draw rivers.
+    :param vectors_subsampling: subsampling ratio of vectors plots.
+    :param zoom: a dict(lonmin, lonmax, latmin, latmax) on which to build the plot.
+    :param pointsize: size of the point, case graphicmode='points'.
+    :param symbol: among ('barbs', 'arrows', 'stream') for vector plots.
+    :param figures_dpi: quality of saved figures.
+    :param wind_components_are_projected_on: inform the plot on which axes the
                                           vector components are projected on
                                           ('grid' or 'lonlat').
-        bluemarble: if >0., displays NASA's "blue marble" as background with
-        given transparency.
-        background: if True, set a background color to continents and oceans.
-        composition: dict containing info for a composition of fields.(cf. code for doc)
-        mask_threshold: dict with min and/or max value(s) to mask outside.
-        quiverkey: options to be passed to plotfield to activate a quiver key (cf. pyplot.quiverkey).
-        global_shift_center: for global lon/lat grids, shift the center by the
+    :param bluemarble: if >0., displays NASA's "blue marble" as background with
+    :param given transparency.
+    :param background: if True, set a background color to continents and oceans.
+    :param composition: dict containing info for a composition of fields.(cf. code for doc)
+    :param mask_threshold: dict with min and/or max value(s) to mask outside.
+    :param quiverkey: options to be passed to plotfield to activate a quiver key (cf. pyplot.quiverkey).
+    :param global_shift_center: for global lon/lat grids, shift the center by the
                              requested angle (in degrees). Enables a [0,360] grid
                              to be shifted to a [-180,180] grid, for instance (with -180 argument).
     """
-
     quiverkey = epygram.util.ifNone_emptydict(quiverkey)
     if outputfilename and not output:
         raise epygramError('*output* format must be defined if outputfilename is supplied.')
@@ -415,8 +415,8 @@ def main(filename,
 
 if __name__ == '__main__':
 
-    # ## 1. Parse arguments
-    ######################
+    # 1. Parse arguments
+    ####################
     parser = argparse.ArgumentParser(description='An EPyGrAM tool for simple plots\
                                                   of meteorological fields from a resource.',
                                      epilog='End of help for: %(prog)s (EPyGrAM v' + epygram.__version__ + ')')
@@ -465,8 +465,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # ## 2. Initializations
-    ######################
+    # 2. Initializations
+    ####################
     epygram.init_env()
     # 2.0 logs
     epylog.setLevel('WARNING')
@@ -563,8 +563,8 @@ if __name__ == '__main__':
     else:
         raise epygramError("Need to specify a field (-f) or two wind fields (--wU/--wV).")
 
-    # ## 3. Main
-    ###########
+    # 3. Main
+    #########
     main(six.u(args.filename),
          fieldseed,
          refname=refname,
@@ -603,7 +603,3 @@ if __name__ == '__main__':
          mask_threshold=mask_threshold,
          quiverkey=quiverkey,
          global_shift_center=args.global_shift_center)
-
-###########
-### END ###
-###########

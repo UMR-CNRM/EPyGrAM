@@ -5,8 +5,8 @@
 # http://www.cecill.info
 
 from __future__ import print_function, absolute_import, unicode_literals, division
-
 import six
+
 import argparse
 import sys
 import os
@@ -37,29 +37,29 @@ def main(filename,
          outputfilename=None,
          grib_short_fid=False):
     """
-    Args:
-        filename: name of the file to be processed.
-        fieldseed: either a fid or a list of fid, used as a seed for
+    Computes stats over fields.
+
+    :param filename: name of the file to be processed.
+    :param fieldseed: either a fid or a list of fid, used as a seed for
                    generating the list of fields to be processed.
-        refname: name of the reference file to be compared to.
-        diffonly: if True, only prints the difference statistics.
-        only_maxdiff: if diffonly and True, only print the maximum absolute
+    :param refname: name of the reference file to be compared to.
+    :param diffonly: if True, only prints the difference statistics.
+    :param only_maxdiff: if diffonly and True, only print the maximum absolute
                       difference (and min/max values of fields for magnitude
-        subzone: LAM zone among ('C', 'CI', 'CIE').
-        pressure_unit_hpa: for FA, converts log(pressure) fields to hPa.
-        operation: makes the requested operation
+    :param subzone: LAM zone among ('C', 'CI', 'CIE').
+    :param pressure_unit_hpa: for FA, converts log(pressure) fields to hPa.
+    :param operation: makes the requested operation
                    (e.g. {'operation':'-','scalar':273.15} or
                    {'operation':'exp'}) on the field.
-        diffoperation: makes the requested operation
+    :param diffoperation: makes the requested operation
                        (e.g. {'operation':'-','scalar':273.15} or
                        {'operation':'exp'}) on the difference field.
-        precision: number of decimals for writing floats.
-        progressmode: among ('verbose', 'percentage', None).
-        stdoutput: if True, output is redirected to stdout.
-        outputfilename: specify an output filename.
-        grib_short_fid: if True, condense GRIB fid.
+    :param precision: number of decimals for writing floats.
+    :param progressmode: among ('verbose', 'percentage', None).
+    :param stdoutput: if True, output is redirected to stdout.
+    :param outputfilename: specify an output filename.
+    :param grib_short_fid: if True, condense GRIB fid.
     """
-
     resource = epygram.formats.resource(filename, openmode='r')
     if resource.format not in ('GRIB', 'FA', 'LFI', 'TIFFMF'):
         epylog.warning(" ".join(["tool NOT TESTED with format",
@@ -272,8 +272,8 @@ def main(filename,
 
 if __name__ == '__main__':
 
-    # ## 1. Parse arguments
-    ######################
+    # 1. Parse arguments
+    ####################
     parser = argparse.ArgumentParser(description='An EPyGrAM tool for computing basic statistics on \
                                                   meteorological fields.',
                                      epilog='End of help for: %(prog)s (EPyGrAM v' + epygram.__version__ + ')')
@@ -300,8 +300,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # ## 2. Initializations
-    ######################
+    # 2. Initializations
+    ####################
     epygram.init_env()
     # 2.0 logs
     epylog.setLevel('WARNING')
@@ -352,8 +352,8 @@ if __name__ == '__main__':
     else:
         fieldseed = None
 
-    # ## 3. Main
-    ###########
+    # 3. Main
+    #########
     main(six.u(args.filename),
          fieldseed,
          refname=refname,
@@ -368,7 +368,3 @@ if __name__ == '__main__':
          stdoutput=args.stdout,
          outputfilename=args.outputfilename,
          grib_short_fid=args.grib_short_fid)
-
-###########
-### END ###
-###########

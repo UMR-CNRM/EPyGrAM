@@ -4,11 +4,17 @@
 .. automodule:: usevortex
    :synopsis: Contains proxies to reach resources using Vortex
 
+-----------------------------------------------------------
+
 Functions
 ---------
 
 .. autofunction:: set_defaults
 .. autofunction:: get_resources
+.. autofunction:: hendrix_prestage
+.. autofunction:: extractor
+
+-----------------------------------------------------------
 
 Shortcuts
 ---------

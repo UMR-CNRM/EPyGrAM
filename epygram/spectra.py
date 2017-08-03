@@ -10,6 +10,7 @@ This module contains:
 - a function to compute DCT spectrum from a 2D field;
 - a function to sort spectra with regards to their name;
 - a function to plot a series of spectra.
+- a function to read a dumped spectrum.
 """
 
 from __future__ import print_function, absolute_import, unicode_literals, division
@@ -27,7 +28,6 @@ _file_columns = ['#', 'lambda', 'variance']
 
 def read_Spectrum(filename):
     """Read a Spectrum written in file and return it."""
-
     with open(filename, 'r') as _file:
         init_kwargs = {}
         # Spectrum file id
@@ -69,20 +69,22 @@ class Spectrum(RecursiveObject):
         Using the Discrete Cosine Transform (DCT)'
     """
 
-    def __init__(self, variances, name=None, resolution=None, mean2=None,
+    def __init__(self, variances,
+                 name=None,
+                 resolution=None,
+                 mean2=None,
                  **kwargs):
         """
-        Args:
-        - *variances* being the variances of the spectrum, from wavenumber 1
-          to N-1.
-        - *name* is an optional name for the spectrum.
-        - *resolution* is an optional resolution for the field represented by
-          the spectrum. It is used to compute the according wavelengths.
-          Resolution unit is arbitrary, to the will of the user.
-        - *mean2* is the optional mean^2 of the field, i.e. variance of
-          wavenumber 0 of the spectrum.
+        :param variances: variances of the spectrum, from wavenumber 1 to N-1.
+        :param name: an optional name for the spectrum.
+        :param resolution: an optional resolution for the field represented by
+                           the spectrum. It is used to compute the according
+                           wavelengths.
+                           Resolution unit is arbitrary, to the will of the
+                           user.
+        :param mean2: the optional mean^2 of the field, i.e. variance of
+                      wavenumber 0 of the spectrum.
         """
-
         self.variances = numpy.array(variances)
         self.name = name
         self.resolution = resolution
@@ -106,10 +108,8 @@ class Spectrum(RecursiveObject):
         """
         Writes the spectrum with formatted output in *out*.
 
-        *out* must be an output open file-like object
-        (*out*.write() only is needed).
+        :param out: must be an output open file-like object.
         """
-
         out.write(_file_id + '\n')
         if self.name is not None:
             out.write('name = ' + str(self.name) + '\n')
@@ -142,7 +142,6 @@ class Spectrum(RecursiveObject):
         Plot the spectrum.
         Cf. function plotspectra() of this module for arguments.
         """
-
         return plotspectra(self,
                            over=over,
                            slopes=slopes,
@@ -154,7 +153,6 @@ class Spectrum(RecursiveObject):
 # internal
     def _check_operands(self, other):
         """Check compatibility of both spectra."""
-
         if isinstance(other, Spectrum):
             assert all((len(self.variances) == len(other.variances),
                         self.resolution == other.resolution or
@@ -213,12 +211,10 @@ class Spectrum(RecursiveObject):
                         mean2=mean2)
 
 
-#############################
-### FUNCTIONS FOR SPECTRA ###
-#############################
+# FUNCTIONS FOR SPECTRA #
+#########################
 def sort(spectra):
     """ Sort a list of spectra with regards to their name. """
-
     untied_spectra = copy.copy(spectra)
     sortedspectra = []
     for f in sorted([s.name for s in untied_spectra], reverse=True):
@@ -229,7 +225,7 @@ def sort(spectra):
     return sortedspectra
 
 
-def dctspectrum(x, log=None, verbose=False):
+def dctspectrum(x, verbose=False, log=None):
     """
     Function *dctspectrum* takes a 2D-array as argument and returns its 1D
     DCT ellipse spectrum.
@@ -239,8 +235,9 @@ def dctspectrum(x, log=None, verbose=False):
         Atmospheric Fields on Limited-Area Domains Using
         the Discrete Cosine Transform (DCT).'
 
-    *log* is an optional logging.Logger instance to which print info
-    in *verbose* case.
+    :param verbose: verbose mode
+    :param log: an optional logging.Logger instance to which print info
+                in *verbose* case.
     """
     import scipy.fftpack as tfm
 
@@ -290,24 +287,23 @@ def plotspectra(spectra,
     """
     To plot a series of spectra.
 
-    Args:\n
-    - over = any existing figure and/or ax to be used for the
-      plot, given as a tuple (fig, ax), with None for
-      missing objects. *fig* is the frame of the
-      matplotlib figure, containing eventually several
-      subplots (axes); *ax* is the matplotlib axes on
-      which the drawing is done. When given (is not None),
-      these objects must be coherent, i.e. ax being one of
-      the fig axes.
-    - spectra = a Spectrum instance or a list of.
-    - unit: string accepting LaTeX-mathematical syntaxes
-    - slopes = list of dict(
-      - exp=x where x is exposant of a A*k**-x slope
-      - offset=A where A is logscale offset in a A*k**-x slope;
-        a offset=1 is fitted to intercept the first spectra at wavenumber = 2
-      - label=(optional label) appearing 'k = label' in legend)
-    - zoom = dict(xmin=,xmax=,ymin=,ymax=)
-    - title = string for title
+    :param over: any existing figure and/or ax to be used for the
+                 plot, given as a tuple (fig, ax), with None for
+                 missing objects. *fig* is the frame of the
+                 matplotlib figure, containing eventually several
+                 subplots (axes); *ax* is the matplotlib axes on
+                 which the drawing is done. When given (is not None),
+                 these objects must be coherent, i.e. ax being one of
+                 the fig axes.
+    :param spectra: a Spectrum instance or a list of.
+    :param unit: string accepting LaTeX-mathematical syntaxes
+    :param slopes: list of dict(
+                   - exp=x where x is exposant of a A*k**-x slope
+                   - offset=A where A is logscale offset in a A*k**-x slope;
+                     a offset=1 is fitted to intercept the first spectra at wavenumber = 2
+                   - label=(optional label) appearing 'k = label' in legend)
+    :param zoom: dict(xmin=,xmax=,ymin=,ymax=)
+    :param title: title for the plot
     """
     import matplotlib.pyplot as plt
     plt.rc('font', family='serif')

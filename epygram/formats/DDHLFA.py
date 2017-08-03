@@ -64,10 +64,6 @@ class DDHLFA(LFA):
     )
 
     def __init__(self, *args, **kwargs):
-        """
-        Constructor. See its footprint for arguments.
-        """
-
         self.isopen = False
         super(LFA, self).__init__(*args, **kwargs)
         if not wlfa.wlfatest(self.container.abspath):
@@ -88,10 +84,9 @@ class DDHLFA(LFA):
         Opens the DDHLFA in Fortran sense, and initializes domains, validity
         and vertical geometry.
 
-        - *openmode*: optional, to open with a specific openmode, eventually
-          different from the one specified at initialization.
+        :param openmode: optional, to open with a specific openmode, eventually
+                         different from the one specified at initialization.
         """
-
         super(DDHLFA, self).open(openmode=openmode)
 
         if self.openmode == 'r':
@@ -115,14 +110,12 @@ class DDHLFA(LFA):
         Returns a list of the fields from resource whose name match the given
         *seed*.
 
-        Args: \n
-        - *seed*: might be a regular expression, a list of regular expressions
+        :param seed: might be a regular expression, a list of regular expressions
           or *None*. If *None* (default), returns the list of all fields in
           resource.
-        - *fieldtype*: optional, among ('V1D', 'Point', 'Misc'). If provided,
+        :param fieldtype: optional, among ('V1D', 'Point', 'Misc'). If provided,
           filters out the fields not of the given type.
         """
-
         fieldslist = super(DDHLFA, self).find_fields_in_resource(seed=seed)
         if generic:
             raise NotImplementedError("not yet.")
@@ -149,7 +142,8 @@ class DDHLFA(LFA):
         return fieldslist
 
     @FileResource._openbeforedelayed
-    def readfield(self, fieldname, getdata=True,
+    def readfield(self, fieldname,
+                  getdata=True,
                   footprints_proxy_as_builder=config.footprints_proxy_as_builder):
         """
         Reads a field in resource.
@@ -160,10 +154,11 @@ class DDHLFA(LFA):
         - Profile/surface fields are returned as a
           :class:`epygram.base.FieldSet` of 1D/Point fields, one for each
           domain.
-        - *footprints_proxy_as_builder*: if *True*, uses footprints.proxy
-          to build fields and geometry.
-        """
 
+        :param getdata: if False, do not read data but only metadata
+        :param footprints_proxy_as_builder: if *True*, uses footprints.proxy
+               to build fields and geometry.
+        """
         if footprints_proxy_as_builder:
             field_builder = footprints.proxy.field
             geom_builder = footprints.proxy.geometry
@@ -224,11 +219,11 @@ class DDHLFA(LFA):
             else:
                 # profile fields
                 if not getdata:
-                    fieldlevels = wlfa.wlfacas(self._unit, fieldname)[1] // \
-                                  self.domains['number']
+                    fieldlevels = (wlfa.wlfacas(self._unit, fieldname)[1] //
+                                   self.domains['number'])
                 else:
-                    fieldlevels = len(field_from_LFA.getdata()) // \
-                                  self.domains['number']
+                    fieldlevels = (len(field_from_LFA.getdata()) //
+                                   self.domains['number'])
                 if fieldlevels == self.levels['VT']:
                     position_on_grid = 'mass'
                     # gridposition = 'mass'
@@ -272,7 +267,7 @@ class DDHLFA(LFA):
                     toreturn.append(field)
         return toreturn
 
-    def readfields(self, requestedfields, getdata=True):
+    def readfields(self, requestedfields, **kwargs):
         """
         Inactivation of readfields because readfield already returns a FieldSet.
         """
@@ -287,12 +282,10 @@ class DDHLFA(LFA):
         """
         Writes in file a summary of the contents of the DDHLFA.
 
-        Args: \n
-        - *out*: the output open file-like object (duck-typing: *out*.write()
+        :param out: the output open file-like object (duck-typing: *out*.write()
           only is needed).
-        - *sortfields*: **True** if the fields have to be sorted by type.
+        :param sortfields: **True** if the fields have to be sorted by type.
         """
-
         domains = self.domains
         mass_vertical_levels = len(self.readfield('VPP0')[0].geometry.vcoordinate.levels)
         listoffields = self.listfields()
@@ -403,7 +396,6 @@ class DDHLFA(LFA):
         Reads DOCFICHIER and DOCDnnn fields, to fill-in domains and levels
         attributes. Cf. J.M. Piriou's documentation about DDH.
         """
-
         domains = {}
         DOCFICHIER = self.readfield('DOCFICHIER')
         vpp_init = super(DDHLFA, self).readfield('VPP0')
@@ -505,7 +497,6 @@ class DDHLFA(LFA):
         Reads DATE and ECHEANCE fields, to fill-in a FieldValidity object.
         Cf. J.M. Piriou's documentation about DDH.
         """
-
         DATE = self.readfield('DATE')
         DATE_data = DATE.getdata()
         year = DATE_data[0]

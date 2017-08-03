@@ -47,8 +47,7 @@ class PointField(D3Field):
         """
         Plot a PointField if only it has a time dimension.
 
-        Args:
-        - *over* = any existing figure and/or ax to be used for the
+        :param over: any existing figure and/or ax to be used for the
           plot, given as a tuple (fig, ax), with None for
           missing objects. *fig* is the frame of the
           matplotlib figure, containing eventually several
@@ -56,15 +55,14 @@ class PointField(D3Field):
           which the drawing is done. When given (is not None),
           these objects must be coherent, i.e. ax being one of
           the fig axes.
-        - *title*: of the plot.
+        :param title: title of the plot.
           No title if *None*, time range if '__timerange__'.
-        - *unit*: unit for Y axis
-        - *datefmt*: date format to use, e.g. "%Y-%m-%d %H:%M:%S %Z"
-        - *showgrid*: True/False to show grid or not
-        - *plot_kwargs*: arguments to be passed to matplotlib.axes.Axes.plot()
-        - *legend_kwargs*: arguments to be passed to matplotlib.axes.Axes.legend()
+        :param unit: unit for Y axis
+        :param datefmt: date format to use, e.g. "%Y-%m-%d %H:%M:%S %Z"
+        :param showgrid: True/False to show grid or not
+        :param plot_kwargs: arguments to be passed to matplotlib.axes.Axes.plot()
+        :param legend_kwargs: arguments to be passed to matplotlib.axes.Axes.legend()
         """
-
         import matplotlib.pyplot as plt
         from matplotlib import dates
         plt.rc('font', family='serif')
@@ -122,12 +120,10 @@ def gimme_one_point(longitude, latitude,
     """
     Builds an empty PointField at given (longitude, latitude).
 
-    Arguments *field_args*, *geometry_args*, *vertical_geometry_args*
-    can be provided as dictionaries containing kwargs for the corresponding
-    objects.
-    E.g. a validity should be stored in *field_args*.
+    :param field_args: to be passed to field constructor, e.g. a validity
+    :param geometry_args: to be passed to geometry constructor
+    :param vertical_geometry_args: to be passed to vertical_geometry constructor
     """
-
     field_args = ifNone_emptydict(field_args)
     geometry_args = ifNone_emptydict(geometry_args)
     vertical_geometry_args = ifNone_emptydict(vertical_geometry_args)

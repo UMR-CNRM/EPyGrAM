@@ -16,6 +16,7 @@ import six
 
 import footprints
 from footprints import FPDict, proxy as fpx
+
 import pyexttiff
 
 from epygram import config, epygramError, util
@@ -43,10 +44,6 @@ class TIFFMF(FileResource):
     )
 
     def __init__(self, *args, **kwargs):
-        """
-        Constructor. See its footprint for arguments.
-        """
-
         self.isopen = False
         self.geometry = None
         self.validity = None
@@ -58,10 +55,7 @@ class TIFFMF(FileResource):
             self.open()
 
     def open(self):
-        """
-        Opens a TIFFMF, and initializes some attributes.
-        """
-
+        """Opens a TIFFMF, and initializes some attributes."""
         # Opening
         if self.openmode in ('r'):
             self.tiff = pyexttiff.TiffFile(self.container.abspath, [(34974,)], method=2)
@@ -78,10 +72,7 @@ class TIFFMF(FileResource):
             self._read_sections()
 
     def close(self):
-        """
-        Closes a TIFFMF file.
-        """
-
+        """Closes a TIFFMF file."""
         if self.isopen:
             self.isopen = False
             # Cleanings

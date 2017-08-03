@@ -9,7 +9,6 @@ This resource exposes 3D fields when the low level resource only expose horizont
 """
 
 from __future__ import print_function, absolute_import, unicode_literals, division
-
 import six
 
 from footprints import proxy as fpx
@@ -39,8 +38,6 @@ class CombineLevelsResource(Resource):
     )
 
     def __init__(self, *args, **kwargs):
-        """Constructor. See its footprint for arguments."""
-
         super(Resource, self).__init__(*args, **kwargs)
 
         if self.resource.openmode != self.openmode:
@@ -50,7 +47,6 @@ class CombineLevelsResource(Resource):
 
     def open(self):
         """Opens the low level resource"""
-
         if not self.resource.isopen:
             self.resource.open()
 
@@ -70,16 +66,14 @@ class CombineLevelsResource(Resource):
         Returns a list of the fields from resource whose name match the given
         seed.
 
-        Args: \n
-        - *seed*: might be a 'handgrip', i.e. a dict where you can store all
+        :param seed: might be a 'handgrip', i.e. a dict where you can store all
           requested keys,
           e.g. {'shortName':'t', 'indicatorOfTypeOfLevel':'pl', 'level':850},
           a list of handgrips or *None*. If *None* (default), returns the list
           of all fields in resource.
-        - *genric*: if True, returns a list of tuples (fid, fid) of
+        :param generic: if True, returns a list of tuples (fid, fid) of
           the fields (for mimetism with other formats).
         """
-
         if seed is None or isinstance(seed, dict):
             fieldslist = self.listfields(select=seed)
         elif isinstance(seed, list):
@@ -98,9 +92,7 @@ class CombineLevelsResource(Resource):
 
     def _create_list(self):
         """Creates the list of available fields associated with the original fids."""
-
         result = {}
-
         # Loop over the low level resource fids
         for fid in self.resource.listfields(complete=True):
             assert 'generic' in fid, \
@@ -113,17 +105,14 @@ class CombineLevelsResource(Resource):
                 result[hashable_generic_fid] = {'original_fids':[], 'generic':None}
             result[hashable_generic_fid]['original_fids'].append((original_fid, level))
             result[hashable_generic_fid]['generic'] = generic_fid
-
         # For fields present on only one layer, we put again the level in the generic fid
         for k, v in result.items():
             if len(v['original_fids']) == 1 and v['original_fids'][0][1] is not None:
                 v['generic']['level'] = v['original_fids'][0][1]
-
         return result
 
     def listfields(self, onlykey=None, select=None, complete=False):
         """Lists the available fields."""
-
         fidlist = [v['generic'] for v in self._create_list().values()]
         if select is not None:
             fidlist = [f for f in fidlist if all([(k in f and f[k] == select[k]) for k in select.keys()])]
@@ -141,11 +130,11 @@ class CombineLevelsResource(Resource):
         Returns a sorted list of fields with regards to the given *sortingkey*
         of their fid, as a dict of lists.
 
-        Argument *onlykey* can be specified as a string or a tuple of strings,
-        so that only specified keys of the fid will returned.
+        :param sortingkey: sorting key
+        :param onlykey: can be specified as a string or a tuple of strings,
+          so that only specified keys of the fid will returned.
         """
         # Taken from GRIB.py
-
         sortedfields = {}
         listoffields = self.listfields()
         onlykeylistoffields = self.listfields(onlykey=onlykey)
@@ -159,20 +148,27 @@ class CombineLevelsResource(Resource):
                 sortedfields[category].append(field)
             else:
                 sortedfields[category] = [field]
-
         return sortedfields
 
     def readfield(self, handgrip, getdata=True):
-        """Read the field in the low level resource and join the levels."""
+        """
+        Read the field in the low level resource and join the levels.
 
+        :param handgrip: identification of the field
+        :param getdata: if False, do not read data but only metadata
+        """
         result = self.readfields(handgrip=handgrip, getdata=getdata)
         if len(result) != 1:
             raise epygramError(str(len(result)) + "field(s) have been found, only one expected.")
         return result[0]
 
     def readfields(self, handgrip, getdata=True):
-        """Read the field in the low level resource and join the levels."""
+        """
+        Read the field in the low level resource and join the levels.
 
+        :param handgrip: identification of the field
+        :param getdata: if False, do not read data but only metadata
+        """
         fieldset = FieldSet()
         cont = self._create_list()
         for fid in self.listfields(select=handgrip):
@@ -193,7 +189,7 @@ class CombineLevelsResource(Resource):
                     fieldset.append(field)
             else:
                 fidList = [original_fid[0] for original_fid in cont[found]['original_fids']]
-                
+
                 if len(fidList) == 1:
                     field = self.resource.readfield(fidList[0])
                     field.fid[self.format] = fid

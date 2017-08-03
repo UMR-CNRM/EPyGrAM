@@ -25,8 +25,8 @@ from footprints import proxy as fpx, FPDict, FPList
 from epygram import config, epygramError, util
 from epygram.base import FieldSet, FieldValidity
 from epygram.resources import FileResource
-from epygram.util import Angle, RecursiveObject, \
-                         separation_line, write_formatted_dict
+from epygram.util import (Angle, RecursiveObject,
+                          separation_line, write_formatted_dict)
 from epygram.fields import H2DField
 from epygram.geometries.VGeometry import pressure2altitude
 from . import grib_utilities
@@ -94,22 +94,32 @@ class GRIBmessage(RecursiveObject, dict):
                  grib_edition=None,
                  other_GRIB_options=None):
         """
-        *source* being a tuple of either form:\n
-        - ('file', '*filename*' [, *offset_position*])
-          *filename* being a relative or absolute path to the file it is read
-          in. n = *offset_position*, if given, enables to read the n+1'th GRIB
-          message in file. Defaults to 0. Negative value counts from the end.
-        - ('field', :class:`epygram.fields.H2DField`)
-          In that case, the *packing* options, *grib_edition*,
-          *other_GRIB_options* and the *sample* to be used can be forced using
-          the adhoc arguments (cf _build_msg_from_field() doc).
-        - ('gribid', *gribid*)
-          *gribid* being an integer, refering to the *gribid* of a GRIB_API
-          message in memory.
-        - ('sample', '*samplename*')
-          *samplename* being the name of the sample from which to be generated.
-        """
+        Initialize a GRIBmessage from either sources.
 
+        :param source: being a tuple of either form:\n
+          - ('file', '*filename*' [, *offset_position*])
+            *filename* being a relative or absolute path to the file it is read
+            in. n = *offset_position*, if given, enables to read the n+1'th GRIB
+            message in file. Defaults to 0. Negative value counts from the end.
+          - ('field', :class:`epygram.fields.H2DField`)
+          - ('gribid', *gribid*)
+            *gribid* being an integer, refering to the *gribid* of a GRIB_API
+            message in memory.
+          - ('sample', '*samplename*')
+            *samplename* being the name of the sample from which to be
+            generated.
+
+        In case **source** is a field, some options can be forced:
+
+        :param ordering: flattening of 2D data
+        :param packing: options of packing and compression in GRIB (dict).
+        :param sample: to use a specific sample GRIB.
+          Specific syntax 'file:$filename$' takes the first message
+          in $filename$ as sample.
+        :param grib_edition: to force a GRIB edition number (1, 2).
+        :param other_GRIB_options: other options to be specified in GRIB,
+          as a dict(GRIBkey=value)
+        """
         super(GRIBmessage, self).__init__()
         self.built_from = source[0]
         if self.built_from == 'file':
@@ -172,9 +182,7 @@ class GRIBmessage(RecursiveObject, dict):
         super(GRIBmessage, self).__setitem__(key, value)
 
     def get(self, key, default=None):
-        """
-        Same as dict.get(), but try to read attribute first.
-        """
+        """Same as dict.get(), but try to read attribute first."""
         try:
             value = self.__getitem__(key)
         except (KeyError, gribapi.GribInternalError):
@@ -183,15 +191,13 @@ class GRIBmessage(RecursiveObject, dict):
 
     def _clone_from_sample(self, sample):
         """Clone a sample GRIB message."""
-
         sample_gid = gribapi.grib_new_from_samples(str(sample))  # FIXME: gribapi str/unicode incompatibility
         gid = gribapi.grib_clone(sample_gid)
         gribapi.grib_release(sample_gid)
         return gid
 
     def _clone_from_file(self, filename):
-        """Clone a GRIB message in file."""
-
+        """Clone first GRIB message from file."""
         f = open(filename, 'r')
         original_gid = gribapi.grib_new_from_file(f)
         gid = gribapi.grib_clone(original_gid)
@@ -201,7 +207,6 @@ class GRIBmessage(RecursiveObject, dict):
 
     def _readattribute(self, attribute, array=False):
         """Actual access to the attributes."""
-
         if attribute != 'values':
             if not array:
                 try:
@@ -240,19 +245,16 @@ class GRIBmessage(RecursiveObject, dict):
         """
         Build the GRIB message from the field, using a template.
 
-        *field* being a :class:`epygram.base.Field`.
-
-        Optional arguments:\n
-        - *ordering*: flattening of 2D data
-        - *packing*: options of packing and compression in GRIB (dict).
-        - *sample*: to use a specific sample GRIB.
+        :param field: a :class:`epygram.base.Field`.
+        :param ordering: flattening of 2D data
+        :param packing: options of packing and compression in GRIB (dict).
+        :param sample: to use a specific sample GRIB.
           Specific syntax 'file:$filename$' takes the first message
           in $filename$ as sample.
-        - *grib_edition*: to force a GRIB edition number (1, 2).
-        - *other_GRIB_options*: other options to be specified in GRIB,
+        :param grib_edition: to force a GRIB edition number (1, 2).
+        :param other_GRIB_options: other options to be specified in GRIB,
           as a dict(GRIBkey=value)
         """
-
         if not isinstance(field, H2DField):
             raise NotImplementedError("not yet.")
 
@@ -635,10 +637,11 @@ class GRIBmessage(RecursiveObject, dict):
 
     def set_packing(self, packing):
         """
-        Specific method to set packing because the order of the elements is
-        important. *packing* to be a dict.
-        """
+        Specific method to set **packing** because the order of the elements is
+        important.
 
+        :param dict packing: GRIB keys fro packing.
+        """
         packing = copy.copy(packing)
         if packing.get('bitsPerValue') is not None and packing.get('bitsPerValue') > 24:
             packing['bitsPerValue'] = 24  # FIXME: problem with bitsPerValue = 30 at least
@@ -660,9 +663,8 @@ class GRIBmessage(RecursiveObject, dict):
 
     def set_values(self, values):
         """
-        Wrapper to set values as a 2D array if gridpoint or 1D if spectral.
+        Wrapper to set **values** as a 2D array if gridpoint or 1D if spectral.
         """
-
         if len(values.shape) == 1:
             gribapi.grib_set_values(self._gid, values)
         elif len(values.shape) == 2:
@@ -670,10 +672,9 @@ class GRIBmessage(RecursiveObject, dict):
 
     def set_2Dvalues(self, values):
         """
-        Wrapper to set values as a 2D array, in coherence with ordering
+        Wrapper to set **values** as a 2D array, in coherence with ordering
         parameters already set beforehand.
         """
-
         if self['iScansNegatively'] == 0 and \
            self['jScansPositively'] == 0 and \
            self['jPointsAreConsecutive'] == 0:
@@ -711,20 +712,19 @@ class GRIBmessage(RecursiveObject, dict):
         Returns a geometry object containing
         the geometry information of the GRIB message.
         """
-
         geoid = config.default_geoid
         try:
             geoid = grib_utilities.pyproj_geoid_shapes[self['shapeOfTheEarth']]
         except KeyError:
             if self['shapeOfTheEarth'] == 1:
-                radius = float(self['scaledValueOfRadiusOfSphericalEarth']) / \
-                         10 ** self['scaleFactorOfRadiusOfSphericalEarth']
+                radius = (float(self['scaledValueOfRadiusOfSphericalEarth']) /
+                          10 ** self['scaleFactorOfRadiusOfSphericalEarth'])
                 geoid = {'a':radius, 'b':radius}
             elif self['shapeOfTheEarth'] in (3, 7):
-                a = float(self['scaledValueOfMajorAxisOfOblateSpheroidEarth']) / \
-                    10 ** self['scaleFactorOfMajorAxisOfOblateSpheroidEarth']
-                b = float(self['scaledValueOfMinorAxisOfOblateSpheroidEarth']) / \
-                    10 ** self['scaleFactorOfMinorAxisOfOblateSpheroidEarth']
+                a = (float(self['scaledValueOfMajorAxisOfOblateSpheroidEarth']) /
+                     10 ** self['scaleFactorOfMajorAxisOfOblateSpheroidEarth'])
+                b = (float(self['scaledValueOfMinorAxisOfOblateSpheroidEarth']) /
+                     10 ** self['scaleFactorOfMinorAxisOfOblateSpheroidEarth'])
                 if self['shapeOfTheEarth'] == 3:
                     a *= 1000
                     b *= 1000
@@ -910,7 +910,6 @@ class GRIBmessage(RecursiveObject, dict):
         Returns a :class:`epygram.base.FieldValidity` object containing the
         validity of the GRIB message.
         """
-
         year = int(str(self['dataDate'])[0:4])
         month = int(str(self['dataDate'])[4:6])
         day = int(str(self['dataDate'])[6:8])
@@ -940,7 +939,6 @@ class GRIBmessage(RecursiveObject, dict):
         If E present and lacks .keys() method, does: for (k, v) in E: D[k] = v
         In either case, this is followed by: for k in F: D[k] = F[k]
         """
-
         if isinstance(E, dict):
             items = list(E.items())
         elif '__iter__' in dir(E):
@@ -968,8 +966,7 @@ class GRIBmessage(RecursiveObject, dict):
         """
         Reads and returns the available keys of the message.
 
-        Args:\n
-        - *namespace*: the namespace of keys to be read, among:\n
+        :param namespace: the namespace of keys to be read, among:\n
           - **None**: to get all keys present in message,
           - 'ls': to get the same default keys as the grib_ls,
           - 'mars': to get the keys used by MARS.
@@ -989,14 +986,12 @@ class GRIBmessage(RecursiveObject, dict):
         """
         Reads the meta-data of the message.
 
-        Args:\n
-        - *namespace*: the namespace of keys to be read, among:\n
+        :param namespace: the namespace of keys to be read, among:\n
           - **None**: to get all keys present in message,
           - ['myKey1', 'myKey2', ...] for any custom namespace,
           - 'ls': to get the same default keys as the grib_ls,
           - 'mars': to get the keys used by MARS.
         """
-
         self.clear()
         if namespace in (None, 'ls', 'mars'):
             namespace = self.readkeys(namespace=namespace)
@@ -1010,14 +1005,13 @@ class GRIBmessage(RecursiveObject, dict):
         """
         Returns an :class:`epygram.base.Field` made out from the GRIB message.
 
-        - *getdata*: if *False*, only metadata are read, the field do not
+        :param getdata: if *False*, only metadata are read, the field do not
           contain data.
-        - *footprints_proxy_as_builder*: if **True**, uses footprints.proxy
+        :param footprints_proxy_as_builder: if **True**, uses footprints.proxy
           to build fields.
-        - *get_info_as_json*: if not **None**, writes the keys given in
+        :param get_info_as_json: if not **None**, writes the keys given in
           *get_info_as_json* as json in field.comment.
         """
-
         if footprints_proxy_as_builder:
             builder = fpx.field
         else:
@@ -1090,8 +1084,10 @@ class GRIBmessage(RecursiveObject, dict):
                 else:
                     raise NotImplementedError("not yet !")
 
-            if ((self['editionNumber'] == 2 and self['bitMapIndicator'] == 0) or
-                (self['editionNumber'] == 1 and self['bitmapPresent'] == 1)):
+            if ((self['editionNumber'] == 2 and
+                 self['bitMapIndicator'] == 0) or
+                (self['editionNumber'] == 1 and
+                 self['bitmapPresent'] == 1)):
                 data2d = numpy.ma.masked_equal(data2d, self['missingValue'])
             field.setdata(data2d)
 
@@ -1117,8 +1113,6 @@ class GRIB(FileResource):
     )
 
     def __init__(self, *args, **kwargs):
-        """Constructor. See its footprint for arguments."""
-
         self.isopen = False
         super(GRIB, self).__init__(*args, **kwargs)
         if self.openmode in ('r', 'a'):
@@ -1134,10 +1128,9 @@ class GRIB(FileResource):
         """
         Opens a GRIB and initializes some attributes.
 
-        - *openmode*: optional, to open with a specific openmode, eventually
+        :param openmode: optional, to open with a specific openmode, eventually
           different from the one specified at initialization.
         """
-
         super(GRIB, self).open(openmode=openmode)
         self._file = open(self.container.abspath, self.openmode)
         self.isopen = True
@@ -1146,7 +1139,6 @@ class GRIB(FileResource):
         """
         Closes a GRIB.
         """
-
         if hasattr(self, '_file'):
             self._file.close()
         self.isopen = False
@@ -1162,13 +1154,12 @@ class GRIB(FileResource):
         Returns a list containing the GRIB identifiers of all the fields of the
         resource.
 
-        Argument *onlykey* can be specified as a string or a tuple of strings,
-        so that only specified keys of the fid will returned.
-
-        Argument *select* can be specified as a dict(key=value) to restrain
-        the list of fields to those that match the key:value pairs.
+        :param onlykey: can be specified as a string or a tuple of strings,
+          so that only specified keys of the fid will returned.
+        :param select: can be specified as a dict(key=value) to restrain
+          the list of fields to those that match the key:value pairs.
+        :param complete: list fields with their natural fid + generic one.
         """
-
         if select is not None:
             additional_keys = [k for k in select.keys() if k not in
                                GRIBmessage.fid_keys[1] + GRIBmessage.fid_keys[2]]
@@ -1192,7 +1183,6 @@ class GRIB(FileResource):
 
     def _listfields(self, additional_keys=[]):
         """Returns a list of GRIB-type fid of the fields inside the resource."""
-
         fidlist = []
         _file = open(self.container.abspath, 'r')
         while True:
@@ -1226,7 +1216,6 @@ class GRIB(FileResource):
         components of wind, given a *fieldseed*.
         Syntax example: 'shortName':'u+v', or 'indicatorOfParameter':'33+34'
         """
-
         if isinstance(fieldseed, six.string_types):
             fieldseed = parse_GRIBstr_todict(fieldseed)
 
@@ -1249,13 +1238,17 @@ class GRIB(FileResource):
         Returns the message at position *position*, from 0 (first message)
         to messages_number-1 (last message).
         Negative position starts from the end: -1 is last message.
+
         Should not be used sequentially, probably very inefficient.
         """
         return GRIBmessage(('file', self.container.abspath, position))
 
     def iter_messages(self, headers_only=True):
-        """Iterates sequentially on messages, returning messages."""
+        """
+        Iterates sequentially on messages, returning messages.
 
+        :param headers_only: if False, read data from messages.
+        """
         try:
             ok = not self._sequential_file.closed
             if not ok:
@@ -1273,8 +1266,11 @@ class GRIB(FileResource):
         return msg
 
     def iter_fields(self, getdata=True, **kwargs):
-        """Iterates sequentially on messages, returning fields."""
+        """
+        Iterates sequentially on messages, returning fields.
 
+        :param getdata: if False, do not read data from the messages.
+        """
         fld = self.iter_messages(headers_only=False)
         if fld is not None:
             fld = fld.asfield(getdata=getdata, **kwargs)
@@ -1285,10 +1281,10 @@ class GRIB(FileResource):
         Returns a sorted list of fields with regards to the given *sortingkey*
         of their fid, as a dict of lists.
 
-        Argument *onlykey* can be specified as a string or a tuple of strings,
-        so that only specified keys of the fid will returned.
+        :param sortingkey: key on which to sort out fields
+        :param onlykey: specified as a string or a tuple of strings,
+          so that only specified keys of the fid will returned.
         """
-
         sortedfields = {}
         listoffields = self.listfields()
         onlykeylistoffields = self.listfields(onlykey=onlykey)
@@ -1310,8 +1306,7 @@ class GRIB(FileResource):
         Returns a list of the fields from resource whose name match the given
         seed.
 
-        Args: \n
-        - *seed*: might be
+        :param seed: might be:\n
           - a 'handgrip', i.e. a dict where you can store all requested GRIB
             keys, e.g. {'shortName':'t', 'indicatorOfTypeOfLevel':'pl',
                         'level':850},
@@ -1320,11 +1315,10 @@ class GRIB(FileResource):
             converted to a dict handgrip
           - *None*. If *None* (default), returns the list of all fields in
             resource.
-        - *generic*: if True, returns complete fid's,
+        :param generic: if True, returns complete fid's,
           union of {'FORMATname':fieldname} and the according generic fid of
           the fields.
         """
-
         if seed is None or isinstance(seed, dict):
             fieldslist = self.listfields(select=seed)
         elif isinstance(seed, list):
@@ -1360,20 +1354,17 @@ class GRIB(FileResource):
         If several messages meet the requirements, raises error (use
         readfields() method instead).
 
-        *handgrip* is a dict where you can store all requested GRIB keys...
-        E.g. {'shortName':'t', 'indicatorOfTypeOfLevel':'pl', 'level':850}
-        will return the Temperature at 850hPa field.
-
-        If *getdata* == **False**, the data is not read, the field consist
-        in the meta-data only.
-
-        If *footprints_proxy_as_builder* == **True**, uses footprints.proxy
-        to build fields. True decreases performance.
-
-        If *get_info_as_json* is not **None**, writes the keys given in
-        *get_info_as_json* as json in field.comment.
+        :param dict handgrip: a dict where you can store all requested GRIB
+          keys for discrimination...
+          E.g. {'shortName':'t', 'indicatorOfTypeOfLevel':'pl', 'level':850}
+          will return the Temperature at 850hPa field.
+        :param getdata: if False, the data is not read, the field consist
+          in the meta-data only.
+        :param footprints_proxy_as_builder: if True, uses footprints.proxy
+          to build fields. True decreases performance.
+        :param get_info_as_json: if not None, writes the keys given in
+          *get_info_as_json* as json in field.comment.
         """
-
         if isinstance(handgrip, six.string_types):
             handgrip = parse_GRIBstr_todict(handgrip)
 
@@ -1405,20 +1396,18 @@ class GRIB(FileResource):
         and returns it as a :class:`epygram.base.FieldSet` of
         :class:`epygram.base.Field`.
 
+        :param dict handgrip: a dict where you can store all requested GRIB
+          keys for discrimination...
+          E.g. {'shortName':'t', 'indicatorOfTypeOfLevel':'pl'}
+          will return all the Temperature fields on Pressure levels.
+        :param getdata: if False, the data is not read, the field consist
+          in the meta-data only.
+        :param footprints_proxy_as_builder: if True, uses footprints.proxy
+          to build fields. True decreases performance.
+        :param get_info_as_json: if not None, writes the keys given in
+          *get_info_as_json* as json in field.comment.
         *handgrip* is a dict where you can store all requested GRIB keys...
-        E.g. {'shortName':'t', 'indicatorOfTypeOfLevel':'pl'}
-        will return all the Temperature fields on Pressure levels.
-
-        If *getdata* == **False**, the data is not read, the field(s) consist
-        in the meta-data only.
-
-        If *footprints_proxy_as_builder* == **True**, uses footprints.proxy
-        to build fields. True decreases performance.
-
-        If *get_info_as_json* is not **None**, writes the keys given in
-        *get_info_as_json* as json in field.comment.
         """
-
         matchingfields = FieldSet()
         idx = gribapi.grib_index_new_from_file(self.container.abspath,
                                                [str(k) for k in handgrip.keys()])  # FIXME: gribapi str/unicode incompatibility
@@ -1479,15 +1468,13 @@ class GRIB(FileResource):
         """
         Writes a Field as a GRIBmessage into the GRIB resource.
 
-        Args:\n
-        - *field*: a :class:`epygram.base.Field` instance
-        - *packing*: options of packing and compression in GRIB (dict).
-        - *sample*: to use a specific sample GRIB
-        - *grib_edition*: to force a GRIB edition number (1, 2).
-        - *other_GRIB_options*: other options to be specified in GRIB,
+        :param field: a :class:`epygram.base.Field` instance
+        :param packing: options of packing and compression in GRIB (dict).
+        :param sample: to use a specific sample GRIB
+        :param grib_edition: to force a GRIB edition number (1, 2).
+        :param other_GRIB_options: other options to be specified in GRIB,
           as a dict(GRIBkey=value)
         """
-
         if not isinstance(field, H2DField):
             raise NotImplementedError("'field' argument other than a H2DField.")
         m = GRIBmessage(('field', field),
@@ -1508,32 +1495,29 @@ class GRIB(FileResource):
         Extracts a vertical profile from the GRIB resource, given a handgrip
         and the geographic location (*lon*/*lat*) of the profile.
 
-        Args: \n
-        - *handgrip* MUST define the parameter and the type of levels
-        - *lon* is the longitude of the desired point.
-        - *lat* is the latitude of the desired point.
-        - *geometry* is the geometry on which extract data. If None, it is built from
+        :param handgrip: MUST define the parameter and the type of levels
+        :param lon: the longitude of the desired point.
+        :param lat: the latitude of the desired point.
+        :param geometry: the geometry on which extract data. If None, it is built from
           lon/lat.
-        - *vertical_coordinate* defines the requested vertical coordinate of the
-          V1DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
-          possible values).
-        - *interpolation* defines the interpolation function used to compute
-          the profile at requested lon/lat from the fields grid:
+        :param vertical_coordinate defines the requested vertical coordinate of the
+          V1DField (cf. `epygram.geometries.vertical_coordinates` possible values).
+        :param interpolation: defines the interpolation function used to compute
+          the profile at requested lon/lat from the fields grid:\n
           - if 'nearest' (default), extracts profile at the horizontal nearest neighboring gridpoint;
           - if 'linear', computes profile with horizontal linear spline interpolation;
           - if 'cubic', computes profile with horizontal cubic spline interpolation.
-        - *cheap_height*: if True and *vertical_coordinate* among
+        :param cheap_height: if True and *vertical_coordinate* among
           ('altitude', 'height'), the computation of heights is done without
           taking hydrometeors into account (in R computation) nor NH Pressure
           departure (Non-Hydrostatic data). Computation therefore faster.
-        - *external_distance* can be a dict containing the target point value
+        :param external_distance: can be a dict containing the target point value
           and an external field on the same grid as self, to which the distance
           is computed within the 4 horizontally nearest points; e.g.
           {'target_value':4810, 'external_field':an_H2DField_with_same_geometry}.
           If so, the nearest point is selected with
           distance = |target_value - external_field.data|
         """
-
         field3d = fpx.field(fid={'GRIB':handgrip},
                             structure='3D',
                             resource=self, resource_fids=[handgrip])
@@ -1559,8 +1543,10 @@ class GRIB(FileResource):
         return profile
 
     def extractsection(self, handgrip, end1=None, end2=None,
-                       geometry=None, points_number=None,
-                       resolution=None, vertical_coordinate=None,
+                       geometry=None,
+                       points_number=None,
+                       resolution=None,
+                       vertical_coordinate=None,
                        interpolation='linear',
                        cheap_height=True):
         """
@@ -1568,21 +1554,19 @@ class GRIB(FileResource):
         and the geographic (lon/lat) coordinates of its ends.
         The section is returned as a V2DField.
 
-        Args: \n
-        - *handgrip* MUST define the parameter and the type of levels
-        - *end1* must be a tuple (lon, lat).
-        - *end2* must be a tuple (lon, lat).
-        - *geometry* is the geometry on which extract data. If None, defaults to
+        :param handgrip: MUST define the parameter and the type of levels
+        :param end1: must be a tuple (lon, lat).
+        :param end2: must be a tuple (lon, lat).
+        :param geometry: is the geometry on which extract data. If None, defaults to
           linearily spaced positions computed from  *points_number*.
-        - *points_number* defines the total number of horizontal points of the
+        :param points_number: defines the total number of horizontal points of the
           section (including ends). If None, defaults to a number computed from
           the *ends* and the *resolution*.
-        - *resolution* defines the horizontal resolution to be given to the
+        :param resolution: defines the horizontal resolution to be given to the
           field. If None, defaults to the horizontal resolution of the field.
-        - *vertical_coordinate* defines the requested vertical coordinate of the
-          V2DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
-          possible values).
-        - *interpolation* defines the interpolation function used to compute
+        :param vertical_coordinate: defines the requested vertical coordinate of the
+          V2DField (cf. `epygram.geometries.vertical_coordinates` possible values).
+        :param interpolation: defines the interpolation function used to compute
           the profile points locations from the fields grid: \n
           - if 'nearest', each horizontal point of the section is
             taken as the horizontal nearest neighboring gridpoint;
@@ -1590,7 +1574,7 @@ class GRIB(FileResource):
             computed with linear spline interpolation;
           - if 'cubic', each horizontal point of the section is
             computed with linear spline interpolation.
-        - *cheap_height*: if True and *vertical_coordinate* among
+        :param cheap_height: if True and *vertical_coordinate* among
           ('altitude', 'height'), the computation of heights is done without
           taking hydrometeors into account (in R computation) nor NH Pressure
           departure (Non-Hydrostatic data). Computation therefore faster.
@@ -1621,20 +1605,21 @@ class GRIB(FileResource):
 
         return section
 
-    def extract_subdomain(self, handgrip, geometry, vertical_coordinate=None,
-                          interpolation='linear', cheap_height=True,
-                          external_distance=None, field3d=None):
+    def extract_subdomain(self, handgrip, geometry,
+                          vertical_coordinate=None,
+                          interpolation='linear',
+                          cheap_height=True,
+                          external_distance=None,
+                          field3d=None):
         """
         Extracts a subdomain from the GRIB resource, given its handgrip
         and the geometry to use.
 
-        Args: \n
-        - *handgrip* MUST define the parameter and the type of levels
-        - *geometry* is the geometry on which extract data.
-        - *vertical_coordinate* defines the requested vertical coordinate of the
-          V2DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
-          possible values).
-        - *interpolation* defines the interpolation function used to compute
+        :param handgrip: MUST define the parameter and the type of levels
+        :param geometry: is the geometry on which extract data.
+        :param vertical_coordinate: defines the requested vertical coordinate of the
+          V2DField (cf. `epygram.geometries.vertical_coordinates` possible values).
+        :param interpolation: defines the interpolation function used to compute
           the profile points locations from the fields grid: \n
           - if 'nearest', each horizontal point of the section is
             taken as the horizontal nearest neighboring gridpoint;
@@ -1642,12 +1627,11 @@ class GRIB(FileResource):
             computed with linear spline interpolation;
           - if 'cubic', each horizontal point of the section is
             computed with linear spline interpolation.
-        - *cheap_height*: if True and *vertical_coordinate* among
+        :param cheap_height: if True and *vertical_coordinate* among
           ('altitude', 'height'), the computation of heights is done without
           taking hydrometeors into account (in R computation) nor NH Pressure
           departure (Non-Hydrostatic data). Computation therefore faster.
         """
-
         if field3d is None:
             field3d = fpx.field(fid={'GRIB':handgrip},
                                 structure='3D',
@@ -1725,10 +1709,8 @@ class GRIB(FileResource):
         """
         Writes in file a summary of the contents of the GRIB.
 
-        Args: \n
-        - *out*: the output open file-like object (duck-typing: *out*.write()
-          only is needed).
-        - *mode*: among ('one+list', 'fid_list', 'what', 'ls', 'mars'), \n
+        :param out: the output open file-like object
+        :param mode: among ('one+list', 'fid_list', 'what', 'ls', 'mars'), \n
           - 'one+list' = gives the validity/geometry of the first field in
             GRIB, plus the list of fid.
           - 'fid_list' = gives only the fid of each field in GRIB.
@@ -1736,12 +1718,11 @@ class GRIB(FileResource):
             are used to generate an **epygram** field from the message (slower).
           - 'ls' = gives the values of the 'ls' keys from each GRIB message.
           - 'mars' = gives the values of the 'mars' keys from each GRIB message.
-        - *sortfields*: name of the fid key used to sort fields; e.g. 'typeOfLevel';
+        :param sortfields: name of the fid key used to sort fields; e.g. 'typeOfLevel';
           only for *mode* = 'one+list' or 'fid_list'.
-        - *details*: if 'compression', gives the 'packingType' and 'bitsPerValue'
+        :param details: if 'compression', gives the 'packingType' and 'bitsPerValue'
           parameters of field packing. Only with 'what' mode.
         """
-
         out.write("### FORMAT: " + self.format + "\n")
         out.write("\n")
 

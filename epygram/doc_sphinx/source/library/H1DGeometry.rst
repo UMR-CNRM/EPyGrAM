@@ -1,34 +1,33 @@
-:mod:`epygram.geometries.V2DGeometry` --- Vertical 2-D Geometry class
-=====================================================================
+:mod:`epygram.geometries.H1DGeometry` --- Horizontal 1-D Geometry class
+=======================================================================
 
-.. automodule:: epygram.geometries.V2DGeometry
-   :synopsis: Vertical 2-D Geometry class
+.. automodule:: epygram.geometries.H1DGeometry
+   :synopsis: Horizontal 1-D Geometry class
 
 -----------------------------------------------------------
 
-.. autoclass:: V2DGeometry
+.. autoclass:: H1DGeometry
    :show-inheritance:
    :members:
    :member-order: alphabetical
 
 -----------------------------------------------------------
 
-.. autoclass:: V2DRectangularGridGeometry
+.. autoclass:: H1DRectangularGridGeometry
    :show-inheritance:
    :members:
    :member-order: alphabetical
 
 -----------------------------------------------------------
 
-.. autoclass:: V2DUnstructuredGeometry
+.. autoclass:: H1DUnstructuredGeometry
    :show-inheritance:
    :members:
    :member-order: alphabetical
 
 -----------------------------------------------------------
 
-.. autoclass:: V2DProjectedGeometry
+.. autoclass:: H1DProjectedGeometry
    :show-inheritance:
    :members:
    :member-order: alphabetical
-

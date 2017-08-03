@@ -15,9 +15,10 @@ import sys
 
 import footprints
 from footprints import FPDict, FPList, proxy as fpx
+
 from epygram import epygramError, config
-from epygram.util import write_formatted, stretch_array, Angle, set_figax, \
-    degrees_nearest_mod
+from epygram.util import (write_formatted, stretch_array, Angle, set_figax,
+                          degrees_nearest_mod)
 from epygram.base import Field, FieldSet, FieldValidity, FieldValidityList, Resource
 from epygram.geometries import D3Geometry, SpectralGeometry
 
@@ -47,41 +48,43 @@ class D3CommonField(Field):
 # ABOUT DATA #
 ##############
 
-    def getvalue_ll(self, lon=None, lat=None, level=None, validity=None,
+    def getvalue_ll(self, lon=None, lat=None,
+                    level=None,
+                    validity=None,
                     interpolation='nearest',
                     neighborinfo=False,
                     one=True,
                     external_distance=None):
         """
-        Returns the value of the field on point of coordinates (*lon, lat, level*): \n
-        - if *interpolation == 'nearest'* (default), returns the value of the
-          nearest neighboring gridpoint;
-        - if *interpolation == 'linear'*, computes and returns the field value
-          with linear spline interpolation;
-        - if *interpolation == 'cubic'*, computes and returns the field value
-          with cubic spline interpolation.
-        *level* is the True level not the index of the level. Depending on the
-        vertical coordinate, it could be expressed in Pa, m.
-        *validity* is a FieldValidity or a FieldValidityList instance
+        Returns the value of the field on point of coordinates
+        (*lon, lat, level*).
+        *lon* and *lat* may be list/numpy.array.
 
-        If *neighborinfo* is set to **True**, returns a tuple
-        *(value, (lon, lat))*, with *(lon, lat)* being the actual coordinates
-        of the neighboring gridpoint (only for *interpolation == 'nearest'*).
-
-        *lon* and *lat* may be longer than 1.
-        If *one* is False and len(lon) is 1, returns [value] instead of value.
-
-        *external_distance* can be a dict containing the target point value
-        and an external field on the same grid as self, to which the distance
-        is computed within the 4 horizontally nearest points; e.g.
-        {'target_value':4810, 'external_field':an_H2DField_with_same_geometry}.
-        If so, the nearest point is selected with
-        distance = |target_value - external_field.data|
+        :param interpolation: if:\n
+                              - 'nearest' (default), returns the value of the
+                                nearest neighboring gridpoint;
+                              - 'linear', computes and returns the field value
+                                with linear spline interpolation;
+                              - 'cubic', computes and returns the field value
+                                with cubic spline interpolation.
+        :param level: is the True level not the index of the level. Depending on
+                      the vertical coordinate, it could be expressed in Pa, m.
+        :param validity: is a FieldValidity or a FieldValidityList instance
+        :param neighborinfo: if set to **True**, returns a tuple
+                             *(value, (lon, lat))*, with *(lon, lat)* being
+                             the actual coordinates of the neighboring gridpoint
+                             (only for *interpolation == 'nearest'*).
+        :param one: if False and len(lon) is 1, returns [value] instead of value.
+        :param external_distance: can be a dict containing the target point value
+          and an external field on the same grid as self, to which the distance
+          is computed within the 4 horizontally nearest points; e.g.
+          {'target_value':4810, 'external_field':an_H2DField_with_same_geometry}.
+          If so, the nearest point is selected with
+          distance = abs(target_value - external_field.data)
 
         Warning: for interpolation on Gauss geometries, requires the
         :mod:`pyproj` module.
         """
-
         if isinstance(validity, FieldValidity):
             myvalidity = FieldValidityList(validity)
         else:
@@ -210,12 +213,12 @@ class D3CommonField(Field):
     def as_lists(self, order='C', subzone=None):
         """
         Export values as a dict of lists (in fact numpy arrays).
-        - *order*: whether to flatten arrays in 'C' (row-major) or
-                   'F' (Fortran, column-major) order.
-        - *subzone*: defines the LAM subzone to be included, in LAM case,
-                     among: 'C', 'CI'.
-        """
 
+        :param order: whether to flatten arrays in 'C' (row-major) or
+                      'F' (Fortran, column-major) order.
+        :param subzone: defines the LAM subzone to be included, in LAM case,
+                        among: 'C', 'CI'.
+        """
         if self.spectral:
             raise epygramError("as_lists method needs a grid-point field, not a spectral one.")
 
@@ -241,10 +244,10 @@ class D3CommonField(Field):
     def as_dicts(self, subzone=None):
         """
         Export values as a list of dicts.
-        - *subzone*: defines the LAM subzone to be included, in LAM case,
-                     among: 'C', 'CI'.
-        """
 
+        :param subzone: defines the LAM subzone to be included, in LAM case,
+                        among: 'C', 'CI'.
+        """
         if self.spectral:
             raise epygramError("as_dicts method needs a grid-point field, not a spectral one.")
 
@@ -271,10 +274,10 @@ class D3CommonField(Field):
     def as_points(self, subzone=None):
         """
         Export values as a fieldset of points.
-        - *subzone*: defines the LAM subzone to be included, in LAM case,
+
+        :param subzone: defines the LAM subzone to be included, in LAM case,
                      among: 'C', 'CI'.
         """
-
         if self.spectral:
             raise epygramError("as_points method needs a grid-point field, not a spectral one.")
 
@@ -313,10 +316,10 @@ class D3CommonField(Field):
     def as_profiles(self, subzone=None):
         """
         Export values as a fieldset of profiles.
-        - *subzone*: defines the LAM subzone to be included, in LAM case,
-                     among: 'C', 'CI'.
-        """
 
+        :param subzone: defines the LAM subzone to be included, in LAM case,
+                        among: 'C', 'CI'.
+        """
         if self.spectral:
             raise epygramError("as_profiles method needs a grid-point field, not a spectral one.")
 
@@ -354,32 +357,32 @@ class D3CommonField(Field):
                 result.append(profilefield)
         return result
 
-    def extract_subdomain(self, geometry, interpolation='nearest',
+    def extract_subdomain(self, geometry,
+                          interpolation='nearest',
                           external_distance=None,
                           exclude_extralevels=True,
                           getdata=True):
         """
         Extracts a subdomain from a field, given a new geometry.
 
-        Args: \n
-        - *geometry* defines the geometry on which extract data
-        - *interpolation* defines the interpolation function used to compute
-          the profile at requested lon/lat from the fields grid:
+        :param geometry: defines the geometry on which extract data
+        :param interpolation: defines the interpolation function used to compute
+                              the profile at requested lon/lat from the fields
+                              grid:\n
           - if 'nearest' (default), extracts profile at the horizontal nearest
             neighboring gridpoint;
           - if 'linear', computes profile with horizontal linear interpolation;
           - if 'cubic', computes profile with horizontal cubic interpolation.
-        - *external_distance* can be a dict containing the target point value
+        :param external_distance: can be a dict containing the target point value
           and an external field on the same grid as self, to which the distance
           is computed within the 4 horizontally nearest points; e.g.
           {'target_value':4810, 'external_field':an_H2DField_with_same_geometry}.
           If so, the nearest point is selected with
-          distance = |target_value - external_field.data|
-        - *exclude_extralevels* if True levels with no physical meaning are
-          suppressed.
-        - *getdata* if False returns a field without data
+          distance = abs(target_value - external_field.data)
+        :param exclude_extralevels: if True levels with no physical meaning are
+                                    suppressed.
+        :param getdata: if False returns a field without data
         """
-
         # build subdomain fid
         subdomainfid = {key:(FPDict(value)
                              if isinstance(value, dict)
@@ -524,12 +527,12 @@ class D3CommonField(Field):
 
     def extract_zoom(self, zoom, extra_10th=False):
         """
-        Extract an unstructured field with the gridpoints contained in *zoom*,
-        *zoom* being a dict(lonmin=, lonmax=, latmin=, latmax=).
-        If **extra_10th**, add 1/10th of the X/Y extension of the zoom
-        (regular_lonlat grid case only).
-        """
+        Extract an unstructured field with the gridpoints contained in *zoom*.
 
+        :param zoom: a dict(lonmin=, lonmax=, latmin=, latmax=).
+        :param extra_10th: if True, add 1/10th of the X/Y extension of the zoom
+                           (regular_lonlat grid case only).
+        """
         assert not self.spectral, \
                "spectral field: convert to gridpoint beforehand"
 
@@ -678,8 +681,8 @@ class D3CommonField(Field):
                                  given in argument (from a former call with
                                  neighbour_info=True)
 
-        //Options from pyresample//
-        Neighbouring options:
+        Options from pyresample, neighbouring:
+
         :param radius_of_influence: Cut off distance in meters, default value
                                     computed from geometry
         :param neighbours: The number of neigbours to consider for each grid
@@ -692,7 +695,8 @@ class D3CommonField(Field):
         :param segments: Number of segments to use when resampling.
                          If set to None an estimate will be calculated
 
-        Resampling options:
+        Options from pyresample, resampling:
+
         :param fill_value: Set undetermined pixels to this value.
                            If fill_value is None a masked array is returned
                            with undetermined pixels masked
@@ -826,7 +830,6 @@ class D3CommonField(Field):
         Be careful no check is done for consistency between the two fields
         geometry (except that dimensions match) nor their validities.
         """
-
         another = another_field_with_time_dimension
         d1 = self.getdata(d4=True)
         d2 = another.getdata(d4=True)
@@ -837,11 +840,12 @@ class D3CommonField(Field):
     def decumulate(self, center=False):
         """
         Decumulate cumulated fields (for a field with temporal dimension !).
-        If **center** is False, values at t are mean values between t-1 and t,
-        except at t=0 where it remains untouched.
-        If **center** is True, values at t are then (v[t-1, t] + v[t,t+1])/2.,
-        except for t=0 where it becomes v[0, 1]
-        and t=last where it remains the same.
+
+        :param center: - if False, values at t are mean values between t-1 and t,
+                         except at t=0 where it remains untouched.
+                       - if True, values at t are then (v[t-1, t] + v[t,t+1])/2.,
+                         except for t=0 where it becomes v[0, 1]
+                         and t=last where it remains the same.
         """
         if len(self.validity) > 1:
             data = self.getdata(d4=True)
@@ -866,14 +870,12 @@ class D3CommonField(Field):
         """
         Computes some basic statistics on the field, as a dict containing:
         {'min', 'max', 'mean', 'std', 'quadmean', 'nonzero'}.
-
         See each of these methods for details.
 
-        - *subzone*: optional, among ('C', 'CI'), for LAM fields only, plots
-          the data resp. on the C or C+I zone. \n
-          Default is no subzone, i.e. the whole field.
+        :param subzone: optional, among ('C', 'CI'), for LAM fields only, plots
+                        the data resp. on the C or C+I zone.
+                        Default is no subzone, i.e. the whole field.
         """
-
         return {'min':self.min(subzone=subzone),
                 'max':self.max(subzone=subzone),
                 'mean':self.mean(subzone=subzone),
@@ -988,22 +990,20 @@ class D3CommonField(Field):
         :param hist_kwargs: any keyword argument to be passed to
                             matplotlib's hist()
         """
-        # 0. Initializations
-        #####################
-        # 0.1 matplotlib initializations
         import matplotlib.pyplot as plt
+        # initializations
         plt.rc('font', family='serif')
         plt.rc('figure', figsize=config.plotsizes)
 
-        # 0.2 checkings
         if self.spectral:
             raise epygramError("please convert to gridpoint with sp2gp()" +
                                " method before plotting.")
-        #
         mask_outside = {'min':-config.mask_outside,
                         'max':config.mask_outside}
         if mask_threshold is not None:
             mask_outside.update(mask_threshold)
+
+        # get data
         data1d = numpy.ma.masked_outside(self.getdata(subzone=subzone),
                                          mask_outside['min'],
                                          mask_outside['max'])
@@ -1016,6 +1016,7 @@ class D3CommonField(Field):
                                                                      mask_outside['min'],
                                                                      mask_outside['max']))
                                for f in together_with]
+        # plot params
         if title is None:
             if len(data1d) == 1:
                 ax.set_title("\n".join([str(self.fid[sorted(self.fid.keys())[0]]),
@@ -1057,7 +1058,9 @@ class D3CommonField(Field):
                 hist_kwargs['bins'][0] = min([d.min() for d in data1d])
             if hist_kwargs['bins'][-1] == 'min':
                 hist_kwargs['bins'][-1] = max([d.max() for d in data1d])
+        # build histogram
         n, bins, patches = ax.hist(data1d, **hist_kwargs)
+        # finalize graphical options
         if len(bins) > 8:
             step = len(bins) // 7
             ticks = [b for b in bins[::step]]
@@ -1092,12 +1095,14 @@ class D3CommonField(Field):
 
     def global_shift_center(self, longitude_shift):
         """
-        For global RegLLGeometry grids only !
         Shifts the center of the geometry (and the data accordingly) by
-        *longitude_shift* (in degrees). *longitude_shift* has to be a multiple
-        of the grid's resolution in longitude.
-        """
+        *longitude_shift* (in degrees).
 
+        :param longitude_shift: has to be a multiple of the grid's resolution
+                                in longitude.
+
+        For global RegLLGeometry grids only.
+        """
         if self.geometry.name != 'regular_lonlat':
             raise epygramError("only for regular lonlat geometries.")
         self.geometry.global_shift_center(longitude_shift)
@@ -1116,19 +1121,15 @@ class D3CommonField(Field):
         """
         Writes in file a summary of the field.
 
-        Args: \n
-        - *out*: the output open file-like object (duck-typing: *out*.write()
-          only is needed).
-        - *vertical_geometry*: if True, writes the validity of the
-          field.
-        - *vertical_geometry*: if True, writes the vertical geometry of the
-          field.
-        - *cumulativeduration*: if False, not written.
-        - *arpifs_var_names*: if True, prints the equivalent 'arpifs' variable
-          names.
-        - *fid*: if True, prints the fid.
+        :param out: the output open file-like object.
+        :param vertical_geometry: if True, writes the validity of the field.
+        :param vertical_geometry: if True, writes the vertical geometry of the
+                                  field.
+        :param cumulativeduration: if False, not written.
+        :param arpifs_var_names: if True, prints the equivalent 'arpifs'
+                                 variable names.
+        :param fid: if True, prints the fid.
         """
-
         if self.spectral:
             spectral_geometry = self.spectral_geometry.truncation
         else:
@@ -1146,9 +1147,12 @@ class D3CommonField(Field):
 
     def dump_to_nc(self, filename, variablename=None, fidkey=None):
         """
-        Dumps the field in a netCDF file named *filename*, with variable
-        name being either *variablename* or self.fid[*fidkey*] or
-        self.fid['netCDF'] if existing.
+        Dumps the field in a netCDF file.
+
+        :param filename: filename to dump in
+        :param variablename: variable name in netCDF
+        :param fidkey: forces *variablename* to self.fid[*fidkey*];
+                       defaults to 'netCDF'
         """
         from epygram.formats import resource
 
@@ -1176,7 +1180,6 @@ class D3CommonField(Field):
         """
         Internal method to check compatibility of terms in operations on fields.
         """
-
         if isinstance(other, self.__class__):
             assert self.spectral == other.spectral, \
                    "cannot operate a spectral field with a non-spectral field."
@@ -1200,7 +1203,6 @@ class D3CommonField(Field):
         Returns a new Field whose data is the resulting operation,
         with 'fid' = {'op':'+'} and null validity.
         """
-
         newfield = self._add(other,
                              structure=self.structure,
                              geometry=self.geometry,
@@ -1216,7 +1218,6 @@ class D3CommonField(Field):
         Returns a new Field whose data is the resulting operation,
         with 'fid' = {'op':'*'} and null validity.
         """
-
         newfield = self._mul(other,
                              structure=self.structure,
                              geometry=self.geometry,
@@ -1232,7 +1233,6 @@ class D3CommonField(Field):
         Returns a new Field whose data is the resulting operation,
         with 'fid' = {'op':'-'} and null validity.
         """
-
         newfield = self._sub(other,
                              structure=self.structure,
                              geometry=self.geometry,
@@ -1248,7 +1248,6 @@ class D3CommonField(Field):
         Returns a new Field whose data is the resulting operation,
         with 'fid' = {'op':'/'} and null validity.
         """
-
         newfield = self._div(other,
                              structure=self.structure,
                              geometry=self.geometry,
@@ -1267,7 +1266,6 @@ class D3CommonField(Field):
         Returns a new Field whose data is the resulting operation,
         with 'fid' = {'op':'-'} and null validity.
         """
-
         newfield = self._rsub(other,
                               structure=self.structure,
                               geometry=self.geometry,
@@ -1283,7 +1281,6 @@ class D3CommonField(Field):
         Returns a new Field whose data is the resulting operation,
         with 'fid' = {'op':'/'} and null validity.
         """
-
         newfield = self._rdiv(other,
                               structure=self.structure,
                               geometry=self.geometry,
@@ -1342,7 +1339,6 @@ class D3Field(D3CommonField):
         The spectral transform subroutine is actually included in the spectral
         geometry's *sp2gp()* method.
         """
-
         if self.spectral:
             gpdims = self._get_gpdims_for_spectral_transforms()
             if self.geometry.rectangular_grid:
@@ -1367,10 +1363,10 @@ class D3Field(D3CommonField):
         *spectral_geometry* mandatorily passed as argument. Replaces data in
         place.
 
-        The spectral transform subroutine is actually included in the spectral
-        geometry's *gp2sp()* method.
+        :param spectral_geometry: instance of SpectralGeometry, actually
+                                  containing spectral transform subroutine (in
+                                  in its own *gp2sp()* method).
         """
-
         assert isinstance(spectral_geometry, SpectralGeometry)
 
         if not self.spectral:
@@ -1395,7 +1391,6 @@ class D3Field(D3CommonField):
         Build a dictionary containing gridpoint dimensions for the call to
         spectral transforms.
         """
-
         if self.geometry.rectangular_grid:
             # LAM
             gpdims = {}
@@ -1420,7 +1415,6 @@ class D3Field(D3CommonField):
         The spectral transform and derivatives subroutines are actually included
         in the spectral geometry's *compute_xy_spderivatives()* method.
         """
-
         if self.spectral:
             gpdims = self._get_gpdims_for_spectral_transforms()
             if self.geometry.rectangular_grid:
@@ -1457,11 +1451,12 @@ class D3Field(D3CommonField):
         Returns the field data, with 3D shape if the field is not spectral,
         2D if spectral.
 
-        - *subzone*: optional, among ('C', 'CI'), for LAM fields only, returns
-          the data resp. on the C or C+I zone.
-          Default is no subzone, i.e. the whole field.
-        - *d4*: if True,  returned values are shaped in a 4 dimensions array
-                if False, shape of returned values is determined with respect to geometry
+        :param subzone: optional, among ('C', 'CI'), for LAM fields only,
+                        returns the data resp. on the C or C+I zone.
+                        Default is no subzone, i.e. the whole field.
+        :param d4: - if True,  returned values are shaped in a 4 dimensions array
+                   - if False, shape of returned values is determined with
+                     respect to geometry.
 
         Shape of 4D data: \n
         - Rectangular grids:\n
@@ -1474,7 +1469,6 @@ class D3Field(D3CommonField):
           grid[t,k,-1,:Nj] is last (Southern) band of latitude (idem). \n
           with k the level, t the temporal dimension
         """
-
         data = self._data
         if not self.spectral and subzone is not None:
             if self.geometry.grid.get('LAMzone') is not None:
@@ -1490,7 +1484,8 @@ class D3Field(D3CommonField):
         """
         Sets field data, checking *data* to have the good shape according to
         geometry.
-        *data* dimensions should in any case be ordered in a subset of
+
+        :param data: dimensions should in any case be ordered in a subset of
         (t,z,y,x), or (t,z,n) if spectral (2D spectral coefficients must be 1D
         with ad hoc ordering, n being the total number of spectral
         coefficients).
@@ -1498,7 +1493,6 @@ class D3Field(D3CommonField):
         *data* may be 4D (3D if spectral) even if the field is not, as long as
         the above dimensions ordering is respected.
         """
-
         if not isinstance(data, numpy.ndarray):
             data = numpy.array(data)
 
@@ -1603,10 +1597,11 @@ class D3Field(D3CommonField):
     def select_subzone(self, subzone):
         """
         If a LAMzone defines the field, select only the *subzone* from it.
-        *subzone* among ('C', 'CI').
+
+        :param subzone: among ('C', 'CI').
+
         Warning: modifies the field and its geometry in place !
         """
-
         if self.geometry.grid.get('LAMzone') is not None:
             data = self.getdata(subzone=subzone)
             self._attributes['geometry'] = self.geometry.select_subzone(subzone)
@@ -1616,14 +1611,18 @@ class D3Field(D3CommonField):
                     one=True):
         """
         Returns the value of the field on point of indices (*i, j, k, t*).
-        Take care (*i, j, k, t*) is python-indexing, ranging from 0 to dimension - 1.
-        *k* is the index of the level (not a value in Pa or m...)
-        *t* is the index of the temporal dimension (not a validity object)
+        Take care (*i, j, k, t*) is python-indexing, ranging from 0 to
+        dimension-1.
+
+        :param i: the index in X direction
+        :param j: the index in Y direction
+        :param k: the index of the level (not a value in Pa or m...)
+        :param t: the index of the temporal dimension (not a validity object)
+
         *k* and *t* can be scalar even if *i* and *j* are arrays.
 
         If *one* is False, returns [value] instead of value.
         """
-
         if len(self.validity) > 1 and t is None:
             raise epygramError("*t* is mandatory when there are several validities")
         if self.geometry.datashape['k'] and k is None:
@@ -1674,10 +1673,10 @@ class D3Field(D3CommonField):
     def getlevel(self, level=None, k=None):
         """
         Returns a level of the field as a new field.
-        *level* is the requested level expressed in coordinate value (Pa, m...)
-        *k* is the index of the requested level
-        """
 
+        :param level: the requested level expressed in coordinate value (Pa, m...)
+        :param k: the index of the requested level
+        """
         if k is None and level is None:
             raise epygramError("You must give k or level.")
         if k is not None and level is not None:
@@ -1738,11 +1737,11 @@ class D3Field(D3CommonField):
         Returns the field restrained to one of its temporal validity as a new
         field.
 
-        *index_or_validity* can be either a :class:`epygram.base.FieldValidity`
-        instance or the index of the requested validity in the field's
-        FieldValidityList.
+        :param index_or_validity: can be either a
+                                  :class:`epygram.base.FieldValidity` instance
+                                  or the index of the requested validity in the
+                                  field's FieldValidityList.
         """
-
         assert isinstance(index_or_validity, FieldValidity) or isinstance(index_or_validity, int), \
                "index_or_validity* should be either a FieldValidity instance or an int."
         if isinstance(index_or_validity, FieldValidity):
@@ -1801,12 +1800,7 @@ class D3VirtualField(D3CommonField):
     )
 
     def __init__(self, *args, **kwargs):
-        """
-        Constructor. See its footprint for arguments.
-        """
-
         super(D3VirtualField, self).__init__(*args, **kwargs)
-
         if len(self.fieldset) != 0:
             if self.resource is not None or self.resource_fids != FPList():
                 raise epygramError("You cannot set fieldset and (resource or resource_fids) at the same time.")
@@ -1986,11 +1980,12 @@ class D3VirtualField(D3CommonField):
     def gp2sp(self, spectral_geometry):
         """
         Transforms the gridpoint field into spectral space, according to the
-        *spectral geometry* mandatorily passed as argument. Replaces data in
+        *spectral_geometry* mandatorily passed as argument. Replaces data in
         place.
 
-        The spectral transform subroutine is actually included in the spectral
-        geometry's *gp2sp()* method.
+        :param spectral_geometry: instance of SpectralGeometry, actually
+                                  containing spectral transform subroutine (in
+                                  in its own *gp2sp()* method).
         """
         self._spectral_geometry = spectral_geometry
         if self._mode == 'resource':
@@ -2004,11 +1999,12 @@ class D3VirtualField(D3CommonField):
         Returns the field data, with 3D shape if the field is not spectral,
         2D if spectral.
 
-        - *subzone*: optional, among ('C', 'CI'), for LAM fields only, returns
-          the data resp. on the C or C+I zone.
-          Default is no subzone, i.e. the whole field.
-        - *d4*: if True,  returned values are shaped in a 4 dimensions array
-                if False, shape of returned values is determined with respect to geometry
+        :param subzone: optional, among ('C', 'CI'), for LAM fields only,
+                        returns the data resp. on the C or C+I zone.
+                        Default is no subzone, i.e. the whole field.
+        :param d4: - if True,  returned values are shaped in a 4 dimensions array
+                   - if False, shape of returned values is determined with
+                     respect to geometry
 
         Shape of 3D data: \n
         - Rectangular grids:\n
@@ -2021,7 +2017,6 @@ class D3VirtualField(D3CommonField):
           grid[k,-1,:Nj] is last (Southern) band of latitude (idem). \n
           with k the level
         """
-
         dataList = []
         concat = numpy.concatenate
         arr = numpy.array
@@ -2058,14 +2053,18 @@ class D3VirtualField(D3CommonField):
                     one=True):
         """
         Returns the value of the field on point of indices (*i, j, k, t*).
-        Take care (*i, j, k, t*) is python-indexing, ranging from 0 to dimension - 1.
-        *k* is the index of the level (not a value in Pa or m...)
-        *t* is the index of the temporal dimension (not a validity object)
+        Take care (*i, j, k, t*) is python-indexing, ranging from 0 to
+        dimension-1.
+
+        :param i: the index in X direction
+        :param j: the index in Y direction
+        :param k: the index of the level (not a value in Pa or m...)
+        :param t: the index of the temporal dimension (not a validity object)
+
         *k* and *t* can be scalar even if *i* and *j* are arrays.
 
         If *one* is False, returns [value] instead of value.
         """
-
         if len(self.validity) > 1 and t is None:
             raise epygramError("*t* is mandatory when there are several validities")
         if self.geometry.datashape['k'] and k is None:
@@ -2128,10 +2127,10 @@ class D3VirtualField(D3CommonField):
     def getlevel(self, level=None, k=None):
         """
         Returns a level of the field as a new field.
-        *level* is the requested level expressed in coordinate value (Pa, m...)
-        *k* is the index of the requested level
-        """
 
+        :param level: the requested level expressed in coordinate value (Pa, m...)
+        :param k: the index of the requested level
+        """
         if k is None and level is None:
             raise epygramError("You must give k or level.")
         if k is not None and level is not None:

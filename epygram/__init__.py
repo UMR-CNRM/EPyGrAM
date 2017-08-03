@@ -29,13 +29,19 @@ stuff for recompiling it on other platforms. Be aware to be recompiled, this
 library needs an *arpifs* pack pre-compiled with *gmkpack*, and *gribex*
 library.
 
-Other dependencies:
+Other dependencies,
+
+Mandatory:
 
 - :mod:`numpy`
+- :mod:`pyproj`
+
+Functional:
+
 - :mod:`matplotlib`
 - :mod:`mpl_toolkits.basemap`
-- :mod:`pyproj`
 - :mod:`scipy`
+- :mod:`pyresample` (optional)
 
 and (if according formats are activated):
 
@@ -175,12 +181,10 @@ def init_env(omp_num_threads=1, no_mpi=True, unlimited_stack=True, lfi_C=True):
     A function to modify execution environment (to be called early in
     execution).
 
-    Currently,\n
-    - environments variables:\n
-      - if *no_mpi*, DR_HOOK_NOT_MPI set to 1
-      - OMP_NUM_THREADS set to *omp_num_threads*
-      - LFI_HNDL_SPEC set to ':1' if *lfi_C*, to use the C version of LFI
-    - stack size unlimited on Bull supercomputers.
+    :param no_mpi: environment variable DR_HOOK_NOT_MPI set to 1
+    :param omp_num_threads: sets OMP_NUM_THREADS
+    :param lfi_C: if True, LFI_HNDL_SPEC set to ':1', to use the C version of LFI
+    :param unlimited_stack: stack size unlimited on Bull supercomputers.
     """
     import os
     import resource

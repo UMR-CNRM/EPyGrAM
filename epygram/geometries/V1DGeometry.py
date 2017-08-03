@@ -9,6 +9,8 @@ Contains the classes for Horizontal 2D geometries of fields.
 
 from __future__ import print_function, absolute_import, unicode_literals, division
 
+import sys
+
 from epygram import epygramError
 from epygram.util import write_formatted
 from .V2DGeometry import V2DUnstructuredGeometry
@@ -47,15 +49,12 @@ class V1DGeometry(V2DUnstructuredGeometry):
         """No meaning with a one-point geometry."""
         raise epygramError("this method has no meaning with a one-point geometry.")
 
-    def _what_grid(self, out):
+    def _what_grid(self, out=sys.stdout):
         """
         Writes in file a summary of the grid of the field.
 
-        Args: \n
-        - *out*: the output open file-like object (duck-typing: *out*.write()
-          only is needed).
+        :param out: the output open file-like object
         """
-
         (lons, lats) = (self.grid['longitudes'], self.grid['latitudes'])
         write_formatted(out, "Kind of Geometry", 'Unstructured')
         write_formatted(out, "Longitude in deg", lons[0])

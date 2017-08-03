@@ -11,7 +11,7 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 
 from footprints import proxy as fpx
 
-from .H2DGeometry import H2DGeometry, H2DUnstructuredGeometry
+from .H2DGeometry import H2DGeometry
 from .D3Geometry import D3Geometry
 from .VGeometry import VGeometry
 from .V1DGeometry import V1DGeometry
@@ -27,6 +27,14 @@ PV = 109
 HybridH = 118
 HybridP = 119
 
+#: Mapping of vertical coordinates
+vertical_coordinates = {'Pressure':Pressure,
+                        'Altitude':Altitude,
+                        'Height':Height,
+                        'PV':PV,
+                        'HybridH':HybridH,
+                        'HybridP':HybridP}
+
 
 def build_surf_VGeometry():
     """Build a surface vertical geometry."""
@@ -34,7 +42,12 @@ def build_surf_VGeometry():
 
 
 def build_geometry(help_on=None, **kwargs):
-    """Proxy to build geometry from scratch."""
+    """
+    Proxy to build geometry from scratch.
+    All arguments are to be given to build geometry.
+
+    :param help_on: name of the attribute to have some help on.
+    """
     g = fpx.geometry(**kwargs)
     if g is None and help_on is not None:
         print('H' * 80)

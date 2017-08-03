@@ -4,10 +4,14 @@
 .. automodule:: epygram.args_catalog
    :synopsis: Catalog of command-line arguments
 
+-----------------------------------------------------------
+
 Functions
 .........
 
 .. autofunction:: add_arg_to_parser
+
+-----------------------------------------------------------
 
 Catalogs
 ........

@@ -5,8 +5,8 @@
 # http://www.cecill.info
 
 from __future__ import print_function, absolute_import, unicode_literals, division
-
 import six
+
 import argparse
 import sys
 from footprints import FPDict
@@ -14,10 +14,10 @@ from footprints import FPDict
 import epygram
 from epygram import epylog
 from epygram.util import write_formatted_table
-from epygram.args_catalog import add_arg_to_parser, \
-                                 files_management, fields_management, \
-                                 misc_options, runtime_options, \
-                                 extraction_options, output_options
+from epygram.args_catalog import (add_arg_to_parser,
+                                  files_management, fields_management,
+                                  misc_options, runtime_options,
+                                  extraction_options, output_options)
 
 
 def main(filename,
@@ -35,33 +35,33 @@ def main(filename,
          external_distance=None,
          outputfilename=None):
     """
-    Args:
-        filename: name of the file to be processed.
-        fieldseed: either a string or a list of strings, used as a seed for
+    Extract point.
+
+    :param filename: name of the file to be processed.
+    :param fieldseed: either a string or a list of strings, used as a seed for
                    generating the list of fields to be processed.
-        coordinates: (lon, lat) coordinates (in °) of the point to be extracted.
-        refname: name of the reference file to be compared to.
-        diffonly: if True, only prints the difference.
-        pressure_unit_hpa: converts FA log(pressure) fields to hPa.
-        operation: makes the requested operation
+    :param coordinates: (lon, lat) coordinates (in °) of the point to be extracted.
+    :param refname: name of the reference file to be compared to.
+    :param diffonly: if True, only prints the difference.
+    :param pressure_unit_hpa: converts FA log(pressure) fields to hPa.
+    :param operation: makes the requested operation
                    (e.g. {'operation':'-','scalar':273.15} or
                    {'operation':'exp'}) on the field.
-        interpolation: kind of interpolation from grid to coordinates, among
+    :param interpolation: kind of interpolation from grid to coordinates, among
                        ('nearest', 'linear', 'cubic').
-        precision: number of digits for output fields values.
-        lonlat_precision: number of digits for output lon/lat values.
-        stdoutput: if True, output is redirected to stdout.
-        grib_short_fid: if True, condense GRIB fid.
-        external_distance: can be a dict containing the target point value
+    :param precision: number of digits for output fields values.
+    :param lonlat_precision: number of digits for output lon/lat values.
+    :param stdoutput: if True, output is redirected to stdout.
+    :param grib_short_fid: if True, condense GRIB fid.
+    :param external_distance: can be a dict containing the target point value
                            and an additional field fid, to which field the distance
                            for computing nearest point
                            is computed within the 4 horizontally nearest points; e.g.
                            {'target_value':4810, 'external_field':an_additional_fid}.
                            If so, the nearest point is selected with
                            distance = |target_value - external_field.data|
-        outputfilename: specify an output filename.
+    :param outputfilename: specify an output filename.
     """
-
     resource = epygram.formats.resource(filename, openmode='r')
     if resource.format not in ('GRIB', 'FA', 'LFI'):
         epylog.warning(" ".join(["tool NOT TESTED with format",
@@ -255,8 +255,8 @@ def main(filename,
 
 if __name__ == '__main__':
 
-    ### 1. Parse arguments
-    ######################
+    # 1. Parse arguments
+    ####################
     parser = argparse.ArgumentParser(description="An EPyGrAM tool for extracting from a resource the value of meteorological fields\
                                                   on a geographical point.",
                                      epilog='End of help for: %(prog)s (EPyGrAM v' + epygram.__version__ + ')')
@@ -282,8 +282,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    ### 2. Initializations
-    ######################
+    # 2. Initializations
+    ####################
     epygram.init_env()
     # 2.0 logs
     epylog.setLevel('WARNING')
@@ -334,8 +334,8 @@ if __name__ == '__main__':
     else:
         fieldseed = None
 
-    ### 3. Main
-    ###########
+    # 3. Main
+    #########
     main(six.u(args.filename),
          fieldseed,
          coordinates,
@@ -350,7 +350,3 @@ if __name__ == '__main__':
          grib_short_fid=args.grib_short_fid,
          external_distance=external_distance,
          outputfilename=args.outputfilename)
-
-###########
-### END ###
-###########

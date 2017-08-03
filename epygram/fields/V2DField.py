@@ -13,9 +13,9 @@ import numpy
 
 import footprints
 
-from .D3Field import D3Field, D3CommonField, D3VirtualField
 from epygram import config, util, epygramError
 from epygram.geometries import V2DGeometry
+from .D3Field import D3Field, D3CommonField, D3VirtualField
 
 epylog = footprints.loggers.getLogger(__name__)
 
@@ -67,8 +67,7 @@ class V2DCommonField(D3CommonField):
         """
         Makes a simple (profile) plot of the field.
 
-        Args: \n
-        - *over* = any existing figure and/or ax to be used for the
+        :param over: any existing figure and/or ax to be used for the
           plot, given as a tuple (fig, ax), with None for
           missing objects. *fig* is the frame of the
           matplotlib figure, containing eventually several
@@ -76,46 +75,45 @@ class V2DCommonField(D3CommonField):
           which the drawing is done. When given (is not None),
           these objects must be coherent, i.e. ax being one of
           the fig axes.
-        - *colorbar_over*: an optional existing ax to plot the colorbar on.
-        - *title* = title for the plot.
-        - *fidkey* = type of fid for entitling the plot with *fid[fidkey]*,
+        :param colorbar_over: an optional existing ax to plot the colorbar on.
+        :param title: title for the plot.
+        :param fidkey: type of fid for entitling the plot with *fid[fidkey]*,
                      if title is *None*;
                      if *None*, labels with raw fid.
-        - *logscale* = to set Y logarithmic scale
-        - *minmax*: defines the min and max values for the plot colorbar. \n
+        :param logscale: to set Y logarithmic scale
+        :param minmax: defines the min and max values for the plot colorbar. \n
           Syntax: [min, max]. [0.0, max] also works. Default is min/max of the
           field.
-        - *graphicmode*: among ('colorshades', 'contourlines').
-        - *levelsnumber*: number of levels for contours and colorbar.
-        - *colormap*: name of the **matplotlib** colormap to use.
-        - *center_cmap_on_0*: aligns the colormap center on the value 0.
-        - *colorbar*: if *False*, hide colorbar the plot; else, defines the
+        :param graphicmode: among ('colorshades', 'contourlines').
+        :param levelsnumber: number of levels for contours and colorbar.
+        :param colormap: name of the **matplotlib** colormap to use.
+        :param center_cmap_on_0: aligns the colormap center on the value 0.
+        :param colorbar: if *False*, hide colorbar the plot; else, defines the
           colorbar position, among ('bottom', 'right'). Defaults to 'right'.
-        - *zoom*: a dict containing optional limits to zoom on the plot. \n
+        :param zoom: a dict containing optional limits to zoom on the plot. \n
           Syntax: e.g. {'ymax':500, ...}.
-        - *minmax_in_title*: if True and minmax is not None, adds min and max
+        :param minmax_in_title: if True and minmax is not None, adds min and max
           values in title
-        - *contourcolor*: color or colormap to be used for 'contourlines'
+        :param contourcolor: color or colormap to be used for 'contourlines'
           graphicmode. It can be either a legal html color name, or a colormap
           name.
-        - *contourwidth*: width of contours for 'contourlines' graphicmode.
-        - *contourlabel*: displays labels on contours.
-        - *existingfigure*: to plot the field over an existing figure (e.g.
+        :param contourwidth: width of contours for 'contourlines' graphicmode.
+        :param contourlabel: displays labels on contours.
+        :param existingfigure: to plot the field over an existing figure (e.g.
           contourlines over colorshades).
           Be aware that no check is done between the *existingfigure* geometry
           and either the field's one: there might be inconsistency.
-        - *x_is*: abscissa to be among:
+        :param x_is: abscissa to be among:
           - 'distance': distance from first point of transect
           - 'lon': longitude of points
           - 'lat': latitude of points
-        - *mask_threshold*: dict with min and/or max value(s) to mask outside.
+        :param mask_threshold: dict with min and/or max value(s) to mask outside.
 
         Warning: requires **matplotlib**.
         """
-
         if len(self.validity) != 1:
             raise epygramError("plotfield can handle only field with one validity.")
-        
+
         import matplotlib.pyplot as plt
         from mpl_toolkits.axes_grid1 import make_axes_locatable
         plt.rc('font', family='serif')
@@ -202,9 +200,6 @@ class V2DCommonField(D3CommonField):
         if graphicmode == 'colorshades':
             pf = ax.contourf(x, z, data, levels, cmap=colormap,
                              vmin=vmin, vmax=vmax)
-
-
-
             if colorbar:
                     if colorbar_over is None:
                         cax = make_axes_locatable(ax).append_axes(colorbar,
@@ -280,7 +275,11 @@ class V2DCommonField(D3CommonField):
 
         return (fig, ax)
 
-    def plotanimation(self, title='__auto__', repeat=False, interval=1000, **kwargs):
+    def plotanimation(self,
+                      title='__auto__',
+                      repeat=False,
+                      interval=1000,
+                      **kwargs):
         """
         Plot the field with animation with regards to time dimension.
         Returns a :class:`matplotlib.animation.FuncAnimation`.
@@ -288,13 +287,11 @@ class V2DCommonField(D3CommonField):
         In addition to those specified below, all :meth:`plotfield` method
         arguments can be provided.
 
-        Args:\n
-        - *title* = title for the plot. '__auto__' (default) will print
+        :param title: title for the plot. '__auto__' (default) will print
           the current validity of the time frame.
-        - *repeat*: to repeat animation
-        - *interval*: number of milliseconds between two validities
+        :param repeat: to repeat animation
+        :param interval: number of milliseconds between two validities
         """
-
         import matplotlib.animation as animation
 
         if len(self.validity) == 1:
@@ -339,6 +336,7 @@ class V2DCommonField(D3CommonField):
 
         return anim
 
+
 class V2DField(V2DCommonField, D3Field):
     """
     Vertical 2-Dimension (section) real field class.
@@ -358,6 +356,7 @@ class V2DField(V2DCommonField, D3Field):
                 type=V2DGeometry),
         )
     )
+
 
 class V2DVirtualField(V2DCommonField, D3VirtualField):
     """

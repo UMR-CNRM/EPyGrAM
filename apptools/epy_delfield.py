@@ -5,16 +5,16 @@
 # http://www.cecill.info
 
 from __future__ import print_function, absolute_import, unicode_literals, division
-
 import six
+
 import argparse
 
 import epygram
 from epygram import epylog, epygramError
 from epygram.util import printstatus
-from epygram.args_catalog import add_arg_to_parser, \
-                                 files_management, fields_management, \
-                                 runtime_options
+from epygram.args_catalog import (add_arg_to_parser,
+                                  files_management, fields_management,
+                                  runtime_options)
 
 
 def main(filename, fieldseed,
@@ -22,17 +22,17 @@ def main(filename, fieldseed,
          progressmode=None,
          in_place=False):
     """
-    Args:
-        filename: name of the file to be processed.
-        fieldseed: either a fid or a list of fid, used as a seed for
-                   generating the list of fields to be processed.
-        reverse: if True, reverse the field selection: deletes all but
-                 selected fields.
-        progressmode: among ('verbose', 'percentage', None)
-        in_place: if True, the field(s) is(are) deleted "in place",
-                  not in a new file.
-    """
+    Delete fields.
 
+    :param filename: name of the file to be processed.
+    :param fieldseed: either a fid or a list of fid, used as a seed for
+                      generating the list of fields to be processed.
+    :param reverse: if True, reverse the field selection: deletes all but
+                    selected fields.
+    :param progressmode: among ('verbose', 'percentage', None)
+    :param in_place: if True, the field(s) is(are) deleted "in place",
+                     not in a new file.
+    """
     source = epygram.formats.resource(filename, openmode='a')
     fidlist = source.find_fields_in_resource(seed=fieldseed)
     if source.format not in ('GRIB', 'FA', 'LFI'):
@@ -114,8 +114,8 @@ def main(filename, fieldseed,
 
 if __name__ == '__main__':
 
-    # ## 1. Parse arguments
-    ######################
+    # 1. Parse arguments
+    ####################
     parser = argparse.ArgumentParser(description='An EPyGrAM tool for removing field(s) from a resource.',
                                      epilog='End of help for: %(prog)s (EPyGrAM v' + epygram.__version__ + ')')
 
@@ -131,8 +131,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # ## 2. Initializations
-    ######################
+    # 2. Initializations
+    ####################
     epygram.init_env()
     # 2.0 logs
     epylog.setLevel('WARNING')
@@ -159,13 +159,9 @@ if __name__ == '__main__':
     else:
         fieldseed = None
 
-    # ## 3. Main
-    ###########
+    # 3. Main
+    #########
     main(six.u(args.filename), fieldseed,
          reverse=args.reverse,
          progressmode=progressmode,
          in_place=args.in_place)
-
-###########
-### END ###
-###########

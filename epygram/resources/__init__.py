@@ -16,30 +16,49 @@ Module contains:
 """
 
 from __future__ import print_function, absolute_import, unicode_literals, division
+import six
+
+from footprints import proxy as fpx
 
 from epygram import epygramError
 from epygram.base import Resource
+
+
+class open_and_close_resource(object):
+    """Context manager for automatically open/close resources."""
+    def __init__(self, r):
+        """
+        :param r: resource to open
+        """
+        self.r = r
+
+    def __enter__(self):
+        self.r.open()
+
+    def __exit__(self, t, v, tbk):
+        self.r.close()
+
+
 from .FileResource import FileResource
 from .MultiValiditiesResource import MultiValiditiesResource
 from .CombineLevelsResource import CombineLevelsResource
 from .SubdomainResource import SubdomainResource
+
 
 def meta_resource(filenames_or_resources, openmode, rtype):
     """
     Factory for meta resources, such as MultiValiditiesResource or
     CombineLevelsResource.
 
-    *filenames_or_resources* can be either a filename or a list of,
-                             or a resource or a list of.
-    *openmode*: among 'r', 'w', 'a'
-    *rtype*: resource type, e.g.:
-             'MV' for a MultiValiditiesResource,
-             'CL' for a CombineLevelsResource
-             'MV+CL' for a composition of both (should be similar to CL+MV)
+    :param filenames_or_resources: can be either a filename or a list of,
+                                   or a resource or a list of.
+    :param openmode: among 'r', 'w', 'a'
+    :param rtype: resource type, e.g.:\n
+                  - 'MV' for a MultiValiditiesResource,
+                  - 'CL' for a CombineLevelsResource
+                  - 'MV+CL' for a composition of both (should be similar to CL+MV)
     """
-    import six
     from epygram.formats import resource
-    from footprints import proxy as fpx
 
     if '+' in rtype and len(rtype.split('+')) > 2:
         raise NotImplementedError('more than one composition in *rtype*.')

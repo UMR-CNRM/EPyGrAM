@@ -1,8 +1,8 @@
-Formats
-=======
+:mod:`epygram.formats` --- Formats
+==================================
 
-:Release: |release|
-:Date: |today|
+.. automodule:: epygram.formats
+   :synopsis: juggling with for
 
 .. toctree::
    :maxdepth: 3
@@ -17,9 +17,11 @@ Formats
    GRIB
    grib_utilities
 
-.. automodule:: epygram.formats
-   :synopsis: juggling with formats
+-----------------------------------------------------------
    
 .. autofunction:: guess
+
+-----------------------------------------------------------
+
 .. autofunction:: resource
-#.. autofunction:: fid_converter
+

@@ -5,19 +5,19 @@
 # http://www.cecill.info
 
 from __future__ import print_function, absolute_import, unicode_literals, division
-
 import six
+
 import argparse
 
 import epygram
 from epygram import epylog, epygramError
 
 import matplotlib.pyplot as plt
-from epygram.args_catalog import add_arg_to_parser, \
-                                 files_management, fields_management, \
-                                 misc_options, output_options, \
-                                 runtime_options, graphical_options, \
-                                 extraction_options
+from epygram.args_catalog import (add_arg_to_parser,
+                                  files_management, fields_management,
+                                  misc_options, output_options,
+                                  runtime_options, graphical_options,
+                                  extraction_options)
 
 
 def main(filename,
@@ -50,49 +50,49 @@ def main(filename,
          section_abscissa='distance',
          mask_threshold=None):
     """
-    Args:
-        filename: name of the file to be processed.
-        fieldseed: field identifier.
-        starting_point: (lon, lat) coordinates of the starting point of section.
-        ending_point: (lon, lat) coordinates of the ending point of section.
-        refname: name of the reference file to be compared to.
-        diffonly: if True, only plots the difference field.
-        points_number: specific number of points on the transect.
-        resolution: resolution of the transect.
-        Yconvert: among ('pressure', 'height', 'altitude'),
+    Extract and plot section.
+
+    :param filename: name of the file to be processed.
+    :param fieldseed: field identifier.
+    :param starting_point: (lon, lat) coordinates of the starting point of section.
+    :param ending_point: (lon, lat) coordinates of the ending point of section.
+    :param refname: name of the reference file to be compared to.
+    :param diffonly: if True, only plots the difference field.
+    :param points_number: specific number of points on the transect.
+    :param resolution: resolution of the transect.
+    :param Yconvert: among ('pressure', 'height', 'altitude'),
                   to convert the vertical coordinate.
                   For height/altitude, implies the read of T and q
                   profiles and optionally pressure departure, hydrometeors.
-        interpolation: kind of interpolation from grid to coordinates, among
+    :param interpolation: kind of interpolation from grid to coordinates, among
                        ('nearest', 'linear', 'cubic').
-        cheap_height: if True, do not take hydrometeors nor pressure departure
+    :param cheap_height: if True, do not take hydrometeors nor pressure departure
                       into account for computing height from pressure.
-        operation: makes the requested operation
+    :param operation: makes the requested operation
                    (e.g. {'operation':'-','scalar':273.15} or
                    {'operation':'exp'}) on the field before plot.
-        diffoperation: makes the requested operation
+    :param diffoperation: makes the requested operation
                        (e.g. {'operation':'-','scalar':273.15} or
                        {'operation':'exp'}) on the difference field before plot.
-        graphicmode: graphical display, among ('colorshades', 'contourlines',
+    :param graphicmode: graphical display, among ('colorshades', 'contourlines',
                      'points').
-        minmax: tuple giving (or not) min and max fields values to be plotted.
-        diffminmax: idem for difference fields.
-        levelsnumber: number of color discretization/isolines for fields plots.
-        difflevelsnumber: idem for difference fields.
-        colormap: name of the colormap for fields plots.
-        diffcolormap: idem for difference fields.
-        center_cmap_on_0: to center the colormap on 0.
-        diffcenter_cmap_on_0: NOT to center the diffcolormap on 0.
-        zoom: a dict(ymin, ymax) to restrain the plot.
-        legend: legend to be written over plot.
-        output: output format, among ('png', 'pdf', False).
-        outputfilename: specify an output filename for the section (completed
+    :param minmax: tuple giving (or not) min and max fields values to be plotted.
+    :param diffminmax: idem for difference fields.
+    :param levelsnumber: number of color discretization/isolines for fields plots.
+    :param difflevelsnumber: idem for difference fields.
+    :param colormap: name of the colormap for fields plots.
+    :param diffcolormap: idem for difference fields.
+    :param center_cmap_on_0: to center the colormap on 0.
+    :param diffcenter_cmap_on_0: NOT to center the diffcolormap on 0.
+    :param zoom: a dict(ymin, ymax) to restrain the plot.
+    :param legend: legend to be written over plot.
+    :param output: output format, among ('png', 'pdf', False).
+    :param outputfilename: specify an output filename for the section (completed
                         by the requested output format).
-        figures_dpi: quality of saved figures.
-        section_abscissa: abscissa of section, among ('distance', 'lon', 'lat').
-        mask_threshold: dict with min and/or max value(s) to mask outside.
+    :param figures_dpi: quality of saved figures.
+    :param section_abscissa: abscissa of section, among ('distance', 'lon', 'lat').
+    :param mask_threshold: dict with min and/or max value(s) to mask outside.
     """
-
     if outputfilename and not output:
         raise epygramError('*output* format must be defined if outputfilename is supplied.')
 
@@ -219,8 +219,8 @@ def main(filename,
 
 if __name__ == '__main__':
 
-    ### 1. Parse arguments
-    ######################
+    # 1. Parse arguments
+    ####################
     parser = argparse.ArgumentParser(description='An EPyGrAM tool for extracting (and plotting) vertical sections \
                                                   of meteorological fields from a resource.',
                                      epilog='End of help for: %(prog)s (EPyGrAM v' + epygram.__version__ + ')')
@@ -267,8 +267,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    ### 2. Initializations
-    ######################
+    # 2. Initializations
+    ####################
     epygram.init_env()
     # 2.0 logs
     epylog.setLevel('WARNING')
@@ -321,8 +321,8 @@ if __name__ == '__main__':
     # 2.2 field to be processed
     fieldseed = args.field
 
-    ### 3. Main
-    ###########
+    # 3. Main
+    #########
     main(six.u(args.filename),
          fieldseed,
          starting_point,
@@ -352,7 +352,3 @@ if __name__ == '__main__':
          figures_dpi=args.figures_dpi,
          section_abscissa=args.section_abscissa,
          mask_threshold=mask_threshold)
-
-###########
-### END ###
-###########

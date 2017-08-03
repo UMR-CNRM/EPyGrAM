@@ -14,8 +14,8 @@ import epyweb
 
 if __name__ == '__main__':
 
-    ### 1. Parse arguments
-    ######################
+    # 1. Parse arguments
+    ####################
     parser = argparse.ArgumentParser(description='A web interface for plotting with epygram and vortex.',
                                      epilog='End of help for: %(prog)s (EPyGrAM v' + epygram.__version__ + ')')
     parser.add_argument('-o',
@@ -31,15 +31,11 @@ if __name__ == '__main__':
     add_arg_to_parser(parser, runtime_options['verbose'])
     args = parser.parse_args()
 
-    ### 2. Initializations
-    ######################
+    # 2. Initializations
+    ####################
 
-    ### 3. Main
-    ###########
+    # 3. Main
+    #########
     epyweb.main(open_browser=args.open_browser,
                 port=args.port,
                 verbose=args.verbose)
-
-###########
-### END ###
-###########

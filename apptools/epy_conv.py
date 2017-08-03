@@ -5,22 +5,21 @@
 # http://www.cecill.info
 
 from __future__ import print_function, absolute_import, unicode_literals, division
+import six
 
 import argparse
 import time
 import copy
-import six
 
 import footprints
 from footprints import FPDict, FPList
 import taylorism
-# import interrupt
 
 import epygram
-from epygram.args_catalog import add_arg_to_parser, \
-                                 files_management, fields_management, \
-                                 misc_options, runtime_options, \
-                                 operational_options, output_options
+from epygram.args_catalog import (add_arg_to_parser,
+                                  files_management, fields_management,
+                                  misc_options, runtime_options,
+                                  operational_options, output_options)
 from epygram.formats import grib_utilities
 
 # taylorism.interrupt.logger.setLevel('WARNING')
@@ -68,17 +67,19 @@ def convert(filename,
             progressmode=None,
             **kwargs):
     """
-    Args:
-        filename: name of the file to be processed.
-        output_format_suffix: among 'grb' (GRIB2), 'nc' (netCDF4), 'geo' (GeoPoints)
-        get_write_kwargs: function that gives the necessary write options
-        fieldseed: either a fid or a list of fid, used as a seed for
+    Conversion function.
+
+    :param filename: name of the file to be processed.
+    :param output_format_suffix: among 'grb' (GRIB2), 'nc' (netCDF4), 'geo' (GeoPoints)
+    :param get_write_kwargs: function that gives the necessary write options
+    :param fieldseed: either a fid or a list of fid, used as a seed for
                    generating the list of fields to be processed.
-        subzone: LAM zone among ('C', 'CI', None).
-        grib_short_fid: condense GRIB fid as string, in case converting a GRIB
+    :param subzone: LAM zone among ('C', 'CI', None).
+    :param grib_short_fid: condense GRIB fid as string, in case converting a GRIB
                         file.
-        progressmode: among ('verbose', 'percentage', None)
-        other kwargs are specific to output formats, and passed to
+    :param progressmode: among ('verbose', 'percentage', None)
+
+    Other kwargs are specific to output formats, and passed to
                      get_write_kwargs(), wherein they can be handled whatever for...
     """
     t0 = time.time()
@@ -392,17 +393,18 @@ def main(filenames,
     Converts a series of files to *output_format_suffix*.
 
     Mandatory arguments:
-    - *filenames*: name(s) of the files to be processed
-    - *output_format_suffix*: among 'grb' (GRIB2), 'nc' (netCDF4), 'geo' (GeoPoints)
+
+    :param filenames: name(s) of the files to be processed
+    :param output_format_suffix: among 'grb' (GRIB2), 'nc' (netCDF4), 'geo' (GeoPoints)
 
     Technical named (optional) arguments:
-    - *threads_number*: parallelisation of files processing
-    - *progressmode*: among ('verbose', 'percentage', None)
+
+    :param threads_number: parallelisation of files processing
+    :param progressmode: among ('verbose', 'percentage', None)
 
     Other named arguments depend on the output format, and are defined in the
     Workers footprints attributes !
     """
-
     # build a dummy Converter of the right type
     dummy_converter = footprints.proxy.worker(filename='', output_format_suffix=output_format_suffix)
     instructions_keys = dummy_converter.footprint_attributes
@@ -426,8 +428,8 @@ def main(filenames,
 
 if __name__ == '__main__':
 
-    # ## 1. Parse arguments
-    ######################
+    # 1. Parse arguments
+    ####################
     parser = argparse.ArgumentParser(description='An EPyGrAM tool for converting file formats. \
                                                   Spectral fields are converted into gridpoints.',
                                      epilog='End of help for: %(prog)s (EPyGrAM v' + epygram.__version__ + ')')
@@ -462,8 +464,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # ## 2. Initializations
-    ######################
+    # 2. Initializations
+    ####################
     epygram.init_env()
     # 2.0 logs
     epylog.setLevel('WARNING')
@@ -510,8 +512,8 @@ if __name__ == '__main__':
     else:
         fieldseed = None
 
-    # ## 3. Main
-    ###########
+    # 3. Main
+    #########
     main([six.u(f) for f in args.filenames],
          args.output_format,
          # technical
@@ -533,9 +535,4 @@ if __name__ == '__main__':
          order=args.order,
          lonlat_precision=args.lonlat_precision,
          precision=args.precision,
-         llv=args.llv,
-         )
-
-###########
-### END ###
-###########
+         llv=args.llv)

@@ -26,9 +26,7 @@ import olive
 
 
 def set_defaults(**defaults):
-    """
-    Set defaults key/value pairs for get_resource().
-    """
+    """Set defaults key/value pairs for get_resource()."""
     if len(defaults) == 0:
         defaults = dict(model='arome',
                         cutoff='prod',
@@ -42,11 +40,12 @@ def set_defaults(**defaults):
 def hendrix_prestage(resource_paths, mail=None):
     """
     Puts a pre-staging request on *hendrix* for the given list of
-    resources **resource_paths**, and return the path to it.
+    resources **resource_paths**, and return the path to the request file.
 
-    If **mail** is given, used for informing about the request progress.
+    :param resource_paths: list of paths to requested resources
+    :param mail: if given, used for informing about the request progress.
 
-    Uses .netrc to connect to *hendrix*.
+    Uses ~/.netrc to connect to *hendrix*.
     """
     # connect to archive
     archive_name = 'hendrix'
@@ -62,8 +61,7 @@ def hendrix_prestage(resource_paths, mail=None):
     # build request
     stagedir = '/DemandeMig/ChargeEnEspaceRapide'
     if mail is not None:
-        import re
-        assert re.match('([a-zA-Z\-]+)\.([a-zA-Z-]+)\@meteo.fr', mail), \
+        assert re.match('([a-zA-Z\-]+)\.([a-zA-Z\-]+)\@meteo.fr', mail), \
                'invalid **mail** format: ' + mail
         request = ["#MAIL=" + mail + '\n', ]
     else:
@@ -84,25 +82,31 @@ def hendrix_prestage(resource_paths, mail=None):
     return ['/'.join([stagedir, staging_request])]
 
 
-def get_resources(getmode='epygram', uselocalcache=False, meta_rtype=None,
+def get_resources(getmode='epygram',
+                  uselocalcache=False,
+                  meta_rtype=None,
                   **description):
     """
     Get resources, given their description.
 
-    *getmode*: 'epygram' return the epygram resources
-               'locate' return the physical resolved location of the resource
-               'exist' return the physical resolved location of the resource and its existence
-               'fetch' fetches the resource in local, as filename *local*
-               'vortex' return the vortex data handler of the resource
-               'prestaging' puts a prestaging request for the resolved resources,
-                            on the archive system
-    *uselocalcache*: if True, store resources in a local cache (not
+    :param getmode: controls the action and returned object:\n
+                    - 'epygram' return the epygram resources
+                    - 'locate' return the physical resolved location of the
+                      resource
+                    - 'exist' return the physical resolved location of the
+                      resource and its existence
+                    - 'fetch' fetches the resource in local, as filename *local*
+                    - 'vortex' return the vortex data handler of the resource
+                    - 'prestaging' puts a prestaging request for the resolved
+                      resources, on the archive system
+    :param uselocalcache: if True, store resources in a local cache (not
                      automatically cleaned, take care) defined either (and by
                      priority order) in $MTOOL_STEP_CACHE, $MTOOLDIR, $FTDIR,
                      $WORKDIR, $TMPDIR.
-    *meta_rtype*: if not None and *getmode* == 'epygram', return the resource(s)
-                  as meta_resource. Cf. epygram.resources.meta_resources() for
-                  documentation.
+    :param meta_rtype: if not None and **getmode** is 'epygram', return the
+                       resource(s) as meta_resource.
+                       Cf. epygram.resources.meta_resources() for
+                       documentation.
 
     Examples:
 
@@ -240,19 +244,17 @@ def extractor(vortex_description,
               progressmode=None,
               nc_global_attributes=default_nc_global_attributes):
     """
-    Extract series of data on points.
+    Extract temporal series of points (and profiles for FA historical files) to
+    netCDF files.
 
     Series are either:
       - one series == one file per cutoff if **start_term* != **end_term**
       - one series == one file containing all cutoffs if **start_term* == **end_term**
 
-    Shall be extended to series of profiles later on.
-
-    Args:
+    Shall be extended to series of profiles for other formats later on.
 
     :param vortex_description: vortex description of the resources,
-                               incl. providers,
-                               excepted dates/terms
+                               incl. providers, excepted dates/terms
                                Example:
                                {'model':'arome',
                                 'vapp':'arome',
@@ -273,7 +275,7 @@ def extractor(vortex_description,
     :param end_cutoff: last cutoff of the series
     :param start_term: first term of the series (datetime.datetime instance)
     :param end_term: last term of the series
-    :param points_fields: dictionnary of fields to extract with options, e.g.
+    :param points_fields: dictionnary of fields to extract with options, e.g.:\n
                           {fid1:{'nc_name':nc_fid1,
                                  'nc_attributes':{'unit':...,
                                                   'comment':...,
@@ -283,14 +285,14 @@ def extractor(vortex_description,
                                  'reproject_wind_on_lonlat':False,
                                  },
                            fid2:...
-                           }
-                          'decumulate' can be absent==False, True,
-                          or 'center' for centered decumulation
-                          (cf. D3Field.decumulate for more details);
-                          'operation' is done after decumulation, if both
-                          present
-                          'reproject_wind_on_lonlat: FA only: reproject winds
-                          on lonlat axes (True by default)
+                           }\n
+                          - 'decumulate' can be absent==False, True,
+                            or 'center' for centered decumulation
+                            (cf. D3Field.decumulate for more details);
+                          - 'operation' is done after decumulation, if both
+                            present
+                          - 'reproject_wind_on_lonlat: FA only: reproject winds
+                            on lonlat axes (True by default)
     :param profiles_FAfields: like points_fields but for profiles,
                               but only for FA historic resources !
                               fids supposed to be 'S*PARAMETER'

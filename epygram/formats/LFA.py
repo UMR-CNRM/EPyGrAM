@@ -36,10 +36,6 @@ class LFA(FileResource):
     )
 
     def __init__(self, *args, **kwargs):
-        """
-        Constructor. See its footprint for arguments.
-        """
-
         self.isopen = False
         super(LFA, self).__init__(*args, **kwargs)
         if not wlfa.wlfatest(self.container.abspath):
@@ -51,12 +47,10 @@ class LFA(FileResource):
         """
         Opens the LFA in Fortran sense.
 
-        - *openmode*: optional, to open with a specific openmode, eventually
+        :param openmode: optional, to open with a specific openmode, eventually
           different from the one specified at initialization.
         """
-
         super(LFA, self).open(openmode=openmode)
-
         if self.openmode in ('r', 'a'):
             # open, getting logical unit
             if self.openmode == 'r':
@@ -73,7 +67,6 @@ class LFA(FileResource):
 
     def close(self):
         """Closes a LFA properly."""
-
         if self.isopen:
             try:
                 wlfa.wlfafer(self._unit)
@@ -93,11 +86,10 @@ class LFA(FileResource):
         Returns a list of the fields from resource whose name match the given
         *seed*.
 
-        - *seed*: might be a regular expression, a list of regular expressions
+        :param seed: might be a regular expression, a list of regular expressions
           or *None*. If *None* (default), returns the list of all fields in
           resource.
         """
-
         if seed is None:
             fieldslist = self.listfields()
         elif isinstance(seed, six.string_types):
@@ -115,8 +107,12 @@ class LFA(FileResource):
 
     @FileResource._openbeforedelayed
     def readfield(self, fieldname, getdata=True):
-        """Reads a field in resource."""
+        """
+        Reads a field in resource.
 
+        :param fieldname: name of the field to be read
+        :param getdata: if False, do not read the field data, only metadata.
+        """
         field = MiscField(fid={'LFA':fieldname})
         if getdata:
             (fieldtype, fieldlength) = wlfa.wlfacas(self._unit, fieldname)
@@ -163,7 +159,6 @@ class LFA(FileResource):
         Returns a list containing the LFA identifiers of all the fields of
         the resource.
         """
-
         return super(LFA, self).listfields()
 
     @FileResource._openbeforedelayed
@@ -171,7 +166,6 @@ class LFA(FileResource):
         """
         Returns a list containing the names of the fields in LFA.
         """
-
         (list_length, fieldslist) = wlfa.wlfalaft(self._unit,
                                                   config.LFA_max_num_fields,
                                                   config.LFA_maxstrlen)
@@ -186,10 +180,8 @@ class LFA(FileResource):
         """
         Writes in file a summary of the contents of the LFA.
 
-        Args: \n
-        - *out*: the output open file-like object (duck-typing: *out*.write()
-          only is needed).
-        - *sortfields*: **True** if the fields have to be sorted by type.
+        :param out: the output open file-like object
+        :param sortfields: **True** if the fields have to be sorted by type.
         """
         firstcolumn_width = 50
         secondcolumn_width = 16

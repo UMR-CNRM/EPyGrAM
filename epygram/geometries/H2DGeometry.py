@@ -10,10 +10,10 @@ Contains the classes for Horizontal 2D geometries of fields.
 from __future__ import print_function, absolute_import, unicode_literals, division
 
 from epygram import epygramError
-from .D3Geometry import D3Geometry, D3RectangularGridGeometry, \
-                        D3AcademicGeometry, D3RegLLGeometry, \
-                        D3ProjectedGeometry, D3GaussGeometry, \
-                        D3UnstructuredGeometry
+from .D3Geometry import (D3Geometry, D3RectangularGridGeometry,
+                         D3AcademicGeometry, D3RegLLGeometry,
+                         D3ProjectedGeometry, D3GaussGeometry,
+                         D3UnstructuredGeometry)
 
 
 class H2DGeometry(D3Geometry):

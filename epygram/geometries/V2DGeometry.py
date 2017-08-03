@@ -13,9 +13,9 @@ import sys
 
 from epygram import epygramError
 from epygram.util import separation_line, write_formatted
-from .D3Geometry import D3Geometry, D3RectangularGridGeometry, \
-                        D3UnstructuredGeometry, D3ProjectedGeometry, \
-                        D3AcademicGeometry
+from .D3Geometry import (D3Geometry, D3RectangularGridGeometry,
+                         D3UnstructuredGeometry, D3ProjectedGeometry,
+                         D3AcademicGeometry)
 
 
 class V2DGeometry(D3Geometry):
@@ -43,32 +43,23 @@ class V2DGeometry(D3Geometry):
         """
         Writes in file a summary of the geometry.
 
-        Args: \n
-        - *out*: the output open file-like object (duck-typing: *out*.write()
-          only is needed).
+        :param out: the output open file-like object
         """
-
         out.write("###########################\n")
         out.write("### HORIZONTAL GEOMETRY ###\n")
         out.write("###########################\n")
-
         self._what_grid_dimensions(out)
         self._what_grid(out)
         out.write(separation_line)
         out.write("\n")
-
         self.vcoordinate.what(out)
 
     def _what_grid(self, out):
         """
         Writes in file a summary of the grid of the field.
 
-        Args: \n
-        - *out*: the output open file-like object (duck-typing: *out*.write()
-          only is needed).
-
+        :param out: the output open file-like object
         """
-
         (lons, lats) = self.get_lonlat_grid()
         write_formatted(out, "Kind of Geometry", 'Unstructured')
         write_formatted(out, "Max Longitude in deg", lons.max())
@@ -117,7 +108,7 @@ class V2DAcademicGeometry(D3AcademicGeometry, V2DRectangularGridGeometry):
     _footprint = dict(
         attr=dict(
             structure=dict(
-                values=set(['V2D'])),  #inheritance priority problem
+                values=set(['V2D'])),  # inheritance priority problem
             name=dict(
                 values=set(['academic']))
         )

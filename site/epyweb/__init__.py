@@ -86,10 +86,11 @@ def main(open_browser=False,
          verbose=True):
     """
     Run the 'epyweb' local server.
-    If *open_browser*, open a web browser tab with 'epyweb' interface.
-    The *port* to be used for the server can be specified.
-    """
 
+    :param open_browser: if True, open a web browser tab with 'epyweb' interface
+    :param port: the port to be used for the server can be specified.
+    :param verbose: verbosity
+    """
     epygram.init_env()
     epylog.setLevel('WARNING')
     if verbose:

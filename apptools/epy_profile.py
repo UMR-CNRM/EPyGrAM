@@ -5,18 +5,18 @@
 # http://www.cecill.info
 
 from __future__ import print_function, absolute_import, unicode_literals, division
-
 import six
+
 import argparse
 import numpy
 
 import epygram
 from epygram import epylog
-from epygram.args_catalog import add_arg_to_parser, \
-                                 files_management, fields_management, \
-                                 misc_options, output_options, \
-                                 runtime_options, graphical_options, \
-                                 extraction_options
+from epygram.args_catalog import (add_arg_to_parser,
+                                  files_management, fields_management,
+                                  misc_options, output_options,
+                                  runtime_options, graphical_options,
+                                  extraction_options)
 from epygram.fields.V1DField import plotprofiles
 
 import matplotlib.pyplot as plt
@@ -43,48 +43,48 @@ def main(filename,
          external_distance=None,
          figures_dpi=epygram.config.default_figures_dpi):
     """
-    Args:
-        filename: name of the file to be processed.
-        fieldseed: either a string or a list of strings, used as a seed for
+    Extract and plot profiles.
+
+    :param filename: name of the file to be processed.
+    :param fieldseed: either a string or a list of strings, used as a seed for
                    generating the list of fields to be processed.
-        coordinates: (lon, lat) coordinates (in °) of the point to be extracted.
+    :param coordinates: (lon, lat) coordinates (in °) of the point to be extracted.
                      If None, make horizontally-averaged profile.
-        interpolation: kind of interpolation from grid to coordinates, among
+    :param interpolation: kind of interpolation from grid to coordinates, among
                        ('nearest', 'linear', 'cubic').
-        refname: name of the reference file to be compared to.
-        diffonly: if True, only plots the difference field.
-        operation: makes the requested operation
+    :param refname: name of the reference file to be compared to.
+    :param diffonly: if True, only plots the difference field.
+    :param operation: makes the requested operation
                    (e.g. {'operation':'-','operand':273.15} or
                    {'operation':'exp'}) on the field before plot.
-        diffoperation: makes the requested operation
+    :param diffoperation: makes the requested operation
                        (e.g. {'operation':'-','operand':273.15} or
                        {'operation':'exp'}) on the difference field before plot.
-        legend: legend of plot.
-        output: output format for graphics, among ('png', 'pdf', False).
-        outputfilename: specify an output filename for the profile.
+    :param legend: legend of plot.
+    :param output: output format for graphics, among ('png', 'pdf', False).
+    :param outputfilename: specify an output filename for the profile.
                         The graphical output, if requested, will be completed
                         by the requested output format.
-        zoom: a dict(ymin, ymax) to restrain the plot.
-        Yconvert: among ('pressure', 'height', 'altitude'),
+    :param zoom: a dict(ymin, ymax) to restrain the plot.
+    :param Yconvert: among ('pressure', 'height', 'altitude'),
                   to convert the vertical coordinate.
                   For height/altitude, implies the read of T and q
                   profiles and optionally pressure departure, hydrometeors.
-        cheap_height: if True, do not take hydrometeors nor pressure departure
+    :param cheap_height: if True, do not take hydrometeors nor pressure departure
                       into account for computing height from pressure.
-        noplot: if True, disable the plot of profiles.
-        unit: scientifical unit of plot.
-        logscale: if True, sets vertical logscale.
-        emagramlike: if True, tilts the Temperature axis "as an emagram".
-        external_distance: can be a dict containing the target point value
+    :param noplot: if True, disable the plot of profiles.
+    :param unit: scientifical unit of plot.
+    :param logscale: if True, sets vertical logscale.
+    :param emagramlike: if True, tilts the Temperature axis "as an emagram".
+    :param external_distance: can be a dict containing the target point value
                            and an additional field fid, to which field the distance
                            for computing nearest point
                            is computed within the 4 horizontally nearest points; e.g.
                            {'target_value':4810, 'external_field':an_additional_fid}.
                            If so, the nearest point is selected with
                            distance = |target_value - external_field.data|
-        figures_dpi: quality of saved figures.
+    :param figures_dpi: quality of saved figures.
     """
-
     resource = epygram.formats.resource(filename, openmode='r')
     if resource.format not in ('GRIB', 'FA', 'LFI'):
         epylog.warning(" ".join(["tool NOT TESTED with format",
@@ -263,8 +263,8 @@ def main(filename,
 
 if __name__ == '__main__':
 
-    ### 1. Parse arguments
-    ######################
+    # 1. Parse arguments
+    ####################
     parser = argparse.ArgumentParser(description='An EPyGrAM tool for extracting (and plotting) vertical profiles\
                                                   of meteorological fields from a resource.',
                                      epilog='End of help for: %(prog)s (EPyGrAM v' + epygram.__version__ + ')')
@@ -300,8 +300,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    ### 2. Initializations
-    ######################
+    # 2. Initializations
+    ####################
     epygram.init_env()
     # 2.0 logs
     epylog.setLevel('WARNING')
@@ -352,8 +352,8 @@ if __name__ == '__main__':
     # 2.2 field to be processed
     fieldseed = args.field
 
-    ### 3. Main
-    ###########
+    # 3. Main
+    #########
     main(six.u(args.filename),
          fieldseed,
          coordinates,
@@ -374,7 +374,3 @@ if __name__ == '__main__':
          emagramlike=args.emagramlike,
          external_distance=external_distance,
          figures_dpi=args.figures_dpi)
-
-###########
-### END ###
-###########

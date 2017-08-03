@@ -17,15 +17,7 @@ from footprints import FPList, FPDict, proxy as fpx
 from epygram import epygramError
 from epygram.util import fmtfid
 from epygram.base import Resource, FieldSet, FieldValidityList
-
-
-class _open_and_close(object):
-    def __init__(self, r):
-        self.r = r
-    def __enter__(self):
-        self.r.open()
-    def __exit__(self, t, v, tbk):
-        self.r.close()
+from . import open_and_close_resource
 
 
 class MultiValiditiesResource(Resource):
@@ -43,8 +35,6 @@ class MultiValiditiesResource(Resource):
     )
 
     def __init__(self, *args, **kwargs):
-        """Constructor. See its footprint for arguments."""
-
         super(Resource, self).__init__(*args, **kwargs)
 
         if len(self.resources) == 0:
@@ -59,8 +49,8 @@ class MultiValiditiesResource(Resource):
 
         self.format = "MultiValidities"
         self.lowLevelFormat = self.resources[0].format
-        
-        self.isopen = True #resource always appear to be open
+
+        self.isopen = True  # resource always appear to be open
 
 #    def open(self):
 #        """Opens all resources"""
@@ -70,7 +60,6 @@ class MultiValiditiesResource(Resource):
 
     def close(self):
         """Closes all resources."""
-
         for r in self.resources:
             try:
                 r.close()
@@ -79,10 +68,9 @@ class MultiValiditiesResource(Resource):
 
     def find_fields_in_resource(self, *args, **kwargs):
         """Call to find_fields_in_resource"""
-
         tmp = []
         for r in self.resources:
-            with _open_and_close(r):
+            with open_and_close_resource(r):
                 tmp.extend(r.find_fields_in_resource(*args, **kwargs))
         result = []
         for res in tmp:
@@ -92,11 +80,10 @@ class MultiValiditiesResource(Resource):
 
     def listfields(self, *args, **kwargs):
         """Call to listfields."""
-
         complete = 'complete' in kwargs and kwargs['complete']
         tmp = []
         for r in self.resources:
-            with _open_and_close(r):
+            with open_and_close_resource(r):
                 fidlist = r.listfields(*args, **kwargs)
                 if complete:
                     for fid in fidlist:
@@ -110,10 +97,9 @@ class MultiValiditiesResource(Resource):
 
     def sortfields(self, *args, **kwargs):
         """Call to sortfields"""
-
         tmp = {}
         for r in self.resources:
-            with _open_and_close(r):
+            with open_and_close_resource(r):
                 for k, v in r.sortfields(*args, **kwargs).items():
                     tmp[k] = tmp.get(k, []) + v
         result = {}
@@ -127,7 +113,7 @@ class MultiValiditiesResource(Resource):
         """
         fieldset = FieldSet()
         for r in self.resources:
-            with _open_and_close(r):
+            with open_and_close_resource(r):
                 fieldset.append(r.readfield(*args, **kwargs))
         return self._join_validities(fieldset, **kwargs)
 
@@ -140,10 +126,9 @@ class MultiValiditiesResource(Resource):
         """
         Extracts the profiles in the different resources and join the validities.
         """
-
         fieldset = FieldSet()
         for r in self.resources:
-            with _open_and_close(r):
+            with open_and_close_resource(r):
                 fieldset.append(r.extractprofile(*args, **kwargs))
         return self._join_validities(fieldset)
 
@@ -151,10 +136,9 @@ class MultiValiditiesResource(Resource):
         """
         Extracts the sections in the different resources and join the validities.
         """
-
         fieldset = FieldSet()
         for r in self.resources:
-            with _open_and_close(r):
+            with open_and_close_resource(r):
                 fieldset.append(r.extractsection(*args, **kwargs))
         return self._join_validities(fieldset)
 
@@ -163,7 +147,6 @@ class MultiValiditiesResource(Resource):
         """
         Returns the spectral_geometry
         """
-
         ref = self.resources[0].spectral_geometry
 
         if numpy.all([r.spectral_geometry == ref for r in self.resources]):
@@ -175,7 +158,6 @@ class MultiValiditiesResource(Resource):
         """
         Join the different fields
         """
-
         # Validities
         validities = {}
         for i in range(len(fieldset)):
@@ -244,7 +226,7 @@ class MultiValiditiesResource(Resource):
         if joinLevels:
             if spectral:
                 raise epygramError("Not sure how to merge vertical levels when spectral")
-            
+
             concat = numpy.concatenate
             newLevels = []
             for i in range(len(fieldset)):
@@ -252,7 +234,7 @@ class MultiValiditiesResource(Resource):
                 if isinstance(mylevel, numpy.ma.masked_array):
                     concat = numpy.ma.concatenate
                 newLevels.append(mylevel)
-            kwargs_vcoord['levels'] = list(concat(newLevels, axis=0).swapaxes(0,1).squeeze())
+            kwargs_vcoord['levels'] = list(concat(newLevels, axis=0).swapaxes(0, 1).squeeze())
             geometry.vcoordinate = fpx.geometry(**kwargs_vcoord)
         else:
             geometry.vcoordinate = fpx.geometry(**kwargs_vcoord)

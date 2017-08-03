@@ -22,6 +22,7 @@ import six
 
 import footprints
 from footprints import FPDict, FPList, proxy as fpx
+
 from arpifs4py import wfa, wlfi, wtransforms
 
 from epygram import config, epygramError, util
@@ -29,8 +30,8 @@ from epygram.util import Angle, separation_line, write_formatted_fields
 from epygram.base import FieldSet, FieldValidity, FieldValidityList
 from epygram.resources import FileResource
 from epygram.geometries import D3Geometry, SpectralGeometry
-from epygram.geometries.VGeometry import hybridP2pressure, hybridP2altitude, \
-                                         pressure2altitude
+from epygram.geometries.VGeometry import (hybridP2pressure, hybridP2altitude,
+                                          pressure2altitude)
 from epygram.fields import MiscField, H2DField
 
 __all__ = ['FA', 'inquire_field_dict']
@@ -39,7 +40,7 @@ epylog = footprints.loggers.getLogger(__name__)
 
 
 def find_wind_pair(fieldname):
-    """For a wind fieldname, find and return the pair."""
+    """For a wind **fieldname**, find and return the pair."""
     pairs = {'U':'V', 'V':'U',
              'ZONAL':'MERIDIEN', 'MERIDIEN':'ZONAL', 'MERID':'ZONAL'}
     patterns = ['S\d+WIND\.(?P<d>[U,V])\.PHYS',
@@ -65,7 +66,8 @@ def find_wind_pair(fieldname):
 
 def inquire_field_dict(fieldname):
     """
-    Returns the info contained in the FA _field_dict for the requested field.
+    Returns the info contained in the FA _field_dict for the requested
+    **fieldname**.
     """
     if FA._field_dict == []:
         FA._read_field_dict(FA.CSV_field_dictionaries['default'])
@@ -93,8 +95,7 @@ def inquire_field_dict(fieldname):
 
 
 def _complete_generic_fid_from_name(generic_fid, fieldname):
-    """Complete a generic fid with information of fieldname."""
-
+    """Complete a **generic_fid** with information of **fieldname**."""
     # 'level'
     if 'level' not in generic_fid:
         if generic_fid['typeOfFirstFixedSurface'] == 119:  # hybrid-pressure
@@ -152,8 +153,7 @@ def _complete_generic_fid_from_name(generic_fid, fieldname):
 
 
 def get_generic_fid(fieldname):
-    """Return a generic fid from fieldname (via Field Dict)."""
-
+    """Return a generic fid from **fieldname** (via Field Dict)."""
     fid = inquire_field_dict(fieldname)
     if fid.get('type') != 'Misc':
         fid = _complete_generic_fid_from_name(fid, fieldname)
@@ -166,7 +166,6 @@ def get_generic_fid(fieldname):
 def _gen_headername():
     """Generates a random headername for the FA software."""
     import uuid
-
     return str(uuid.uuid4()).replace('-', '')[0:16]
 
 
@@ -174,15 +173,15 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
     """
     Create a header and returns its name, from a geometry and (preferably)
     a SpectralGeometry.
-    Args:
-    - geometry: a D3Geometry (or heirs) instance, from which the header is set.
-    - spectral_geometry: optional, a SpectralGeometry instance, from which
+
+    :param geometry: a D3Geometry (or heirs) instance, from which the header is set.
+    :param spectral_geometry: optional, a SpectralGeometry instance, from which
       truncation is set in header. If not provided, in LAM case the X/Y
       truncations are computed from field dimension, as linear grid.
       In global case, an error is raised.
+
     Contains a call to arpifs4py.wfa.wfacade (wrapper for FACADE routine).
     """
-
     assert isinstance(geometry, D3Geometry), \
            "geometry must be a D3Geometry (or heirs) instance."
     if spectral_geometry is not None and\
@@ -213,8 +212,8 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
         else:
             KTYPTR = -1 * truncation_in_X
         if geometry.name in ('lambert', 'polar_stereographic'):
-            PSLAPO = geometry.getcenter()[0].get('radians') - \
-                     geometry.projection['reference_lon'].get('radians')
+            PSLAPO = (geometry.getcenter()[0].get('radians') -
+                      geometry.projection['reference_lon'].get('radians'))
         else:
             PSLAPO = 0.0
         PCLOPO = 0.0
@@ -414,9 +413,7 @@ class FA(FileResource):
     @classmethod
     def _read_field_dict(cls, fd_abspath):
         """Reads the CSV fields dictionary of the format."""
-
         field_dict, file_priority = util.read_CSV_as_dict(fd_abspath)
-
         if file_priority == 'main':
             cls._field_dict = field_dict
         elif file_priority == 'underwrite':
@@ -440,10 +437,7 @@ class FA(FileResource):
             cls._field_dict = field_dict
 
     def __init__(self, *args, **kwargs):
-        """Constructor. See its footprint for arguments."""
-
         self.isopen = False
-
         # At creation of the first FA, initialize FA._field_dict
         if self._field_dict == []:
             self._read_field_dict(self.CSV_field_dictionaries['default'])
@@ -460,7 +454,10 @@ class FA(FileResource):
         if not self.fmtdelayedopen:
             self.open()
 
-    def open(self, geometry=None, spectral_geometry=None, validity=None,
+    def open(self,
+             geometry=None,
+             spectral_geometry=None,
+             validity=None,
              openmode=None):
         """
         Opens a FA with ifsaux' FAITOU, and initializes some attributes.
@@ -474,17 +471,15 @@ class FA(FileResource):
         the *open()* will be called again at first writing of a field in
         resource.
 
-        Args: \n
-        - *geometry*: optional, must be a
+        :param geometry: optional, must be a
           :class:`epygram.geometries.D3Geometry` (or heirs) instance.
-        - *spectral_geometry*: optional, must be a
+        :param spectral_geometry: optional, must be a
           :class:`epygram.geometries.SpectralGeometry` instance.
-        - *validity*: optional, must be a :class:`epygram.base.FieldValidity` or
+        :param validity: optional, must be a :class:`epygram.base.FieldValidity` or
           a :class:`epygram.base.FieldValidityList` instance.
-        - *openmode*: optional, to open with a specific openmode, eventually
+        :param openmode: optional, to open with a specific openmode, eventually
           different from the one specified at initialization.
         """
-
         super(FA, self).open(openmode=openmode)
 
         if self.openmode in ('r', 'a'):
@@ -555,7 +550,6 @@ class FA(FileResource):
 
     def close(self):
         """Closes a FA with ifsaux' FAIRME."""
-
         if self.isopen:
             try:
                 wfa.wfairme(self._unit, 'KEEP')
@@ -571,17 +565,15 @@ class FA(FileResource):
         Returns a list of the fields from resource whose name match the given
         seed.
 
-        Args: \n
-        - *seed*: might be a regular expression, a list of regular expressions
+        :param seed: might be a regular expression, a list of regular expressions
           or *None*. If *None* (default), returns the list of all fields in
           resource.
-        - *fieldtype*: optional, among ('H2D', 'Misc') or a list of these strings.
+        :param fieldtype: optional, among ('H2D', 'Misc') or a list of these strings.
           If provided, filters out the fields not of the given types.
-        - *generic*: if True, returns complete fid's,
+        :param generic: if True, returns complete fid's,
           union of {'FORMATname':fieldname} and the according generic fid of
           the fields.
         """
-
         if isinstance(fieldtype, list):
             fieldtypeslist = fieldtype
         else:
@@ -628,11 +620,10 @@ class FA(FileResource):
         """
         Actual listfields() method for FA.
 
-        Args: \n
-        - *complete*: if True method returns a list of {'FA':FA_fid, 'generic':generic_fid}
-                      if False method return a list of FA_fid
+        :param complete: - if True method returns a list of {'FA':FA_fid,
+                           'generic':generic_fid}
+                         - if False method return a list of FA_fid
         """
-
         records_number = wlfi.wlfinaf(self._unit)[0]
         wlfi.wlfipos(self._unit)  # rewind
         fieldslist = []
@@ -643,7 +634,6 @@ class FA(FileResource):
             # i >= 7: 7 first fields in LFI are the header ("cadre")
             # 8th field added by P.Marguinaud, DATX-DES-DONNEES, to store dates
             # with 1-second precision, from cy40t1 onwards.
-
         if complete:
             return [{'FA':f, 'generic':get_generic_fid(f)} for f in fieldslist]
         else:
@@ -654,7 +644,6 @@ class FA(FileResource):
         Return two lists of fids corresponding respectively to U and V
         components of wind, given a *fieldseed*.
         """
-
         fids = self.find_fields_in_resource(fieldseed + '*')
         if fieldseed.startswith('S'):
             Ufid = [f for f in fids if 'WIND.U.PHYS' in f]
@@ -682,11 +671,9 @@ class FA(FileResource):
         Returns a sorted list of fields with regards to their name and nature,
         as a dict of lists.
         """
-
-        list3Dparams = []
+        re_3D = re.compile('(?P<prefix>[A-Z])(?P<level>\d+)(?P<param>[A-Z]+.*)')
         list3D = []
         list2D = []
-
         # final lists
         list3Dsp = []
         list3Dgp = []
@@ -694,20 +681,26 @@ class FA(FileResource):
         list2Dgp = []
         listMisc = []
 
+        params3D = {}
         for f in self.listfields():
             info = inquire_field_dict(f)
             # separate H2D from Misc
             if info['type'] == 'H2D':
                 # separate 3D from 2D
-                if info['typeOfFirstFixedSurface'] in ('119', '100', '103',
-                                                       '109', '20'):
-                    list3D.append(f)
-                    list3Dparams.append(''.join([x for x in f[1:] if not x.isdigit()]))  # FIXME: use re instead, cause some fields may have digits in their name
+                if info['typeOfFirstFixedSurface'] in (119, 100, 103, 109, 20):
+                    re_ok = re_3D.match(f)
+                    if re_ok:
+                        list3D.append(f)
+                        param = re_ok.group('prefix') + re_ok.group('param')
+                        if param not in params3D:
+                            params3D[param] = []
+                        params3D[param].append(f)
+                    else:
+                        list2D.append(f)
                 else:
                     list2D.append(f)
             else:
                 listMisc.append(f)
-        list3Dparams = list(set(list3Dparams))
         # separate gp/sp
         for f in list2D:
             if self.fieldencoding(f)['spectral']:
@@ -717,19 +710,12 @@ class FA(FileResource):
         # sort 2D
         list2Dsp.sort()
         list2Dgp.sort()
-        # sort parameters
-        for p in sorted(list3Dparams):
-            interlist = []
-            for f in list3D:
-                if p in f:
-                    interlist.append(f)
-            # sort by increasing level
-            interlist.sort()
-            # separate gp/sp
-            if self.fieldencoding(interlist[0])['spectral']:
-                list3Dsp.extend(interlist)
+        # sort 3D
+        for p in sorted(params3D.keys()):
+            if self.fieldencoding(params3D[p][0])['spectral']:
+                list3Dsp.extend(sorted(params3D[p]))
             else:
-                list3Dgp.extend(interlist)
+                list3Dgp.extend(sorted(params3D[p]))
         outlists = {'3D spectral fields':list3Dsp,
                     '3D gridpoint fields':list3Dgp,
                     '2D spectral fields':list2Dsp,
@@ -741,15 +727,18 @@ class FA(FileResource):
     @FileResource._openbeforedelayed
     def fieldencoding(self, fieldname):
         """
-        Returns a dict containing info about how the field is encoded:
-        spectral? and compression. Interface to ifsaux' FANION.
+        Returns a dict containing info about how the field **fieldname**
+        is encoded: spectralness and compression. Interface to ifsaux' FANION.
         """
-
         try:
-            (LDCOSP, KNGRIB, KNBITS, KSTRON, KPUILA) = wfa.wfanion(self._unit,
-                                                                   fieldname[0:4],
-                                                                   0,
-                                                                   fieldname[4:])[1:6]
+            (LDCOSP,
+             KNGRIB,
+             KNBITS,
+             KSTRON,
+             KPUILA) = wfa.wfanion(self._unit,
+                                   fieldname[0:4],
+                                   0,
+                                   fieldname[4:])[1:6]
         except RuntimeError as e:
             if 'arpifs4py: Error code -93 was raised' in str(e):
                 raise epygramError(fieldname + ': seems like you try to read a MiscField as a H2DField...')
@@ -768,14 +757,12 @@ class FA(FileResource):
         Reads one field, given its FA name, and returns a Field instance.
         Interface to Fortran routines from 'ifsaux'.
 
-        Args: \n
-        - *fieldname*: FA fieldname
-        - *getdata*: if *False*, only metadata are read, the field do not
+        :param fieldname: FA fieldname
+        :param getdata: if *False*, only metadata are read, the field do not
           contain data.
-        - *footprints_proxy_as_builder*: if *True*, uses footprints.proxy
+        :param footprints_proxy_as_builder: if *True*, uses footprints.proxy
           to build fields.
         """
-
         if self.openmode == 'w':
             raise epygramError("cannot read fields in resource if with" +
                                " openmode == 'w'.")
@@ -972,17 +959,15 @@ class FA(FileResource):
         Returns a :class:`epygram.base.FieldSet` containing requested fields
         read in the resource.
 
-        Args: \n
-        - *requestedfields*: might be \n
+        :param requestedfields: might be:\n
           - a regular expression (e.g. 'S\*WIND.[U,V].PHYS')
           - a list of FA fields identifiers with regular expressions (e.g.
             ['SURFTEMPERATURE', 'S0[10-20]WIND.?.PHYS'])
           - if not specified, interpretated as all fields that will be found in
             resource
-        - *getdata*: optional, if *False*, only metadata are read, the fields
+        :param getdata: optional, if *False*, only metadata are read, the fields
           do not contain data. Default is *True*.
         """
-
         requestedfields = self.find_fields_in_resource(requestedfields)
         if requestedfields == []:
             raise epygramError("unable to find requested fields in resource.")
@@ -993,15 +978,13 @@ class FA(FileResource):
         """
         Write a field in the resource.
 
-        Args: \n
-        - *field*: a :class:`epygram.base.Field` instance or
+        :param field: a :class:`epygram.base.Field` instance or
           :class:`epygram.fields.H2DField`.
-        - *compression*: optional, a (possibly partial) dict containing
+        :param compression: optional, a (possibly partial) dict containing
           parameters for field compression (in case of a
           :class:`epygram.fields.H2DField`). Ex: {'KNGRIB': 2, 'KDMOPL': 5,
           'KPUILA': 1, 'KSTRON': 10, 'KNBPDG': 24, 'KNBCSP': 24}
         """
-
         if self.openmode == 'r':
             raise IOError("cannot write field in a FA with openmode 'r'.")
 
@@ -1078,7 +1061,7 @@ class FA(FileResource):
                 self._set_validity()
             data = numpy.ma.copy(field.getdata()).flatten()
             if isinstance(data, numpy.ma.core.MaskedArray):
-                data = numpy.copy(data[data.mask == False].data)
+                data = numpy.copy(data[data.mask is False].data)
             if compression is not None:
                 modified_compression = True
             elif field.fid[self.format] in self.fieldscompression:
@@ -1116,9 +1099,8 @@ class FA(FileResource):
         """
         Write the fields of the *fieldset* in the resource.
 
-        Args: \n
-        - *fieldset*: must be a :class:`epygram.base.FieldSet` instance.
-        - *compression*: must be a list of compression dicts
+        :param fieldset: must be a :class:`epygram.base.FieldSet` instance.
+        :param compression: must be a list of compression dicts
           (cf. *writefield()* method), of length equal to the length of the
           *fieldset*, and with the same order.
         """
@@ -1166,36 +1148,36 @@ class FA(FileResource):
         Extracts a vertical profile from the FA resource, given its pseudoname
         and the geographic location (*lon*/*lat*) of the profile.
 
-        Args: \n
-        - *pseudoname* must have syntax: 'K\*PARAMETER',
+        :param pseudoname: must have syntax: 'K\*PARAMETER',
           K being the kind of surface (S,P,H,V),
           \* being a true star character,
           and PARAMETER being the name of the parameter requested,
           as named in FA.
-        - *lon* is the longitude of the desired point.
-        - *lat* is the latitude of the desired point.
+        :param lon: the longitude of the desired point.
+        :param lat: the latitude of the desired point.
           If both None, extract a horizontally-averaged profile.
-        - *geometry* is the geometry on which extract data. If None, it is built from
-          lon/lat.
-        - *vertical_coordinate* defines the requested vertical coordinate of the
-          V1DField (as number of GRIB2 norm: http://apps.ecmwf.int/codes/grib/format/grib2/ctables/4/5).
-        - *interpolation* defines the interpolation function used to compute
-          the profile at requested lon/lat from the fields grid:
+        :param geometry: can replace *lon*/*lat*, geometry on which to extract
+          data. If None, it is built from *lon*/*lat*.
+        :param vertical_coordinate: defines the requested vertical coordinate of the
+          V1DField, as number of GRIB2 norm:
+          http://apps.ecmwf.int/codes/grib/format/grib2/ctables/4/5,
+          (cf. `epygram.geometries.vertical_coordinates` possible values).
+        :param interpolation: defines the interpolation function used to compute
+          the profile at requested lon/lat from the fields grid:\n
           - if 'nearest' (default), extracts profile at the horizontal nearest neighboring gridpoint;
           - if 'linear', computes profile with horizontal linear spline interpolation;
           - if 'cubic', computes profile with horizontal cubic spline interpolation.
-        - *cheap_height*: if True and *vertical_coordinate* among
+        :param cheap_height: if True and *vertical_coordinate* among
           ('altitude', 'height'), the computation of heights is done without
           taking hydrometeors into account (in R computation) nor NH Pressure
           departure (Non-Hydrostatic data). Computation therefore faster.
-        - *external_distance* can be a dict containing the target point value
+        :param external_distance: can be a dict containing the target point value
           and an external field on the same grid as self, to which the distance
           is computed within the 4 horizontally nearest points; e.g.
           {'target_value':4810, 'external_field':an_H2DField_with_same_geometry}.
           If so, the nearest point is selected with
-          distance = |target_value - external_field.data|
+          distance = abs(target_value - external_field.data)
         """
-
         if geometry is None:
             if None in [lon, lat]:
                 # mean profile, vertical_coordinate is forgotten
@@ -1233,8 +1215,10 @@ class FA(FileResource):
 
     @FileResource._openbeforedelayed
     def extractsection(self, pseudoname, end1=None, end2=None,
-                       geometry=None, points_number=None,
-                       resolution=None, vertical_coordinate=None,
+                       geometry=None,
+                       points_number=None,
+                       resolution=None,
+                       vertical_coordinate=None,
                        interpolation='linear',
                        cheap_height=True):
         """
@@ -1242,24 +1226,25 @@ class FA(FileResource):
         and the geographic (lon/lat) coordinates of its ends.
         The section is returned as a V2DField.
 
-        Args: \n
-        - *pseudoname* must have syntax: 'K\*PARAMETER',
+        :param pseudoname: must have syntax: 'K\*PARAMETER',
           K being the kind of surface (S,P,H,V),
           \* being a true star character,
           and PARAMETER being the name of the parameter requested, as named in
           FA.
-        - *end1* must be a tuple (lon, lat).
-        - *end2* must be a tuple (lon, lat).
-        - *geometry* is the geometry on which extract data. If None, defaults to
-          linearily spaced positions computed from  *points_number*.
-        - *points_number* defines the total number of horizontal points of the
+        :param end1: must be a tuple (lon, lat).
+        :param end2: must be a tuple (lon, lat).
+        :param geometry: can replace end1/end2, geometry on which to extract
+          data. If None, defaults to
+          linearily spaced positions computed from *points_number*.
+        :param points_number: defines the total number of horizontal points of the
           section (including ends). If None, defaults to a number computed from
           the *ends* and the *resolution*.
-        - *resolution* defines the horizontal resolution to be given to the
+        :param resolution: defines the horizontal resolution to be given to the
           field. If None, defaults to the horizontal resolution of the field.
-        - *vertical_coordinate* defines the requested vertical coordinate of the
-          V2DField (aka typeOfFirstFixedSurface in GRIB2).
-        - *interpolation* defines the interpolation function used to compute
+        :param vertical_coordinate: defines the requested vertical coordinate of
+          the V2DField aka typeOfFirstFixedSurface in GRIB2, (cf.
+          `epygram.geometries.vertical_coordinates` possible values).
+        :param interpolation: defines the interpolation function used to compute
           the profile points locations from the fields grid: \n
           - if 'nearest', each horizontal point of the section is
             taken as the horizontal nearest neighboring gridpoint;
@@ -1267,12 +1252,11 @@ class FA(FileResource):
             computed with linear spline interpolation;
           - if 'cubic', each horizontal point of the section is
             computed with linear spline interpolation.
-        - *cheap_height*: if True and *vertical_coordinate* among
+        :param cheap_height: if True and *vertical_coordinate* among
           ('altitude', 'height'), the computation of heights is done without
           taking hydrometeors into account (in R computation) nor NH Pressure
           departure (Non-Hydrostatic data). Computation therefore faster.
         """
-
         if geometry is None:
             if None in [end1, end2]:
                 raise epygramError("You must give a geometry or end1 *and* end2")
@@ -1303,17 +1287,16 @@ class FA(FileResource):
         Extracts a subdomain from the FA resource, given its fid
         and the geometry to use.
 
-        Args: \n
-        - *pseudoname* must have syntax: 'K\*PARAMETER',
+        :param pseudoname: must have syntax: 'K\*PARAMETER',
           K being the kind of surface (S,P,H,V),
           \* being a true star character,
           and PARAMETER being the name of the parameter requested, as named in
           FA.
-        - *geometry* is the geometry on which extract data.
-        - *vertical_coordinate* defines the requested vertical coordinate of the
-          V2DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
+        :param geometry: is the geometry on which extract data.
+        :param vertical_coordinate: defines the requested vertical coordinate of the
+          V2DField (cf. `epygram.geometries.vertical_coordinates`
           possible values).
-        - *interpolation* defines the interpolation function used to compute
+        :param interpolation: defines the interpolation function used to compute
           the profile points locations from the fields grid: \n
           - if 'nearest', each horizontal point of the section is
             taken as the horizontal nearest neighboring gridpoint;
@@ -1321,7 +1304,7 @@ class FA(FileResource):
             computed with linear spline interpolation;
           - if 'cubic', each horizontal point of the section is
             computed with linear spline interpolation.
-        - *cheap_height*: if True and *vertical_coordinate* among
+        :param cheap_height: if True and *vertical_coordinate* among
           ('altitude', 'height'), the computation of heights is done without
           taking hydrometeors into account (in R computation) nor NH Pressure
           departure (Non-Hydrostatic data). Computation therefore faster.
@@ -1462,23 +1445,20 @@ class FA(FileResource):
 ###########
 
     @FileResource._openbeforedelayed
-    def what(self, out=sys.stdout,
+    def what(self,
+             out=sys.stdout,
              details=None,
              sortfields=False,
              **kwargs):
         """
         Writes in file a summary of the contents of the FA.
 
-        Args: \n
-        - *out*: the output open file-like object (duck-typing: *out*.write()
-          only is needed).
-        - *details*: 'spectral' if spectralness of fields is requested;
-                     'compression' if information about fields compression
-                     is requested.
-        - *sortfields*: **True** if the fields have to be sorted by type.
-        - *fastlist
+        :param out: the output open file-like object.
+        :param details: 'spectral' if spectralness of fields is requested;
+                        'compression' if information about fields compression
+                        is requested.
+        :param sortfields: **True** if the fields have to be sorted by type.
         """
-
         for f in self.listfields():
             if inquire_field_dict(f)['type'] == 'H2D':
                 first_H2DField = f
@@ -1552,18 +1532,16 @@ class FA(FileResource):
                 write_formatted_fields(out, f)
         out.write(separation_line)
 
-##############
 # the FA WAY #
 ##############
     def _get_header(self, out=sys.stdout, mode='FA'):
         """
         Write the "header" of the resource in **out**.
-        If **mode** == 'LFI', writes the header as the corresponding LFI
-        records.
-        If **mode**=='FA', writes the header as returned by routines
-        FACIES and FADIEX.
+        :param mode: - if 'LFI', writes the header as the corresponding LFI
+                       records.
+                     - if **mode**=='FA', writes the header as returned by
+                       routines FACIES and FADIEX.
         """
-
         assert mode in ('FA', 'LFI')
         if mode == 'LFI':
             raise epygramError('that does not work yet ! Soon...')
@@ -1611,18 +1589,19 @@ class FA(FileResource):
         Reads the geometry in the FA header.
         Interface to Fortran routines from 'ifsaux'.
         """
-
         (KTYPTR, PSLAPO, PCLOPO, PSLOPO,
          PCODIL, KTRONC,
          KNLATI, KNXLON, KNLOPA, KNOZPA, PSINLA,
-         KNIVER, PREFER, PAHYBR, PBHYBR) = wfa.wfacies(self._FAsoftware_cst['JPXPAH'],
-                                                       self._FAsoftware_cst['JPXIND'],
-                                                       self._FAsoftware_cst['JPXGEO'],
-                                                       self._FAsoftware_cst['JPXNIV'],
-                                                       self.headername)[:-1]
+         KNIVER, PREFER, PAHYBR, PBHYBR
+         ) = wfa.wfacies(self._FAsoftware_cst['JPXPAH'],
+                         self._FAsoftware_cst['JPXIND'],
+                         self._FAsoftware_cst['JPXGEO'],
+                         self._FAsoftware_cst['JPXNIV'],
+                         self.headername)[:-1]
         Ai = [c * PREFER for c in PAHYBR[0:KNIVER + 1]]
         Bi = [c for c in PBHYBR[0:KNIVER + 1]]
-        vertical_grid = {'gridlevels': tuple([(i + 1, FPDict({'Ai':Ai[i], 'Bi':Bi[i]}))
+        vertical_grid = {'gridlevels': tuple([(i + 1, FPDict({'Ai':Ai[i],
+                                                              'Bi':Bi[i]}))
                                               for i in range(len(Ai))]),
                          'ABgrid_position':'flux'}
         kwargs_vcoord = {'structure': 'V',
@@ -1638,8 +1617,10 @@ class FA(FileResource):
         if rectangular_grid:
             LMAP = int(PCODIL) != -1
             # LAM or regular lat/lon
-            projected_geometry = (int(PSINLA[0]) != 0 and int(PSINLA[1]) != -9) or \
-                                 (int(PSINLA[0]) == 0 and int(PSINLA[9]) != -9)  # "new" or "old" header
+            projected_geometry = ((int(PSINLA[0]) != 0 and
+                                   int(PSINLA[1]) != -9) or  # "new" header
+                                  (int(PSINLA[0]) == 0 and
+                                   int(PSINLA[9]) != -9))  # "old" header
             dimensions = {'X':KNXLON,
                           'Y':KNLATI}
             if projected_geometry:
@@ -1787,7 +1768,6 @@ class FA(FileResource):
         Reads the validity in the FA header.
         Interface to Fortran routines from 'ifsaux'.
         """
-
         KDATEF = wfa.wfadiex(self._unit)
         year = int(KDATEF[0])
         month = int(KDATEF[1])
@@ -1823,8 +1803,8 @@ class FA(FileResource):
     def _set_validity(self, termunit='hours'):
         """
         Sets date, hour and the processtype in the resource.
+        :param termunit: unit of term, among ('hours, 'days',)
         """
-
         if not self.isopen:
             raise epygramError("_set_validity must be called after FA is open.")
 
@@ -1839,13 +1819,13 @@ class FA(FileResource):
             KDATEF[5] = 1
             KDATEF[6] = self.validity.term(fmt='IntHours')
             if self.validity.cumulativeduration() is not None:
-                KDATEF[9] = self.validity.term(fmt='IntHours') - \
-                            self.validity.cumulativeduration(fmt='IntHours')
+                KDATEF[9] = (self.validity.term(fmt='IntHours') -
+                             self.validity.cumulativeduration(fmt='IntHours'))
         elif termunit == 'days':
             KDATEF[5] = 2
             KDATEF[6] = self.validity.term('IntHours') // 24
             if self.validity.cumulativeduration() is not None:
-                KDATEF[9] = (self.validity.term('IntHours') - \
+                KDATEF[9] = (self.validity.term('IntHours') -
                              self.validity.cumulativeduration('IntHours')) // 24
         else:
             raise NotImplementedError("term unit other than hours/days ?")
@@ -1872,8 +1852,8 @@ class FA(FileResource):
                          int(basis.hour) * 3600
             KDATEF[14] = self.validity.term(fmt='IntSeconds')
             if self.validity.cumulativeduration() is not None:
-                KDATEF[15] = self.validity.term(fmt='IntSeconds') - \
-                             self.validity.cumulativeduration(fmt='IntSeconds')
+                KDATEF[15] = (self.validity.term(fmt='IntSeconds') -
+                              self.validity.cumulativeduration(fmt='IntSeconds'))
             wfa.wfandax(self._unit, KDATEF)
 
     @FileResource._openbeforedelayed
@@ -1882,7 +1862,6 @@ class FA(FileResource):
         Returns the current compression parameters of the FA (at time of writing).
         Interface to ifsaux' FAVEUR.
         """
-
         comp = dict()
         (comp['KNGRIB'], comp['KNBPDG'], comp['KNBCSP'], comp['KSTRON'],
          comp['KPUILA'], comp['KDMOPL']) = wfa.wfaveur(self._unit)
@@ -1896,7 +1875,6 @@ class FA(FileResource):
         Interface to FAGOTE (cf. FAGOTE documentation for significance of
         arguments).
         """
-
         if self.openmode == 'r':
             raise IOError("method _setrunningcompression() can only be" +
                           " called if 'openmode' in('w', 'a').")

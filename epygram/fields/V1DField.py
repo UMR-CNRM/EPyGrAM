@@ -75,17 +75,17 @@ class V1DCommonField(D3CommonField):
                   **ignored_kwargs):
         """
         Makes a simple (profile) plot of the field.
-        Help on arguments can be found in actual plot functions docstrings.
 
-        Args: \n
-        - *force_mode* = *False* (default) to plot an hovmoller plot
-                         if several validities are available,
-                         a simple profile plot otherwise.
-                         *hovmoller* to force an hovmoller plot
-                         *profile* to force a simple profile plot
-                         *animation* to force an animation plot
+        **Help on arguments can be found in actual plot functions docstrings.**
+
+        :param force_mode: among:\n
+                           - *False* (default), plot an hovmoller plot
+                             if several validities are available,
+                             a simple profile plot otherwise.
+                           - *hovmoller* to force an hovmoller plot
+                           - *profile* to force a simple profile plot
+                           - *animation* to force an animation plot
         """
-
         if force_mode is not False:
             mode = force_mode
         else:
@@ -210,17 +210,17 @@ class V1DCommonField(D3CommonField):
 
         if len(useless_args) != 0:
             epylog.warning("Some arguments to plotfield are useless and will not be used: " + str(useless_args))
-            
+
     def plotprofiles(self, *args, **kwargs):
         return plotprofiles(self, *args, **kwargs)
-    
+
     def plotverticalhovmoller(self, *args, **kwargs):
         return plotverticalhovmoller(self, *args, **kwargs)
 
     def plotanimation(self, *args, **kwargs):
         return plotanimation(self, *args, **kwargs)
 
-#############
+
 # FUNCTIONS #
 #############
 def plotverticalhovmoller(profile,
@@ -245,9 +245,8 @@ def plotverticalhovmoller(profile,
         """
         Makes a simple vertical Hovmöller plot of the field.
 
-        Args: \n
-        - *profile* being a :class:`epygram.fields.V1DField`
-        - *over* = any existing figure and/or ax to be used for the
+        :param profile: being a :class:`epygram.fields.V1DField`
+        :param over: any existing figure and/or ax to be used for the
           plot, given as a tuple (fig, ax), with None for
           missing objects. *fig* is the frame of the
           matplotlib figure, containing eventually several
@@ -255,37 +254,36 @@ def plotverticalhovmoller(profile,
           which the drawing is done. When given (is not None),
           these objects must be coherent, i.e. ax being one of
           the fig axes.
-        - *fidkey* = type of fid for entitling the plot with *fid[fidkey]*,
-                     if title is *None*;
-                     if *None*, labels with raw fid.
-        - *Ycoordinate* = label for the Y coordinate.
-        - *title* = title for the plot.
-        - *logscale* = to set Y logarithmic scale
-        - *zoom*: a dict containing optional limits to zoom on the plot. \n
+        :param fidkey: type of fid for entitling the plot with *fid[fidkey]*,
+                       if title is *None*;
+                       if *None*, labels with raw fid.
+        :param Ycoordinate: label for the Y coordinate.
+        :param title: title for the plot.
+        :param logscale: to set Y logarithmic scale
+        :param zoom: a dict containing optional limits to zoom on the plot. \n
           Syntax: e.g. {'ymax':500, ...}.
-        - *colorbar*: if *False*, hide colorbar the plot; else, befines the
+        :param colorbar: if *False*, hide colorbar the plot; else, befines the
           colorbar orientation, among ('horizontal', 'vertical').
           Defaults to 'vertical'.
-        - *graphicmode*: among ('colorshades', 'contourlines').
-        - *minmax*: defines the min and max values for the plot colorbar. \n
+        :param graphicmode: among ('colorshades', 'contourlines').
+        :param minmax: defines the min and max values for the plot colorbar. \n
           Syntax: [min, max]. [0.0, max] also works. Default is min/max of the
           field.
-        - *levelsnumber*: number of levels for contours and colorbar.
-        - *center_cmap_on_0*: aligns the colormap center on the value 0.
-        - *colormap*: name of the **matplotlib** colormap to use.
-        - *minmax_in_title*: if True and minmax is not None, adds min and max
+        :param levelsnumber: number of levels for contours and colorbar.
+        :param center_cmap_on_0: aligns the colormap center on the value 0.
+        :param colormap: name of the **matplotlib** colormap to use.
+        :param minmax_in_title: if True and minmax is not None, adds min and max
           values in title
-        - *contourcolor*: color or colormap to be used for 'contourlines'
+        :param contourcolor: color or colormap to be used for 'contourlines'
           graphicmode. It can be either a legal html color name, or a colormap
           name.
-        - *contourwidth*: width of contours for 'contourlines' graphicmode.
-        - *contourlabel*: displays labels on contours.
-        - *datefmt*: date format to use, e.g. "%Y-%m-%d %H:%M:%S %Z"
-        - *showgrid*: True/False to show grid or not
+        :param contourwidth: width of contours for 'contourlines' graphicmode.
+        :param contourlabel: displays labels on contours.
+        :param datefmt: date format to use, e.g. "%Y-%m-%d %H:%M:%S %Z"
+        :param showgrid: True/False to show grid or not
 
         Warning: requires **matplotlib**.
         """
-
         import matplotlib
         import matplotlib.pyplot as plt
         import matplotlib.dates as mdates
@@ -448,13 +446,12 @@ def plotprofiles(profiles,
     To plot a series of profiles. Returns a tuple of :mod:`matplotlib`
     (*Figure*, *ax*).
 
-    Args: \n
-    - *profiles* being a :class:`epygram.base.FieldSet` of
+    :param profiles: a :class:`epygram.base.FieldSet` of
       :class:`epygram.fields.V1DField`, or a single
-      :class:`epygram.fields.V1DField`. \n
+      :class:`epygram.fields.V1DField`.
       All profiles are supposed to have the same unit, and the same vertical
       coordinate.
-    - *over* = any existing figure and/or ax to be used for the
+    :param over: any existing figure and/or ax to be used for the
       plot, given as a tuple (fig, ax), with None for
       missing objects. *fig* is the frame of the
       matplotlib figure, containing eventually several
@@ -462,15 +459,15 @@ def plotprofiles(profiles,
       which the drawing is done. When given (is not None),
       these objects must be coherent, e.g. ax being one of
       the fig axes.
-    - *labels* = a list of labels for the profiles (same length and same order).
-    - *fidkey* = key of fid for labelling the curve with *fid[fidkey]*;
-                  if *None*, labels with raw fid.
-    - *Ycoordinate* = label for the Y coordinate.
-    - *unit* = label for X coordinate.
-    - *title* = title for the plot.
-    - *logscale* = to set Y logarithmic scale
-    - *ema* = to make emagram-like plots of Temperature
-    - *zoom*: a dict containing optional limits to zoom on the plot. \n
+    :param labels: a list of labels for the profiles (same length and same order).
+    :param fidkey: key of fid for labelling the curve with *fid[fidkey]*;
+                   if *None*, labels with raw fid.
+    :param Ycoordinate: label for the Y coordinate.
+    :param unit: label for X coordinate.
+    :param title: title for the plot.
+    :param logscale: to set Y logarithmic scale
+    :param ema: to make emagram-like plots of Temperature
+    :param zoom: a dict containing optional limits to zoom on the plot. \n
       Syntax: e.g. {'ymax':500, ...}.
     """
     import matplotlib.pyplot as plt
@@ -590,12 +587,11 @@ def plotanimation(profile,
     To plot a time-dependent profile as an animation.
     Returns a :class:`matplotlib.animation.FuncAnimation`.
 
-    Args: \n
-    - *profile* being a :class:`epygram.fields.V1DField`.
-    - *title* = title for the plot. '__auto__' (default) will print
+    :param profile: the :class:`epygram.fields.V1DField` to plot.
+    :param title: title for the plot. '__auto__' (default) will print
       the current validity of the time frame.
-    - *repeat*: to repeat animation
-    - *interval*: number of milliseconds between two validities
+    :param repeat: to repeat animation
+    :param interval: number of milliseconds between two validities
 
     Other kwargs passed to plotprofiles().
     """
@@ -634,7 +630,7 @@ def plotanimation(profile,
     if kwargs.get('colorbar_over') is None:
             kwargs['colorbar_over'] = fig.axes[-1]  # the last being created, in plotfield()
     kwargs['over'] = (fig, ax)
-        
+
     def update(i, ax, myself, profilei, title_prefix, kwargs):
         if i < len(myself.validity):
             ax.clear()
@@ -642,7 +638,7 @@ def plotanimation(profile,
             if title_prefix is not None:
                 title = title_prefix + '\n' + profilei.validity.get().isoformat(sep=b' ')
             profilei.plotfield(title=title,
-                             **kwargs)
+                               **kwargs)
 
     anim = animation.FuncAnimation(fig, update,
                                    fargs=[ax, profile, profile0, title_prefix, kwargs],
@@ -651,6 +647,7 @@ def plotanimation(profile,
                                    repeat=repeat)
 
     return anim
+
 
 class V1DField(V1DCommonField, D3Field):
     """
@@ -669,7 +666,8 @@ class V1DField(V1DCommonField, D3Field):
                 access='rwx'),
         )
     )
-    
+
+
 class V1DVirtualField(V1DCommonField, D3VirtualField):
     """
     Vertical 1-Dimension (column) virtual field class.

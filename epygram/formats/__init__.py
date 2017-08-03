@@ -71,15 +71,16 @@ def guess(filename):
 
 def resource(filename, openmode, fmt=None, **kwargs):
     """
-    Returns an instance of Resource of the requested *fmt* format,
-    located at the given *filename* (:class:`epygram.base.File`, ...),
-    and with the given *openmode*.
+    Returns an instance of Resource of the requested **fmt** format,
+    located at the given **filename**, open with the given **openmode**.
 
-    If *fmt* is not given, tries to guess it (only for *openmode* 'r' or 'a').
+    :param filename: name (path) of the file to open
+    :param openmode: opening mode ('r', 'a', 'w')
+    :param fmt: format of the resource; with openmode 'r' or 'a', *fmt* is
+                optional and can be guessed from the existing resource
 
-    Other *kwargs* are passed to the resource constructor.
+    Other kwargs are passed to the resource constructor.
     """
-
     if openmode in ('r', 'a'):
         assert os.path.exists(filename), 'File not found: ' + filename
     if fmt is None and openmode in ('r', 'a'):
@@ -103,7 +104,6 @@ def fid_converter(initial_fid, initial_fmt, target_fmt,
 
     *grib_short_fid* condense GRIB fid in string.
     """
-
     if initial_fmt == 'generic' and target_fmt == 'GRIB2':
         target_fid = copy.copy(initial_fid)
     elif initial_fmt == 'GRIB' and target_fmt in ('netCDF', 'GeoPoints'):

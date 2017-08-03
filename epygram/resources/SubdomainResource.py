@@ -37,10 +37,7 @@ class SubdomainResource(Resource):
     )
 
     def __init__(self, *args, **kwargs):
-        """Constructor. See its footprint for arguments."""
-
         super(Resource, self).__init__(*args, **kwargs)
-
         if self.resource.openmode != self.openmode:
             raise epygramError("The low level resource must be opened using the same mode as this high-level resource.")
 
@@ -49,7 +46,6 @@ class SubdomainResource(Resource):
 
     def open(self):
         """Opens the low level resource"""
-
         if not self.resource.isopen:
             self.resource.open()
 
@@ -66,12 +62,10 @@ class SubdomainResource(Resource):
 
     def find_fields_in_resource(self, *args, **kwargs):
         """Returns a list of the fields from resource matching the request."""
-
         return self.resource.find_fields_in_resource(*args, **kwargs)
 
     def listfields(self, *args, **kwargs):
         """Lists the available fields."""
-
         complete = 'complete' in kwargs and kwargs['complete']
         fidlist = self.resource.listfields(*args, **kwargs)
         if complete:
@@ -81,12 +75,10 @@ class SubdomainResource(Resource):
 
     def sortfields(self, *args, **kwargs):
         """Returns a sorted list of fields."""
-
         return self.resource.sortfields(*args, **kwargs)
 
     def readfield(self, *args, **kwargs):
         """Read the field in the low level resource and extract subdomain."""
-
         result = self.readfields(*args, **kwargs)
         if len(result) != 1:
             raise epygramError(str(len(result)) + "field(s) have been found, only one expected.")
@@ -94,7 +86,6 @@ class SubdomainResource(Resource):
 
     def readfields(self, *args, **kwargs):
         """Read the field in the low level resource and extract subdomain."""
-
         getdata = kwargs.get('getdata', True)
         fieldset = FieldSet()
         for field in self.resource.readfields(*args, **kwargs):
@@ -114,7 +105,6 @@ class SubdomainResource(Resource):
 
     def extractprofile(self, *args, **kwargs):
         """Extracts profiles."""
-
         profile = self.resource.extractprofile(*args, **kwargs)
         lons, lats = profile.geometry.get_lonlat_grid()
         for (lon, lat) in zip(lons.flatten(), lats.flatten()):
@@ -124,7 +114,6 @@ class SubdomainResource(Resource):
 
     def extractsection(self, *args, **kwargs):
         """Extracts sections."""
-
         section = self.resource.extractsection(*args, **kwargs)
         lons, lats = section.geometry.get_lonlat_grid()
         for (lon, lat) in zip(lons.flatten(), lats.flatten()):

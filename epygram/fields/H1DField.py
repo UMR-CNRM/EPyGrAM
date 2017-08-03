@@ -7,17 +7,19 @@
 Contains the class that handle a Horizontal 2D field.
 """
 
+from __future__ import print_function, absolute_import, unicode_literals, division
+
 import numpy
+import datetime
 
 import footprints
 
-from .D3Field import D3Field
-from epygram.base import FieldSet
 from epygram import config, util, epygramError
+from epygram.base import FieldSet
 from epygram.geometries import H1DGeometry
-import datetime
-epylog = footprints.loggers.getLogger(__name__)
+from .D3Field import D3Field
 
+epylog = footprints.loggers.getLogger(__name__)
 
 
 class H1DField(D3Field):
@@ -29,7 +31,7 @@ class H1DField(D3Field):
 
     The natural being of a field is gridpoint, so that:
     a field always has a gridpoint geometry, but it has a spectral geometry only
-    in case it is spectral. 
+    in case it is spectral.
     """
 
     _collector = ('field',)
@@ -48,11 +50,11 @@ class H1DField(D3Field):
     def getlevel(self, level=None, k=None):
         """Returns self. Useless but for compatibility reasons."""
 
-        if k == None and level == None:
+        if k is None and level is None:
             raise epygramError("You must give k or level.")
-        if k != None and level != None:
+        if k is not None and level is not None:
             raise epygramError("You cannot give, at the same time, k and level")
-        if level != None:
+        if level is not None:
             if level not in self.geometry.vcoordinate.levels:
                 raise epygramError("The requested level does not exist.")
         return self
@@ -61,25 +63,24 @@ class H1DField(D3Field):
         """
         Internal method to check compatibility of terms in operations on fields.
         """
-
         if isinstance(other, self.__class__):
             if self.spectral != other.spectral:
-                raise epygramError("cannot operate a spectral field with a" + \
+                raise epygramError("cannot operate a spectral field with a" +
                                    " non-spectral field.")
             if self.geometry.rectangular_grid:
                 if self.geometry.dimensions['X'] != other.geometry.dimensions['X'] or\
                    self.geometry.dimensions['Y'] != other.geometry.dimensions['Y']:
-                    raise epygramError("operations on fields cannot be done if" + \
-                                       " fields do not share their gridpoint" + \
+                    raise epygramError("operations on fields cannot be done if" +
+                                       " fields do not share their gridpoint" +
                                        " dimensions.")
             else:
                 if self.geometry.dimensions != other.geometry.dimensions:
-                    raise epygramError("operations on fields cannot be done if" + \
-                                       " fields do not share their gridpoint" + \
+                    raise epygramError("operations on fields cannot be done if" +
+                                       " fields do not share their gridpoint" +
                                        " dimensions.")
             if self.spectral_geometry != other.spectral_geometry:
-                raise epygramError("operations on fields cannot be done if" + \
-                                   " fields do not share their spectral" + \
+                raise epygramError("operations on fields cannot be done if" +
+                                   " fields do not share their spectral" +
                                    " geometry.")
         else:
             super(D3Field, self)._check_operands(other)
@@ -120,17 +121,16 @@ class H1DField(D3Field):
         """
         Makes a simple (transect) plot of the field.
         Help on arguments can be found in actual plot functions docstrings.
-        
-        Args: \n
-        - *force_mode* = *False* (default) to plot an hovmoller plot
-                         if several validities are available,
-                         a simple profile plot otherwise.
-                         *hovmoller* to force an hovmoller plot
-                         *transect* to force a simple transect plot
-                         *animation* to force an animation plot
+
+        :param force_mode: - if False (default), plot an hovmoller plot
+                             if several validities are available,
+                             a simple transect plot otherwise.
+                           - if 'hovmoller', force an hovmoller plot
+                           - if 'transect', force a simple transect plot
+                           - if 'animation', force an animation plot
         """
 
-        if force_mode != False:
+        if force_mode is not False:
             mode = force_mode
         else:
             if len(self.validity) == 1:
@@ -140,21 +140,36 @@ class H1DField(D3Field):
 
         useless_args = []
         if mode == 'transect':
-            if colorbar != 'vertical': useless_args.append('colorbar')
-            if graphicmode != 'colorshades': useless_args.append('graphicmode')
-            if minmax != None: useless_args.append('minmax')
-            if levelsnumber != 21: useless_args.append('levelsnumber')
-            if center_cmap_on_0 != False: useless_args.append('center_cmap_on_0')
-            if colormap != 'jet': useless_args.append('colormap')
-            if minmax_in_title != True: useless_args.append('minmax_in_title')
-            if contourcolor != 'k': useless_args.append('contourcolor')
-            if contourwidth != 1: useless_args.append('contourwidth')
-            if contourlabel != True: useless_args.append('contourlabel')
-            if datefmt != "%Y%m%d %H:%M:%S %Z": useless_args.append('datefmt')
-            if linecolor != 'black': useless_args.append('linecolor')
-            if linestyle != '-': useless_args.append('linestyle')
-            if repeat != False: useless_args.append('repeat')
-            if interval != 1000: useless_args.append('interval')
+            if colorbar != 'vertical':
+                useless_args.append('colorbar')
+            if graphicmode != 'colorshades':
+                useless_args.append('graphicmode')
+            if minmax is not None:
+                useless_args.append('minmax')
+            if levelsnumber != 21:
+                useless_args.append('levelsnumber')
+            if center_cmap_on_0 is not False:
+                useless_args.append('center_cmap_on_0')
+            if colormap != 'jet':
+                useless_args.append('colormap')
+            if minmax_in_title is not True:
+                useless_args.append('minmax_in_title')
+            if contourcolor != 'k':
+                useless_args.append('contourcolor')
+            if contourwidth != 1:
+                useless_args.append('contourwidth')
+            if contourlabel is not True:
+                useless_args.append('contourlabel')
+            if datefmt != "%Y%m%d %H:%M:%S %Z":
+                useless_args.append('datefmt')
+            if linecolor != 'black':
+                useless_args.append('linecolor')
+            if linestyle != '-':
+                useless_args.append('linestyle')
+            if repeat is not False:
+                useless_args.append('repeat')
+            if interval != 1000:
+                useless_args.append('interval')
             return plottransects(self,
                                  over=over,
                                  labels=labels,
@@ -165,12 +180,18 @@ class H1DField(D3Field):
                                  zoom=zoom,
                                  x_is=x_is)
         elif mode == 'hovmoller':
-            if labels != None: useless_args.append('labels')
-            if unit != 'SI': useless_args.append('unit')
-            if linecolor != 'black':useless_args.append('linecolor')
-            if linestyle != '-':useless_args.append('linestyle')
-            if repeat != False: useless_args.append('repeat')
-            if interval != 1000: useless_args.append('interval')
+            if labels is not None:
+                useless_args.append('labels')
+            if unit != 'SI':
+                useless_args.append('unit')
+            if linecolor != 'black':
+                useless_args.append('linecolor')
+            if linestyle != '-':
+                useless_args.append('linestyle')
+            if repeat is not False:
+                useless_args.append('repeat')
+            if interval != 1000:
+                useless_args.append('interval')
             return plothorizontalhovmoller(self,
                                            over=over,
                                            fidkey=fidkey,
@@ -190,18 +211,30 @@ class H1DField(D3Field):
                                            datefmt=datefmt,
                                            x_is=x_is)
         elif mode == 'animation':
-            if labels != None: useless_args.append('labels')
-            if colorbar != 'vertical': useless_args.append('colorbar')
-            if graphicmode != 'colorshades': useless_args.append('graphicmode')
-            if minmax != None: useless_args.append('minmax')
-            if levelsnumber != 21: useless_args.append('levelsnumber')
-            if center_cmap_on_0 != False: useless_args.append('center_cmap_on_0')
-            if colormap != 'jet': useless_args.append('colormap')
-            if minmax_in_title != True: useless_args.append('minmax_in_title')
-            if contourcolor != 'k': useless_args.append('contourcolor')
-            if contourwidth != 1: useless_args.append('contourwidth')
-            if contourlabel != True: useless_args.append('contourlabel')
-            if datefmt != "%Y%m%d %H:%M:%S %Z": useless_args.append('datefmt')
+            if labels is not None:
+                useless_args.append('labels')
+            if colorbar != 'vertical':
+                useless_args.append('colorbar')
+            if graphicmode != 'colorshades':
+                useless_args.append('graphicmode')
+            if minmax is not None:
+                useless_args.append('minmax')
+            if levelsnumber != 21:
+                useless_args.append('levelsnumber')
+            if center_cmap_on_0 is not False:
+                useless_args.append('center_cmap_on_0')
+            if colormap != 'jet':
+                useless_args.append('colormap')
+            if minmax_in_title is not True:
+                useless_args.append('minmax_in_title')
+            if contourcolor != 'k':
+                useless_args.append('contourcolor')
+            if contourwidth != 1:
+                useless_args.append('contourwidth')
+            if contourlabel is not True:
+                useless_args.append('contourlabel')
+            if datefmt != "%Y%m%d %H:%M:%S %Z":
+                useless_args.append('datefmt')
             return plotanimation(self,
                                  over=over,
                                  fidkey=fidkey,
@@ -227,10 +260,9 @@ class H1DField(D3Field):
     def plotanimation(self, *args, **kwargs):
         return plotanimation(self, *args, **kwargs)
 
-#################
-### FUNCTIONS ###
-#################
 
+# FUNCTIONS #
+#############
 def plothorizontalhovmoller(transect,
                             over=(None, None),
                             fidkey=None,
@@ -253,43 +285,42 @@ def plothorizontalhovmoller(transect,
         """
         Makes a simple vertical Hovmöller plot of the field.
 
-        Args: \n
-        - *transect* being a :class:`epygram.fields.H1DField`
-        - *over* = any existing figure and/or ax to be used for the
+        :param transect: being a :class:`epygram.fields.H1DField`
+        :param over: any existing figure and/or ax to be used for the
           plot, given as a tuple (fig, ax), with None for
           missing objects. *fig* is the frame of the
-          matplotlib figure, containing eventually several 
-          subplots (axes); *ax* is the matplotlib axes on 
+          matplotlib figure, containing eventually several
+          subplots (axes); *ax* is the matplotlib axes on
           which the drawing is done. When given (!= None),
           these objects must be coherent, i.e. ax being one of
           the fig axes.
-        - *fidkey* = type of fid for entitling the plot with *fid[fidkey]*,
+        :param fidkey: type of fid for entitling the plot with *fid[fidkey]*,
                      if title is *None*;
                      if *None*, labels with raw fid.
-        - *title* = title for the plot.
-        - *logscale* = to set Y logarithmic scale
-        - *zoom*: a dict containing optional limits to zoom on the plot. \n
+        :param title: title for the plot.
+        :param logscale: to set Y logarithmic scale
+        :param zoom: a dict containing optional limits to zoom on the plot. \n
           Syntax: e.g. {'ymax':500, ...}.
-        - *colorbar*: if *False*, hide colorbar the plot; else, befines the
+        :param colorbar: if *False*, hide colorbar the plot; else, befines the
           colorbar orientation, among ('horizontal', 'vertical').
           Defaults to 'vertical'.
-        - *graphicmode*: among ('colorshades', 'contourlines').
-        - *minmax*: defines the min and max values for the plot colorbar. \n
+        :param graphicmode: among ('colorshades', 'contourlines').
+        :param minmax: defines the min and max values for the plot colorbar. \n
           Syntax: [min, max]. [0.0, max] also works. Default is min/max of the
           field.
-        - *levelsnumber*: number of levels for contours and colorbar.
-        - *center_cmap_on_0*: aligns the colormap center on the value 0.
-        - *colormap*: name of the **matplotlib** colormap to use.
-        - *minmax_in_title*: if True and minmax != None, adds min and max
+        :param levelsnumber: number of levels for contours and colorbar.
+        :param center_cmap_on_0: aligns the colormap center on the value 0.
+        :param colormap: name of the **matplotlib** colormap to use.
+        :param minmax_in_title: if True and minmax != None, adds min and max
           values in title
-        - *contourcolor*: color or colormap to be used for 'contourlines'
+        :param contourcolor: color or colormap to be used for 'contourlines'
           graphicmode. It can be either a legal html color name, or a colormap
           name.
-        - *contourwidth*: width of contours for 'contourlines' graphicmode.
-        - *contourlabel*: displays labels on contours.
-        - *datefmt*: date format to use, e.g. "%Y-%m-%d %H:%M:%S %Z"
-        - *showgrid*: True/False to show grid or not
-        - *x_is*: abscissa to be among:
+        :param contourwidth: width of contours for 'contourlines' graphicmode.
+        :param contourlabel: displays labels on contours.
+        :param datefmt: date format to use, e.g. "%Y-%m-%d %H:%M:%S %Z"
+        :param showgrid: True/False to show grid or not
+        :param x_is: abscissa to be among:
           - 'distance': distance from first point of transect
           - 'lon': longitude of points
           - 'lat': latitude of points
@@ -314,7 +345,7 @@ def plothorizontalhovmoller(transect,
         # coords
         y = numpy.zeros((len(transect.validity),
                          transect.geometry.dimensions['X']))
-        
+
         validities = {transect.validity[i].get():i for i in range(len(transect.validity))}
         yaxis_label = 'Validity'
         if len(validities) == 1 and len(transect.validity) != 1:
@@ -336,7 +367,7 @@ def plothorizontalhovmoller(transect,
             if x_is == 'distance':
                 p = lonlat[i]
                 distance += transect.geometry.distance((plast[0], plast[1]),
-                                                   (p[0], p[1]))
+                                                       (p[0], p[1]))
                 x[:, i] = distance
                 plast = p
             elif x_is == 'lon':
@@ -348,16 +379,20 @@ def plothorizontalhovmoller(transect,
         # min/max
         m = data.min()
         M = data.max()
-        if minmax != None:
+        if minmax is not None:
             if minmax_in_title:
                 minmax_in_title = '(min: ' + \
                                   '{: .{precision}{type}}'.format(m, type='E', precision=3) + \
                                   ' // max: ' + \
                                   '{: .{precision}{type}}'.format(M, type='E', precision=3) + ')'
-            try: m = float(minmax[0])
-            except Exception: m = data.min()
-            try: M = float(minmax[1])
-            except Exception: M = data.max()
+            try:
+                m = float(minmax[0])
+            except Exception:
+                m = data.min()
+            try:
+                M = float(minmax[1])
+            except Exception:
+                M = data.max()
         else:
             minmax_in_title = ''
         if abs(m - M) > config.epsilon:
@@ -407,7 +442,7 @@ def plothorizontalhovmoller(transect,
         elif x_is == 'lat':
             ax.set_xlabel(u'Latitude (\u00B0).')
         ax.set_ylabel(yaxis_label)
-        if zoom != None:
+        if zoom is not None:
             ykw = {}
             xkw = {}
             for pair in (('bottom', 'ymin'), ('top', 'ymax')):
@@ -436,42 +471,42 @@ def plothorizontalhovmoller(transect,
 
         return (fig, ax)
 
+
 def plottransects(transects,
-                 over=(None, None),
-                 labels=None,
-                 fidkey=None,
-                 unit='SI',
-                 title=None,
-                 logscale=False,
-                 zoom=None,
-                 x_is='distance'):
+                  over=(None, None),
+                  labels=None,
+                  fidkey=None,
+                  unit='SI',
+                  title=None,
+                  logscale=False,
+                  zoom=None,
+                  x_is='distance'):
     """
     To plot a series of transects. Returns a tuple of :mod:`matplotlib`
     (*Figure*, *ax*).
 
-    Args: \n
-    - *transects* being a :class:`epygram.base.FieldSet` of
-      :class:`epygram.fields.H1DField`, or a single
-      :class:`epygram.fields.H1DField`. \n
-      All transects are supposed to have the same unit, and the same horizontal
-      coordinate.
-    - *over* = any existing figure and/or ax to be used for the
+    :param transects: being a :class:`epygram.base.FieldSet` of
+                      :class:`epygram.fields.H1DField`, or a single
+                      :class:`epygram.fields.H1DField`. \n
+                      All transects are supposed to have the same unit,
+                      and the same horizontal coordinate.
+    :param over: any existing figure and/or ax to be used for the
       plot, given as a tuple (fig, ax), with None for
       missing objects. *fig* is the frame of the
-      matplotlib figure, containing eventually several 
-      subplots (axes); *ax* is the matplotlib axes on 
+      matplotlib figure, containing eventually several
+      subplots (axes); *ax* is the matplotlib axes on
       which the drawing is done. When given (!= None),
       these objects must be coherent, e.g. ax being one of
       the fig axes.
-    - *labels* = a list of labels for the profiles (same length and same order).
-    - *fidkey* = key of fid for labelling the curve with *fid[fidkey]*;
+    :param labels: a list of labels for the profiles (same length and same order).
+    :param fidkey: key of fid for labelling the curve with *fid[fidkey]*;
                   if *None*, labels with raw fid.
-    - *unit* = label for X coordinate.
-    - *title* = title for the plot.
-    - *logscale* = to set Y logarithmic scale
-    - *zoom*: a dict containing optional limits to zoom on the plot. \n
+    :param unit: label for X coordinate.
+    :param title: title for the plot.
+    :param logscale: to set Y logarithmic scale
+    :param zoom: a dict containing optional limits to zoom on the plot. \n
       Syntax: e.g. {'ymax':500, ...}.
-    - *x_is*: abscissa to be among:
+    :param x_is: abscissa to be among:
       - 'distance': distance from first point of transect
       - 'lon': longitude of points
       - 'lat': latitude of points
@@ -517,10 +552,10 @@ def plottransects(transects,
     for t in transects:
         if len(t.validity) != 1:
             raise epygramError("plottransects can handle only profiles with one validity.")
-        if labels != None:
+        if labels is not None:
             label = labels[i]
         else:
-            if fidkey != None:
+            if fidkey is not None:
                 label = t.fid.get(fidkey, t.fid)
             else:
                 label = str(t.fid)
@@ -564,6 +599,7 @@ def plottransects(transects,
 
     return (fig, ax)
 
+
 def plotanimation(transect,
                   title='__auto__',
                   repeat=False,
@@ -573,13 +609,12 @@ def plotanimation(transect,
     To plot a time-dependent transect as an animation.
     Returns a :class:`matplotlib.animation.FuncAnimation`.
 
-    Args: \n
-    - *transect* being a :class:`epygram.fields.H1DField`.
-    - *title* = title for the plot. '__auto__' (default) will print
+    :param transect: being a :class:`epygram.fields.H1DField`.
+    :param title: title for the plot. '__auto__' (default) will print
       the current validity of the time frame.
-    - *repeat*: to repeat animation
-    - *interval*: number of milliseconds between two validities
-    
+    :param repeat: to repeat animation
+    :param interval: number of milliseconds between two validities
+
     Other kwargs passed to plottransects().
     """
     import matplotlib.animation as animation
@@ -603,9 +638,9 @@ def plotanimation(transect,
 
     zoom = kwargs.get('zoom')
     zoom = util.ifNone_emptydict(zoom)
-    if not 'ymax' in zoom.keys():
+    if 'ymax' not in zoom.keys():
         zoom.update(ymax=maxdata)
-    if not 'ymin' in zoom.keys():
+    if 'ymin' not in zoom.keys():
         zoom.update(ymin=mindata)
     kwargs['zoom'] = zoom
 
@@ -623,8 +658,7 @@ def plotanimation(transect,
             transecti = myself.getvalidity(i)
             if title_prefix is not None:
                 title = title_prefix + '\n' + transecti.validity.get().isoformat(sep=b' ')
-            transecti.plotfield(title=title,
-                             **kwargs)
+            transecti.plotfield(title=title, **kwargs)
 
     anim = animation.FuncAnimation(fig, update,
                                    fargs=[ax, transect, transect0, title_prefix, kwargs],
