@@ -21,6 +21,7 @@ Contents:
    The epygram Library <library/index>
    External, side modules <site/index>
    FAQ
+   AppTools <apptools>
 
 
 Indices and tables

@@ -10,4 +10,3 @@ Some external, side modules: modules needed for some optional purposes of
    arpifs4py
    pyexttiff
    usevortex
-   taylorism

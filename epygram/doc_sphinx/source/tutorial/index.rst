@@ -11,5 +11,4 @@ Don't forget to read the :ref:`general-design` of the library, at first !
    Resources <resources>
    Fields <fields>
    Geometries <geometries>
-   Speed up your processing with threads <speedup_taylorism>
    
