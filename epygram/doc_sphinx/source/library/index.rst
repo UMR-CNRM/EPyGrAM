@@ -1,5 +1,5 @@
-The *epygram* Library
-==========================
+The epygram library
+===================
 
 :Release: |release|
 :Date: |today|
@@ -27,7 +27,7 @@ Modules
    base
    containers
    
-   geometries
+   geometries_lib
    fields
    formats
    resources

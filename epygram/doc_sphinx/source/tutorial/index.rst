@@ -1,5 +1,5 @@
 Tutorial
-=============
+========
 
 Don't forget to read the :ref:`general-design` of the library, at first !
 
@@ -10,5 +10,5 @@ Don't forget to read the :ref:`general-design` of the library, at first !
    Import <import>
    Resources <resources>
    Fields <fields>
-   Geometries <geometries>
+   Geometries <geometries_tuto>
    
