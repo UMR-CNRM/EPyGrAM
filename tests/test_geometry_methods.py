@@ -97,7 +97,7 @@ class Test_gauss(abtc.Test_GeometryMethods):
 
     def test_resolution_ll(self):
         self.assertAlmostEqual(self.geo.resolution_ll(*self.point),
-                               99924.900787803344, delta=epsilon)
+                               118861.43703733847, delta=epsilon)
 
 
 class Test_lambert_HS(abtc.Test_RectGeometryMethods):

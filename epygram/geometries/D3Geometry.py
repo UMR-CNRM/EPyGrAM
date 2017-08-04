@@ -3435,6 +3435,7 @@ class D3GaussGeometry(D3Geometry):
                 buff = data[:, :, slice(ind_begin, ind_end)]
                 data4D[:, :, j, slice(0, self.dimensions['lon_number_by_lat'][j])] = buff
         if ind_end != data.shape[-1]:
+            print(ind_end, data.shape[-1])
             raise epygramError("data have a wrong length")
         if d4 or len(shp_in) == 3:
             data_out = data4D
@@ -3457,9 +3458,11 @@ class D3GaussGeometry(D3Geometry):
         assert isinstance(data, numpy.ma.masked_array)
         assert len(data.shape) == 4
         data_filled = numpy.ma.masked_array(data.filled(fill_value))
+        mask = numpy.zeros(data_filled.data.shape, dtype=numpy.bool_)
         for j in range(self.dimensions['lat_number']):
             i0 = self.dimensions['lon_number_by_lat'][j]
-            data_filled[:, :, j, i0:].mask = True
+            mask[:, :, j, i0:] = True
+        data_filled.mask = mask
         return data_filled
 
     def horizontally_flattened(self, data):

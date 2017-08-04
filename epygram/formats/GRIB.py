@@ -610,11 +610,11 @@ class GRIBmessage(RecursiveObject, dict):
             if self['editionNumber'] == 2:
                 self['bitMapIndicator'] = 0
                 self['bitmapPresent'] = 1
+                self['missingValue'] = values.fill_value
                 if 'gauss' in field.geometry.name:
                     values = field.geometry.fill_maskedvalues(values)  # TOBECHECKED:
                 else:
                     values = values.filled(values.fill_value)
-                self['missingValue'] = values.fill_value
             else:
                 # bitmap in GRIB1 ?
                 raise NotImplementedError("didn't succeed to make this work")
@@ -1736,7 +1736,7 @@ class GRIB(FileResource):
                 if m is None:
                     break
                 try:
-                    v = m._read_validity().get()
+                    v = m._read_validity()
                 except (epygramError, NotImplementedError):
                     if config.GRIB_ignore_validity_decoding_errors:
                         v = FieldValidity()
