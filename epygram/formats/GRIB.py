@@ -1469,6 +1469,7 @@ class GRIB(FileResource):
         Writes a Field as a GRIBmessage into the GRIB resource.
 
         :param field: a :class:`epygram.base.Field` instance
+        :param ordering: way of ordering data in GRIB, dict of GRIB keys.
         :param packing: options of packing and compression in GRIB (dict).
         :param sample: to use a specific sample GRIB
         :param grib_edition: to force a GRIB edition number (1, 2).

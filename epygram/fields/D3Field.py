@@ -822,6 +822,36 @@ class D3CommonField(Field):
         else:
             return newfield
 
+    def resample_on_regularll(self, borders, resolution_in_degrees, **kwargs):
+        """
+        Resample data (interpolate) on a target geometry defined as a
+        regular lonlat grid of given resolution.
+        Wrapper to resample() method, building target geometry.
+
+        :param dict borders: dict(lonmin=, latmin=, lonmax=, latmax=)
+        :param resolution_in_degrees: resolution of the lonlat grid in degrees.
+                                      Supposed to be a divisor of lonmax-lonmin
+                                      and latmax-latmin.
+
+        Other kwargs to be passed to resample() method.
+        """
+        DX = borders['lonmax'] - borders['lonmin']
+        DY = borders['latmax'] - borders['latmin']
+        X = int(DX / resolution_in_degrees) + 1
+        Y = int(DY / resolution_in_degrees) + 1
+        grid = {'input_position':(0, 0),
+                'input_lon':Angle(borders['lonmin'], 'degrees'),
+                'input_lat':Angle(borders['latmin'], 'degrees'),
+                'X_resolution':Angle(resolution_in_degrees, 'degrees'),
+                'Y_resolution':Angle(resolution_in_degrees, 'degrees')}
+        target_geometry = fpx.geometry(structure=self.geometry.structure,
+                                       name='regular_lonlat',
+                                       vcoordinate=self.geometry.vcoordinate.deepcopy(),
+                                       dimensions={'X':X, 'Y':Y},
+                                       grid=grid,
+                                       position_on_horizontal_grid='center')
+        return self.resample(target_geometry, **kwargs)
+
     def extend(self, another_field_with_time_dimension):
         """
         Extend the field with regard to time dimension with the field given as
