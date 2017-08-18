@@ -11,11 +11,13 @@ What are the different formats implemented in my configuration ?
 >>> epygram.config.implemented_formats
 ['netCDF', 'GRIB', 'GeoPoints', 'TIFFMF', 'FA', 'LFI', 'DDHLFA', 'LFA']
 
-There is a *proxy* to open an exisiting resource without making an explicit reference to its format, e.g.:
+There is a *proxy* to open an existing resource without making an explicit reference to its format, e.g.:
 
 >>> a_resource = epygram.formats.resource('ICMSHAROM+0042', 'r')
 
-(where 'r' stands for 'read' opening mode), that uses the underneath guessing function
+(where 'r' stands for 'read' opening mode and 'ICMSHAROM+0042' is the filename
+of the resource), that uses the underneath guessing function,
+that you may find useful (?)
 
 >>> epygram.formats.guess('ICMSHAROM+0042')
 'FA'
@@ -25,10 +27,11 @@ For opening a new resource in writing mode, specifying the format is though nece
 >>> a_resource = epygram.formats.resource('ICMSHAROM+0042_new', 'w', fmt='FA')
 
 All resources of different formats share a set of common methods, such as
-:meth:`listfields`, :meth:`readfield()` and :meth:`writefield`, that behave very similarly
-and return the same kind of objects.
+:meth:`listfields`, :meth:`readfield()` and :meth:`writefield`, that behave
+similarly: :meth:`readfield()` always return the same kind of objects:
+:class:`Fields`.
 
-
+-----------------------------------------------------------
 
 Explore resources
 -----------------
@@ -55,17 +58,12 @@ False
 
 Where is my resource stored ?
 
->>> print r.container
-File containing:
-    _abspath: /home/mary/worktmp/ICMSHAROM+0042
-    filename: ICMSHAROM+0042
 >>> r.container.absdir
 '/home/mary/worktmp/'
 >>> r.container.basename
 'ICMSHAROM+0042'
-
-In this case, the container of the resource is a File, but it could be something
-else, a memory address for instance...
+>>> print r.container.abspath
+'/home/mary/worktmp/ICMSHAROM+0042'
 
 Now let's explore what's inside this FA file.
 
@@ -83,7 +81,8 @@ Some FA additional properties
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The case of FA is a bit specific in that the temporal and geometric metadata is
-common to the whole resource and shared by all fields. Therefore, the resource "has a geometry":
+common to the whole resource and shared by all fields.
+Therefore, the resource "has a geometry":
 
 >>> print r.geometry
 D3ProjectedGeometry containing:
@@ -112,7 +111,8 @@ SpectralGeometry containing:
         shape: elliptic
     space: bi-fourier
 
-and also a validity (embedded in a list of 1 element):
+and also a validity (embedded in a list of 1 element, because time can be
+a dimension of fields):
 
 >>> print r.validity[0]
 FieldValidity containing:
@@ -121,7 +121,12 @@ FieldValidity containing:
     _statistical_process_on_duration: None
     _cumulativeduration: 3:00:00
 
-Also, has been included a function to look for fields with a generic *seed*, e.g.:
+Here, we can see the validity is 2014-12-02 18:00:00,
+starting from *basis* 2014-12-01 00:00:00,
+which mean the term of the resource is 18h.
+
+Also, has been included a function to look for fields with a generic *seed*,
+e.g.:
 
 >>> r.find_fields_in_resource('*RAY*')
 ['SOMMFLU.RAY.SOLA', 'SURFFLU.RAY.SOLA', 'SOMMFLU.RAY.THER', 'SURFFLU.RAY.THER',
@@ -144,12 +149,14 @@ The encoding of fields is also available:
   {'spectral': True, 'KSTRON': 0, 'KPUILA': 0, 'KNGRIB': 0, 'KNBITS': 0}
 
 - and stored by time of reading:
-
+  
+  >>> r.readfield('S001TEMPERATURE')
   >>> r.fieldscompression
   {'S001TEMPERATURE': {'KNBPDG': 18, 'KSTRON': 106, 'KPUILA': 1, 'KNGRIB': 2, 'KNBCSP': 18},
   ...
   }
 
+-----------------------------------------------------------
 
 Field identifier (**fid**)
 --------------------------
@@ -170,9 +177,10 @@ returns a list of dicts:
 ...
 ]
 
-Field identifiers as an attribute of :doc:`../library/fields` objects will be detailed in section :ref:`tuto-fid` of the tutorial.
+Field identifiers as an attribute of :doc:`../library/fields` objects will be
+detailed in section :ref:`Field identifier <tuto-fid>` of the tutorial.
 
-
+-----------------------------------------------------------
 
 Juggling with resources
 -----------------------

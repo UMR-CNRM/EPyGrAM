@@ -1,6 +1,13 @@
 Some examples
 =============
 
+*These examples are meant to illustrate the relative simplicity of
+handling and use of the library, as well as a quick glance at its
+possibilities.*
+
+Fore more detailed examples, please refer to the :ref:`tutorial <tuto-index>`
+and more advanced Notebooks section.
+
 About Resources
 ---------------
 
@@ -114,6 +121,7 @@ About Fields
     >>> rot = du*du + dv*dv
     >>> rot.mean()
     1.3670194410302572
+    >>> rot.plotfield() # rot is still a Field object
 
 - Compute the windspeed and plot it, together with wind barbs:
 
@@ -149,6 +157,6 @@ About Geometry
     1.0108440620737038
     >>> s30temp.geometry.gimme_corners_ll()['lr']
     (12.658994623143194, 37.300971400173346)
-    >>> s30temp.geometry.point_is_inside_domain((15.0,37.0))
+    >>> s30temp.geometry.point_is_inside_domain(15.0, 37.0)
     False
 

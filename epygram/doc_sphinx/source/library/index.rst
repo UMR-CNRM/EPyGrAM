@@ -21,7 +21,7 @@ Modules
 -------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    util
    base
@@ -38,7 +38,6 @@ Utilities
 .. toctree::
    :maxdepth: 2
 
-   myproj
    profiles
    spectra
    args_catalog

@@ -1,6 +1,8 @@
 Geometries
 ==========
 
+.. _tuto-geometry:
+
 .. highlight:: python
 
 Again, fields objects (and their :attr:`geometry` attribute) are rather
@@ -11,6 +13,8 @@ geometries and fields coming from FA files, for convenience only.
 >>> epygram.init_env()
 >>> arp = epygram.formats.resource('icmsharpe+0000', 'r')  # an ARPEGE file
 >>> aro = epygram.formats.resource('ICMSHAROM+0042', 'r')  # an AROME file
+
+-----------------------------------------------------------
 
 Horizontal geometries
 ---------------------
@@ -26,6 +30,7 @@ unstructured grids).
 >>> t_aro = arp.readfield('CLSTEMPERATURE')
 >>> type(t_aro.geometry)
 <class 'epygram.geometries.H2DGeometry.H2DProjectedGeometry'>
+
 
 >>> g_arp = t_arp.geometry; g_aro = t_aro.geometry  # shortcuts
 >>> g_arp.rectangular_grid  # reduced Gauss grids have a variable number of longitudes depending on the latitude
@@ -49,8 +54,9 @@ Noticeable attributes
 Note that lon/lat angles as parameters of a geometry are stored in
 :class:`epygram.util.Angle` objects, in order to:
 
-- ensure to keep bit-reproducibility of original values (as read in a given format)
-- enable easy unit conversion (degrees, radians, (cos, sin) tuples...)
+- ensure to keep bit-reproducibility of original values (as read in a given
+  format, for instance)
+- enable easy unit conversion (degrees, radians, (cos, sin)...)
 
 >>> g_aro.projection['reference_lat']._origin_unit
 'radians'
@@ -58,11 +64,17 @@ Note that lon/lat angles as parameters of a geometry are stored in
 46.70000000000001
 >>> g_aro.projection['reference_lat']._origin_value
 0.815068760681
->>> numpy.radians(numpy.degrees(g_aro.projection['reference_lat']._origin_value))
-0.81506876068135203
+>>> g_aro.projection['reference_lat'].get('radians')
+0.815068760681
+
 
 Most useful methods
 ^^^^^^^^^^^^^^^^^^^
+
+.. note::
+    *Autocompletion, in interactive (i)Python session or smart editors,
+    may be an even better (than doc/tuto) way to explore the available methods
+    of objects.*
 
 - get grid, eventually directly a subzone of (LAM)
 
@@ -84,6 +96,8 @@ Most useful methods
   >>> g_arp.make_basemap(specificproj='kav7')
 
 ...
+
+-----------------------------------------------------------
 
 Vertical geometries
 -------------------
@@ -107,3 +121,9 @@ Vertical kind of geometries are usually built from either resources or
 100
 
 Cf. http://apps.ecmwf.int/codes/grib/format/grib2/ctables/4/5 for vertical coordinate types.
+
+These V1D fields are also *plottable*, by the way:
+
+>>> p.plotfield(title='A simple profile') 
+
+

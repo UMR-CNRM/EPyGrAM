@@ -39,9 +39,9 @@ so that the user should:
 General design
 --------------
 
-There are 3 basic concepts used in ``epygram``: fields, geometries, resources.
+There are 3 basic concepts used in ``epygram``: **fields, geometries, resources**.
 
-- a field is the union of a data and its meta-data: its identification, its 
+- a **field** is the union of a data and its meta-data: its identification, its 
   temporal validity and geographical description, and eventually further
   documentation. There is no *a priori* about the geometry of the field,
   it can be either a horizontal surface, a vertical profile, a transect, a
@@ -52,15 +52,18 @@ There are 3 basic concepts used in ``epygram``: fields, geometries, resources.
   In any case, a set of basic features has been intimately attached to the 
   field, providing it handy manipulation.
 
-- the geometry of a field is a set of parameters and methods that enables,
+- the **geometry** of a field is a set of parameters and methods that enables,
   basically, to know precisely what is the 3D-earth-round localization of any 
   point of the field it describes. As listed above, a geometry can be of 
   several natures and dimensions.
 
-- a resource is an aggregation of fields, stored in a given data and meta-data
+- a **resource** is an aggregation of fields, stored in a given data and meta-data
   format. The resource is dissociated with its container, *i.e.* the 
   system and physical support is it written on (*e.g.* a file on disk, a memory
   address, remote database...).
+
+A 4th important element is the **fid** (field identifier) of a field,
+which identifies its nature and can index it inside resources.
 
 The ``epygram`` package hence provides as much as possible easy read/write of
 fields from/to resources, as well as basic features on fields and geometries,

@@ -1,5 +1,5 @@
-Import
-======
+Introduction
+============
 
 .. highlight:: python
 
@@ -28,26 +28,30 @@ Create objects
 In a general way in ``epygram``, users should not have to generate an object
 using its class name and constructor (except in the library development, inside
 internal methods). First, because it may be painful to do so (objects can be
-rather complex...). Second, because there surely is a method to do it in an
+rather complex...). Second, because there surely is a method to do it with an
 integrated, comprehensive manner (except if you are doing very exotic things) !
 
 Explore objects
-^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^
 
 Generally, when wondering about the internal components of an object, just type
 
->>> print <my_object>
+>>> print my_object
+
+the representation method of these objects dig into its attributes
+(which can be verbose...).
 
 Another, better-looking way of inspecting objects (fields, geometries,
-resources and validities) is the :meth:`what` method, that dumps info into
-a file-like object:
+resources and validities) is the :meth:`what` method, that dumps organized,
+formatted info to the stdout (or to a file-like object):
 
->>> my_object.what(open('dump_of_my_object.txt', 'w'))
->>> # or
 >>> my_object.what() # to stdout
+
 
 Customize installation
 ^^^^^^^^^^^^^^^^^^^^^^
+
+(Advanced use)
 
 The ``epygram`` library is designed to be customized easily by a given user:
 modifying defaults, bringing modifications to existing classes (Fields, Formats,

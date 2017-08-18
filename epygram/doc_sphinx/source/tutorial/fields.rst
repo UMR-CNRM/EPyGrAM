@@ -15,9 +15,10 @@ Fields
 A meteorological field has (mainly):
 
 - a :ref:`fid <tuto-fid>`, that identifies the field nature
-- a ``geometry``, that defines the position of the of the field's data; detailed
-  in :doc:`geometries`.
-- a :ref:`validity <tuto-validity>`, that defines the temporal validity of the field's data
+- a :ref:`geometry <tuto-geometry>`, that defines the position of the of the
+  field's data; detailed in :doc:`../library/geometries_lib`
+- a :ref:`validity <tuto-validity>`, that defines the temporal validity of the
+  field's data
 - a :ref:`spectral geometry <tuto-spectral>`, if the field is spectral.
 
 >>> field.structure
@@ -29,14 +30,18 @@ A meteorological field has (mainly):
 
 In the following, we focus on H2DField, but all kind of fields behave similarly. 
 
+-----------------------------------------------------------
 
 .. _tuto-fid:
 
 Field identifier (fid)
 ----------------------
 
-The fid of a field is a dict() which keys are formats names (with a distinction
-between GRIB1 \& GRIB2), e.g.
+The fid of a field handle its *nature*, i.e. the physical parameter and the 
+material (surface, soil, atmosphere) it represents (often with a detailed 
+vertical location).
+It is handled as a dict() which keys are formats names, because fields in files
+are stored under different fid depending on the format, e.g.
 
 >>> field.fid
 {'FA':'S058WIND.U.PHYS',
@@ -53,21 +58,21 @@ between GRIB1 \& GRIB2), e.g.
 
 
 Take care that for a field to be written in a resource, the only-but-mandatory
-required field characteristics is that its fid must have a fid of the resource
-format !
+required field characteristics is that its fid in the resource format must be
+present!
 
 In other words, a field whose fid is ``{'FA':'SURFTEMPERATURE', 'GRIB':{...}}``
 will be writeable either in a GRIB or a FA file, but not in a LFI or any other
 format...
- 
 
+-----------------------------------------------------------
 
 .. _tuto-validity:
 
 Validity
 --------
 The ``validity`` attribute of a field is a list of
-:class:`epygram.base.FieldValidity`, because a field can have a temporal dimension (~ Hovmöller fields). 
+:class:`epygram.base.FieldValidity`, because a field can have a temporal dimension. 
 
 >>> field.validity[0].getbasis()
 datetime.datetime(2014, 12, 1, 0, 0)
@@ -88,10 +93,15 @@ The ``statistical_process_on_duration``, among which one can find min, max,
 average and so on, is coded as GRIB2 norm
 (http://apps.ecmwf.int/codes/grib/format/grib2/ctables/4/10), if available.
 
-
+-----------------------------------------------------------
 
 Fields useful methods
 ---------------------
+
+.. note::
+    *Autocompletion, in interactive (i)Python session or smart editors,
+    may be an even better (than doc/tuto) way to explore the available methods
+    of objects.*
 
 .. _tuto-spectral:
 
@@ -119,7 +129,7 @@ None
 >>> field.gp2sp(spgeom)
 >>> field.spectral
 True
->>> field.sp2gp()
+
 
 Data
 ^^^^
@@ -128,6 +138,7 @@ Some methods have been implemented to ease a comprehensive access to the data:
 
 - basic statistics:
 
+  >>> field.sp2gp()
   >>> field.stats()
   {'std': 6.1556479204416092, 'nonzero': 2211840, 'quadmean': 280.99889135008499, 'min': 259.33480158698774, 'max': 293.21439026360537, 'mean': 280.93145950331785}
 
@@ -206,6 +217,8 @@ Operations between fields can be done in two ways:
 In any case, a simple consistency check is done on the fields' geometry,
 basically on their dimensions.
 
+-----------------------------------------------------------
+
 Building Vector Fields
 ----------------------
 
@@ -246,6 +259,8 @@ so on...).
   >>> type(ff)
   <class 'epygram.fields.H2DField.H2DField'>
 
+-----------------------------------------------------------
+
 Plots
 -----
 
@@ -262,17 +277,18 @@ then either
 >>> fig.show()
 >>> fig.savefig('my_figure.png')
 
-Tip: as the most time-consuming part of creating the plot is the creation of
-the underlying Basemap object (:mod:`mpl_toolkits.basemap`), when creating
-several plots one should save and reuse the basemap object
-(cf. :doc:`geometries`). This will save much time.
+.. note::
+    as the most time-consuming part of creating the plot is the creation of
+    the underlying Basemap object (:mod:`mpl_toolkits.basemap`), when creating
+    several plots one should save and reuse the basemap object
+    (cf. :doc:`../library/geometries_lib`). This will save much time.
 
->>> temp = r.readfields('S00*TEMPERATURE')  # read highest levels temperature
->>> bm = temp[0].geometry.make_basemap()  # specific basemap can be addressed through optional arguments
->>> for t in temp:
-...     t.sp2gp()
-...     fig, ax = t.plotfield(use_basemap=bm, ...)
-...     fig.savefig(t.fid['FA'] + '.png')
+	>>> temp = r.readfields('S00*TEMPERATURE')  # read highest levels temperature
+	>>> bm = temp[0].geometry.make_basemap()  # specific basemap can be addressed through optional arguments
+	>>> for t in temp:
+	...     t.sp2gp()
+	...     fig, ax = t.plotfield(use_basemap=bm, ...)
+	...     fig.savefig(t.fid['FA'] + '.png')
 
 Similarly, superposition of plots can be done:
 
