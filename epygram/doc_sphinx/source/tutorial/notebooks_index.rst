@@ -8,7 +8,7 @@ Here are available some more advanced examples of use.
 .. toctree::
    :maxdepth: 2
 
-   Introduction <introduction_tuto>
-   Resources <resources>
-   Fields <fields>
-   Geometries <geometries_tuto>
+   Advanced plotting <notebooks/advanced_plotting>
+   Hacking fields <notebooks/hacking_fields>
+   Time dimension <notebooks/Time_dimension>
+   Make 4D fields from H2D <notebooks/make_4Dfields>

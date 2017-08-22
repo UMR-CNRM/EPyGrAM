@@ -42,6 +42,7 @@ geometries.rst
 # Locals
 epygram/doc_sphinx/html
 epygram/doc_sphinx/build
+epygram/doc_sphinx/source/tutorial/notebooks/.ipynb_checkpoints
 site/arpifs4py/*.so
 playground
 versioning.txt
