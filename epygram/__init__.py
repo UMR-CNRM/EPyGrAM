@@ -36,12 +36,16 @@ Mandatory:
 - :mod:`numpy`
 - :mod:`pyproj`
 
-Functional:
+Functional (needed for specific, more or less usual functionalities):
 
 - :mod:`matplotlib`
 - :mod:`mpl_toolkits.basemap`
 - :mod:`scipy`
-- :mod:`pyresample` (optional)
+- :mod:`pyresample`
+- :mod:`nbsphinx`
+
+it is recalled that packages available on Pypi can be installed locally using:
+pip install --user <packagename>
 
 and (if according formats are activated):
 
@@ -96,7 +100,7 @@ import footprints
 
 __all__ = []
 
-__version__ = '1.2.9'
+__version__ = '1.2.10'
 
 __license__ = 'CeCILL-C'
 

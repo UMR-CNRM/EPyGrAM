@@ -1,4 +1,4 @@
-*epygram* v |release| documentation
+*epygram*-|release| documentation
 ===================================
 
 *Enhanced Python for Graphics and Analysis of Meteorological fields*
@@ -30,4 +30,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
