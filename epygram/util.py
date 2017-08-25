@@ -911,7 +911,9 @@ def restrain_to_index_i_of_dim_d(a, i, d, n=None):
     """
     if n is None:
         n = a.shape
-    if n == 2:
+    if n == 1:
+        ra = a[[i]]
+    elif n == 2:
         if d == 0:
             ra = a[[i], :]
         else:

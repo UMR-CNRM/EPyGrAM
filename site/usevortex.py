@@ -344,12 +344,14 @@ def extractor(vortex_description,
     # 2. definition of functions
     # extraction function from resource to a dict of extracted variables
     def get_from_to(res, variables, term, dt_cutoff):
-        for f in points_fields.keys():
+        for f in sorted(points_fields.keys()):
             if progressmode == 'verbose':
                 print(f)
             nc_name = points_fields[f].get('nc_name', str(f))
             if f in res.listfields():
                 fld = res.readfield(f)
+                if fld.spectral:
+                    fld.sp2gp()
                 if points_fields[f].get('reproject_wind_on_lonlat', True):
                     try:
                         d, other = epygram.formats.FA.find_wind_pair(f)
