@@ -63,7 +63,8 @@ class V2DCommonField(D3CommonField):
                   contourwidth=1,
                   contourlabel=True,
                   x_is='distance',
-                  mask_threshold=None):
+                  mask_threshold=None,
+                  figsize=None):
         """
         Makes a simple (profile) plot of the field.
 
@@ -108,6 +109,8 @@ class V2DCommonField(D3CommonField):
           - 'lon': longitude of points
           - 'lat': latitude of points
         :param mask_threshold: dict with min and/or max value(s) to mask outside.
+        :param figsize: figure sizes in inches, e.g. (5, 8.5).
+                        If None, get the default figsize in config.plotsizes.
 
         Warning: requires **matplotlib**.
         """
@@ -117,13 +120,12 @@ class V2DCommonField(D3CommonField):
         import matplotlib.pyplot as plt
         from mpl_toolkits.axes_grid1 import make_axes_locatable
         plt.rc('font', family='serif')
-        plt.rc('figure', figsize=config.plotsizes)
         # User colormaps
         if colormap not in plt.colormaps():
             util.add_cmap(colormap)
 
         # Figure, ax
-        fig, ax = util.set_figax(*over)
+        fig, ax = util.set_figax(*over, figsize=figsize)
         # coords
         z = numpy.zeros((len(self.geometry.vcoordinate.levels),
                          self.geometry.dimensions['X']))

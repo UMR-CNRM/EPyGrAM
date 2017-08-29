@@ -359,7 +359,8 @@ class H2DVectorField(Field):
                   quiver_options=None,
                   components_are_projected_on='grid',
                   map_factor_correction=True,
-                  mask_threshold=None):
+                  mask_threshold=None,
+                  figsize=None):
         """
         Makes a simple plot of the field, with a number of options.
 
@@ -440,12 +441,13 @@ class H2DVectorField(Field):
         :param map_factor_correction: if True, applies a correction of magnitude
           to vector due to map factor.
         :param mask_threshold: dict with min and/or max value(s) to mask outside.
+        :param figsize: figure sizes in inches, e.g. (5, 8.5).
+                        If None, get the default figsize in config.plotsizes.
 
         This method uses (hence requires) 'matplotlib' and 'basemap' libraries.
         """
         import matplotlib.pyplot as plt
         plt.rc('font', family='serif')
-        plt.rc('figure', figsize=config.plotsizes)
 
         plot_module_options = util.ifNone_emptydict(plot_module_options)
         quiver_options = util.ifNone_emptydict(quiver_options)
@@ -456,7 +458,7 @@ class H2DVectorField(Field):
 
         # 1. Figure, ax
         if not plot_module:
-            fig, ax = util.set_figax(*over)
+            fig, ax = util.set_figax(*over, figsize=figsize)
 
         # 2. Set up the map
         academic = self.geometry.name == 'academic'

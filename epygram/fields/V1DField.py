@@ -72,6 +72,7 @@ class V1DCommonField(D3CommonField):
                   force_mode=False,
                   repeat=False,
                   interval=1000,
+                  figsize=(6., 9.),
                   **ignored_kwargs):
         """
         Makes a simple (profile) plot of the field.
@@ -135,7 +136,8 @@ class V1DCommonField(D3CommonField):
                                 title=title,
                                 logscale=logscale,
                                 ema=ema,
-                                zoom=zoom)
+                                zoom=zoom,
+                                figsize=figsize)
         elif mode == 'hovmoller':
             if labels is not None:
                 useless_args.append('labels')
@@ -168,7 +170,8 @@ class V1DCommonField(D3CommonField):
                                          contourcolor=contourcolor,
                                          contourwidth=contourwidth,
                                          contourlabel=contourlabel,
-                                         datefmt=datefmt)
+                                         datefmt=datefmt,
+                                         figsize=figsize)
         elif mode == 'animation':
             if labels is not None:
                 useless_args.append('labels')
@@ -204,7 +207,8 @@ class V1DCommonField(D3CommonField):
                                  ema=ema,
                                  zoom=zoom,
                                  repeat=repeat,
-                                 interval=interval)
+                                 interval=interval,
+                                 figsize=figsize)
         else:
             raise NotImplementedError("This graphic mode is not implemented")
 
@@ -241,7 +245,8 @@ def plotverticalhovmoller(profile,
                           contourwidth=1,
                           contourlabel=True,
                           datefmt=None,
-                          showgrid=True):
+                          showgrid=True,
+                          figsize=(6., 9.)):
         """
         Makes a simple vertical Hovmöller plot of the field.
 
@@ -281,6 +286,8 @@ def plotverticalhovmoller(profile,
         :param contourlabel: displays labels on contours.
         :param datefmt: date format to use, e.g. "%Y-%m-%d %H:%M:%S %Z"
         :param showgrid: True/False to show grid or not
+        :param figsize: figure sizes in inches, e.g. (5, 8.5).
+                        If None, get the default figsize in config.plotsizes.
 
         Warning: requires **matplotlib**.
         """
@@ -289,14 +296,13 @@ def plotverticalhovmoller(profile,
         import matplotlib.dates as mdates
         from mpl_toolkits.axes_grid1 import make_axes_locatable
         plt.rc('font', family='serif')
-        plt.rc('figure', figsize=config.plotsizes)
 
         # User colormaps
         if colormap not in plt.colormaps():
             util.add_cmap(colormap)
 
         # Figure, ax
-        fig, ax = util.set_figax(*over)
+        fig, ax = util.set_figax(*over, figsize=figsize)
 
         # coords
         z = numpy.zeros((len(profile.validity),

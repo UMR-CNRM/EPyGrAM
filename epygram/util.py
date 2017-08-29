@@ -1068,12 +1068,14 @@ def set_DateHour_axis(axis, datetimerange, xy,
         plt.sca(_ax)
 
 
-def set_figax(figure, ax, figsize=config.plotsizes):
+def set_figax(figure, ax, figsize=None):
     """
     Given existing matplotlib *figure* and an *ax* (or None),
     check consistency or generate a consistent (figure, ax) duet.
 
-    :param figsize: size of the figure, if generated on the fly
+    :param figsize: if generated on the fly, figure sizes in inches,
+                    e.g. (5, 8.5).
+                    If None, get the default figsize in config.plotsizes.
     """
     import matplotlib.pyplot as plt
 
@@ -1088,6 +1090,8 @@ def set_figax(figure, ax, figsize=config.plotsizes):
         if ax not in figure.axes:
             raise epygramError('*over*: inconsistency between given fig and ax')
     elif figure is ax is None:
+        if figsize is None:
+            figsize = config.plotsizes
         figure, ax = plt.subplots(1, 1, figsize=figsize)
 
     return (figure, ax)

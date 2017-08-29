@@ -137,7 +137,8 @@ class Spectrum(RecursiveObject):
                              {'exp':-5. / 3., 'offset':1, 'label':'-5/3'}],
                      zoom=None,
                      unit='SI',
-                     title=None):
+                     title=None,
+                     figsize=None):
         """
         Plot the spectrum.
         Cf. function plotspectra() of this module for arguments.
@@ -147,7 +148,8 @@ class Spectrum(RecursiveObject):
                            slopes=slopes,
                            zoom=zoom,
                            unit=unit,
-                           title=title)
+                           title=title,
+                           figsize=figsize)
 
 ##########
 # internal
@@ -283,7 +285,8 @@ def plotspectra(spectra,
                         {'exp':-5. / 3., 'offset':1, 'label':'-5/3'}],
                 zoom=None,
                 unit='SI',
-                title=None):
+                title=None,
+                figsize=None):
     """
     To plot a series of spectra.
 
@@ -304,11 +307,13 @@ def plotspectra(spectra,
                    - label=(optional label) appearing 'k = label' in legend)
     :param zoom: dict(xmin=,xmax=,ymin=,ymax=)
     :param title: title for the plot
+    :param figsize: figure sizes in inches, e.g. (5, 8.5).
+                    If None, get the default figsize in config.plotsizes.
     """
     import matplotlib.pyplot as plt
     plt.rc('font', family='serif')
 
-    fig, ax = set_figax(*over)
+    fig, ax = set_figax(*over, figsize=figsize)
 
     if isinstance(spectra, Spectrum):
         spectra = [spectra]

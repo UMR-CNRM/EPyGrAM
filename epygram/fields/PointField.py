@@ -42,6 +42,7 @@ class PointField(D3Field):
                   unit=None,
                   datefmt=None,
                   showgrid=True,
+                  figsize=None,
                   plot_kwargs=None,
                   legend_kwargs=None):
         """
@@ -60,13 +61,14 @@ class PointField(D3Field):
         :param unit: unit for Y axis
         :param datefmt: date format to use, e.g. "%Y-%m-%d %H:%M:%S %Z"
         :param showgrid: True/False to show grid or not
+        :param figsize: figure sizes in inches, e.g. (5, 8.5).
+                        If None, get the default figsize in config.plotsizes.
         :param plot_kwargs: arguments to be passed to matplotlib.axes.Axes.plot()
         :param legend_kwargs: arguments to be passed to matplotlib.axes.Axes.legend()
         """
         import matplotlib.pyplot as plt
         from matplotlib import dates
         plt.rc('font', family='serif')
-        plt.rc('figure', figsize=config.plotsizes)
 
         plot_kwargs = ifNone_emptydict(plot_kwargs)
         legend_kwargs = ifNone_emptydict(legend_kwargs)
@@ -75,7 +77,7 @@ class PointField(D3Field):
 
         assert len(self.validity) > 1, 'only time-dimensioned PointField can be plot.'
 
-        fig, ax = set_figax(*over)
+        fig, ax = set_figax(*over, figsize=figsize)
 
         validities = [v.get() for v in self.validity]
         basis = [v.getbasis() for v in self.validity]

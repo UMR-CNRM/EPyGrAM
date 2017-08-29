@@ -886,6 +886,33 @@ class D3CommonField(Field):
                     data[1:-1, ...] = (data[1:-1, ...] + data[2:, ...]) / 2.
             self.setdata(data)
 
+    def time_smooth(self, length, window='center'):
+        """
+        Smooth data in time.
+
+        :param length: time span to average on
+        :param window: replace data[t] by:\n
+          - data[t-length/2:t+length/2].mean() if 'center';
+          - data[t-length:t].mean() if 'left';
+          - data[t:t+length/2].mean() if 'right'.
+        """
+        assert len(self.validity) > 1
+        data = copy.deepcopy(self.getdata(d4=True))
+        if window == 'center':
+            tinf = length // 2
+            tsup = length // 2
+        elif window == 'left':
+            tinf = length
+            tsup = 0
+        elif window == 'right':
+            tinf = 0
+            tsup = length
+        for t in range(len(self.validity)):
+            t9 = max(0, t - tinf)
+            t1 = min(len(self.validity), t + tsup)
+            data[t, ...] = self.getdata(d4=True)[t9:t1, ...].mean(axis=0)
+        self.setdata(data)
+
 ###################
 # PRE-APPLICATIVE #
 ###################
@@ -994,6 +1021,7 @@ class D3CommonField(Field):
                   mask_threshold=None,
                   center_hist_on_0=False,
                   minmax_in_title=True,
+                  figsize=None,
                   **hist_kwargs):
         """
         Build an histogram of the field data.
@@ -1019,11 +1047,12 @@ class D3CommonField(Field):
                                 adds min and max values in title.
         :param hist_kwargs: any keyword argument to be passed to
                             matplotlib's hist()
+        :param figsize: figure sizes in inches, e.g. (5, 8.5).
+                        If None, get the default figsize in config.plotsizes.
         """
         import matplotlib.pyplot as plt
         # initializations
         plt.rc('font', family='serif')
-        plt.rc('figure', figsize=config.plotsizes)
 
         if self.spectral:
             raise epygramError("please convert to gridpoint with sp2gp()" +
@@ -1038,7 +1067,7 @@ class D3CommonField(Field):
                                          mask_outside['min'],
                                          mask_outside['max'])
         data1d = [stretch_array(data1d)]
-        fig, ax = set_figax(*over)
+        fig, ax = set_figax(*over, figsize=figsize)
         if together_with != []:
             if isinstance(together_with, D3Field):
                 together_with = [together_with]

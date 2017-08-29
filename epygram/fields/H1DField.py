@@ -117,6 +117,7 @@ class H1DField(D3Field):
                   repeat=False,
                   interval=1000,
                   x_is='distance',
+                  figsize=(6., 9.),
                   **ignored_kwargs):
         """
         Makes a simple (transect) plot of the field.
@@ -178,7 +179,8 @@ class H1DField(D3Field):
                                  title=title,
                                  logscale=logscale,
                                  zoom=zoom,
-                                 x_is=x_is)
+                                 x_is=x_is,
+                                 figsize=figsize)
         elif mode == 'hovmoller':
             if labels is not None:
                 useless_args.append('labels')
@@ -209,7 +211,8 @@ class H1DField(D3Field):
                                            contourwidth=contourwidth,
                                            contourlabel=contourlabel,
                                            datefmt=datefmt,
-                                           x_is=x_is)
+                                           x_is=x_is,
+                                           figsize=figsize)
         elif mode == 'animation':
             if labels is not None:
                 useless_args.append('labels')
@@ -244,7 +247,8 @@ class H1DField(D3Field):
                                  zoom=zoom,
                                  repeat=repeat,
                                  interval=interval,
-                                 x_is=x_is)
+                                 x_is=x_is,
+                                 figsize=figsize)
         else:
             raise NotImplementedError("This graphic mode is not implemented")
 
@@ -281,7 +285,8 @@ def plothorizontalhovmoller(transect,
                             contourlabel=True,
                             datefmt=None,
                             showgrid=True,
-                            x_is='distance'):
+                            x_is='distance',
+                            figsize=None):
         """
         Makes a simple vertical Hovmöller plot of the field.
 
@@ -324,6 +329,8 @@ def plothorizontalhovmoller(transect,
           - 'distance': distance from first point of transect
           - 'lon': longitude of points
           - 'lat': latitude of points
+        :param figsize: figure sizes in inches, e.g. (5, 8.5).
+                        If None, get the default figsize in config.plotsizes.
 
         Warning: requires **matplotlib**.
         """
@@ -333,14 +340,13 @@ def plothorizontalhovmoller(transect,
         import matplotlib.dates as mdates
         from mpl_toolkits.axes_grid1 import make_axes_locatable
         plt.rc('font', family='serif')
-        plt.rc('figure', figsize=config.plotsizes)
 
         # User colormaps
         if colormap not in plt.colormaps():
             util.add_cmap(colormap)
 
         # Figure, ax
-        fig, ax = util.set_figax(*over)
+        fig, ax = util.set_figax(*over, figsize=figsize)
 
         # coords
         y = numpy.zeros((len(transect.validity),
@@ -480,7 +486,8 @@ def plottransects(transects,
                   title=None,
                   logscale=False,
                   zoom=None,
-                  x_is='distance'):
+                  x_is='distance',
+                  figsize=(6., 9.)):
     """
     To plot a series of transects. Returns a tuple of :mod:`matplotlib`
     (*Figure*, *ax*).
@@ -510,7 +517,8 @@ def plottransects(transects,
       - 'distance': distance from first point of transect
       - 'lon': longitude of points
       - 'lat': latitude of points
-
+    :param figsize: figure sizes in inches, e.g. (5, 8.5).
+                    If None, get the default figsize in config.plotsizes.
     """
     import matplotlib.pyplot as plt
 
@@ -545,7 +553,7 @@ def plottransects(transects,
     plast = lonlat[-1]
 
     # Figure
-    fig, ax = util.set_figax(*over, figsize=(6., 9.))
+    fig, ax = util.set_figax(*over, figsize=figsize)
     if logscale:
         ax.set_yscale('log')
     i = 0

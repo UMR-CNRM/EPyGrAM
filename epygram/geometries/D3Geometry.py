@@ -377,8 +377,8 @@ class D3Geometry(RecursiveObject, FootprintBase):
         """
         import matplotlib.pyplot as plt
         plt.rc('font', family='serif')
-        plt.rc('figure', figsize=config.plotsizes)
-        fig, ax = set_figax(*kwargs.get('over', (None, None)))
+        fig, ax = set_figax(*kwargs.get('over', (None, None)),
+                            figsize=kwargs.get('figsize', None))
         if self.name == 'academic':
             raise epygramError("We cannot plot lon/lat of an academic grid.")
         if kwargs.get('use_basemap') is None:
@@ -1319,7 +1319,6 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
         # make basemap
         if zoom is not None:
             # zoom case
-            specificproj = 'cyl'
             llcrnrlon = zoom['lonmin']
             llcrnrlat = zoom['latmin']
             urcrnrlon = zoom['lonmax']
@@ -1981,7 +1980,6 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
         # make basemap
         if zoom is not None:
             # zoom case
-            specificproj = 'cyl'
             llcrnrlon = zoom['lonmin']
             llcrnrlat = zoom['latmin']
             urcrnrlon = zoom['lonmax']
@@ -2703,9 +2701,9 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         from mpl_toolkits.basemap import Basemap
 
         if zoom is not None:
-            if specificproj not in [None, 'cyl']:
-                raise epygramError("projection can only be cyl in zoom mode.")
-            specificproj = 'cyl'
+            if specificproj not in [None, 'cyl', 'merc']:
+                raise epygramError("projection can only be cyl/merc in zoom mode.")
+            specificproj = True
 
         if specificproj is None:
             # corners
@@ -2785,6 +2783,12 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                 llcrnrlat = zoom['latmin']
                 urcrnrlon = zoom['lonmax']
                 urcrnrlat = zoom['latmax']
+                #specificproj = 'cyl'
+                if llcrnrlat <= -89.0 or \
+                   urcrnrlat >= 89.0:
+                    specificproj = 'cyl'
+                else:
+                    specificproj = 'merc'
             else:
                 (imin, jmin) = self.gimme_corners_ij(subzone)['ll']
                 (imax, jmax) = self.gimme_corners_ij(subzone)['ur']
@@ -2812,7 +2816,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                             lon_0=lon0,
                             lat_0=lat0,
                             ax=ax)
-            elif specificproj == 'cyl':
+            elif specificproj in ('cyl', 'merc'):
                 b = Basemap(resolution=gisquality,
                             projection=specificproj,
                             llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
@@ -3520,11 +3524,15 @@ class D3GaussGeometry(D3Geometry):
         # make basemap
         if zoom is not None:
             # zoom case
-            specificproj = 'cyl'
             llcrnrlon = zoom['lonmin']
             llcrnrlat = zoom['latmin']
             urcrnrlon = zoom['lonmax']
             urcrnrlat = zoom['latmax']
+            if llcrnrlat <= -89.0 or \
+               urcrnrlat >= 89.0:
+                specificproj = 'cyl'
+            else:
+                specificproj = 'merc'
         if specificproj is None:
             # defaults
             if 'rotated' in self.name:
@@ -3553,7 +3561,7 @@ class D3GaussGeometry(D3Geometry):
                             lon_0=lon0,
                             lat_0=lat0,
                             ax=ax)
-            elif specificproj == 'cyl':
+            elif specificproj in ('cyl', 'merc'):
                 b = Basemap(resolution=gisquality, projection=specificproj,
                             llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
                             urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
