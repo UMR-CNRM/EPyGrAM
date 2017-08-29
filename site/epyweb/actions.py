@@ -359,7 +359,7 @@ class MyPlot(object):
                             try:  # Cas des RR @0h : param n'existe pas
                                 validity = field.validity
                                 fid = field.fid
-                                if Lexception:  # cas normal
+                                if Lexception == False:  # cas normal
                                     field = field - fieldDecumul
                                 else:  # cas juste après un champ inexistant : field=field et fin de l'exception
                                     Lexception = False
