@@ -1719,7 +1719,7 @@ function UpdateFields(oneDesc,zoom_spinner) {
             //On met la lecture du domaine à ce niveau pour éviter les conflits de lecture simultané de FA
             //On ne met pas à jour le zoom pour le fichier B (= cloned)
             if (oneDesc["suffixe"] == "") {
-                GetCoordinates(zoom_spinner);
+                GetCoordinates(zoom_spinner,fields[0]);
             }
             
         },
@@ -2322,12 +2322,13 @@ function get_specific_args(my_args_plot,suffixe,filename) {
 
 }   
 
-function GetCoordinates (zoom_spinner) {
+function GetCoordinates (zoom_spinner,champ) {
                 //Appel pour obtenir les coordonnées du domaine pour préremplir le zoom
                 //Uniquement si le zoom n'est pas déjà activé... (pour ne pas perdre les valeurs
                 //en changeant de fichier
                 var args_domain = {};
                 args_domain["file"] = Adesc["local_path"][0];
+                args_domain["champ"] = champ;
                 var args_domain_json = JSON.stringify(args_domain);
 
                 if ($("#active_zoom").is(':checked')) {

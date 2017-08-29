@@ -230,10 +230,11 @@ class GetDomain(object):
     def POST(self):
         try:
             fichier = getAjaxArg('file')
+            champ = getAjaxArg('champ')
             resource = epygram.formats.resource(fichier, 'r')
 
             # On prend la géométrie du 1er champ => compatibilité FA / GRIB
-            firstfield = resource.readfield(resource.listfields()[0])
+            firstfield = resource.readfield(champ)
             if firstfield.geometry.rectangular_grid:
                 (llcrnrlon, llcrnrlat) = firstfield.geometry.gimme_corners_ll()['ll']
                 (urcrnrlon, urcrnrlat) = firstfield.geometry.gimme_corners_ll()['ur']
@@ -359,7 +360,7 @@ class MyPlot(object):
                             try:  # Cas des RR @0h : param n'existe pas
                                 validity = field.validity
                                 fid = field.fid
-                                if Lexception:  # cas normal
+                                if Lexception == False:  # cas normal
                                     field = field - fieldDecumul
                                 else:  # cas juste après un champ inexistant : field=field et fin de l'exception
                                     Lexception = False
