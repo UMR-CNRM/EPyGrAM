@@ -12,6 +12,7 @@ import copy
 import six
 
 import matplotlib
+from numpy.core.defchararray import startswith
 matplotlib.use("Agg")
 
 from . import web
@@ -28,6 +29,9 @@ def whichFields(fichier):
     try:
         resource = epygram.formats.resource(fichier, 'r')
         listoffields = resource.listfields()
+        #Cas de Surfex : on ne lit que les champs de type H2D (plus long que listfields)
+        if resource.format == "FA" and listoffields[0].startswith("SFX."):
+            listoffields = resource.find_fields_in_resource(fieldtype="H2D") #resource.listfields()
         resource.close()
         return listoffields
     except ValueError:

@@ -230,10 +230,11 @@ class GetDomain(object):
     def POST(self):
         try:
             fichier = getAjaxArg('file')
+            champ = getAjaxArg('champ')
             resource = epygram.formats.resource(fichier, 'r')
 
             # On prend la géométrie du 1er champ => compatibilité FA / GRIB
-            firstfield = resource.readfield(resource.listfields()[0])
+            firstfield = resource.readfield(champ)
             if firstfield.geometry.rectangular_grid:
                 (llcrnrlon, llcrnrlat) = firstfield.geometry.gimme_corners_ll()['ll']
                 (urcrnrlon, urcrnrlat) = firstfield.geometry.gimme_corners_ll()['ur']
