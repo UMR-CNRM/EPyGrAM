@@ -18,8 +18,10 @@ import netrc
 import os
 import datetime
 import re
+import copy
 
 import footprints
+import taylorism
 from vortex import toolbox
 import common
 import olive
@@ -430,8 +432,9 @@ def extractor(vortex_description,
         vortex_description['getmode'] = 'prestaging'
         vortex_description['date'] = cutoffs
         vortex_description['term'] = terms
-        print(get_resources(**vortex_description))
+        to_return = get_resources(**vortex_description)
     else:
+        to_return = []
         if len(terms) > 1:
             for i in range(len(cutoffs)):
                 vortex_description['date'] = cutoffs[i]
@@ -453,6 +456,7 @@ def extractor(vortex_description,
                         'w',
                         fmt='netCDF')
                     write_to(variables, nc, loc)
+                    to_return.append(nc.container.abspath)
         else:  # 1 term only: series of dates at frozen term
             variables = {loc:{} for loc in coords.keys()}
             for i in range(len(cutoffs)):
@@ -474,7 +478,32 @@ def extractor(vortex_description,
                     'w',
                     fmt='netCDF')
                 write_to(variables, nc, loc)
+                to_return.append(nc.container.abspath)
+    return to_return
 # End of extractor()
+
+
+class Extractor(taylorism.Worker):
+    """Independant extractor."""
+
+    _footprint = dict(
+        info="Run extractor().",
+        attr=dict(
+            directives=dict(
+                info="Contains all arguments to extractor(...).",
+                type=footprints.FPDict)
+        )
+    )
+
+    def _task(self):
+        directives = copy.copy(self.directives)
+        return extractor(directives.pop('vortex_description'),
+                         directives.pop('coords'),
+                         directives.pop('start_cutoff'),
+                         directives.pop('end_cutoff'),
+                         directives.pop('start_term'),
+                         directives.pop('end_term'),
+                         **directives)
 
 
 #############
