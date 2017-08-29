@@ -342,6 +342,8 @@ def extractor(vortex_description,
                        for f, pf in profiles_FAfields.items()})
     vortex_description.update({'getmode':'epygram',
                                'uselocalcache':use_local_cache})
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
 
     # 2. definition of functions
     # extraction function from resource to a dict of extracted variables
