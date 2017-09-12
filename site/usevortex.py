@@ -19,9 +19,11 @@ import os
 import datetime
 import re
 import copy
+import time
 
 import footprints
 import taylorism
+import vortex
 from vortex import toolbox
 import common
 import olive
@@ -156,6 +158,7 @@ def get_resources(getmode='epygram',
       + model='aladin',  # name of the model
     """
     import common.util.usepygram
+    t = vortex.ticket()
 
     if uselocalcache:
         _domain = 'multi'
@@ -189,13 +192,17 @@ def get_resources(getmode='epygram',
     if getmode == 'check':
         # just check completion of the resource
         try:
+            t.context.record_off()
             toolbox.rload(**description)
+            t.context.record_on()
             resources = True
         except (toolbox.VortexToolboxDescError, footprints.FootprintException):
             resources = False
     else:
         # resolve resource description: raise an error if the description is not complete
+        t.context.record_off()
         resolved = toolbox.rload(**description)
+        t.context.record_on()
         # and complete reaching resource according to getmode
         if getmode == 'vortex':
             resources = resolved
@@ -208,7 +215,22 @@ def get_resources(getmode='epygram',
                                           for r in resolved],
                                          description.get('mail', None))
         elif getmode in ('fetch', 'epygram'):
-            ok = [r.get() for r in resolved]
+            ok = []
+            for r in resolved:
+                ftp_count = 4
+                while ftp_count > 0:
+                    try:
+                        rgot = r.get()
+                    except (ftplib.error_proto, ftplib.error_temp):
+                        if ftp_count > 1:
+                            footprints.logger.warning('unexpected FTP error: will try again after 20s.')
+                            time.sleep(20.)
+                        else:
+                            ok.append(False)
+                        ftp_count -= 1
+                    else:
+                        ok.append(rgot)
+                        ftp_count = 0
             if all(ok):
                 if getmode == 'fetch':
                     resources = [r.container.abspath for r in resolved]
