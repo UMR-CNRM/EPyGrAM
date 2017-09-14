@@ -47,10 +47,11 @@ rm site/arpifs4py/libs4py_*.so
 # Rsync
 rsync -av * sxcoope1:~mary/sync_epygram/EPyGrAM$version/
 rm site/arpifs4py/libs4py.so
+rsync -av * pagre:~mary/public/EPyGrAM$version/
 rm -rf site/epyweb
 rsync -av * beaufix:~mary/public/EPyGrAM$version/
 rsync -av * prolix:~mary/public/EPyGrAM$version/
-echo "libs4py.so to be linked on beaufix/prolix (~mary/deploy_epygram_finalize.sh)"
+echo "libs4py.so to be linked on beaufix/prolix (~mary/deploy_epygram_finalize.sh) and pagre"
 
 # Come back and clean
 cd $here

@@ -679,6 +679,16 @@ class netCDF(FileResource):
                     Xgrid, Ygrid = find_grid_in_variables()
                     grid = {'longitudes':Xgrid,
                             'latitudes':Ygrid}
+                    if (hasattr(self._variables[variable.grid_mapping], 'x_resolution')
+                        and len(Xgrid.shape) == 2):
+                        # then this is a regular lon lat
+                        kwargs_geom['name'] = 'regular_lonlat'
+                        grid = {'input_lon':Angle(Xgrid[0, 0], 'degrees'),
+                                'input_lat':Angle(Ygrid[0, 0], 'degrees'),
+                                'input_position':(0, 0),
+                                'X_resolution':Angle(grid_mapping.x_resolution, 'degrees'),
+                                'Y_resolution':Angle(grid_mapping.y_resolution, 'degrees')}
+                    print("#########", kwargs_geom)
                 else:
                     raise NotImplementedError('grid_mapping.grid_mapping_name == ' + grid_mapping.grid_mapping_name)
             else:
@@ -1198,7 +1208,7 @@ class netCDF(FileResource):
         """
         self.behaviour.update(kwargs)
 
-    def what(self, out=sys.stdout):
+    def what(self, out=sys.stdout, **ignored_kwargs):
         """Writes in file a summary of the contents of the GRIB."""
 
         # adapted from http://schubert.atmos.colostate.edu/~cslocum/netcdf_example.html
