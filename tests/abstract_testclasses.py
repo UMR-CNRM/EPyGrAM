@@ -217,3 +217,44 @@ class Test_RectGeometryMethods(Test_GeometryMethods):
         self.assertTrue(self.geo.point_is_inside_domain_ll(*self.point))
         self.assertFalse(self.geo.point_is_inside_domain_ll(self.point[0],
                                                             - self.point[1]))
+
+
+class TestSpectral(TestCase):
+
+    datadir = os.path.join(datadir, 'geometries')
+    basename = ''  # in real tests
+    diff_OK_for_spectral_wayround = 1e-7
+
+    def setUp(self):
+        self.filename = os.path.join(self.datadir, self.basename)
+
+    def test_read_gp_and_wayround(self):
+        with epygram.formats.resource(self.filename, 'r') as r:
+            gp = r.readfield('SURFGEOPOTENTIEL')
+            spgeom = r.spectral_geometry
+        gp_copy = gp.deepcopy()
+        gp_copy.gp2sp(spgeom)
+        gp_copy.sp2gp()
+        diff = gp_copy - gp
+        self.assertLessEqual(max(abs(diff.min()), diff.max()),
+                             self.diff_OK_for_spectral_wayround)
+
+    def test_read_sp_and_wayround(self):
+        with epygram.formats.resource(self.filename, 'r') as r:
+            sp = r.readfield('SPECSURFGEOPOTEN')
+        spgeom = sp.spectral_geometry
+        sp_copy = sp.deepcopy()
+        sp_copy.sp2gp()
+        sp_copy.gp2sp(spgeom)
+        diff = sp_copy - sp
+        self.assertLessEqual(max(abs(diff.min()), diff.max()),
+                             self.diff_OK_for_spectral_wayround)
+
+    def test_sp_and_gp_equal_in_gp_space(self):
+        with epygram.formats.resource(self.filename, 'r') as r:
+            sp = r.readfield('SPECSURFGEOPOTEN')
+            gp = r.readfield('SURFGEOPOTENTIEL')
+        sp.sp2gp()
+        diff = sp - gp
+        self.assertLessEqual(max(abs(diff.min()), diff.max()),
+                             self.diff_OK_for_spectral_wayround)
