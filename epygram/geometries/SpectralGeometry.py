@@ -10,6 +10,7 @@ Contains the class that handles spectral parameters and spectral transforms.
 from __future__ import print_function, absolute_import, unicode_literals, division
 
 import numpy
+import os
 
 from footprints import FootprintBase, FPDict
 
@@ -24,7 +25,9 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
     _footprint = dict(
         attr=dict(
             space=dict(
-                access='rwx',
+                access='rxx',
+                type=str,
+                values=['legendre', 'bi-fourier'],
                 info='Name of spectral space.'),
             truncation=dict(
                 type=FPDict,
@@ -32,6 +35,31 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
                 info='Handles the spectral truncation parameters.'),
         )
     )
+
+    def __init__(self, *args, **kwargs):
+        super(SpectralGeometry, self).__init__(*args, **kwargs)
+        self._total_system_memory = (os.sysconf(b'SC_PAGE_SIZE') *
+                                     os.sysconf(b'SC_PHYS_PAGES'))  # TODO: use bronx.system.mem_tool
+        self._prevent_swapping()
+
+    def _prevent_swapping(self):
+        if (self.space == 'legendre' and  # TODO: release condition on space
+            (self.needed_memory >=
+             config.prevent_swapping_legendre * self._total_system_memory)):
+            needed_mem_in_mb = float(self.needed_memory) / (1024 ** 2.)
+            total_mem_in_mb = float(self._total_system_memory) / (1024 ** 2.)
+            raise epygramError('Legendre spectral transforms need {:.1f} MB \
+                                memory, while only {:.1f} MB is available: \
+                                SWAPPING prevented !'.format(needed_mem_in_mb,
+                                                             total_mem_in_mb))
+
+    @property
+    def needed_memory(self):
+        """Memory needed for transforms, in bytes."""
+        if self.space == 'legendre':  # TODO: release condition on space
+            return self.truncation['max'] ** 3 / 2 * 8
+        else:
+            raise NotImplementedError('space:' + self.space)
 
     def sp2gp(self, data, gpdims,
               spectral_coeff_order=config.spectral_coeff_order):
@@ -48,6 +76,7 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
         Input and output data are both 1D.
         """
         from arpifs4py import wtransforms
+        self._prevent_swapping()
         if self.space == 'bi-fourier':
             gpdata = wtransforms.w_spec2gpt_lam(gpdims['X'],
                                                 gpdims['Y'],
@@ -100,6 +129,7 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
         Input and output data are both 1D.
         """
         from arpifs4py import wtransforms
+        self._prevent_swapping()
         if self.space == 'bi-fourier':
             SPdatasize = wtransforms.w_etrans_inq(gpdims['X'],
                                                   gpdims['Y'],
@@ -176,6 +206,7 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
         Input and output data are both 1D.
         """
         from arpifs4py import wtransforms
+        self._prevent_swapping()
         if self.space == 'bi-fourier':
             gpdata = wtransforms.w_spec2gpt_lam(gpdims['X'],
                                                 gpdims['Y'],
