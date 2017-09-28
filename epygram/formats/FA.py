@@ -1061,7 +1061,7 @@ class FA(FileResource):
                 self._set_validity()
             data = numpy.ma.copy(field.getdata()).flatten()
             if isinstance(data, numpy.ma.core.MaskedArray):
-                data = numpy.copy(data[data.mask is False].data)
+                data = numpy.copy(data[data.mask[...] == False].data)  # FIXME: does not work with real masked array fields
             if compression is not None:
                 modified_compression = True
             elif field.fid[self.format] in self.fieldscompression:
