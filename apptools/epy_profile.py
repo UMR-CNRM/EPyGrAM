@@ -205,7 +205,7 @@ def main(filename,
                 plt.show()
 
     # Text Output
-    parameter = epygram.util.linearize2str(profile.fid.get(resource.format, profile.fid))
+    parameter = epygram.util.soft_string(profile.fid.get(resource.format, profile.fid))
     if None in coordinates:
         position = 'mean'
     else:

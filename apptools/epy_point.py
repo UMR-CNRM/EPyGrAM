@@ -186,7 +186,7 @@ def main(filename,
             filename = outputfilename
         else:
             if noutfields == 1:
-                parameter = epygram.util.linearize2str(fidlist[0])
+                parameter = epygram.util.soft_string(fidlist[0])
                 filename = '.'.join([resource.container.abspath,
                                      parameter,
                                      str(coordinates[0]) + "E" + str(coordinates[1]) + "N",
@@ -210,7 +210,7 @@ def main(filename,
             filename = outputfilename
         else:
             if noutfields == 1:
-                parameter = epygram.util.linearize2str(unionfidlist[0])
+                parameter = epygram.util.soft_string(unionfidlist[0])
                 filename = resource.container.absdir + \
                            '.'.join(['diff',
                                      resource.container.basename + '-' + reference.container.basename,

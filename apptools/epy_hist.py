@@ -206,7 +206,7 @@ def main(filename,
     if output:
         epylog.info("save plots...")
         suffix = '.'.join(['hist', output])
-        parameter = epygram.util.linearize2str(fieldseed)
+        parameter = epygram.util.soft_string(fieldseed)
         # main resource
         if not diffonly:
             if not diffmode and outputfilename:

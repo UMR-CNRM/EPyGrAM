@@ -187,7 +187,7 @@ def main(filename,
     # Output
     if output:
         epylog.info("save plots...")
-        parameter = epygram.util.linearize2str(section.fid.get(resource.format, section.fid))
+        parameter = epygram.util.soft_string(section.fid.get(resource.format, section.fid))
         suffix = '.'.join(['_'.join([parameter,
                                      str(starting_point[0]) + "E" + str(starting_point[1]) + "N",
                                      str(ending_point[0]) + "E" + str(ending_point[1]) + "N"]),

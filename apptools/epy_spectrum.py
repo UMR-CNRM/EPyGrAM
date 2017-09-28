@@ -288,7 +288,7 @@ def main(filename,
             filename = outputfilename
         else:
             filename = '.'.join([outputrootname,
-                                 epygram.util.linearize2str(s.name),
+                                 epygram.util.soft_string(s.name),
                                  suffix])
         s.write(open(filename, 'w'))
     if output:
@@ -297,7 +297,7 @@ def main(filename,
                 filename = outputfilename
             else:
                 filename = '.'.join([outputrootname,
-                                     epygram.util.linearize2str(p),
+                                     epygram.util.soft_string(p),
                                      suffix,
                                      output])
             spectraplots[p].savefig(filename, dpi=figures_dpi)

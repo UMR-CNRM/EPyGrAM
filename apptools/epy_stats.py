@@ -162,7 +162,7 @@ def main(filename,
         printlist = fidlist
         printlist.sort()
         noutfields = len(printlist)
-        parameter = epygram.util.linearize2str(printlist[0])
+        parameter = epygram.util.soft_string(printlist[0])
         if outputfilename:
             filename = outputfilename
         else:
@@ -182,7 +182,7 @@ def main(filename,
             printlist = unionfidlist
         printlist.sort()
         noutfields = len(printlist)
-        parameter = epygram.util.linearize2str(printlist[0])
+        parameter = epygram.util.soft_string(printlist[0])
         if outputfilename:
             filename = outputfilename
         else:
