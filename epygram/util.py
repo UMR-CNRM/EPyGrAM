@@ -627,7 +627,28 @@ def linearize(s, quotes=False):
 
 def linearize2str(o, quotes=False):
     """Returns str(*o*) linearized (cf. util.linearize)."""
-    return linearize(str(o))
+    return linearize(str(o), quotes=quotes)
+
+
+def soft_string(s, escaped_characters={' ':'_',
+                                       '{':'',
+                                       '}':'',
+                                       '(':'',
+                                       ')':'',
+                                       '[':'',
+                                       ']':'',
+                                       '*':''}):
+    """
+    Returns str(*s*) escaping special characters that may
+    be forbidden in filenames.
+
+    :param escaped_characters: special characters to escape,
+                               and their replacement in case.
+    """
+    result = str(s).strip()
+    for repl in escaped_characters.items():
+        result = result.replace(*repl)
+    return result
 
 
 def str_or_int_to_datetime(dt):
@@ -841,14 +862,14 @@ def color_scale(cmap, max_val=None):
 
 @contextmanager
 def stdout_redirected(to=os.devnull):
-    '''
+    """
     Usage:
-    import os
 
     with stdout_redirected(to=filename):
         print("from Python")
+        import os
         os.system("echo non-Python applications are also supported")
-    '''
+    """
     # http://stackoverflow.com/questions/5081657/how-do-i-prevent-a-c-shared-library-to-print-on-stdout-in-python
     fd = sys.stdout.fileno()
 
@@ -871,14 +892,14 @@ def stdout_redirected(to=os.devnull):
 
 @contextmanager
 def stderr_redirected(to=os.devnull):
-    '''
+    """
     Usage:
-    import os
 
     with stderr_redirected(to=filename):
         print("from Python")
+        import os
         os.system("echo non-Python applications are also supported")
-    '''
+    """
     # Based on stdout_redirected
     fd = sys.stderr.fileno()
 
@@ -901,16 +922,21 @@ def restrain_to_index_i_of_dim_d(a, i, d, n=None):
     Of an array a[d1, d2, d3, ... dn], returns the array restricted to
     index **i** of the dimension **d**.
 
-    A more elegant solution would have been the following, except that it does
-    not work when accessing netCDF variable (for which it was necessary).
+    :param a: the input array
+    :param i: index in dimension **d**
+    :param d: the dimension to restrain
+    :param n: specify *a priori* the number of dimensions of **a**
 
-    indexes = [range(len(self._dimensions[d])) for d in variable.dimensions] # equivalent to [:, :, :, ...]
-    for k in only.keys():
-        indexes[variable.dimensions.index(k)] = [only[k]] # restrain to the "only" give
-    return array[numpy.ix_(*indexes)]
+    A more elegant solution would have been the following, but it does
+    not work when accessing netCDF variable (for which it was necessary)::
+
+        indexes = [range(len(self._dimensions[d])) for d in variable.dimensions] # equivalent to [:, :, :, ...]
+        for k in only.keys():
+            indexes[variable.dimensions.index(k)] = [only[k]] # restrain to the "only" give
+        return array[numpy.ix_(*indexes)]
     """
     if n is None:
-        n = a.shape
+        n = len(a.shape)
     if n == 1:
         ra = a[[i]]
     elif n == 2:

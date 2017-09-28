@@ -83,7 +83,7 @@ def hendrix_prestage(resource_paths, mail=None):
     os.remove(staging_request_fullname)
     ftp.quit()
     # send back request identifier
-    return ['/'.join([stagedir, staging_request])]
+    return '/'.join([stagedir, staging_request])
 
 
 def get_resources(getmode='epygram',
@@ -211,9 +211,9 @@ def get_resources(getmode='epygram',
         elif getmode == 'exist':
             resources = [(r.locate(), bool(r.check())) for r in resolved]
         elif getmode == 'prestaging':
-            resources = hendrix_prestage([r.locate().split('hendrix.meteo.fr:')[1]
-                                          for r in resolved],
-                                         description.get('mail', None))
+            resources = [hendrix_prestage([r.locate().split('hendrix.meteo.fr:')[1]
+                                           for r in resolved],
+                                          description.get('mail', None))]
         elif getmode in ('fetch', 'epygram'):
             ok = []
             for r in resolved:
