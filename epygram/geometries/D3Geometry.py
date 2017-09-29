@@ -3115,7 +3115,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         write_formatted(out, "Center Longitude (of C+I) in deg" + varname,
                         self._center_lon.get('degrees'))
         if arpifs_var_names:
-            varname = ' (ELAT0)'
+            varname = ' (ELATC)'
         write_formatted(out, "Center Latitude (of C+I) in deg" + varname,
                         self._center_lat.get('degrees'))
         if arpifs_var_names:

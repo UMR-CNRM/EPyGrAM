@@ -372,6 +372,7 @@ def geom2namblocks(geometry):
     # quadclim namelist
     namelist_name = 'namel_mens_quad'
     namelists[namelist_name] = {'NAMDIM':{},
+                                'NEMDIM':{},
                                 'NEMGEO':{}}
     blocks = namelists[namelist_name]
     blocks['NAMDIM']['NDLON'] = geometry.dimensions['X']
@@ -380,6 +381,8 @@ def geom2namblocks(geometry):
     blocks['NAMDIM']['NDGUXG'] = geometry.dimensions['Y_CIzone']
     blocks['NAMDIM']['NMSMAX'] = Xtruncation_quad
     blocks['NAMDIM']['NSMAX'] = Ytruncation_quad
+    blocks['NEMDIM']['NBZONL'] = geometry.dimensions['X_Iwidth']
+    blocks['NEMDIM']['NBZONG'] = geometry.dimensions['Y_Iwidth']
     blocks['NEMGEO']['ELON0'] = geometry.projection['reference_lon'].get('degrees')
     blocks['NEMGEO']['ELAT0'] = geometry.projection['reference_lat'].get('degrees')
     blocks['NEMGEO']['ELONC'] = geometry.getcenter()[0].get('degrees')
@@ -440,8 +443,8 @@ def format_namelists_blocks(blocks, out=None):
     if out is not None:
         out.write("# Namelists blocks #\n")
         out.write("  ================\n")
-        for n, b in blocks.items():
-            _write_namelist(out, n, b)
+        for n in sorted(blocks.keys(), reverse=True):
+            _write_namelist(out, n, blocks[n])
     else:
         for n, b in blocks.items():
             with open(n + '.geoblks', 'w') as out:
@@ -501,7 +504,7 @@ def ask_and_build_geometry(defaults,
         else:
             raise ValueError("Invalid latitude.")
     try:
-        tilting = float(raw_input("Optional counterclockwise tilting in degrees [" + str(defaults['tilting']) + "]: "))
+        tilting = float(raw_input("Optional counterclockwise tilting in degrees (lon0-lonC) [" + str(defaults['tilting']) + "]: "))
     except ValueError:
         tilting = defaults['tilting']
 
