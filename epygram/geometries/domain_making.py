@@ -13,7 +13,8 @@ import numpy
 import math
 import copy
 
-import footprints
+from footprints import FPDict
+from footprints import proxy as fpx
 
 from epygram import epygramError, epylog
 from epygram.util import Angle
@@ -28,7 +29,7 @@ maxdims_security_barrier = 10000
 vkw = {'structure': 'V',
        'typeoffirstfixedsurface': 1,
        'levels': [1]}
-vgeom = footprints.proxy.geometry(**vkw)
+vgeom = fpx.geometry(**vkw)
 projections_s2g = {'L':'lambert', 'M':'mercator', 'PS':'polar_stereographic'}
 projections_g2p = {'lambert':'Lambert (conformal conic)', 'mercator':'Mercator', 'polar_stereographic':'Polar Stereographic'}
 projections_s2p = {'L':'Lambert (conformal conic)', 'M':'Mercator', 'PS':'Polar Stereographic'}
@@ -131,13 +132,13 @@ def build_geometry(center_lon, center_lat,
     if abs(center_lat) >= threshold_mercator_lambert:  # lambert or polar stereographic
         # we make a "first guess" with Lambert Geometry, just to check the pole is not inside the domain
         geometryname = 'lambert'
-        geometry = footprints.proxy.geometry(structure='H2D',
-                                             name=geometryname,
-                                             grid=footprints.FPDict(grid),
-                                             dimensions=footprints.FPDict(dimensions),
-                                             projection=footprints.FPDict(projection),
-                                             vcoordinate=vgeom,
-                                             position_on_horizontal_grid='center')
+        geometry = fpx.geometry(structure='H2D',
+                                name=geometryname,
+                                grid=FPDict(grid),
+                                dimensions=FPDict(dimensions),
+                                projection=FPDict(projection),
+                                vcoordinate=vgeom,
+                                position_on_horizontal_grid='center')
 
         # test if pole in lambert grid
         pole_in_domain = (geometry.point_is_inside_domain_ll(0, 90) or
@@ -182,13 +183,13 @@ def build_geometry(center_lon, center_lat,
             if accepted_lat != '':
                 reference_lat = float(accepted_lat)
     projection['reference_lat'] = Angle(reference_lat, 'degrees')
-    geometry = footprints.proxy.geometry(structure='H2D',
-                                         name=projname,
-                                         grid=footprints.FPDict(grid),
-                                         dimensions=footprints.FPDict(dimensions),
-                                         projection=footprints.FPDict(projection),
-                                         vcoordinate=vgeom,
-                                         position_on_horizontal_grid='center',)
+    geometry = fpx.geometry(structure='H2D',
+                            name=projname,
+                            grid=FPDict(grid),
+                            dimensions=FPDict(dimensions),
+                            projection=FPDict(projection),
+                            vcoordinate=vgeom,
+                            position_on_horizontal_grid='center',)
     return geometry
 
 
@@ -298,13 +299,13 @@ def build_geometry_fromlonlat(lonmin, lonmax,
                 }
         # first guess for lambert, to check that pole is not in domain
         if projname == 'lambert':
-            geometry = footprints.proxy.geometry(structure='H2D',
-                                                 name=projname,
-                                                 grid=footprints.FPDict(grid),
-                                                 dimensions=footprints.FPDict(dimensions),
-                                                 projection=footprints.FPDict(projection),
-                                                 vcoordinate=vgeom,
-                                                 position_on_horizontal_grid='center')
+            geometry = fpx.geometry(structure='H2D',
+                                    name=projname,
+                                    grid=FPDict(grid),
+                                    dimensions=FPDict(dimensions),
+                                    projection=FPDict(projection),
+                                    vcoordinate=vgeom,
+                                    position_on_horizontal_grid='center')
             pole_in_domain = (geometry.point_is_inside_domain_ll(0, 90) or geometry.point_is_inside_domain_ll(0, -90))
             if pole_in_domain:
                 epylog.warning("Pole is inside Lambert domain => shifted to Polar Stereographic projection !")
@@ -312,13 +313,13 @@ def build_geometry_fromlonlat(lonmin, lonmax,
                 projection['reference_lat'] = Angle(math.copysign(90.0, center_lat), 'degrees')
 
         # guess
-        geometry = footprints.proxy.geometry(structure='H2D',
-                                             name=projname,
-                                             grid=footprints.FPDict(grid),
-                                             dimensions=footprints.FPDict(dimensions),
-                                             projection=footprints.FPDict(projection),
-                                             vcoordinate=vgeom,
-                                             position_on_horizontal_grid='center')
+        geometry = fpx.geometry(structure='H2D',
+                                name=projname,
+                                grid=FPDict(grid),
+                                dimensions=FPDict(dimensions),
+                                projection=FPDict(projection),
+                                vcoordinate=vgeom,
+                                position_on_horizontal_grid='center')
         # test whether the lonlat corners are inside domain
         points_to_test = [(lonmax, latmax), (lonmax, latmin),
                           (lonmin, latmax), (lonmin, latmin),
@@ -416,6 +417,47 @@ def geom2namblocks(geometry):
     blocks['NAMFPG']['NFPMAX'] = Ytruncation_lin
 
     return namelists
+
+
+def build_geom_from_e923nam(nam):
+    """
+    Build geometry and spectral geometry objects, given e923-like namelist
+    blocks.
+    """
+
+    if nam['NEMGEO']['ELAT0'] <= epsilon:
+        geometryname = 'mercator'
+    elif 90. - abs(nam['NEMGEO']['ELAT0']) <= epsilon:
+        geometryname = 'polar_stereographic'
+    elif epsilon < abs(nam['NEMGEO']['ELAT0']) < 90. - epsilon:
+        geometryname = 'lambert'
+    geom = fpx.geometry(structure='H2D',
+                        name=geometryname,
+                        vcoordinate=vgeom,
+                        projection=dict(reference_lat=Angle(nam['NEMGEO']['ELAT0'], 'degrees'),
+                                        reference_lon=Angle(nam['NEMGEO']['ELON0'], 'degrees'),
+                                        rotation=Angle(0.,'degrees')),
+                        grid=dict(input_lat=Angle(nam['NEMGEO']['ELATC'], 'degrees'),
+                                  input_lon=Angle(nam['NEMGEO']['ELONC'], 'degrees'),
+                                  input_position=((nam['NAMDIM']['NDLUXG'] - 1) / 2,
+                                                  (nam['NAMDIM']['NDGUXG'] - 1) / 2),
+                                  X_resolution=nam['NEMGEO']['EDELX'],
+                                  Y_resolution=nam['NEMGEO']['EDELY'],
+                                  LAMzone='CI'),
+                        dimensions=dict(X=nam['NAMDIM']['NDLUXG'],
+                                        Y=nam['NAMDIM']['NDGUXG'],
+                                        X_CIzone=nam['NAMDIM']['NDLUXG'],
+                                        Y_CIzone=nam['NAMDIM']['NDGUXG'],
+                                        X_Czone=nam['NAMDIM']['NDLUXG'] - 2 * nam['NEMDIM']['NBZONL'],
+                                        Y_Czone=nam['NAMDIM']['NDGUXG'] - 2 * nam['NEMDIM']['NBZONG'],
+                                        X_Iwidth=nam['NEMDIM']['NBZONL'],
+                                        Y_Iwidth=nam['NEMDIM']['NBZONG']),
+                        position_on_horizontal_grid='center'
+                        )
+    spgeom = fpx.geometry(space='bi-fourier',
+                          truncation=dict(in_X=nam['NAMDIM']['NMSMAX'],
+                                          in_Y=nam['NAMDIM']['NSMAX']))
+    return (geom, spgeom)
 
 
 def format_namelists_blocks(blocks, out=None):
@@ -732,15 +774,15 @@ def build_lonlat_field(ll_boundaries, fid={'lon/lat':'template'}):
               'Y_resolution':Angle((ll_boundaries['latmax'] - ll_boundaries['latmin']) / llwidth, 'degrees')
               }
     lldims = {'X':llwidth + 1, 'Y':llwidth + 1}
-    llgeometry = footprints.proxy.geometry(structure='H2D',
-                                           name='regular_lonlat',
-                                           grid=footprints.FPDict(llgrid),
-                                           dimensions=footprints.FPDict(lldims),
-                                           vcoordinate=vgeom,
-                                           position_on_horizontal_grid='center')
-    lldomain = footprints.proxy.field(structure='H2D',
-                                      geometry=llgeometry,
-                                      fid=footprints.FPDict(fid))
+    llgeometry = fpx.geometry(structure='H2D',
+                              name='regular_lonlat',
+                              grid=FPDict(llgrid),
+                              dimensions=FPDict(lldims),
+                              vcoordinate=vgeom,
+                              position_on_horizontal_grid='center')
+    lldomain = fpx.field(structure='H2D',
+                         geometry=llgeometry,
+                         fid=FPDict(fid))
     data = numpy.zeros((lldims['Y'], lldims['X']))
     data[1:-1, 1:-1] = 1.
     lldomain.setdata(data)
