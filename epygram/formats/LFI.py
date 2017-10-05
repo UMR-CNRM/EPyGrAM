@@ -552,7 +552,7 @@ class LFI(FileResource):
             # Create H2D field
             fid = fieldname if self.true3d else (fieldname, level)
             fid = {self.format: fid,
-                   'generic':self._get_generic_fid(fid)
+                   'generic':FPDict(self._get_generic_fid(fid))
                    }
             kwargs_geom['position_on_horizontal_grid'] = gridIndicator['horizontal']
             kwargs_vcoord['position_on_grid'] = gridIndicator['vertical']
