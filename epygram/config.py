@@ -263,6 +263,8 @@ spectral_coeff_order = 'model'
 #: To call epygram.init_env() automatically at import
 #: ! Should not be True if using Vortex !
 init_at_import = False
+#: hide messages when guessing format
+silent_guess_format = True
 
 
 # USER CUSTOMIZATION #

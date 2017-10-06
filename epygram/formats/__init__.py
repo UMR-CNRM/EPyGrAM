@@ -59,8 +59,13 @@ def guess(filename):
                                       if f != glf] + [glf]
     for f in formats_in_guess_order:
         try:
-            r = fpx.dataformat(filename=filename, openmode='r', format=f)
-            r.close()
+            if config.silent_guess_format:
+                with util.stderr_redirected():
+                    r = fpx.dataformat(filename=filename, openmode='r', format=f)
+                    r.close()
+            else:
+                r = fpx.dataformat(filename=filename, openmode='r', format=f)
+                r.close()
             fmt = f
             break
         except IOError:
