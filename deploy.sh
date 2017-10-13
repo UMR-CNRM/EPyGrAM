@@ -46,6 +46,7 @@ rm site/arpifs4py/libs4py_*.so
 
 # Rsync
 rsync -av * sxcoope1:~mary/sync_epygram/EPyGrAM$version/
+#rsync -av * vxdev64:~mary/EPyGrAM$version/  # vxdev64: development server @ CNRM (OS updates)
 rm site/arpifs4py/libs4py.so
 rsync -av * pagre:~mary/public/EPyGrAM$version/
 rm -rf site/epyweb

@@ -22,6 +22,24 @@ Errors
 
 -----------------------------------------------------------
 
+How can I... ?
+--------------
+
++ How can I plot the sum of several fields ?
+   
+   7 lines !
+   
+   >>> import epygram
+   >>> epygram.init_env()
+   >>> r = epygram.formats.resource('myfile', 'r')
+   >>> fld1 = r.readfield('FLD1')
+   >>> fld2 = r.readfield('FLD2')
+   >>> fld_s = fld1 + fld2
+   >>> fld_s.plotfield(...)
+   
+
+-----------------------------------------------------------
+
 How does it work ?
 ------------------
 
