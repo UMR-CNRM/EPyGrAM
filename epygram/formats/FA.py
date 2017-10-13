@@ -29,7 +29,8 @@ from epygram import config, epygramError, util
 from epygram.util import Angle, separation_line, write_formatted_fields
 from epygram.base import FieldSet, FieldValidity, FieldValidityList
 from epygram.resources import FileResource
-from epygram.geometries import D3Geometry, SpectralGeometry
+from epygram.geometries import (D3Geometry, SpectralGeometry,
+                                truncation_from_gridpoint_dims)
 from epygram.geometries.VGeometry import (hybridP2pressure, hybridP2altitude,
                                           pressure2altitude)
 from epygram.fields import MiscField, H2DField
@@ -198,13 +199,15 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
     JPXPAH = FA._FAsoftware_cst['JPXPAH']
     JPXIND = FA._FAsoftware_cst['JPXIND']
     if geometry.rectangular_grid:
+        # truncation
         if spectral_geometry is not None:
-            truncation_in_X = spectral_geometry.truncation['in_X']
-            truncation_in_Y = spectral_geometry.truncation['in_Y']
+            truncation = spectral_geometry.truncation
         else:
             # default: linear truncation...
-            truncation_in_X = numpy.floor((geometry.dimensions['X'] - 1) / 2).astype('int')
-            truncation_in_Y = numpy.floor((geometry.dimensions['Y'] - 1) / 2).astype('int')
+            truncation = truncation_from_gridpoint_dims(geometry.dimensions,
+                                                        grid='linear')
+        truncation_in_X = truncation['in_X']
+        truncation_in_Y = truncation['in_Y']
 
         # scalars
         if geometry.name == 'regular_lonlat':
@@ -313,8 +316,8 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
             KTRONC = spectral_geometry.truncation['max']
         else:
             # default: linear truncation...
-            KTRONC = (geometry.dimensions['max_lon_number'] - 1) // 2
-            KTRONC = 2 * (KTRONC // 2)  # make it even
+            KTRONC = truncation_from_gridpoint_dims(geometry.dimensions,
+                                                    grid='linear')['max']
         KNLATI = geometry.dimensions['lat_number']
         KNXLON = geometry.dimensions['max_lon_number']
         KNLOPA = numpy.zeros(JPXPAH, dtype=numpy.int64)

@@ -18,7 +18,7 @@ from .V1DGeometry import V1DGeometry
 from .V2DGeometry import V2DGeometry
 from .H1DGeometry import H1DGeometry
 from .PointGeometry import PointGeometry
-from .SpectralGeometry import SpectralGeometry
+from .SpectralGeometry import SpectralGeometry, truncation_from_gridpoint_dims
 
 Pressure = 100
 Altitude = 102

@@ -19,6 +19,7 @@ from footprints import proxy as fpx
 from epygram import epygramError, epylog
 from epygram.util import Angle
 from epygram.config import epsilon
+from epygram.geometries.SpectralGeometry import truncation_from_gridpoint_dims
 
 
 # parameters
@@ -349,10 +350,10 @@ def geom2namblocks(geometry):
     namelists = {}
 
     # compute additionnal parameters
-    Xtruncation_lin = int(numpy.floor((geometry.dimensions['X'] - 1) / 2))
-    Ytruncation_lin = int(numpy.floor((geometry.dimensions['Y'] - 1) / 2))
-    Xtruncation_quad = int(numpy.floor((geometry.dimensions['X'] - 1) / 3))
-    Ytruncation_quad = int(numpy.floor((geometry.dimensions['Y'] - 1) / 3))
+    truncation_lin = truncation_from_gridpoint_dims(geometry.dimensions,
+                                                    grid='linear')
+    truncation_quad = truncation_from_gridpoint_dims(geometry.dimensions,
+                                                     grid='quadratic')
 
     # PGD namelist
     namelist_name = 'namel_pre_pgd'
@@ -380,8 +381,8 @@ def geom2namblocks(geometry):
     blocks['NAMDIM']['NDLUXG'] = geometry.dimensions['X_CIzone']
     blocks['NAMDIM']['NDGLG'] = geometry.dimensions['Y']
     blocks['NAMDIM']['NDGUXG'] = geometry.dimensions['Y_CIzone']
-    blocks['NAMDIM']['NMSMAX'] = Xtruncation_quad
-    blocks['NAMDIM']['NSMAX'] = Ytruncation_quad
+    blocks['NAMDIM']['NMSMAX'] = truncation_quad['in_X']
+    blocks['NAMDIM']['NSMAX'] = truncation_quad['in_Y']
     blocks['NEMDIM']['NBZONL'] = geometry.dimensions['X_Iwidth']
     blocks['NEMDIM']['NBZONG'] = geometry.dimensions['Y_Iwidth']
     blocks['NEMGEO']['ELON0'] = geometry.projection['reference_lon'].get('degrees')
@@ -395,8 +396,8 @@ def geom2namblocks(geometry):
     namelist_name = 'namel_mens_lin'
     namelists[namelist_name] = copy.deepcopy(namelists['namel_mens_quad'])
     blocks = namelists[namelist_name]
-    blocks['NAMDIM']['NMSMAX'] = Xtruncation_lin
-    blocks['NAMDIM']['NSMAX'] = Ytruncation_lin
+    blocks['NAMDIM']['NMSMAX'] = truncation_lin['in_X']
+    blocks['NAMDIM']['NSMAX'] = truncation_lin['in_Y']
 
     # couplingsurf namelist
     namelist_name = 'namel_e927_surf'
@@ -413,8 +414,8 @@ def geom2namblocks(geometry):
     blocks['NAMFPD']['RDELY'] = geometry.grid['Y_resolution']
     blocks['NAMFPG']['FPLON0'] = geometry.projection['reference_lon'].get('degrees')
     blocks['NAMFPG']['FPLAT0'] = geometry.projection['reference_lat'].get('degrees')
-    blocks['NAMFPG']['NMFPMAX'] = Xtruncation_lin
-    blocks['NAMFPG']['NFPMAX'] = Ytruncation_lin
+    blocks['NAMFPG']['NMFPMAX'] = truncation_lin['in_X']
+    blocks['NAMFPG']['NFPMAX'] = truncation_lin['in_Y']
 
     return namelists
 
@@ -454,9 +455,12 @@ def build_geom_from_e923nam(nam):
                                         Y_Iwidth=nam['NEMDIM']['NBZONG']),
                         position_on_horizontal_grid='center'
                         )
-    spgeom = fpx.geometry(space='bi-fourier',
-                          truncation=dict(in_X=nam['NAMDIM']['NMSMAX'],
-                                          in_Y=nam['NAMDIM']['NSMAX']))
+    if 'NMSMAX' in nam['NAMDIM'].keys() and 'NSMAX' in nam['NAMDIM'].keys():
+        spgeom = fpx.geometry(space='bi-fourier',
+                              truncation=dict(in_X=nam['NAMDIM']['NMSMAX'],
+                                              in_Y=nam['NAMDIM']['NSMAX']))
+    else:
+        spgeom = None
     return (geom, spgeom)
 
 

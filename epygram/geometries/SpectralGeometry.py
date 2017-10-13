@@ -18,6 +18,34 @@ from epygram import config, epygramError
 from epygram.util import RecursiveObject
 
 
+def truncation_from_gridpoint_dims(dimensions, grid='linear'):
+    """
+    Compute truncation from gridpoint dimensions, according to the kind of
+    grid ('linear', 'quadratic').
+
+    :param dimensions: dict containing dimensions, among:
+                       {'X':..., 'Y':...} for LAM grids,
+                       {'lat_number':..., 'max_lon_number':...} for Gauss grids
+    :param grid: how to choose the truncation, among ('linear', 'quadratic',
+                 'cubic')
+
+    Formula taken from "Spectral transforms in the cycle 45 of ARPEGE/IFS",
+    http://www.umr-cnrm.fr/gmapdoc/IMG/pdf/ykts45.pdf
+    """
+    truncation = {}
+    spfactor = {'linear':2, 'quadratic':3, 'cubic':4}[grid]
+    if all([k in dimensions.keys() for k in ('X', 'Y')]):
+        # LAM
+        truncation['in_X'] = (dimensions['X'] - 1) // spfactor
+        truncation['in_Y'] = (dimensions['Y'] - 1) // spfactor
+    elif all([k in dimensions.keys() for k in ('lat_number',
+                                               'max_lon_number')]):
+        # Gauss
+        truncation['max'] = min(2 * dimensions['lat_number'] - 3,
+                                dimensions['max_lon_number'] - 1) // spfactor
+    return truncation
+
+
 class SpectralGeometry(RecursiveObject, FootprintBase):
     """Handles the spectral geometry and transforms for a H2DField."""
 
