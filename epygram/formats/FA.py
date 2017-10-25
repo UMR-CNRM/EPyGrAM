@@ -303,8 +303,8 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
     else:  # global
         if geometry.name == 'reduced_gauss':
             KTYPTR = 1
-            PSLAPO = 0.  # as observed in files; why not 1. ?
-            PCLOPO = 0.  # as observed in files; why not 1. ?
+            PSLAPO = 1.
+            PCLOPO = 1.
             PSLOPO = 0.
         elif geometry.name == 'rotated_reduced_gauss':
             KTYPTR = 2
