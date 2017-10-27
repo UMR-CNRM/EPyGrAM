@@ -8,6 +8,7 @@ Contains functions for building a LAM domain.
 """
 
 from __future__ import print_function, absolute_import, unicode_literals, division
+import six
 
 import numpy
 import math
@@ -94,6 +95,10 @@ def build_geometry(center_lon, center_lat,
                              to have a E-zone width of 11 points
     :param interactive: interactive mode, to fine-tune the projection
     """
+    Xpoints_CI = int(Xpoints_CI)
+    Ypoints_CI = int(Ypoints_CI)
+    if Iwidth is not None:
+        Iwidth = int(Iwidth)
     # begin to build a horizontal geometry
     Xpoints_CIE = nearest_greater_FFT992compliant_int(Xpoints_CI + Ezone_minimum_width)
     Ypoints_CIE = nearest_greater_FFT992compliant_int(Ypoints_CI + Ezone_minimum_width)
@@ -216,6 +221,8 @@ def build_geometry_fromlonlat(lonmin, lonmax,
                              to have a E-zone width of 11 points
     :param interactive: interactive mode, to fine-tune the projection
     """
+    if Iwidth is not None:
+        Iwidth = int(Iwidth)
     # begin to build a horizontal geometry
     if lonmin > lonmax:
         lonmax += 360.
@@ -345,18 +352,24 @@ def build_geometry_fromlonlat(lonmin, lonmax,
     return geometry
 
 
-def geom2namblocks(geometry):
-    """From the geometry, build the namelist blocks for the necessary namelists."""
+def geom2namblocks(geometry, truncated='quadratic'):
+    """
+    From the geometry, build the namelist blocks for the necessary namelists.
+
+    :param truncated: the kind of additional truncated spectral geometry to
+                      generate, among ('quadratic', 'cubic').
+                      If 'linear', do not produce an additional namelist.
+    """
     namelists = {}
 
     # compute additionnal parameters
     truncation_lin = truncation_from_gridpoint_dims(geometry.dimensions,
                                                     grid='linear')
-    truncation_quad = truncation_from_gridpoint_dims(geometry.dimensions,
-                                                     grid='quadratic')
+    truncation_trunc = truncation_from_gridpoint_dims(geometry.dimensions,
+                                                      grid=truncated)
 
     # PGD namelist
-    namelist_name = 'namel_pre_pgd'
+    namelist_name = 'namel_buildpgd'
     namelists[namelist_name] = {'NAM_CONF_PROJ':{},
                                 'NAM_CONF_PROJ_GRID':{}}
     blocks = namelists[namelist_name]
@@ -371,8 +384,8 @@ def geom2namblocks(geometry):
     blocks['NAM_CONF_PROJ_GRID']['XDX'] = geometry.grid['X_resolution']
     blocks['NAM_CONF_PROJ_GRID']['XDY'] = geometry.grid['Y_resolution']
 
-    # quadclim namelist
-    namelist_name = 'namel_mens_quad'
+    # linclim namelist
+    namelist_name = 'namel_c923'
     namelists[namelist_name] = {'NAMDIM':{},
                                 'NEMDIM':{},
                                 'NEMGEO':{}}
@@ -381,8 +394,8 @@ def geom2namblocks(geometry):
     blocks['NAMDIM']['NDLUXG'] = geometry.dimensions['X_CIzone']
     blocks['NAMDIM']['NDGLG'] = geometry.dimensions['Y']
     blocks['NAMDIM']['NDGUXG'] = geometry.dimensions['Y_CIzone']
-    blocks['NAMDIM']['NMSMAX'] = truncation_quad['in_X']
-    blocks['NAMDIM']['NSMAX'] = truncation_quad['in_Y']
+    blocks['NAMDIM']['NMSMAX'] = truncation_lin['in_X']
+    blocks['NAMDIM']['NSMAX'] = truncation_lin['in_Y']
     blocks['NEMDIM']['NBZONL'] = geometry.dimensions['X_Iwidth']
     blocks['NEMDIM']['NBZONG'] = geometry.dimensions['Y_Iwidth']
     blocks['NEMGEO']['ELON0'] = geometry.projection['reference_lon'].get('degrees')
@@ -392,15 +405,18 @@ def geom2namblocks(geometry):
     blocks['NEMGEO']['EDELX'] = geometry.grid['X_resolution']
     blocks['NEMGEO']['EDELY'] = geometry.grid['Y_resolution']
 
-    # linclim namelist
-    namelist_name = 'namel_mens_lin'
-    namelists[namelist_name] = copy.deepcopy(namelists['namel_mens_quad'])
-    blocks = namelists[namelist_name]
-    blocks['NAMDIM']['NMSMAX'] = truncation_lin['in_X']
-    blocks['NAMDIM']['NSMAX'] = truncation_lin['in_Y']
+    # truncated grid namelist
+    namelist_name = 'namel_c923_' + truncated
+    if truncated != 'linear':
+        namelists[namelist_name] = {'NAMDIM':{},
+                                    'NAMCLA':{}}
+        blocks = namelists[namelist_name]
+        blocks['NAMDIM']['NMSMAX'] = truncation_trunc['in_X']
+        blocks['NAMDIM']['NSMAX'] = truncation_trunc['in_Y']
+        blocks['NAMCLA']['NLISSP'] = 0
 
     # couplingsurf namelist
-    namelist_name = 'namel_e927_surf'
+    namelist_name = 'namel_e927'
     namelists[namelist_name] = {'NAMFPD':{},
                                 'NAMFPG':{}}
     blocks = namelists[namelist_name]
@@ -425,7 +441,6 @@ def build_geom_from_e923nam(nam):
     Build geometry and spectral geometry objects, given e923-like namelist
     blocks.
     """
-
     if nam['NEMGEO']['ELAT0'] <= epsilon:
         geometryname = 'mercator'
     elif 90. - abs(nam['NEMGEO']['ELAT0']) <= epsilon:
@@ -464,13 +479,18 @@ def build_geom_from_e923nam(nam):
     return (geom, spgeom)
 
 
-def format_namelists_blocks(blocks, out=None):
+def format_namelists(blocks, out=None, prefix='', suffix='geoblocks'):
     """
     Write out namelists blocks.
 
-    :param blocks: dict of blocks (coming from output of
-                   build_namelists_blocks())
-    :param out: if given, write all in one file, else in separate files.
+    :param namelists: dict of namelists (coming from output of
+                      build_namelists_blocks())
+    :param out: if given as a str: write all in one file,
+                else in separate files:
+                     either as filename if out==dict(namelist:filename, ...)
+                     or if None following syntax: "prefix.namelist.suffix".
+    :param prefix: prefix for output names
+    :param suffix: prefix for output names
     """
     # output routines
     def _write_blocks(out, blocks):
@@ -486,14 +506,21 @@ def format_namelists_blocks(blocks, out=None):
         out.write("------------------------------" + "\n")
         _write_blocks(out, blocks)
 
-    if out is not None:
+    if isinstance(out, six.string_types):
         out.write("# Namelists blocks #\n")
         out.write("  ================\n")
         for n in sorted(blocks.keys(), reverse=True):
             _write_namelist(out, n, blocks[n])
     else:
         for n, b in blocks.items():
-            with open(n + '.geoblks', 'w') as out:
+            if isinstance(out, dict):
+                nm = out[n]
+            else:
+                nm = [n, suffix]
+                if prefix != '':
+                    nm.insert(0, prefix)
+                nm = '.'.join(nm)
+            with open(nm, 'w') as out:
                 _write_blocks(out, b)
 
 
@@ -509,12 +536,12 @@ def write_geometry_as_namelist_blocks(geometry, allinone=False):
         outputfilename = "new_domain.namelists_blocks"
         with open(outputfilename, 'w') as out:
             out.write(show_geometry(geometry) + '\n')
-            format_namelists_blocks(namelists_blocks, out)
+            format_namelists(namelists_blocks, out)
     else:
         outputfilename = "new_domain.summary"
         with open(outputfilename, 'w') as out:
             out.write(show_geometry(geometry) + '\n')
-        format_namelists_blocks(namelists_blocks, out=None)
+        format_namelists(namelists_blocks, out=None)
 
 
 def ask_and_build_geometry(defaults,
@@ -713,9 +740,65 @@ def show_geometry(geometry):
         disp += "            " + "  |" + '\n'
         disp += "            " + "  v" + '\n'
         disp += "            " + '{:.{precision}{type}}'.format(ll_included['latmin'], type='F', precision=4) + '\n'
-    disp += "--------------------------------------------------"
+    disp += "--------------------------------------------------\n"
 
     return disp
+
+
+def plot_geometry(geometry,
+                  lonlat_included=None,
+                  out=None,
+                  gisquality='i',
+                  bluemarble=0.0,
+                  background=True):
+    """
+    Plot the built geometry, along with lonlat included domain if given.
+
+    :param lonlat_included: parameters of the lonlat domain to plot
+    :param out: filename (.png) if not None (else interactive pyplot.show())
+    :param gisquality: quality of coastlines and countries boundaries.
+    :param bluemarble: if >0., displays NASA's "blue marble" as background with
+                       given transparency.
+    :param background: if True, set a background color to continents and oceans.
+    """
+    # plot
+    CIEdomain = fpx.field(structure='H2D',
+                          geometry=geometry,
+                          fid=FPDict({'zone':'C+I+E'}))
+    data = numpy.ones((geometry.dimensions['Y'], geometry.dimensions['X'])) * 2.0
+    data[0:geometry.dimensions['Y_CIzone'], 0:geometry.dimensions['X_CIzone']] = 1.0
+    data[geometry.dimensions['Y_Iwidth']:geometry.dimensions['Y_CIzone'] - geometry.dimensions['Y_Iwidth'],
+         geometry.dimensions['X_Iwidth']:geometry.dimensions['X_CIzone'] - geometry.dimensions['X_Iwidth']] = 0.0
+    CIEdomain.setdata(data)
+    domsize = max(geometry.dimensions['Y'] * geometry.grid['Y_resolution'],
+                  geometry.dimensions['X'] * geometry.grid['X_resolution'])
+    bm = CIEdomain.geometry.make_basemap(specificproj=('nsper', {'sat_height':domsize * 3}))
+    fig, ax = CIEdomain.plotfield(use_basemap=bm,
+                                  levelsnumber=6,
+                                  minmax=[-1.0, 3.0],
+                                  colorbar=False,
+                                  title='Domain: C+I+E',
+                                  meridians=None,
+                                  parallels=None,
+                                  gisquality=gisquality,
+                                  bluemarble=bluemarble,
+                                  background=background)
+    if lonlat_included is not None:
+        ll_domain = build_lonlat_field(lonlat_included)
+        ll_domain.plotfield(over=(fig, ax),
+                            use_basemap=bm,
+                            graphicmode='contourlines',
+                            title='Domain: C+I+E \n Red contour: required lon/lat',
+                            levelsnumber=2,
+                            contourcolor='red',
+                            contourwidth=2,
+                            contourlabel=False,
+                            gisquality=gisquality)
+    if out is not None:
+        fig.savefig(out, bbox_inches='tight')
+    else:
+        import matplotlib.pyplot as plt
+        plt.show()
 
 
 def compute_lonlat_included(geometry):
@@ -737,28 +820,28 @@ def ask_lonlat(defaults):
     try:
         lonmin = float(raw_input("Minimum (Western) longitude in degrees [" + str(defaults['lonmin']) + "]: "))
     except ValueError:
-        if defaults['lonmin'] != '':
+        if str(defaults['lonmin']) != '':
             lonmin = defaults['lonmin']
         else:
             raise ValueError("Invalid longitude.")
     try:
         lonmax = float(raw_input("Maximum (Eastern) longitude in degrees [" + str(defaults['lonmax']) + "]: "))
     except ValueError:
-        if defaults['lonmax'] != '':
+        if str(defaults['lonmax']) != '':
             lonmax = defaults['lonmax']
         else:
             raise ValueError("Invalid longitude.")
     try:
         latmin = float(raw_input("Minimum (Southern) latitude in degrees [" + str(defaults['latmin']) + "]: "))
     except ValueError:
-        if defaults['latmin'] != '':
+        if str(defaults['latmin']) != '':
             latmin = defaults['latmin']
         else:
             raise ValueError("Invalid latitude.")
     try:
         latmax = float(raw_input("Maximum (Northern) latitude in degrees [" + str(defaults['latmax']) + "]: "))
     except ValueError:
-        if defaults['latmax'] != '':
+        if str(defaults['latmax']) != '':
             latmax = defaults['latmax']
         else:
             raise ValueError("Invalid latitude.")

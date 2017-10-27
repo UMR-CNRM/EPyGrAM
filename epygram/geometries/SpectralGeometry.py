@@ -21,7 +21,7 @@ from epygram.util import RecursiveObject
 def truncation_from_gridpoint_dims(dimensions, grid='linear'):
     """
     Compute truncation from gridpoint dimensions, according to the kind of
-    grid ('linear', 'quadratic').
+    **grid**.
 
     :param dimensions: dict containing dimensions, among:
                        {'X':..., 'Y':...} for LAM grids,

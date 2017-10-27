@@ -45,13 +45,25 @@ rm -f apptools/*.pyc
 rm site/arpifs4py/libs4py_*.so
 
 # Rsync
-rsync -av * sxcoope1:~mary/sync_epygram/EPyGrAM$version/
-#rsync -av * vxdev64:~mary/EPyGrAM$version/  # vxdev64: development server @ CNRM (OS updates)
+#LOC_SXCOOPE="sxcoope1:~mary/sync_epygram/EPyGrAM$version/"
+#rsync -av * $LOC_SXCOOPE
+
+#LOC_VXDEV64="vxdev64:~mary/EPyGrAM$version/" # vxdev64: development server @ CNRM (OS updates)
+#rsync -av * $LOC_VXDEV64
+
 rm site/arpifs4py/libs4py.so
-rsync -av * pagre:~mary/public/EPyGrAM$version/
+
+#LOC_PAGRE="pagre:~mary/public/EPyGrAM$version/"
+#rsync -av * $LOC_PAGRE
+
 rm -rf site/epyweb
-rsync -av * beaufix:~mary/public/EPyGrAM$version/
-rsync -av * prolix:~mary/public/EPyGrAM$version/
+
+LOC_BFX="beaufix:~mary/public/EPyGrAM$version/"
+rsync -av * $LOC_BFX
+#LOC_PLX="prolix:~mary/public/EPyGrAM$version/"
+#rsync -av * $LOC_PLX
+echo ""
+echo "==> deployment done on: $LOC_SXCOOPE $LOC_VXDEV64 $LOC_PAGRE $LOC_BFX $LOC_PLX"
 echo "libs4py.so to be linked on beaufix/prolix (~mary/deploy_epygram_finalize.sh) and pagre"
 
 # Come back and clean

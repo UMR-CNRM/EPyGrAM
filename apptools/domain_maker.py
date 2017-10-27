@@ -63,27 +63,6 @@ def main(mode,
             print("Compute domain...")
             print(dm.show_geometry(geometry))
             if display:
-                # plot
-                CIEdomain = footprints.proxy.field(structure='H2D',
-                                                   geometry=geometry,
-                                                   fid=footprints.FPDict({'zone':'C+I+E'}))
-                data = numpy.ones((geometry.dimensions['Y'], geometry.dimensions['X'])) * 2.0
-                data[0:geometry.dimensions['Y_CIzone'], 0:geometry.dimensions['X_CIzone']] = 1.0
-                data[geometry.dimensions['Y_Iwidth']:geometry.dimensions['Y_CIzone'] - geometry.dimensions['Y_Iwidth'],
-                     geometry.dimensions['X_Iwidth']:geometry.dimensions['X_CIzone'] - geometry.dimensions['X_Iwidth']] = 0.0
-                CIEdomain.setdata(data)
-                print("Plot domain...")
-                bm = CIEdomain.geometry.make_basemap(specificproj=('nsper', {'sat_height':5000}))
-                fig, ax = CIEdomain.plotfield(use_basemap=bm,
-                                              levelsnumber=6,
-                                              minmax=[-1.0, 3.0],
-                                              colorbar=False,
-                                              title='Domain: C+I+E',
-                                              meridians=None,
-                                              parallels=None,
-                                              gisquality=gisquality,
-                                              bluemarble=bluemarble,
-                                              background=background)
                 plot_lonlat_included = raw_input("Plot a lon/lat domain over model domain ? [n]: ")
                 if plot_lonlat_included in ('y', 'Y', 'yes'):
                     plot_lonlat_included = True
@@ -93,17 +72,13 @@ def main(mode,
                     proposed = dm.compute_lonlat_included(geometry)
                     print("Min/Max longitudes & latitudes of the lon/lat domain (defaults to that proposed above):")
                     ll_boundaries = dm.ask_lonlat(proposed)
-                    ll_domain = dm.build_lonlat_field(ll_boundaries)
-                    ll_domain.plotfield(over=(fig, ax),
-                                        use_basemap=bm,
-                                        graphicmode='contourlines',
-                                        title='Domain: C+I+E \n Red contour: required lon/lat',
-                                        levelsnumber=2,
-                                        contourcolor='red',
-                                        contourwidth=2,
-                                        contourlabel=False,
-                                        gisquality=gisquality)
-                plt.show()
+                print("Plot domain...")
+                dm.plot_geometry(geometry,
+                                 lonlat_included=ll_boundaries,
+                                 out=None,
+                                 gisquality=gisquality,
+                                 bluemarble=bluemarble,
+                                 background=background)
 
             # retry ?
             retry = raw_input("Do you want to modify something ? [n] ")

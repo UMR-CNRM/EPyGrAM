@@ -20,6 +20,20 @@ Errors
    And warn the ``epygram`` team about it, so that it will enter next version
    default ``Field_Dict_FA.csv``.
 
++ My PC does not have enough memory to deal with these global spectral fields...
+  
+  >>> Legendre spectral transforms need XX.XX MB
+  >>> memory, while only YY.YY MB is available:
+  >>> SWAPPING prevented !
+  
+  => either:
+  
+  - run your script on beaufix/prolix usiang the alias
+    ``s1batch='sbatch -N 1 -p normal64 --mem 60000 -t 00:30:00'``
+    e.g.: ``s1batch myscript.py options -of -my --script``
+  - use the ``fa_sp2gp.py`` tool on Bull (using the above alias) to convert your
+    file to all-gridpoint then work in gridpoint space
+
 -----------------------------------------------------------
 
 How can I... ?
