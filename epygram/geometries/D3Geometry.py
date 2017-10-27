@@ -3742,7 +3742,11 @@ class D3GaussGeometry(D3Geometry):
             lat = numpy.array(lat)
 
         if not reverse:
-            lon = degrees_nearest_mod(lon, self.grid.get('pole_lon', Angle(90., 'degrees')).get('degrees'))
+            if 'rotated' in self.name:
+                lon0 = self.grid['pole_lon'].get('degrees')
+            else:
+                lon0 = 0.0
+            lon = degrees_nearest_mod(lon, lon0)
             PSLAR = numpy.sin(numpy.radians(lat))
             PSLOR = numpy.sin(numpy.radians(lon))
             PCLOR = numpy.cos(numpy.radians(lon))
@@ -3865,7 +3869,10 @@ class D3GaussGeometry(D3Geometry):
         lon/lat are coordinates on real sphere.
         """
         pc = self.grid['dilatation_coef']
-        plac = self.grid['pole_lat'].get('degrees')
+        if 'rotated' in self.name:
+            plac = self.grid['pole_lat'].get('degrees')
+        else:
+            plac = 90.
         (plob, plab) = self._rotate_stretch(lon, lat)
         # the below formulas seem to be working with
         # lon_on_rotated_sphere begining below pole_of_rotation,
