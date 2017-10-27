@@ -261,6 +261,7 @@ def main(filename,
                                                                  pointsize=pointsize,
                                                                  # bluemarble=bluemarble,
                                                                  # background=background,
+                                                                 center_cmap_on_0=center_cmap_on_0,
                                                                  mask_threshold=mask_threshold),
                                         components_are_projected_on=wind_components_are_projected_on,
                                         map_factor_correction=map_factor_correction)
