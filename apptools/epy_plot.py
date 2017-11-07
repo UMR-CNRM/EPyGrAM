@@ -42,7 +42,7 @@ def main(filename,
          levelsnumber=50,
          difflevelsnumber=50,
          colormap='jet',
-         diffcolormap='seismic',
+         diffcolormap='RdBu_r',
          center_cmap_on_0=False,
          diffcenter_cmap_on_0=True,
          parallels='auto',
@@ -64,7 +64,7 @@ def main(filename,
          ):
     """
     Plot fields.
-    
+
     :param filename: name of the file to be processed.
     :param fieldseed: field identifier.
     :param refname: name of the reference file to be compared to.

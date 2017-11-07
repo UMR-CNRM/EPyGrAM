@@ -550,14 +550,14 @@ graphical_options = {
     'diffcolormap':[
         '-C', '--diffcolormap',
         dict(help="name of the **matplotlib** colormap to use for diff.\
-                   Default is 'seismic'\
+                   Default is 'RdBu_r'\
                    (Cf. http://matplotlib.org/examples/color/colormaps_reference.html \
                    for standard matplotlib colormaps, or epygram.config.epygram_colormaps.keys() \
                    in a python interpreter for epygram's own colormaps).\
                    Custom colormaps can be defined (http://colormap.org or\
                    manually) and added in userconfig,\
                    in usercolormaps = {'my_cmap':'path_to_my_cmap'}.",
-             default='seismic')],
+             default='RdBu_r')],
     'center_cmap_on_0':[
         '-t', '--center_cmap_on_0',
         dict(action='store_true',
