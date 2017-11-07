@@ -10,13 +10,11 @@ Some useful utilities...
 from __future__ import print_function, absolute_import, division  # , unicode_literals
 import six
 
-import os
 import math
 import copy
 import numpy
 import sys
 import datetime
-from contextlib import contextmanager
 
 from footprints import FootprintBase
 from bronx.graphics.colormapping import add_cmap, get_norm4colorscale
@@ -490,26 +488,6 @@ def write_formatted_table(dest, table, alignments=['<', '^'], precision=6, float
         dest.write(line + '\n')
 
 
-def str_or_int_to_datetime(dt):
-    """
-    Creates a datetime.datetime from a string or int YYYYMMDDHHMMSS...
-    """
-    dt = str(dt)
-    year = int(dt[0:4])
-    month = int(dt[4:6])
-    day = int(dt[6:8])
-    hour = minutes = seconds = 0
-    try:
-        hour = int(dt[8:10])
-        minutes = int(dt[10:12])
-        seconds = int(dt[12:14])
-    except (IndexError, ValueError):
-        pass
-    dt = datetime.datetime(year, month, day, hour, minutes, seconds)
-
-    return dt
-
-
 def add_meridians_and_parallels_to(bm,
                                    meridians='auto',
                                    parallels='auto',
@@ -646,6 +624,7 @@ def nearlyEqual(a, b, epsilon=config.epsilon):
     else:  # use relative error
         return diff / min((absA + absB), sys.float_info.max) < epsilon
 
+
 nearlyEqualArray = numpy.vectorize(nearlyEqual)
 nearlyEqualArray.__doc__ = "Vector version of nearlyEqual()."
 
@@ -751,20 +730,20 @@ def datetimes2fieldvaliditylist(datetimes, basis=None):
     from epygram.base import FieldValidityList
 
     if isinstance(datetimes, datetime.datetime):
-        assert isinstance(basis, datetime.datetime) or \
-               (isinstance(basis, list) and
-                isinstance(basis[0], datetime.datetime)) or \
-               basis is None
+        assert (isinstance(basis, datetime.datetime) or
+                (isinstance(basis, list) and
+                 isinstance(basis[0], datetime.datetime)) or
+                basis is None)
         if isinstance(basis, list):
             fvl = FieldValidityList(date_time=[datetimes for _ in basis], basis=basis)
         else:
             fvl = FieldValidityList(date_time=datetimes, basis=basis)
     elif isinstance(datetimes, list) and isinstance(datetimes[0], datetime.datetime):
-        assert isinstance(basis, datetime.datetime) or \
-               basis is None or \
-               (isinstance(basis, list) and
-                isinstance(basis[0], datetime.datetime) and
-                len(basis) == len(datetimes))
+        assert (isinstance(basis, datetime.datetime) or
+                basis is None or
+                (isinstance(basis, list) and
+                 isinstance(basis[0], datetime.datetime) and
+                 len(basis) == len(datetimes)))
         if isinstance(basis, datetime.datetime) or basis is None:
             basis = [basis for _ in range(len(datetimes))]
         fvl = FieldValidityList(date_time=datetimes,
@@ -823,6 +802,8 @@ def set_map_up(bm, ax,
 
 def datetimerange(start, stop=None, step=1, stepunit='h', tzinfo=None):
     """
+    .. deprecated::
+
     A generator of datetime.datetime objects ranging from *start* to *stop*
     (included) by *step*.
 

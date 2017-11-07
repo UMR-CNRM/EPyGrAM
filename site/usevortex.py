@@ -20,6 +20,7 @@ import time
 
 import footprints
 from bronx.system.mf import prestage
+from bronx.stdtypes.date import daterange
 import taylorism
 
 import vortex
@@ -300,8 +301,8 @@ def extractor(vortex_description,
     extraction_options = epygram.util.ifNone_emptydict(extraction_options)
 
     # 1. Prepare stuff
-    dt_cutoffs = epygram.util.datetimerange(start_cutoff, end_cutoff,
-                                            everycutoff_in_hours, 'h')
+    dt_cutoffs = daterange(start_cutoff, end_cutoff,
+                           'PT{}H'.format(everycutoff_in_hours))
     cutoffs = [dt.isoformat(sep=str(' ')).replace('-', '').replace(' ', '')[:10]
                for dt in dt_cutoffs]
     terms = range(start_term, end_term + 1, everyterm_in_hours)
