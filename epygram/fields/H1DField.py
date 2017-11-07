@@ -13,6 +13,7 @@ import numpy
 import datetime
 
 import footprints
+from bronx.graphics.axes import set_figax, set_nice_time_axis
 
 from epygram import config, util, epygramError
 from epygram.base import FieldSet
@@ -91,7 +92,6 @@ class H1DField(D3Field):
 # (but useful and rather standard) !
 # [so that, subject to continuation through updated versions,
 #  including suggestions/developments by users...]
-
     def plotfield(self,
                   over=(None, None),
                   labels=None,
@@ -287,195 +287,194 @@ def plothorizontalhovmoller(transect,
                             showgrid=True,
                             x_is='distance',
                             figsize=None):
-        """
-        Makes a simple vertical Hovmöller plot of the field.
+    """
+    Makes a simple vertical Hovmöller plot of the field.
 
-        :param transect: being a :class:`epygram.fields.H1DField`
-        :param over: any existing figure and/or ax to be used for the
-          plot, given as a tuple (fig, ax), with None for
-          missing objects. *fig* is the frame of the
-          matplotlib figure, containing eventually several
-          subplots (axes); *ax* is the matplotlib axes on
-          which the drawing is done. When given (!= None),
-          these objects must be coherent, i.e. ax being one of
-          the fig axes.
-        :param fidkey: type of fid for entitling the plot with *fid[fidkey]*,
-                     if title is *None*;
-                     if *None*, labels with raw fid.
-        :param title: title for the plot.
-        :param logscale: to set Y logarithmic scale
-        :param zoom: a dict containing optional limits to zoom on the plot. \n
-          Syntax: e.g. {'ymax':500, ...}.
-        :param colorbar: if *False*, hide colorbar the plot; else, befines the
-          colorbar orientation, among ('horizontal', 'vertical').
-          Defaults to 'vertical'.
-        :param graphicmode: among ('colorshades', 'contourlines').
-        :param minmax: defines the min and max values for the plot colorbar. \n
-          Syntax: [min, max]. [0.0, max] also works. Default is min/max of the
-          field.
-        :param levelsnumber: number of levels for contours and colorbar.
-        :param center_cmap_on_0: aligns the colormap center on the value 0.
-        :param colormap: name of the **matplotlib** colormap to use.
-        :param minmax_in_title: if True and minmax != None, adds min and max
-          values in title
-        :param contourcolor: color or colormap to be used for 'contourlines'
-          graphicmode. It can be either a legal html color name, or a colormap
-          name.
-        :param contourwidth: width of contours for 'contourlines' graphicmode.
-        :param contourlabel: displays labels on contours.
-        :param datefmt: date format to use, e.g. "%Y-%m-%d %H:%M:%S %Z"
-        :param showgrid: True/False to show grid or not
-        :param x_is: abscissa to be among:
-          - 'distance': distance from first point of transect
-          - 'lon': longitude of points
-          - 'lat': latitude of points
-        :param figsize: figure sizes in inches, e.g. (5, 8.5).
-                        If None, get the default figsize in config.plotsizes.
+    :param transect: being a :class:`epygram.fields.H1DField`
+    :param over: any existing figure and/or ax to be used for the
+      plot, given as a tuple (fig, ax), with None for
+      missing objects. *fig* is the frame of the
+      matplotlib figure, containing eventually several
+      subplots (axes); *ax* is the matplotlib axes on
+      which the drawing is done. When given (!= None),
+      these objects must be coherent, i.e. ax being one of
+      the fig axes.
+    :param fidkey: type of fid for entitling the plot with *fid[fidkey]*,
+                 if title is *None*;
+                 if *None*, labels with raw fid.
+    :param title: title for the plot.
+    :param logscale: to set Y logarithmic scale
+    :param zoom: a dict containing optional limits to zoom on the plot. \n
+      Syntax: e.g. {'ymax':500, ...}.
+    :param colorbar: if *False*, hide colorbar the plot; else, befines the
+      colorbar orientation, among ('horizontal', 'vertical').
+      Defaults to 'vertical'.
+    :param graphicmode: among ('colorshades', 'contourlines').
+    :param minmax: defines the min and max values for the plot colorbar. \n
+      Syntax: [min, max]. [0.0, max] also works. Default is min/max of the
+      field.
+    :param levelsnumber: number of levels for contours and colorbar.
+    :param center_cmap_on_0: aligns the colormap center on the value 0.
+    :param colormap: name of the **matplotlib** colormap to use.
+    :param minmax_in_title: if True and minmax != None, adds min and max
+      values in title
+    :param contourcolor: color or colormap to be used for 'contourlines'
+      graphicmode. It can be either a legal html color name, or a colormap
+      name.
+    :param contourwidth: width of contours for 'contourlines' graphicmode.
+    :param contourlabel: displays labels on contours.
+    :param datefmt: date format to use, e.g. "%Y-%m-%d %H:%M:%S %Z"
+    :param showgrid: True/False to show grid or not
+    :param x_is: abscissa to be among:
+      - 'distance': distance from first point of transect
+      - 'lon': longitude of points
+      - 'lat': latitude of points
+    :param figsize: figure sizes in inches, e.g. (5, 8.5).
+                    If None, get the default figsize in config.plotsizes.
 
-        Warning: requires **matplotlib**.
-        """
+    Warning: requires **matplotlib**.
+    """
 
-        import matplotlib
-        import matplotlib.pyplot as plt
-        import matplotlib.dates as mdates
-        from mpl_toolkits.axes_grid1 import make_axes_locatable
-        plt.rc('font', family='serif')
+    import matplotlib.pyplot as plt
+    import matplotlib.dates as mdates
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+    plt.rc('font', family='serif')
 
-        # User colormaps
-        if colormap not in plt.colormaps():
-            util.add_cmap(colormap)
+    # User colormaps
+    if colormap not in plt.colormaps():
+        util.load_cmap(colormap)
 
-        # Figure, ax
-        fig, ax = util.set_figax(*over, figsize=figsize)
+    # Figure, ax
+    fig, ax = set_figax(*over, figsize=figsize)
 
-        # coords
-        y = numpy.zeros((len(transect.validity),
-                         transect.geometry.dimensions['X']))
+    # coords
+    y = numpy.zeros((len(transect.validity),
+                     transect.geometry.dimensions['X']))
 
-        validities = {transect.validity[i].get():i for i in range(len(transect.validity))}
-        yaxis_label = 'Validity'
-        if len(validities) == 1 and len(transect.validity) != 1:
-            yaxis_label = 'Basis'
-            validities = {transect.validity[i].getbasis():i for i in len(transect.validity)}
-        epoch = datetime.datetime(1970, 1, 1)
-        for i in range(len(transect.validity)):
-            d = transect.validity[i].get() if yaxis_label == 'Validity' else transect.validity[i].getbasis()
-            timedelta = d - epoch
-            p = (timedelta.microseconds + (timedelta.seconds + timedelta.days * 24 * 3600) * 10 ** 6) / 1e6
-            y[i, :] = matplotlib.dates.epoch2num(p)
-        x = numpy.zeros((len(transect.validity),
-                         transect.geometry.dimensions['X']))
-        lonlat = zip(*transect.geometry.get_lonlat_grid())
-        p0 = lonlat[0]
-        plast = p0
-        distance = 0
-        for i in range(transect.geometry.dimensions['X']):
-            if x_is == 'distance':
-                p = lonlat[i]
-                distance += transect.geometry.distance((plast[0], plast[1]),
-                                                       (p[0], p[1]))
-                x[:, i] = distance
-                plast = p
-            elif x_is == 'lon':
-                x[:, i] = lonlat[i][0]
-            elif x_is == 'lat':
-                x[:, i] = lonlat[i][1]
-        plast = lonlat[-1]
-        data = transect.getdata()
-        # min/max
-        m = data.min()
-        M = data.max()
-        if minmax is not None:
-            if minmax_in_title:
-                minmax_in_title = '(min: ' + \
-                                  '{: .{precision}{type}}'.format(m, type='E', precision=3) + \
-                                  ' // max: ' + \
-                                  '{: .{precision}{type}}'.format(M, type='E', precision=3) + ')'
-            try:
-                m = float(minmax[0])
-            except Exception:
-                m = data.min()
-            try:
-                M = float(minmax[1])
-            except Exception:
-                M = data.max()
-        else:
-            minmax_in_title = ''
-        if abs(m - M) > config.epsilon:
-            levels = numpy.linspace(m, M, levelsnumber)
-            vmin = vmax = None
-            if center_cmap_on_0:
-                vmax = max(abs(m), M)
-                vmin = -vmax
-        else:
-            raise epygramError("cannot plot uniform field.")
-        L = int((levelsnumber - 1) // 15) + 1
-        hlevels = [levels[l] for l in range(len(levels) - L / 3) if
-                   l % L == 0] + [levels[-1]]
-        # plot
-        if logscale:
-            ax.set_yscale('log')
-        ax.grid()
-        if graphicmode == 'colorshades':
-            pf = ax.contourf(x, y, data, levels, cmap=colormap,
-                              vmin=vmin, vmax=vmax)
-            if colorbar:
-                position = 'right' if colorbar == 'vertical' else 'bottom'
-                cax = make_axes_locatable(ax).append_axes(position,
-                                                          size="5%",
-                                                          pad=0.1)
-                cb = plt.colorbar(pf,
-                                  orientation=colorbar,
-                                  ticks=hlevels,
-                                  cax=cax)
-                if minmax_in_title != '':
-                    cb.set_label(minmax_in_title)
-        elif graphicmode == 'contourlines':
-            pf = ax.contour(x, y, data, levels=levels, colors=contourcolor,
-                            linewidths=contourwidth)
-            if contourlabel:
-                ax.clabel(pf, colors=contourcolor)
-        # time
-        ymin = mdates.num2date(ax.axis()[2]).replace(tzinfo=None)
-        ymax = mdates.num2date(ax.axis()[3]).replace(tzinfo=None)
-        util.set_DateHour_axis(ax, ymax - ymin, 'y',
-                               showgrid=showgrid, datefmt=datefmt)
-        # decoration
+    validities = {transect.validity[i].get():i for i in range(len(transect.validity))}
+    yaxis_label = 'Validity'
+    if len(validities) == 1 and len(transect.validity) != 1:
+        yaxis_label = 'Basis'
+        validities = {transect.validity[i].getbasis():i for i in len(transect.validity)}
+    epoch = datetime.datetime(1970, 1, 1)
+    for i in range(len(transect.validity)):
+        d = transect.validity[i].get() if yaxis_label == 'Validity' else transect.validity[i].getbasis()
+        timedelta = d - epoch
+        p = (timedelta.microseconds + (timedelta.seconds + timedelta.days * 24 * 3600) * 10 ** 6) / 1e6
+        y[i, :] = mdates.epoch2num(p)
+    x = numpy.zeros((len(transect.validity),
+                     transect.geometry.dimensions['X']))
+    lonlat = zip(*transect.geometry.get_lonlat_grid())
+    p0 = lonlat[0]
+    plast = p0
+    distance = 0
+    for i in range(transect.geometry.dimensions['X']):
         if x_is == 'distance':
-            ax.set_xlabel('Distance from left-end point (m).')
+            p = lonlat[i]
+            distance += transect.geometry.distance((plast[0], plast[1]),
+                                                   (p[0], p[1]))
+            x[:, i] = distance
+            plast = p
         elif x_is == 'lon':
-            ax.set_xlabel(u'Longitude (\u00B0).')
+            x[:, i] = lonlat[i][0]
         elif x_is == 'lat':
-            ax.set_xlabel(u'Latitude (\u00B0).')
-        ax.set_ylabel(yaxis_label)
-        if zoom is not None:
-            ykw = {}
-            xkw = {}
-            for pair in (('bottom', 'ymin'), ('top', 'ymax')):
-                try:
-                    ykw[pair[0]] = zoom[pair[1]]
-                except Exception:
-                    pass
-            for pair in (('left', 'xmin'), ('right', 'xmax')):
-                try:
-                    xkw[pair[0]] = zoom[pair[1]]
-                except Exception:
-                    pass
-            ax.set_ylim(**ykw)
-            ax.set_xlim(**xkw)
-        if title is None:
-            if fidkey is None:
-                fid = transect.fid[sorted(transect.fid.keys())[0]]
-            else:
-                fid = transect.fid[fidkey]
-            title = u'Horizontal Hovmöller of ' + str(fid) + ' between \n' + \
-                    '<- (' + str(p0[0]) + ', ' + \
-                    str(p0[1]) + ')' + ' and ' + \
-                    '(' + str(plast[0]) + ', ' + \
-                    str(plast[1]) + ') ->'
-        ax.set_title(title)
+            x[:, i] = lonlat[i][1]
+    plast = lonlat[-1]
+    data = transect.getdata()
+    # min/max
+    m = data.min()
+    M = data.max()
+    if minmax is not None:
+        if minmax_in_title:
+            minmax_in_title = '(min: ' + \
+                              '{: .{precision}{type}}'.format(m, type='E', precision=3) + \
+                              ' // max: ' + \
+                              '{: .{precision}{type}}'.format(M, type='E', precision=3) + ')'
+        try:
+            m = float(minmax[0])
+        except Exception:
+            m = data.min()
+        try:
+            M = float(minmax[1])
+        except Exception:
+            M = data.max()
+    else:
+        minmax_in_title = ''
+    if abs(m - M) > config.epsilon:
+        levels = numpy.linspace(m, M, levelsnumber)
+        vmin = vmax = None
+        if center_cmap_on_0:
+            vmax = max(abs(m), M)
+            vmin = -vmax
+    else:
+        raise epygramError("cannot plot uniform field.")
+    L = int((levelsnumber - 1) // 15) + 1
+    hlevels = [levels[l] for l in range(len(levels) - L / 3) if
+               l % L == 0] + [levels[-1]]
+    # plot
+    if logscale:
+        ax.set_yscale('log')
+    ax.grid()
+    if graphicmode == 'colorshades':
+        pf = ax.contourf(x, y, data, levels, cmap=colormap,
+                          vmin=vmin, vmax=vmax)
+        if colorbar:
+            position = 'right' if colorbar == 'vertical' else 'bottom'
+            cax = make_axes_locatable(ax).append_axes(position,
+                                                      size="5%",
+                                                      pad=0.1)
+            cb = plt.colorbar(pf,
+                              orientation=colorbar,
+                              ticks=hlevels,
+                              cax=cax)
+            if minmax_in_title != '':
+                cb.set_label(minmax_in_title)
+    elif graphicmode == 'contourlines':
+        pf = ax.contour(x, y, data, levels=levels, colors=contourcolor,
+                        linewidths=contourwidth)
+        if contourlabel:
+            ax.clabel(pf, colors=contourcolor)
+    # time
+    ymin = mdates.num2date(ax.axis()[2]).replace(tzinfo=None)
+    ymax = mdates.num2date(ax.axis()[3]).replace(tzinfo=None)
+    set_nice_time_axis(ax, ymax - ymin, 'y',
+                       showgrid=showgrid, datefmt=datefmt)
+    # decoration
+    if x_is == 'distance':
+        ax.set_xlabel('Distance from left-end point (m).')
+    elif x_is == 'lon':
+        ax.set_xlabel(u'Longitude (\u00B0).')
+    elif x_is == 'lat':
+        ax.set_xlabel(u'Latitude (\u00B0).')
+    ax.set_ylabel(yaxis_label)
+    if zoom is not None:
+        ykw = {}
+        xkw = {}
+        for pair in (('bottom', 'ymin'), ('top', 'ymax')):
+            try:
+                ykw[pair[0]] = zoom[pair[1]]
+            except Exception:
+                pass
+        for pair in (('left', 'xmin'), ('right', 'xmax')):
+            try:
+                xkw[pair[0]] = zoom[pair[1]]
+            except Exception:
+                pass
+        ax.set_ylim(**ykw)
+        ax.set_xlim(**xkw)
+    if title is None:
+        if fidkey is None:
+            fid = transect.fid[sorted(transect.fid.keys())[0]]
+        else:
+            fid = transect.fid[fidkey]
+        title = u'Horizontal Hovmöller of ' + str(fid) + ' between \n' + \
+                '<- (' + str(p0[0]) + ', ' + \
+                str(p0[1]) + ')' + ' and ' + \
+                '(' + str(plast[0]) + ', ' + \
+                str(plast[1]) + ') ->'
+    ax.set_title(title)
 
-        return (fig, ax)
+    return (fig, ax)
 
 
 def plottransects(transects,
@@ -553,7 +552,7 @@ def plottransects(transects,
     plast = lonlat[-1]
 
     # Figure
-    fig, ax = util.set_figax(*over, figsize=figsize)
+    fig, ax = set_figax(*over, figsize=figsize)
     if logscale:
         ax.set_yscale('log')
     i = 0
@@ -656,7 +655,7 @@ def plotanimation(transect,
                             title=title,
                             **kwargs)
     if kwargs.get('colorbar_over') is None:
-            kwargs['colorbar_over'] = fig.axes[-1]  # the last being created, in plotfield()
+        kwargs['colorbar_over'] = fig.axes[-1]  # the last being created, in plotfield()
     kwargs['over'] = (fig, ax)
 
     def update(i, ax, myself, transecti, title_prefix, kwargs):

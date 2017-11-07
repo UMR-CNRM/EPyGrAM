@@ -19,6 +19,7 @@ import datetime
 from contextlib import contextmanager
 
 from footprints import FootprintBase
+from bronx.graphics.colormapping import add_cmap, get_norm4colorscale
 
 from epygram import config, epygramError
 
@@ -362,20 +363,6 @@ def find_re_in_list(regexp, a_list):
     return found
 
 
-def nicedeco(decorator):
-    """
-    A decorator of decorator, for the decorated method to keep the original
-    __name__, __doc__ and __dict__.
-    """
-    def new_decorator(f):
-        g = decorator(f)
-        g.__name__ = f.__name__
-        g.__doc__ = f.__doc__
-        g.__dict__.update(f.__dict__)
-        return g
-    return new_decorator
-
-
 def degrees_nearest_mod(d, ref):
     """Returns the angle(s) **d** in the modulo nearest to **ref**."""
     try:
@@ -417,122 +404,17 @@ def positive_longitude(lon, unit='degrees'):
     return lon
 
 
-def make_custom_cmap(filename):
-    """
-    Creates a custom Colormap from a set of RGB colors in a file with the
-    following formating:
-
-    r1,g1,b1;\n
-    r2,g2,b2;\n
-    ...\n
-    rn,gn,bn
-
-    each value being comprised between 0 and 255
-    e.g. coming from http://colormap.org.
-    """
-    import matplotlib
-
-    with open(filename, 'r') as f:
-        colors = f.readlines()
-    for i in range(len(colors)):
-        colors[i] = colors[i].replace(';', '')
-        colors[i] = colors[i].replace('[', '')
-        colors[i] = colors[i].replace(']', '')
-        colors[i] = colors[i].replace('\n', '')
-        colors[i] = colors[i].split(',')
-    colors = numpy.array(colors, dtype=numpy.float64)
-    if colors.max() > 1.:
-        cm = matplotlib.colors.ListedColormap(colors / 255.)
-    else:
-        cm = matplotlib.colors.ListedColormap(colors)
-
-    return cm
-
-
-def add_cmap(cmap):
+def load_cmap(cmap):
     """
     Reads and registers the epygram-or-user-colormap called *cmap*,
     which must be either in config.epygram_colormaps or
     config.usercolormaps.
     """
     import matplotlib.pyplot as plt
-
     if cmap not in plt.colormaps():
-        if cmap in config.colormaps:
-            plt.register_cmap(name=cmap,
-                              cmap=make_custom_cmap(config.colormaps[cmap]))
-        else:
-            raise epygramError("unknown colormap '" + cmap +
-                               "': must be added to userconfig, in \
-                                usercolormaps.")
+        with open(config.colormaps[cmap], 'r') as ocm:
+            add_cmap(cmap, ocm)
 
-
-def printstatus(step, end, refresh_freq=1):
-    """
-    Print percentage of the loop it is in.
-
-    :param step: the current loop step
-    :param end: the final loop step
-    :param refresh_freq: the frequency in % at which reprinting status.
-    """
-    status = step * 100. / end
-    if status % refresh_freq == 0:
-        sys.stdout.write('{:>{width}}%'.format(int(status), width=3))
-        sys.stdout.flush()
-        if step < end :
-            sys.stdout.write('\b' * 4)
-        else:
-            sys.stdout.write('\n')
-
-
-def read_CSV_as_dict(filename):
-    """
-    Reads a .csv file as a list of dict, with the assumption:
-    - on first line is described the delimiter
-    - on second line is described the 'priority' of the dict.
-    """
-    import io
-    import csv
-
-    field_dict = []
-    with io.open(filename, 'r') as f:
-        delimiter = str(f.readline()[0])
-        file_priority = str(f.readline()[0:-1])
-        field_table = csv.reader(f, delimiter=delimiter)
-        for field in field_table:
-            # syntax example of field description:
-            # name:FIELDNAME;param:value;...
-            if len(field) > 1 and field[0][0] != '#':
-                fd = {}
-                for kv in field:
-                    try:
-                        fd[kv.split(':')[0]] = int(kv.split(':')[1])
-                    except ValueError:
-                        fd[kv.split(':')[0]] = kv.split(':')[1]
-                field_dict.append(fd)
-
-    return field_dict, file_priority
-
-
-def gfl2R(q, ql=0., qi=0., qr=0., qs=0., qg=0.):
-    """
-    Computes air specific gas constant R according to specific humidity,
-    and hydrometeors if present.
-    """
-    # Constants
-    Rd = config.Rd
-    Rv = config.Rv
-
-    q = numpy.array(q)
-    ql = numpy.array(ql)
-    qi = numpy.array(qi)
-    qr = numpy.array(qr)
-    qs = numpy.array(qs)
-    qg = numpy.array(qg)
-
-    R = Rd + (Rv - Rd) * q - Rd * (ql + qi + qr + qs + qg)
-
-    return R
 
 formatting_default_widths = (50, 20)
 separation_line = '{:-^{width}}'.format('', width=sum(formatting_default_widths) + 1) + '\n'
@@ -606,49 +488,6 @@ def write_formatted_table(dest, table, alignments=['<', '^'], precision=6, float
         line = ('{:' + alignments[0] + '{width}}').format(table[i][0], width=columns_dimension[0])
         line += ''.join([('{:' + alignments[1] + '{width}}').format(elements[j], width=columns_dimension[j + 1]) for j in range(len(elements))])
         dest.write(line + '\n')
-
-
-def linearize(s, quotes=False):
-    """
-    Returns string *s* linearized, i.e. without special characters that may
-    be forbidden in filenames.
-
-    :param quotes: must we also remove quotes?
-    """
-    replacements = [(' ', '_'), ('{', ''), ('}', ''), ("'", ''), ('*', '')]
-    if quotes:
-        replacements = [("'", ""), ('"', '')]
-    result = s.strip()
-    for repl in replacements:
-        result = result.replace(*repl)
-
-    return result
-
-
-def linearize2str(o, quotes=False):
-    """Returns str(*o*) linearized (cf. util.linearize)."""
-    return linearize(str(o), quotes=quotes)
-
-
-def soft_string(s, escaped_characters={' ':'_',
-                                       '{':'',
-                                       '}':'',
-                                       '(':'',
-                                       ')':'',
-                                       '[':'',
-                                       ']':'',
-                                       '*':''}):
-    """
-    Returns str(*s*) escaping special characters that may
-    be forbidden in filenames.
-
-    :param escaped_characters: special characters to escape,
-                               and their replacement in case.
-    """
-    result = str(s).strip()
-    for repl in escaped_characters.items():
-        result = result.replace(*repl)
-    return result
 
 
 def str_or_int_to_datetime(dt):
@@ -736,8 +575,10 @@ def add_meridians_and_parallels_to(bm,
             delta_lon = 1
         elif 10 < Delta_lon <= 30:
             delta_lon = 5
-        else:
+        elif 30 < Delta_lon <= 180:
             delta_lon = 10
+        else:
+            delta_lon = 20
         if isinstance(meridians, int) or isinstance(meridians, float):
             delta_lon = meridians
         lonmin = bm.lonmin - bm.lonmin % delta_lon
@@ -809,112 +650,19 @@ nearlyEqualArray = numpy.vectorize(nearlyEqual)
 nearlyEqualArray.__doc__ = "Vector version of nearlyEqual()."
 
 
-def parse_str2dict(string, try_convert=None):
+def scale_colormap(cmap, max_val=None):
     """
-    Parse a *string* (of syntax 'key1:value1,key2=value2') to a dict.
-    If *try_convert* is not None, try to convert values as type *try_convert*.
-    """
-    if ':' not in string and '=' not in string:
-        raise SyntaxError("string: '{}' is not convertible to a dict".format(string))
-    d = {i.replace('=', ':').split(':')[0].strip():i.replace('=', ':').split(':')[1].strip()
-         for i in string.split(',')}
-    if try_convert is not None:
-        for k, v in d.items():
-            try:
-                d[k] = try_convert(v)
-            except ValueError:
-                pass
-    return d
+    Creates a matplotlib.colors.BoundaryNorm object tuned for scaled colormaps,
+    i.e. discrete, irregular colorshades.
 
+    :param cmap: name of the colormap, as found in config.colormaps_scaling
+    :param max_val: if given, replaces the upper bound.
 
-def stretch_array(array):
+    :return: a tuple (norm, scaling), scaling being eventually modified
+             according to **max_val**
     """
-    Return array.flatten() or compressed(), whether the array is
-    masked or not.
-    """
-    if isinstance(array, numpy.ma.masked_array):
-        array = array.compressed()
-    elif isinstance(array, numpy.ndarray):
-        array = array.flatten()
-    else:
-        raise NotImplementedError(' '.join(['type:', type(array), 'array']))
-
-    return array
-
-
-def color_scale(cmap, max_val=None):
-    """
-    Creates a matplotlib.colors.BoundaryNorm object tuned for radar colormaps.
-    If *max_val* is given, eventually replaces the upper bound.
-    """
-    import matplotlib.colors as colors
     bounds = copy.copy(config.colormaps_scaling.get(cmap, None))
-    assert bounds is not None, \
-           "unknown colormap" + cmap + "in config.epygram_colormaps_scaling"
-    if max_val is not None:
-        if bounds[-2] <= max_val <= bounds[-1]:
-            bounds[-1] = max_val
-
-    norm = colors.BoundaryNorm(boundaries=bounds, ncolors=len(bounds) - 1)
-
-    return (norm, bounds)
-
-
-@contextmanager
-def stdout_redirected(to=os.devnull):
-    """
-    Usage:
-
-    with stdout_redirected(to=filename):
-        print("from Python")
-        import os
-        os.system("echo non-Python applications are also supported")
-    """
-    # http://stackoverflow.com/questions/5081657/how-do-i-prevent-a-c-shared-library-to-print-on-stdout-in-python
-    fd = sys.stdout.fileno()
-
-    # assert that Python and C stdio write using the same file descriptor
-    # assert libc.fileno(ctypes.c_void_p.in_dll(libc, "stdout")) == fd == 1
-
-    def _redirect_stdout(to):
-        sys.stdout.close()  # + implicit flush()
-        os.dup2(to.fileno(), fd)  # fd writes to 'to' file
-        sys.stdout = os.fdopen(fd, 'w')  # Python writes to fd
-
-    with os.fdopen(os.dup(fd), 'w') as old_stdout:
-        with open(to, 'w') as f:
-            _redirect_stdout(to=f)
-        try:
-            yield  # allow code to be run with the redirected stdout
-        finally:
-            _redirect_stdout(to=old_stdout)  # restore stdout.
-
-
-@contextmanager
-def stderr_redirected(to=os.devnull):
-    """
-    Usage:
-
-    with stderr_redirected(to=filename):
-        print("from Python")
-        import os
-        os.system("echo non-Python applications are also supported")
-    """
-    # Based on stdout_redirected
-    fd = sys.stderr.fileno()
-
-    def _redirect_stderr(to):
-        sys.stderr.close()  # + implicit flush()
-        os.dup2(to.fileno(), fd)  # fd writes to 'to' file
-        sys.stderr = os.fdopen(fd, 'w')  # Python writes to fd
-
-    with os.fdopen(os.dup(fd), 'w') as old_stderr:
-        with open(to, 'w') as f:
-            _redirect_stderr(to=f)
-        try:
-            yield  # allow code to be run with the redirected stderr
-        finally:
-            _redirect_stderr(to=old_stderr)  # restore stderr.
+    return get_norm4colorscale(bounds, max_val=max_val)
 
 
 def restrain_to_index_i_of_dim_d(a, i, d, n=None):
@@ -1032,95 +780,6 @@ def ifNone_emptydict(arg):
     if arg is None:
         arg = {}
     return arg
-
-
-def set_DateHour_axis(axis, datetimerange, xy,
-                      showgrid=True,
-                      datefmt=None,
-                      tickslabelsrotation=30.):
-    """
-    Set an adequate axis ticks and ticks labels for Date/Hour axis.
-
-    :param datetimerange: supposed to be a :class:`datetime.timedelta` instance
-    :param xy: must be 'x' or 'y'
-    :param showgrid: to set the grid or not
-    :param datefmt: format for date
-    :param tickslabelsrotation: angle in degrees, anti-clockwise order
-    """
-    import matplotlib.dates as mdates
-    import matplotlib.pyplot as plt
-
-    dayhourformatter = mdates.DateFormatter('%Y-%m-%d\n%H:%M:%S')
-    dayformatter = mdates.DateFormatter('%Y-%m-%d')
-    if datetimerange <= datetime.timedelta(2):
-        major_locator = mdates.HourLocator(interval=6)
-        minor_locator = mdates.HourLocator(interval=1)
-        formatter = mdates.AutoDateFormatter(major_locator)
-    elif datetimerange <= datetime.timedelta(7):
-        major_locator = mdates.DayLocator(interval=1)
-        minor_locator = mdates.HourLocator(interval=6)
-        formatter = dayhourformatter
-    elif datetimerange <= datetime.timedelta(21):
-        major_locator = mdates.DayLocator(interval=2)
-        minor_locator = mdates.DayLocator(interval=1)
-        formatter = dayhourformatter
-    elif datetimerange <= datetime.timedelta(100):
-        major_locator = mdates.DayLocator(interval=7)
-        minor_locator = mdates.DayLocator(interval=1)
-        formatter = dayformatter
-    else:
-        major_locator = mdates.AutoDateLocator()
-        minor_locator = None
-        formatter = mdates.AutoDateFormatter(major_locator)
-    if datefmt is not None:
-        formatter = mdates.DateFormatter(datefmt)
-    if xy == 'x':
-        myaxis = axis.xaxis
-    else:
-        myaxis = axis.yaxis
-    myaxis.set_major_locator(major_locator)
-    myaxis.set_major_formatter(formatter)
-    axis.grid(showgrid)
-    if minor_locator is not None:
-        myaxis.set_minor_locator(minor_locator)
-        axis.grid(showgrid, which='minor', axis=xy, color='grey')
-    if tickslabelsrotation != 0.:
-        _ax = plt.gca()
-        plt.sca(axis)
-        if xy == 'x':
-            plt.xticks(rotation=tickslabelsrotation)
-        else:
-            plt.yticks(rotation=tickslabelsrotation)
-        plt.sca(_ax)
-
-
-def set_figax(figure, ax, figsize=None):
-    """
-    Given existing matplotlib *figure* and an *ax* (or None),
-    check consistency or generate a consistent (figure, ax) duet.
-
-    :param figsize: if generated on the fly, figure sizes in inches,
-                    e.g. (5, 8.5).
-                    If None, get the default figsize in config.plotsizes.
-    """
-    import matplotlib.pyplot as plt
-
-    if ax is not None and figure is None:
-        figure = ax.figure
-    elif ax is None and figure is not None:
-        if len(figure.axes) > 0:
-            ax = figure.axes[0]
-        else:
-            ax = figure.gca()
-    elif ax is not None and figure is not None:
-        if ax not in figure.axes:
-            raise epygramError('*over*: inconsistency between given fig and ax')
-    elif figure is ax is None:
-        if figsize is None:
-            figsize = config.plotsizes
-        figure, ax = plt.subplots(1, 1, figsize=figsize)
-
-    return (figure, ax)
 
 
 def set_map_up(bm, ax,

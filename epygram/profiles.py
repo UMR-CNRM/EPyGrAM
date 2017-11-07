@@ -16,12 +16,15 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 
 import numpy
 
-from . import config
+from bronx.meteo import constants
+
+from .config import default_Ptop
 
 # Constants
-Cpd = config.Cpd
-Rd = config.Rd
-Rv = config.Rv
+Cpd = constants.Cpd
+Rd = constants.Rd
+Rv = constants.Rv
+g0 = constants.g0
 
 
 # FORMULAS #
@@ -139,7 +142,7 @@ def hybridH2massheight(A, B, Zsurf, conv2height=False):
     return H
 
 
-def flux2masspressures(pi_tilde, vertical_mean, Ptop=config.default_Ptop):
+def flux2masspressures(pi_tilde, vertical_mean, Ptop=default_Ptop):
     """Converts pressures at flux levels to mass levels."""
 
     if not numpy.all(pi_tilde[1:] >= pi_tilde[:-1]):
@@ -169,7 +172,7 @@ def flux2masspressures(pi_tilde, vertical_mean, Ptop=config.default_Ptop):
     return pi
 
 
-def mass2fluxpressures(pi, vertical_mean, Ptop=config.default_Ptop):
+def mass2fluxpressures(pi, vertical_mean, Ptop=default_Ptop):
     """Converts pressures at mass levels to flux levels."""
 
     if not numpy.all(pi[1:] >= pi[:-1]):
@@ -322,13 +325,13 @@ def pressure2altitude(R, T, vertical_mean,
         Phi[ik] = myPhi_surf + partialsum[ik] + R[ik] * T[ik] * alpha[ik] / \
                   (1. + myPdep[ik] / pi[ik])
     # Altitude
-    z = Phi / config.g0
+    z = Phi / g0
 
     return z
 
 
 def hybridP2altitude(A, B, R, T, Psurf, vertical_mean,
-                     Pdep=None, Phi_surf=None, Ptop=config.default_Ptop):
+                     Pdep=None, Phi_surf=None, Ptop=default_Ptop):
     """
     Computes the altitude of mass levels defined by hybrid-pressure
     coefficients. (= height above ground if *Phi_surf == 0*).

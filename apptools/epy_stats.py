@@ -12,10 +12,12 @@ import sys
 import os
 
 from footprints import FPDict
+from bronx.fancies.display import printstatus
+from bronx.syntax.pretty import smooth_string
 
 import epygram
 from epygram import epylog
-from epygram.util import printstatus, write_formatted_table
+from epygram.util import write_formatted_table
 from epygram.args_catalog import (add_arg_to_parser,
                                   files_management, fields_management,
                                   misc_options, runtime_options,
@@ -162,7 +164,7 @@ def main(filename,
         printlist = fidlist
         printlist.sort()
         noutfields = len(printlist)
-        parameter = epygram.util.soft_string(printlist[0])
+        parameter = smooth_string(printlist[0])
         if outputfilename:
             filename = outputfilename
         else:
@@ -182,7 +184,7 @@ def main(filename,
             printlist = unionfidlist
         printlist.sort()
         noutfields = len(printlist)
-        parameter = epygram.util.soft_string(printlist[0])
+        parameter = smooth_string(printlist[0])
         if outputfilename:
             filename = outputfilename
         else:

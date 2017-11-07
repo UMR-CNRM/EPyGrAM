@@ -20,6 +20,7 @@ import six
 
 import footprints
 from footprints import FPDict, proxy as fpx
+from bronx.datagrip.misc import read_dict_in_CSV
 
 from arpifs4py import wlfi
 
@@ -150,7 +151,7 @@ class LFI(FileResource):
     @classmethod
     def _read_field_dict(cls, fd_abspath):
         """Reads the CSV fields dictionary of the format."""
-        field_dict, file_priority = util.read_CSV_as_dict(fd_abspath)
+        field_dict, file_priority = read_dict_in_CSV(fd_abspath)
         if file_priority == 'main':
             cls._field_dict = field_dict
         elif file_priority == 'underwrite':

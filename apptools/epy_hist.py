@@ -10,6 +10,9 @@ import six
 import argparse
 import numpy
 
+from bronx.syntax.parsing import str2dict
+from bronx.syntax.pretty import smooth_string
+
 import epygram
 from epygram import epylog, epygramError
 from epygram.args_catalog import (add_arg_to_parser,
@@ -206,7 +209,7 @@ def main(filename,
     if output:
         epylog.info("save plots...")
         suffix = '.'.join(['hist', output])
-        parameter = epygram.util.soft_string(fieldseed)
+        parameter = smooth_string(fieldseed)
         # main resource
         if not diffonly:
             if not diffmode and outputfilename:
@@ -313,7 +316,7 @@ if __name__ == '__main__':
     else:
         diffminmax = None
     if args.zoom is not None:
-        zoom = epygram.util.parse_str2dict(args.zoom, float)
+        zoom = str2dict(args.zoom, float)
     else:
         zoom = None
     if args.operation is not None:
@@ -331,7 +334,7 @@ if __name__ == '__main__':
     else:
         diffoperation = None
     if args.mask_threshold is not None:
-        mask_threshold = epygram.util.parse_str2dict(args.mask_threshold, float)
+        mask_threshold = str2dict(args.mask_threshold, float)
     else:
         mask_threshold = None
 

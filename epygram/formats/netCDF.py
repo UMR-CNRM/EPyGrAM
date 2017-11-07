@@ -22,11 +22,12 @@ import netCDF4
 
 import footprints
 from footprints import proxy as fpx, FPDict, FPList
+from bronx.syntax.arrays import stretch_array
 
 from epygram import config, epygramError, util
 from epygram.base import FieldValidity, FieldValidityList
 from epygram.resources import FileResource
-from epygram.util import stretch_array, Angle
+from epygram.util import Angle
 
 __all__ = ['netCDF']
 

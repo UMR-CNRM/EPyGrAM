@@ -64,6 +64,7 @@ class TestFunctions(TestCase):
         self.assertIsInstance(util.make_custom_cmap(radar_cmap),
                               matplotlib.colors.ListedColormap)
 
+    # TODO: move test to bronx
     def test_read_CSV_as_dict(self):
         import tempfile
         f = tempfile.mktemp()
@@ -84,6 +85,7 @@ class TestFunctions(TestCase):
         self.assertEqual(util.str_or_int_to_datetime('20000101010101'),
                          datetime.datetime(2000, 1, 1, 1, 1, 1))
 
+    # TODO: move test to bronx
     def test_parse_str2dict(self):
         self.assertEqual(util.parse_str2dict('a:1,b=2'),
                          {'a':'1', 'b':'2'})

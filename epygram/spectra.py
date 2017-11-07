@@ -15,11 +15,13 @@ This module contains:
 
 from __future__ import print_function, absolute_import, unicode_literals, division
 
+from bronx.graphics.axes import set_figax
+
 import numpy
 import copy
 
 from epygram import epygramError
-from epygram.util import RecursiveObject, write_formatted_table, set_figax
+from epygram.util import RecursiveObject, write_formatted_table
 
 
 _file_id = 'epygram.spectra.Spectrum'

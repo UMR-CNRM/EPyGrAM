@@ -16,6 +16,7 @@ import sys
 
 import footprints
 from footprints import FPDict, FPList
+from bronx.meteo.constants import g0
 
 from arpifs4py import wlfa
 
@@ -473,14 +474,14 @@ class DDHLFA(LFA):
             dm1 = d - 1
             vgrid = {}
             fluxlevels_pressure_init = vpp_init.getdata()[dm1 * self.levels['VT']:(dm1 + 1) * self.levels['VT']
-                                                          ] * config.g0
+                                                          ] * g0
             fluxlevels_pressure_init = [sum(fluxlevels_pressure_init[0:i])
                                         for i in range(1, len(fluxlevels_pressure_init) + 1)]
             vgrid['fluxlevels_pressure_init'] = numpy.array([0.] + fluxlevels_pressure_init)
             vgrid['masslevels_pressure_init'] = profiles.flux2masspressures(fluxlevels_pressure_init,
                                                                             vertical_mean)
             fluxlevels_pressure_term = vpp_term.getdata()[dm1 * self.levels['VT']:(dm1 + 1) * self.levels['VT']
-                                                          ] * config.g0
+                                                          ] * g0
             fluxlevels_pressure_term = [sum(fluxlevels_pressure_term[0:i])
                                         for i in range(1, len(fluxlevels_pressure_term) + 1)]
             vgrid['fluxlevels_pressure_term'] = numpy.array([0.] + fluxlevels_pressure_term)

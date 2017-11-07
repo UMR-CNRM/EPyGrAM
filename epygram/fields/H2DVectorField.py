@@ -15,6 +15,8 @@ import numpy
 import sys
 
 from footprints import proxy as fpx, FPList
+from bronx.graphics.axes import set_figax
+from bronx.syntax.arrays import stretch_array
 
 from epygram import config, epygramError, util, epylog
 from epygram.base import Field, FieldValidityList
@@ -458,7 +460,7 @@ class H2DVectorField(Field):
 
         # 1. Figure, ax
         if not plot_module:
-            fig, ax = util.set_figax(*over, figsize=figsize)
+            fig, ax = set_figax(*over, figsize=figsize)
 
         # 2. Set up the map
         academic = self.geometry.name == 'academic'
@@ -551,11 +553,14 @@ class H2DVectorField(Field):
                 (u_ll, v_ll) = (u, v)
             else:
                 # wind is projected on a grid that is not lonlat: rotate to lonlat
-                (u_ll, v_ll) = self.geometry.reproject_wind_on_lonlat(util.stretch_array(u), util.stretch_array(v),
-                                                                      util.stretch_array(lons), util.stretch_array(lats),
+                (u_ll, v_ll) = self.geometry.reproject_wind_on_lonlat(stretch_array(u), stretch_array(v),
+                                                                      stretch_array(lons), stretch_array(lats),
                                                                       map_factor_correction=map_factor_correction)
             # rotate from lonlat to map projection
-            (u_map, v_map) = bm.rotate_vector(u_ll, v_ll, util.stretch_array(lons), util.stretch_array(lats))
+            (u_map, v_map) = bm.rotate_vector(u_ll,
+                                              v_ll,
+                                              stretch_array(lons),
+                                              stretch_array(lats))
             # go back to 2D if necessary
             if symbol == 'stream':
                 u_map = u_map.reshape(u.shape)
@@ -571,10 +576,10 @@ class H2DVectorField(Field):
             else:
                 raise NotImplementedError("matplotlib's streamplot need an evenly spaced grid.")
         else:
-                xf = util.stretch_array(x)
-                yf = util.stretch_array(y)
-                u = util.stretch_array(u_map)
-                v = util.stretch_array(v_map)
+                xf = stretch_array(x)
+                yf = stretch_array(y)
+                u = stretch_array(u_map)
+                v = stretch_array(v_map)
         if symbol == 'barbs':
             bm.barbs(xf, yf, u, v, ax=ax, **symbol_options)
         elif symbol == 'arrows':

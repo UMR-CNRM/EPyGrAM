@@ -15,9 +15,11 @@ import sys
 
 import footprints
 from footprints import FPDict, FPList, proxy as fpx
+from bronx.graphics.axes import set_figax
+from bronx.syntax.arrays import stretch_array
 
 from epygram import epygramError, config
-from epygram.util import (write_formatted, stretch_array, Angle, set_figax,
+from epygram.util import (write_formatted, Angle,
                           degrees_nearest_mod)
 from epygram.base import Field, FieldSet, FieldValidity, FieldValidityList, Resource
 from epygram.geometries import D3Geometry, SpectralGeometry

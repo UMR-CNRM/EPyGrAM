@@ -22,6 +22,8 @@ import six
 
 import footprints
 from footprints import FPDict, FPList, proxy as fpx
+from bronx.datagrip.misc import read_dict_in_CSV
+from bronx.meteo.conversion import q2R
 
 from arpifs4py import wfa, wlfi, wtransforms
 
@@ -416,7 +418,7 @@ class FA(FileResource):
     @classmethod
     def _read_field_dict(cls, fd_abspath):
         """Reads the CSV fields dictionary of the format."""
-        field_dict, file_priority = util.read_CSV_as_dict(fd_abspath)
+        field_dict, file_priority = read_dict_in_CSV(fd_abspath)
         if file_priority == 'main':
             cls._field_dict = field_dict
         elif file_priority == 'underwrite':
@@ -1368,8 +1370,8 @@ class FA(FileResource):
                                                " resource.")
                         else:
                             side_profiles[p] = numpy.zeros(side_profiles['t'].shape)
-                R = util.gfl2R(*[side_profiles[p] for p in
-                                 ['q', 'ql', 'qi', 'qr', 'qs', 'qg']])
+                R = q2R(*[side_profiles[p] for p in
+                          ['q', 'ql', 'qi', 'qr', 'qs', 'qg']])
             if vertical_coordinate == 102:
                 try:
                     geopotential = self.readfield('SPECSURFGEOPOTEN')

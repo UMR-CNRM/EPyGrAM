@@ -10,6 +10,8 @@ import six
 import argparse
 import numpy
 
+from bronx.syntax.pretty import smooth_string
+
 import epygram
 from epygram import epylog
 from epygram.args_catalog import (add_arg_to_parser,
@@ -205,7 +207,7 @@ def main(filename,
                 plt.show()
 
     # Text Output
-    parameter = epygram.util.soft_string(profile.fid.get(resource.format, profile.fid))
+    parameter = smooth_string(profile.fid.get(resource.format, profile.fid))
     if None in coordinates:
         position = 'mean'
     else:

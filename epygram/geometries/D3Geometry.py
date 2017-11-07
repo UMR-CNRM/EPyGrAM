@@ -17,11 +17,13 @@ import re
 
 import footprints
 from footprints import FootprintBase, FPDict, proxy as fpx
+from bronx.graphics.axes import set_figax
+from bronx.syntax.arrays import stretch_array
 
 from epygram import epygramError, config
 from epygram.util import (RecursiveObject, degrees_nearest_mod, Angle,
-                          separation_line, write_formatted, stretch_array,
-                          nearlyEqual, set_figax, set_map_up)
+                          separation_line, write_formatted,
+                          nearlyEqual, set_map_up)
 from .VGeometry import VGeometry
 
 epylog = footprints.loggers.getLogger(__name__)

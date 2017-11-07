@@ -12,17 +12,16 @@ Of course, this module need to have a proper Vortex installation !
 from __future__ import print_function, absolute_import, unicode_literals, division
 
 import uuid
-import tempfile
 import ftplib
-import netrc
 import os
 import datetime
-import re
 import copy
 import time
 
 import footprints
+from bronx.system.mf import prestage
 import taylorism
+
 import vortex
 from vortex import toolbox
 import common
@@ -41,54 +40,9 @@ def set_defaults(**defaults):
     toolbox.defaults(**defaults)
 
 
-def hendrix_prestage(resource_paths, mail=None):
-    """
-    Puts a pre-staging request on *hendrix* for the given list of
-    resources **resource_paths**, and return the path to the request file.
-
-    :param resource_paths: list of paths to requested resources
-    :param mail: if given, used for informing about the request progress.
-
-    Uses ~/.netrc to connect to *hendrix*.
-    """
-    # connect to archive
-    archive_name = 'hendrix'
-    try:
-        (_login, _, _passwd) = netrc.netrc().authenticators(archive_name)
-    except TypeError:
-        if netrc.netrc().authenticators(archive_name) is None:
-            raise IOError("host " + archive_name + " is unknown in .netrc")
-        else:
-            raise
-    ftp = ftplib.FTP(archive_name)
-    ftp.login(_login, _passwd)
-    # build request
-    stagedir = '/DemandeMig/ChargeEnEspaceRapide'
-    if mail is not None:
-        assert re.match('([a-zA-Z\-]+)\.([a-zA-Z\-]+)\@meteo.fr', mail), \
-               'invalid **mail** format: ' + mail
-        request = ["#MAIL=" + mail + '\n', ]
-    else:
-        request = []
-    request += [r + '\n' for r in resource_paths]
-    with open(tempfile.mkstemp(prefix='.'.join([_login, 'staging_request', '']),
-                               suffix='.MIG')[1], 'w') as f:
-        f.writelines(request)
-        staging_request = os.path.basename(f.name)
-        staging_request_fullname = f.name
-    # transfer request to archive
-    with open(staging_request_fullname, 'rb') as f:
-        ftp.cwd(stagedir)
-        ftp.storbinary('STOR ' + staging_request, f)
-    os.remove(staging_request_fullname)
-    ftp.quit()
-    # send back request identifier
-    return '/'.join([stagedir, staging_request])
-
-
 def get_resources(getmode='epygram',
                   uselocalcache=False,
-                  meta_rtype=None,
+                  # meta_rtype=None,
                   **description):
     """
     Get resources, given their description.
@@ -110,7 +64,7 @@ def get_resources(getmode='epygram',
     :param meta_rtype: if not None and **getmode** is 'epygram', return the
                        resource(s) as meta_resource.
                        Cf. epygram.resources.meta_resources() for
-                       documentation.
+                       documentation. [Not implemented yet]
 
     Examples:
 
@@ -211,9 +165,9 @@ def get_resources(getmode='epygram',
         elif getmode == 'exist':
             resources = [(r.locate(), bool(r.check())) for r in resolved]
         elif getmode == 'prestaging':
-            resources = [hendrix_prestage([r.locate().split('hendrix.meteo.fr:')[1]
-                                           for r in resolved],
-                                          description.get('mail', None))]
+            resources = [prestage([r.locate().split('hendrix.meteo.fr:')[1]
+                                   for r in resolved],
+                                  description.get('mail', None))]
         elif getmode in ('fetch', 'epygram'):
             ok = []
             for r in resolved:
@@ -255,13 +209,13 @@ def extractor(vortex_description,
               end_cutoff,
               start_term,
               end_term,
-              points_fields={},
-              profiles_FAfields={},
+              points_fields=None,
+              profiles_FAfields=None,
               everycutoff_in_hours=24,
               everyterm_in_hours=1,
               # options
               vertical_coordinate=None,
-              extraction_options={},
+              extraction_options=None,
               use_local_cache=False,
               prestaging=False,
               outdir=os.getcwd(),
@@ -326,7 +280,7 @@ def extractor(vortex_description,
                                 among ('pressure', 'height', 'altitude', None)
     :param extraction_options: options to FA.extractprofile() and
                                H2DField.extract_point()
-                               concerning interpolation...
+                               concerning interpolation, as dict...
     :param use_local_cache: use a local Vortex cache, in which files are stored
     :param prestaging: triggers prestaging for the requested resources (Hendrix)
     :param outdir: directory in which to store output files
@@ -341,6 +295,9 @@ def extractor(vortex_description,
     vd = {'pressure':epygram.geometries.Pressure,
           'altitude':epygram.geometries.Altitude,
           'height':epygram.geometries.Height}
+    points_fields = epygram.util.ifNone_emptydict(points_fields)
+    profiles_FAfields = epygram.util.ifNone_emptydict(profiles_FAfields)
+    extraction_options = epygram.util.ifNone_emptydict(extraction_options)
 
     # 1. Prepare stuff
     dt_cutoffs = epygram.util.datetimerange(start_cutoff, end_cutoff,

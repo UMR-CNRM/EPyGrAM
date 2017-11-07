@@ -12,6 +12,8 @@ import argparse
 import copy
 
 from footprints import FPDict
+from bronx.syntax.parsing import str2dict
+from bronx.syntax.pretty import smooth_string
 
 import epygram
 from epygram import epylog, epygramError
@@ -288,7 +290,7 @@ def main(filename,
             filename = outputfilename
         else:
             filename = '.'.join([outputrootname,
-                                 epygram.util.soft_string(s.name),
+                                 smooth_string(s.name),
                                  suffix])
         s.write(open(filename, 'w'))
     if output:
@@ -297,7 +299,7 @@ def main(filename,
                 filename = outputfilename
             else:
                 filename = '.'.join([outputrootname,
-                                     epygram.util.soft_string(p),
+                                     smooth_string(p),
                                      suffix,
                                      output])
             spectraplots[p].savefig(filename, dpi=figures_dpi)
@@ -389,7 +391,7 @@ if __name__ == '__main__':
                 label = str(exp)
             slopes.append({'exp':exp, 'offset':offset, 'label':label})
     if args.zoom is not None:
-        zoom = epygram.util.parse_str2dict(args.zoom, float)
+        zoom = str2dict(args.zoom, float)
     else:
         zoom = None
 

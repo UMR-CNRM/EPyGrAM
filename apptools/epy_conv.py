@@ -14,6 +14,8 @@ import copy
 import footprints
 from footprints import FPDict, FPList
 import taylorism
+from bronx.fancies.display import printstatus
+from bronx.syntax.parsing import str2dict
 
 import epygram
 from epygram.args_catalog import (add_arg_to_parser,
@@ -104,7 +106,7 @@ def convert(filename,
     numfields = len(fidlist)
     if progressmode == 'percentage':
         n = 0
-        epygram.util.printstatus(n, numfields)
+        printstatus(n, numfields)
         n += 1
     # loop over fields
     for f in fidlist:
@@ -160,7 +162,7 @@ def convert(filename,
         output_resource.writefield(field, **write_kwargs)
         # print progress if requested
         if progressmode == 'percentage':
-            epygram.util.printstatus(n, numfields)
+            printstatus(n, numfields)
             n += 1
 
     t1 = time.time()
@@ -479,11 +481,11 @@ if __name__ == '__main__':
     else:
         subzone = None
     if args.GRIB2_packing is not None:
-        default_packing = epygram.util.parse_str2dict(args.GRIB2_packing, try_convert=int)
+        default_packing = str2dict(args.GRIB2_packing, try_convert=int)
     else:
         default_packing = epygram.config.GRIB_default_packing[2]
     if args.GRIB_other_options is not None:
-        other_GRIB_options = epygram.util.parse_str2dict(args.GRIB_other_options, try_convert=int)
+        other_GRIB_options = str2dict(args.GRIB_other_options, try_convert=int)
     else:
         other_GRIB_options = {}
     if args.numod is not None:

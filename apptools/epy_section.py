@@ -9,6 +9,9 @@ import six
 
 import argparse
 
+from bronx.syntax.parsing import str2dict
+from bronx.syntax.pretty import smooth_string
+
 import epygram
 from epygram import epylog, epygramError
 
@@ -187,7 +190,7 @@ def main(filename,
     # Output
     if output:
         epylog.info("save plots...")
-        parameter = epygram.util.soft_string(section.fid.get(resource.format, section.fid))
+        parameter = smooth_string(section.fid.get(resource.format, section.fid))
         suffix = '.'.join(['_'.join([parameter,
                                      str(starting_point[0]) + "E" + str(starting_point[1]) + "N",
                                      str(ending_point[0]) + "E" + str(ending_point[1]) + "N"]),
@@ -287,7 +290,7 @@ if __name__ == '__main__':
     ending_point = args.ending_point.split(',')
     ending_point = tuple([float(i) for i in ending_point])
     if args.zoom is not None:
-        zoom = epygram.util.parse_str2dict(args.zoom, float)
+        zoom = str2dict(args.zoom, float)
     else:
         zoom = None
     if args.minmax is not None:
@@ -314,7 +317,7 @@ if __name__ == '__main__':
         diffoperation = None
     # FIXME: problem in plot with mask_threshold
     if args.mask_threshold is not None:
-        mask_threshold = epygram.util.parse_str2dict(args.mask_threshold, float)
+        mask_threshold = str2dict(args.mask_threshold, float)
     else:
         mask_threshold = None
 

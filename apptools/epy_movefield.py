@@ -9,9 +9,10 @@ import six
 
 import argparse
 
+from bronx.fancies.display import printstatus
+
 import epygram
 from epygram import epylog, epygramError
-from epygram.util import printstatus
 from epygram.args_catalog import (add_arg_to_parser,
                                   files_management, fields_management,
                                   runtime_options)

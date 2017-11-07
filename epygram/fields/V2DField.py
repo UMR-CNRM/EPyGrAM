@@ -12,6 +12,7 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 import numpy
 
 import footprints
+from bronx.graphics.axes import set_figax
 
 from epygram import config, util, epygramError
 from epygram.geometries import V2DGeometry
@@ -122,10 +123,10 @@ class V2DCommonField(D3CommonField):
         plt.rc('font', family='serif')
         # User colormaps
         if colormap not in plt.colormaps():
-            util.add_cmap(colormap)
+            util.load_cmap(colormap)
 
         # Figure, ax
-        fig, ax = util.set_figax(*over, figsize=figsize)
+        fig, ax = set_figax(*over, figsize=figsize)
         # coords
         z = numpy.zeros((len(self.geometry.vcoordinate.levels),
                          self.geometry.dimensions['X']))

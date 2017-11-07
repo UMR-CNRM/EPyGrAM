@@ -22,6 +22,8 @@ import copy
 import os
 
 from footprints import proxy as fpx
+from bronx.system.unistd import stderr_redirected
+
 from epygram import config, epygramError, util
 
 __all__ = []
@@ -60,7 +62,7 @@ def guess(filename):
     for f in formats_in_guess_order:
         try:
             if config.silent_guess_format:
-                with util.stderr_redirected():
+                with stderr_redirected():
                     r = fpx.dataformat(filename=filename, openmode='r', format=f)
                     r.close()
             else:

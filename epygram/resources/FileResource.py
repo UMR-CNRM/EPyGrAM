@@ -12,9 +12,9 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 import os
 
 import footprints
+from bronx.syntax.decorators import nicedeco
 
 from epygram.base import Resource
-from epygram.util import nicedeco
 from epygram import epygramError, config
 
 epylog = footprints.loggers.getLogger(__name__)

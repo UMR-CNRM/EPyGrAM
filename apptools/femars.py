@@ -13,14 +13,15 @@ import six
 
 import footprints
 import taylorism
+from bronx.fancies.display import printstatus
+from bronx.syntax.parsing import str2dict
 
 import epygram
 from epygram import epylog
-from epygram.util import printstatus
-from epygram.args_catalog import add_arg_to_parser, \
-                                 files_management, fields_management, \
-                                 runtime_options, misc_options, \
-                                 output_options
+from epygram.args_catalog import (add_arg_to_parser,
+                                  files_management, fields_management,
+                                  runtime_options, misc_options,
+                                  output_options)
 
 
 FA2GRIB1_dict = {'TEMPERATURE':{'table2Version':128, 'indicatorOfParameter':130, },
@@ -345,7 +346,7 @@ if __name__ == '__main__':
     else:
         progressmode = None
     if args.GRIB_other_options is not None:
-        other_GRIB_options = epygram.util.parse_str2dict(args.GRIB_other_options, try_convert=int)
+        other_GRIB_options = str2dict(args.GRIB_other_options, try_convert=int)
     else:
         other_GRIB_options = default_GRIB_options
 

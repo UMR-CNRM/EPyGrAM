@@ -14,6 +14,7 @@ import numpy
 import six
 
 import footprints
+from bronx.graphics.axes import set_figax, set_nice_time_axis
 
 from .D3Field import D3CommonField, D3Field, D3VirtualField
 from epygram import epygramError, config, util
@@ -247,195 +248,195 @@ def plotverticalhovmoller(profile,
                           datefmt=None,
                           showgrid=True,
                           figsize=(6., 9.)):
-        """
-        Makes a simple vertical Hovmöller plot of the field.
+    """
+    Makes a simple vertical Hovmöller plot of the field.
 
-        :param profile: being a :class:`epygram.fields.V1DField`
-        :param over: any existing figure and/or ax to be used for the
-          plot, given as a tuple (fig, ax), with None for
-          missing objects. *fig* is the frame of the
-          matplotlib figure, containing eventually several
-          subplots (axes); *ax* is the matplotlib axes on
-          which the drawing is done. When given (is not None),
-          these objects must be coherent, i.e. ax being one of
-          the fig axes.
-        :param fidkey: type of fid for entitling the plot with *fid[fidkey]*,
-                       if title is *None*;
-                       if *None*, labels with raw fid.
-        :param Ycoordinate: label for the Y coordinate.
-        :param title: title for the plot.
-        :param logscale: to set Y logarithmic scale
-        :param zoom: a dict containing optional limits to zoom on the plot. \n
-          Syntax: e.g. {'ymax':500, ...}.
-        :param colorbar: if *False*, hide colorbar the plot; else, befines the
-          colorbar orientation, among ('horizontal', 'vertical').
-          Defaults to 'vertical'.
-        :param graphicmode: among ('colorshades', 'contourlines').
-        :param minmax: defines the min and max values for the plot colorbar. \n
-          Syntax: [min, max]. [0.0, max] also works. Default is min/max of the
-          field.
-        :param levelsnumber: number of levels for contours and colorbar.
-        :param center_cmap_on_0: aligns the colormap center on the value 0.
-        :param colormap: name of the **matplotlib** colormap to use.
-        :param minmax_in_title: if True and minmax is not None, adds min and max
-          values in title
-        :param contourcolor: color or colormap to be used for 'contourlines'
-          graphicmode. It can be either a legal html color name, or a colormap
-          name.
-        :param contourwidth: width of contours for 'contourlines' graphicmode.
-        :param contourlabel: displays labels on contours.
-        :param datefmt: date format to use, e.g. "%Y-%m-%d %H:%M:%S %Z"
-        :param showgrid: True/False to show grid or not
-        :param figsize: figure sizes in inches, e.g. (5, 8.5).
-                        If None, get the default figsize in config.plotsizes.
+    :param profile: being a :class:`epygram.fields.V1DField`
+    :param over: any existing figure and/or ax to be used for the
+      plot, given as a tuple (fig, ax), with None for
+      missing objects. *fig* is the frame of the
+      matplotlib figure, containing eventually several
+      subplots (axes); *ax* is the matplotlib axes on
+      which the drawing is done. When given (is not None),
+      these objects must be coherent, i.e. ax being one of
+      the fig axes.
+    :param fidkey: type of fid for entitling the plot with *fid[fidkey]*,
+                   if title is *None*;
+                   if *None*, labels with raw fid.
+    :param Ycoordinate: label for the Y coordinate.
+    :param title: title for the plot.
+    :param logscale: to set Y logarithmic scale
+    :param zoom: a dict containing optional limits to zoom on the plot. \n
+      Syntax: e.g. {'ymax':500, ...}.
+    :param colorbar: if *False*, hide colorbar the plot; else, befines the
+      colorbar orientation, among ('horizontal', 'vertical').
+      Defaults to 'vertical'.
+    :param graphicmode: among ('colorshades', 'contourlines').
+    :param minmax: defines the min and max values for the plot colorbar. \n
+      Syntax: [min, max]. [0.0, max] also works. Default is min/max of the
+      field.
+    :param levelsnumber: number of levels for contours and colorbar.
+    :param center_cmap_on_0: aligns the colormap center on the value 0.
+    :param colormap: name of the **matplotlib** colormap to use.
+    :param minmax_in_title: if True and minmax is not None, adds min and max
+      values in title
+    :param contourcolor: color or colormap to be used for 'contourlines'
+      graphicmode. It can be either a legal html color name, or a colormap
+      name.
+    :param contourwidth: width of contours for 'contourlines' graphicmode.
+    :param contourlabel: displays labels on contours.
+    :param datefmt: date format to use, e.g. "%Y-%m-%d %H:%M:%S %Z"
+    :param showgrid: True/False to show grid or not
+    :param figsize: figure sizes in inches, e.g. (5, 8.5).
+                    If None, get the default figsize in config.plotsizes.
 
-        Warning: requires **matplotlib**.
-        """
-        import matplotlib
-        import matplotlib.pyplot as plt
-        import matplotlib.dates as mdates
-        from mpl_toolkits.axes_grid1 import make_axes_locatable
-        plt.rc('font', family='serif')
+    Warning: requires **matplotlib**.
+    """
+    import matplotlib
+    import matplotlib.pyplot as plt
+    import matplotlib.dates as mdates
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+    plt.rc('font', family='serif')
 
-        # User colormaps
-        if colormap not in plt.colormaps():
-            util.add_cmap(colormap)
+    # User colormaps
+    if colormap not in plt.colormaps():
+        util.load_cmap(colormap)
 
-        # Figure, ax
-        fig, ax = util.set_figax(*over, figsize=figsize)
+    # Figure, ax
+    fig, ax = set_figax(*over, figsize=figsize)
 
-        # coords
-        z = numpy.zeros((len(profile.validity),
-                         len(profile.geometry.vcoordinate.levels)))
-        for k in range(len(profile.geometry.vcoordinate.levels)):
-            z[:, k] = profile.geometry.vcoordinate.levels[k]
-        x = numpy.zeros((len(profile.validity),
-                         len(profile.geometry.vcoordinate.levels)))
-        validities = {profile.validity[i].get():i for i in range(len(profile.validity))}
-        xaxis_label = 'Validity'
-        if len(validities) == 1 and len(profile.validity) != 1:
-            xaxis_label = 'Basis'
-            validities = {profile.validity[i].getbasis():i for i in len(profile.validity)}
-        epoch = datetime.datetime(1970, 1, 1)
-        for i in range(len(profile.validity)):
-            d = profile.validity[i].get() if xaxis_label == 'Validity' else profile.validity[i].getbasis()
-            timedelta = d - epoch
-            p = (timedelta.microseconds + (timedelta.seconds + timedelta.days * 24 * 3600) * 1e6) / 1e6
-            x[i, :] = matplotlib.dates.epoch2num(p)
-        data = profile.getdata()
-        if profile.geometry.vcoordinate.typeoffirstfixedsurface in (119, 100):
-            reverseY = True
+    # coords
+    z = numpy.zeros((len(profile.validity),
+                     len(profile.geometry.vcoordinate.levels)))
+    for k in range(len(profile.geometry.vcoordinate.levels)):
+        z[:, k] = profile.geometry.vcoordinate.levels[k]
+    x = numpy.zeros((len(profile.validity),
+                     len(profile.geometry.vcoordinate.levels)))
+    validities = {profile.validity[i].get():i for i in range(len(profile.validity))}
+    xaxis_label = 'Validity'
+    if len(validities) == 1 and len(profile.validity) != 1:
+        xaxis_label = 'Basis'
+        validities = {profile.validity[i].getbasis():i for i in len(profile.validity)}
+    epoch = datetime.datetime(1970, 1, 1)
+    for i in range(len(profile.validity)):
+        d = profile.validity[i].get() if xaxis_label == 'Validity' else profile.validity[i].getbasis()
+        timedelta = d - epoch
+        p = (timedelta.microseconds + (timedelta.seconds + timedelta.days * 24 * 3600) * 1e6) / 1e6
+        x[i, :] = matplotlib.dates.epoch2num(p)
+    data = profile.getdata()
+    if profile.geometry.vcoordinate.typeoffirstfixedsurface in (119, 100):
+        reverseY = True
+    else:
+        reverseY = False
+    # min/max
+    m = data.min()
+    M = data.max()
+    if minmax is not None:
+        if minmax_in_title:
+            minmax_in_title = '(min: ' + \
+                              '{: .{precision}{type}}'.format(m, type='E', precision=3) + \
+                              ' // max: ' + \
+                              '{: .{precision}{type}}'.format(M, type='E', precision=3) + ')'
+        try:
+            m = float(minmax[0])
+        except Exception:
+            m = data.min()
+        try:
+            M = float(minmax[1])
+        except Exception:
+            M = data.max()
+    else:
+        minmax_in_title = ''
+    if abs(m - M) > config.epsilon:
+        levels = numpy.linspace(m, M, levelsnumber)
+    else:
+        raise epygramError("cannot plot uniform field.")
+    if center_cmap_on_0:
+        vmax = max(abs(m), M)
+        vmin = -vmax
+    else:
+        vmin = m
+        vmax = M
+    L = int((levelsnumber - 1) // 15) + 1
+    hlevels = [levels[l]
+               for l in range(len(levels) - L // 3)
+               if l % L == 0] + [levels[-1]]
+    # plot
+    if reverseY and not ax.yaxis_inverted():
+        ax.invert_yaxis()
+    if logscale:
+        ax.set_yscale('log')
+    ax.grid()
+    if graphicmode == 'colorshades':
+        pf = ax.contourf(x, z, data, levels, cmap=colormap,
+                          vmin=vmin, vmax=vmax)
+        if colorbar:
+            position = 'right' if colorbar == 'vertical' else 'bottom'
+            cax = make_axes_locatable(ax).append_axes(position,
+                                                      size="5%",
+                                                      pad=0.1)
+            cb = plt.colorbar(pf,
+                              orientation=colorbar,
+                              ticks=hlevels,
+                              cax=cax)
+            if minmax_in_title != '':
+                cb.set_label(minmax_in_title)
+    elif graphicmode == 'contourlines':
+        pf = ax.contour(x, z, data, levels=levels, colors=contourcolor,
+                        linewidths=contourwidth)
+        if contourlabel:
+            ax.clabel(pf, colors=contourcolor)
+    # time
+    xmin = mdates.num2date(ax.axis()[0]).replace(tzinfo=None)
+    xmax = mdates.num2date(ax.axis()[1]).replace(tzinfo=None)
+    set_nice_time_axis(ax, xmax - xmin, 'x',
+                       showgrid=showgrid, datefmt=datefmt)
+    # decoration
+    surf = z[-1, :]
+    bottom = max(surf) if reverseY else min(surf)
+    ax.fill_between(x[-1, :], surf, numpy.ones(len(surf)) * bottom,
+                    color='k')
+    if Ycoordinate is None:
+        if profile.geometry.vcoordinate.typeoffirstfixedsurface == 119:
+            Ycoordinate = 'Level \nHybrid-Pressure \ncoordinate'
+        elif profile.geometry.vcoordinate.typeoffirstfixedsurface == 100:
+            Ycoordinate = 'Pressure (hPa)'
+        elif profile.geometry.vcoordinate.typeoffirstfixedsurface == 102:
+            Ycoordinate = 'Altitude (m)'
+        elif profile.geometry.vcoordinate.typeoffirstfixedsurface == 103:
+            Ycoordinate = 'Height (m)'
+        elif profile.geometry.vcoordinate.typeoffirstfixedsurface == 118:
+            Ycoordinate = 'Level \nHybrid-Height \ncoordinate'
+        elif profile.geometry.vcoordinate.typeoffirstfixedsurface == 109:
+            Ycoordinate = 'Potential \nvortex \n(PVU)'
         else:
-            reverseY = False
-        # min/max
-        m = data.min()
-        M = data.max()
-        if minmax is not None:
-            if minmax_in_title:
-                minmax_in_title = '(min: ' + \
-                                  '{: .{precision}{type}}'.format(m, type='E', precision=3) + \
-                                  ' // max: ' + \
-                                  '{: .{precision}{type}}'.format(M, type='E', precision=3) + ')'
+            Ycoordinate = 'unknown \ncoordinate'
+    ax.set_xlabel(xaxis_label)
+    ax.set_ylabel(Ycoordinate)
+    if zoom is not None:
+        ykw = {}
+        xkw = {}
+        for pair in (('bottom', 'ymin'), ('top', 'ymax')):
             try:
-                m = float(minmax[0])
+                ykw[pair[0]] = zoom[pair[1]]
             except Exception:
-                m = data.min()
+                pass
+        for pair in (('left', 'xmin'), ('right', 'xmax')):
             try:
-                M = float(minmax[1])
+                xkw[pair[0]] = zoom[pair[1]]
             except Exception:
-                M = data.max()
+                pass
+        ax.set_ylim(**ykw)
+        ax.set_xlim(**xkw)
+    if title is None:
+        if fidkey is None:
+            fid = profile.fid[sorted(profile.fid.keys())[0]]
         else:
-            minmax_in_title = ''
-        if abs(m - M) > config.epsilon:
-            levels = numpy.linspace(m, M, levelsnumber)
-        else:
-            raise epygramError("cannot plot uniform field.")
-        if center_cmap_on_0:
-            vmax = max(abs(m), M)
-            vmin = -vmax
-        else:
-            vmin = m
-            vmax = M
-        L = int((levelsnumber - 1) // 15) + 1
-        hlevels = [levels[l]
-                   for l in range(len(levels) - L // 3)
-                   if l % L == 0] + [levels[-1]]
-        # plot
-        if reverseY and not ax.yaxis_inverted():
-            ax.invert_yaxis()
-        if logscale:
-            ax.set_yscale('log')
-        ax.grid()
-        if graphicmode == 'colorshades':
-            pf = ax.contourf(x, z, data, levels, cmap=colormap,
-                              vmin=vmin, vmax=vmax)
-            if colorbar:
-                position = 'right' if colorbar == 'vertical' else 'bottom'
-                cax = make_axes_locatable(ax).append_axes(position,
-                                                          size="5%",
-                                                          pad=0.1)
-                cb = plt.colorbar(pf,
-                                  orientation=colorbar,
-                                  ticks=hlevels,
-                                  cax=cax)
-                if minmax_in_title != '':
-                    cb.set_label(minmax_in_title)
-        elif graphicmode == 'contourlines':
-            pf = ax.contour(x, z, data, levels=levels, colors=contourcolor,
-                            linewidths=contourwidth)
-            if contourlabel:
-                ax.clabel(pf, colors=contourcolor)
-        # time
-        xmin = mdates.num2date(ax.axis()[0]).replace(tzinfo=None)
-        xmax = mdates.num2date(ax.axis()[1]).replace(tzinfo=None)
-        util.set_DateHour_axis(ax, xmax - xmin, 'x',
-                               showgrid=showgrid, datefmt=datefmt)
-        # decoration
-        surf = z[-1, :]
-        bottom = max(surf) if reverseY else min(surf)
-        ax.fill_between(x[-1, :], surf, numpy.ones(len(surf)) * bottom,
-                        color='k')
-        if Ycoordinate is None:
-            if profile.geometry.vcoordinate.typeoffirstfixedsurface == 119:
-                Ycoordinate = 'Level \nHybrid-Pressure \ncoordinate'
-            elif profile.geometry.vcoordinate.typeoffirstfixedsurface == 100:
-                Ycoordinate = 'Pressure (hPa)'
-            elif profile.geometry.vcoordinate.typeoffirstfixedsurface == 102:
-                Ycoordinate = 'Altitude (m)'
-            elif profile.geometry.vcoordinate.typeoffirstfixedsurface == 103:
-                Ycoordinate = 'Height (m)'
-            elif profile.geometry.vcoordinate.typeoffirstfixedsurface == 118:
-                Ycoordinate = 'Level \nHybrid-Height \ncoordinate'
-            elif profile.geometry.vcoordinate.typeoffirstfixedsurface == 109:
-                Ycoordinate = 'Potential \nvortex \n(PVU)'
-            else:
-                Ycoordinate = 'unknown \ncoordinate'
-        ax.set_xlabel(xaxis_label)
-        ax.set_ylabel(Ycoordinate)
-        if zoom is not None:
-            ykw = {}
-            xkw = {}
-            for pair in (('bottom', 'ymin'), ('top', 'ymax')):
-                try:
-                    ykw[pair[0]] = zoom[pair[1]]
-                except Exception:
-                    pass
-            for pair in (('left', 'xmin'), ('right', 'xmax')):
-                try:
-                    xkw[pair[0]] = zoom[pair[1]]
-                except Exception:
-                    pass
-            ax.set_ylim(**ykw)
-            ax.set_xlim(**xkw)
-        if title is None:
-            if fidkey is None:
-                fid = profile.fid[sorted(profile.fid.keys())[0]]
-            else:
-                fid = profile.fid[fidkey]
-            title = u'Vertical Hovmöller of ' + str(fid)
-        ax.set_title(title)
+            fid = profile.fid[fidkey]
+        title = u'Vertical Hovmöller of ' + str(fid)
+    ax.set_title(title)
 
-        return (fig, ax)
+    return (fig, ax)
 
 
 def plotprofiles(profiles,
@@ -447,7 +448,8 @@ def plotprofiles(profiles,
                  title=None,
                  logscale=False,
                  ema=False,
-                 zoom=None):
+                 zoom=None,
+                 figsize=(6., 9.)):
     """
     To plot a series of profiles. Returns a tuple of :mod:`matplotlib`
     (*Figure*, *ax*).
@@ -475,6 +477,8 @@ def plotprofiles(profiles,
     :param ema: to make emagram-like plots of Temperature
     :param zoom: a dict containing optional limits to zoom on the plot. \n
       Syntax: e.g. {'ymax':500, ...}.
+    :param figsize: figure sizes in inches, e.g. (5, 8.5).
+                    If None, get the default figsize in config.plotsizes.
     """
     import matplotlib.pyplot as plt
 
@@ -513,7 +517,7 @@ def plotprofiles(profiles,
             Ycoordinate = 'unknown \ncoordinate'
 
     # Figure
-    fig, ax = util.set_figax(*over, figsize=(6., 9.))
+    fig, ax = set_figax(*over, figsize=figsize)
     if logscale:
         ax.set_yscale('log')
     for i, p in enumerate(profiles):

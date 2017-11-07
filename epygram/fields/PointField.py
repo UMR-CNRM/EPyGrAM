@@ -12,11 +12,12 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 import numpy
 
 from footprints import proxy as fpx
+from bronx.graphics.axes import set_figax, set_nice_time_axis
 
 from .D3Field import D3Field
 from epygram import config, epygramError
 from epygram.geometries import PointGeometry, VGeometry
-from epygram.util import ifNone_emptydict, set_DateHour_axis, set_figax
+from epygram.util import ifNone_emptydict
 
 
 class PointField(D3Field):
@@ -101,8 +102,8 @@ class PointField(D3Field):
 
         xmin = dates.num2date(ax.axis()[0]).replace(tzinfo=None)
         xmax = dates.num2date(ax.axis()[1]).replace(tzinfo=None)
-        set_DateHour_axis(ax, xmax - xmin, 'x',
-                          showgrid=showgrid, datefmt=datefmt)
+        set_nice_time_axis(ax, xmax - xmin, 'x',
+                           showgrid=showgrid, datefmt=datefmt)
 
         if title is not None:
             if title == '__timerange__':

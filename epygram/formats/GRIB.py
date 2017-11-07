@@ -21,6 +21,8 @@ import six
 
 import footprints
 from footprints import proxy as fpx, FPDict, FPList
+from bronx.meteo.conversion import q2R
+from bronx.syntax.parsing import str2dict
 
 from epygram import config, epygramError, util
 from epygram.base import FieldSet, FieldValidity
@@ -54,7 +56,7 @@ twotoone = {v:k for (k, v) in onetotwo.items()}
 
 def parse_GRIBstr_todict(strfid):
     """Parse and return a dict GRIB fid from a string."""
-    fid = util.parse_str2dict(strfid, try_convert=int)
+    fid = str2dict(strfid, try_convert=int)
     return fid
 
 
@@ -1674,8 +1676,8 @@ class GRIB(FileResource):
                                                " resource.")
                         else:
                             side_profiles[p] = numpy.zeros(side_profiles['t'].shape)
-                R = util.gfl2R(*[side_profiles[p] for p in
-                                 ['q']])
+                R = q2R(*[side_profiles[p] for p in
+                          ['q']])
                 if vertical_coordinate == 102:
                     raise NotImplementedError("not yet.")
                     # surface_geopotential = geopotential.getvalue_ll(*geometry.get_lonlat_grid(),

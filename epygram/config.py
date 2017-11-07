@@ -49,14 +49,6 @@ epygram_colormaps_scaling = {'radar':[0., 0.1, 1., 3., 5., 7., 10., 15., 20., 30
 
 # PARAMETERS #
 ##############
-#: gravity constant
-g0 = 9.80665
-#: Cp dry air
-Cpd = 1004.709
-#: Specific gas constant, dry air
-Rd = 287.059
-#: Specific gas constant, water vapor
-Rv = 461.524
 #: Ptop: pressure @ summit of atmosphere. For vertical coordinates conversions.
 default_Ptop = 0.
 #: Epsilon
@@ -303,10 +295,12 @@ if os.path.exists(userconfigfile):
     from userconfig import *
     del userconfig
 #: colormaps gathers epygram and user colormaps
-colormaps = copy.copy(epygram_colormaps)
+colormaps = {}
+colormaps.update(epygram_colormaps)
 colormaps.update(usercolormaps)
 #: colormaps_scaling gathers epygram and user colormaps_scaling
-colormaps_scaling = copy.copy(epygram_colormaps_scaling)
+colormaps_scaling = {}
+colormaps_scaling.update(epygram_colormaps_scaling)
 colormaps_scaling.update(usercolormaps_scaling)
 
 
