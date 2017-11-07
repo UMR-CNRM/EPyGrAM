@@ -12,7 +12,6 @@ import six
 
 import numpy
 import math
-import copy
 
 from footprints import FPDict
 from footprints import proxy as fpx
@@ -251,6 +250,9 @@ def build_geometry_fromlonlat(lonmin, lonmax,
         accepted_projection = raw_input("Chosen projection [" + projections_g2s[projname] + "]: ")
         if accepted_projection != '':
             projname = projections_s2g[accepted_projection]
+    if force_projection is not None:
+        projname = force_projection
+        print("Projection forced by dummy argument to:", force_projection)
     if projname == 'polar_stereographic':
         reference_lat = math.copysign(90.0, center_lat)
     elif projname == 'mercator':
