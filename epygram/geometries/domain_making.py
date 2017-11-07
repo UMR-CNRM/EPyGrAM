@@ -23,8 +23,11 @@ from epygram.geometries.SpectralGeometry import truncation_from_gridpoint_dims
 
 
 # parameters
+#: minimum width of Extension zone
 Ezone_minimum_width = 11
+#: threshold in degrees towards Equator for the domain center, to choose lambert/mercator
 threshold_mercator_lambert = 1.
+#: threshold in degrees towards Pole for the min/max latitude, to choose lambert/polar_stereographic
 threshold_pole_distance_lambert = 1.
 maxdims_security_barrier = 10000
 vkw = {'structure': 'V',
@@ -44,7 +47,10 @@ can be tilted ? Open question...
 
 
 def default_Iwidth_resolution(resolution):
-    return 16 if resolution < 2000. else 8
+    """
+    Return default Iwidth depending on the resolution.
+    """
+    return 16 if resolution < 2000. else 8  # FIXME: go beyond for smaller resolutions ?
 
 
 def nearest_greater_FFT992compliant_int(guess):

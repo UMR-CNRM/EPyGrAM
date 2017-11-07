@@ -387,9 +387,7 @@ def plotverticalhovmoller(profile,
         if contourlabel:
             ax.clabel(pf, colors=contourcolor)
     # time
-    xmin = mdates.num2date(ax.axis()[0]).replace(tzinfo=None)
-    xmax = mdates.num2date(ax.axis()[1]).replace(tzinfo=None)
-    set_nice_time_axis(ax, xmax - xmin, 'x',
+    set_nice_time_axis(ax, 'x',
                        showgrid=showgrid, datefmt=datefmt)
     # decoration
     surf = z[-1, :]

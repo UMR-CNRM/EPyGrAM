@@ -20,10 +20,6 @@ Installation
 Parameters
 ----------
 
-.. autodata:: g0
-.. autodata:: Cpd
-.. autodata:: Rd
-.. autodata:: Rv
 .. autodata:: default_Ptop
 .. autodata:: epsilon
 .. autodata:: KNUMMAXRESOL

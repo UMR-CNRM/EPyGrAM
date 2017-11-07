@@ -802,7 +802,7 @@ def set_map_up(bm, ax,
 
 def datetimerange(start, stop=None, step=1, stepunit='h', tzinfo=None):
     """
-    .. deprecated::
+    .. deprecated:: 1.2.11
 
     A generator of datetime.datetime objects ranging from *start* to *stop*
     (included) by *step*.

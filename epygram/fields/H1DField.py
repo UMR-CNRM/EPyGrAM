@@ -437,9 +437,7 @@ def plothorizontalhovmoller(transect,
         if contourlabel:
             ax.clabel(pf, colors=contourcolor)
     # time
-    ymin = mdates.num2date(ax.axis()[2]).replace(tzinfo=None)
-    ymax = mdates.num2date(ax.axis()[3]).replace(tzinfo=None)
-    set_nice_time_axis(ax, ymax - ymin, 'y',
+    set_nice_time_axis(ax, 'y',
                        showgrid=showgrid, datefmt=datefmt)
     # decoration
     if x_is == 'distance':

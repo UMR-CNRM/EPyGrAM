@@ -11,7 +11,6 @@ Functions
 
 .. autofunction:: set_defaults
 .. autofunction:: get_resources
-.. autofunction:: hendrix_prestage
 .. autofunction:: extractor
 
 -----------------------------------------------------------
