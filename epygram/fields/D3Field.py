@@ -1050,11 +1050,13 @@ class D3CommonField(Field):
         :param hist_kwargs: any keyword argument to be passed to
                             matplotlib's hist()
         :param figsize: figure sizes in inches, e.g. (5, 8.5).
-                        If None, get the default figsize in config.plotsizes.
+                        Default figsize is config.plotsizes.
         """
         import matplotlib.pyplot as plt
         # initializations
         plt.rc('font', family='serif')
+        if figsize is None:
+            figsize = config.plotsizes
 
         if self.spectral:
             raise epygramError("please convert to gridpoint with sp2gp()" +

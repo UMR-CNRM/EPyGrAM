@@ -20,7 +20,7 @@ from bronx.graphics.axes import set_figax
 import numpy
 import copy
 
-from epygram import epygramError
+from epygram import epygramError, config
 from epygram.util import RecursiveObject, write_formatted_table
 
 
@@ -310,10 +310,12 @@ def plotspectra(spectra,
     :param zoom: dict(xmin=,xmax=,ymin=,ymax=)
     :param title: title for the plot
     :param figsize: figure sizes in inches, e.g. (5, 8.5).
-                    If None, get the default figsize in config.plotsizes.
+                    Default figsize is config.plotsizes.
     """
     import matplotlib.pyplot as plt
     plt.rc('font', family='serif')
+    if figsize is None:
+        figsize = config.plotsizes
 
     fig, ax = set_figax(*over, figsize=figsize)
 

@@ -111,7 +111,7 @@ class V2DCommonField(D3CommonField):
           - 'lat': latitude of points
         :param mask_threshold: dict with min and/or max value(s) to mask outside.
         :param figsize: figure sizes in inches, e.g. (5, 8.5).
-                        If None, get the default figsize in config.plotsizes.
+                        Default figsize is config.plotsizes.
 
         Warning: requires **matplotlib**.
         """
@@ -121,6 +121,8 @@ class V2DCommonField(D3CommonField):
         import matplotlib.pyplot as plt
         from mpl_toolkits.axes_grid1 import make_axes_locatable
         plt.rc('font', family='serif')
+        if figsize is None:
+            figsize = config.plotsizes
         # User colormaps
         if colormap not in plt.colormaps():
             util.load_cmap(colormap)

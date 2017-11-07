@@ -380,7 +380,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
         import matplotlib.pyplot as plt
         plt.rc('font', family='serif')
         fig, ax = set_figax(*kwargs.get('over', (None, None)),
-                            figsize=kwargs.get('figsize', None))
+                            figsize=kwargs.get('figsize', config.plotsizes))
         if self.name == 'academic':
             raise epygramError("We cannot plot lon/lat of an academic grid.")
         if kwargs.get('use_basemap') is None:

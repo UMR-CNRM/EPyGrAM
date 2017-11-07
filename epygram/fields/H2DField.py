@@ -214,7 +214,7 @@ class H2DField(D3Field):
         :param pointsmarker: shape of the points if graphicmode='points'.
                          Cf. matplotlib.scatter() for possible markers.
         :param figsize: figure sizes in inches, e.g. (5, 8.5).
-                        If None, get the default figsize in config.plotsizes.
+                        Default figsize is config.plotsizes.
 
         This method uses (hence requires) 'matplotlib' and 'basemap' libraries.
         """
@@ -225,6 +225,8 @@ class H2DField(D3Field):
         from matplotlib.colors import cnames
         from mpl_toolkits.axes_grid1 import make_axes_locatable
         plt.rc('font', family='serif')
+        if figsize is None:
+            figsize = config.plotsizes
 
         # 0.2 checkings
         if self.spectral:

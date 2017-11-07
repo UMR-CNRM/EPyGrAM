@@ -63,13 +63,15 @@ class PointField(D3Field):
         :param datefmt: date format to use, e.g. "%Y-%m-%d %H:%M:%S %Z"
         :param showgrid: True/False to show grid or not
         :param figsize: figure sizes in inches, e.g. (5, 8.5).
-                        If None, get the default figsize in config.plotsizes.
+                        Default figsize is config.plotsizes.
         :param plot_kwargs: arguments to be passed to matplotlib.axes.Axes.plot()
         :param legend_kwargs: arguments to be passed to matplotlib.axes.Axes.legend()
         """
         import matplotlib.pyplot as plt
         from matplotlib import dates
         plt.rc('font', family='serif')
+        if figsize is None:
+            figsize = config.plotsizes
 
         plot_kwargs = ifNone_emptydict(plot_kwargs)
         legend_kwargs = ifNone_emptydict(legend_kwargs)

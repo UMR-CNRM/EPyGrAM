@@ -117,7 +117,7 @@ class H1DField(D3Field):
                   repeat=False,
                   interval=1000,
                   x_is='distance',
-                  figsize=(6., 9.),
+                  figsize=None,
                   **ignored_kwargs):
         """
         Makes a simple (transect) plot of the field.
@@ -330,7 +330,7 @@ def plothorizontalhovmoller(transect,
       - 'lon': longitude of points
       - 'lat': latitude of points
     :param figsize: figure sizes in inches, e.g. (5, 8.5).
-                    If None, get the default figsize in config.plotsizes.
+                    Default figsize is config.plotsizes.
 
     Warning: requires **matplotlib**.
     """
@@ -339,6 +339,8 @@ def plothorizontalhovmoller(transect,
     import matplotlib.dates as mdates
     from mpl_toolkits.axes_grid1 import make_axes_locatable
     plt.rc('font', family='serif')
+    if figsize is None:
+        figsize = config.plotsizes
 
     # User colormaps
     if colormap not in plt.colormaps():
@@ -486,7 +488,7 @@ def plottransects(transects,
                   logscale=False,
                   zoom=None,
                   x_is='distance',
-                  figsize=(6., 9.)):
+                  figsize=None):
     """
     To plot a series of transects. Returns a tuple of :mod:`matplotlib`
     (*Figure*, *ax*).
@@ -517,12 +519,13 @@ def plottransects(transects,
       - 'lon': longitude of points
       - 'lat': latitude of points
     :param figsize: figure sizes in inches, e.g. (5, 8.5).
-                    If None, get the default figsize in config.plotsizes.
+                    Default figsize is config.plotsizes.
     """
     import matplotlib.pyplot as plt
-
     plt.rc('font', family='serif')
     plt.rc('figure', autolayout=True)
+    if figsize is None:
+        figsize = config.plotsizes
 
     colors = ['red', 'blue', 'green', 'orange', 'magenta', 'darkolivegreen',
               'yellow', 'salmon', 'black']

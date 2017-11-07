@@ -444,12 +444,14 @@ class H2DVectorField(Field):
           to vector due to map factor.
         :param mask_threshold: dict with min and/or max value(s) to mask outside.
         :param figsize: figure sizes in inches, e.g. (5, 8.5).
-                        If None, get the default figsize in config.plotsizes.
+                        Default figsize is config.plotsizes.
 
         This method uses (hence requires) 'matplotlib' and 'basemap' libraries.
         """
         import matplotlib.pyplot as plt
         plt.rc('font', family='serif')
+        if figsize is None:
+            figsize = config.plotsizes
 
         plot_module_options = util.ifNone_emptydict(plot_module_options)
         quiver_options = util.ifNone_emptydict(quiver_options)
