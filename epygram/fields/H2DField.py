@@ -119,7 +119,15 @@ class H2DField(D3Field):
                   mask_threshold=None,
                   contourlabelfmt='%0i',
                   pointsmarker=',',
-                  figsize=None):
+                  figsize=None,
+                  drawmapboundary_kwargs=None,
+                  fillcontinents_kwargs=None,
+                  drawcoastlines_kwargs=None,
+                  drawcountries_kwargs=None,
+                  drawparallels_kwargs=None,
+                  drawmeridians_kwargs=None,
+                  drawequator_kwargs=None,
+                  drawgreenwich_kwargs=None):
         """
         Makes a simple plot of the field, with a number of options.
 
@@ -205,7 +213,7 @@ class H2DField(D3Field):
                          as background. The numerical value sets its
                          transparency.
         :param background: if True, set a background color to
-                         continents and oceans.
+                           continents and oceans.
         :param mask_threshold: dict with min and/or max value(s) to mask outside.
         :param contourlabelfmt: format of the contour labels: e.g. 273.15 will
                          appear: '%0i' => 273, '%0f' => 273.150000,
@@ -215,6 +223,14 @@ class H2DField(D3Field):
                          Cf. matplotlib.scatter() for possible markers.
         :param figsize: figure sizes in inches, e.g. (5, 8.5).
                         Default figsize is config.plotsizes.
+        :param drawmapboundary_kwargs: kwargs to be passed to basemap.drawmapboundary()
+        :param fillcontinents_kwargs: kwargs to be passed to basemap.fillcontinents()
+        :param drawcoastlines_kwargs: kwargs to be passed to basemap.drawcoastlines()
+        :param drawcountries_kwargs: kwargs to be passed to basemap.drawcountries()
+        :param drawparallels_kwargs: kwargs to be passed to basemap.drawparallels()
+        :param drawmeridians_kwargs: kwargs to be passed to basemap.drawgreenwich()
+        :param drawequator_kwargs: draw kwargs to emphasize equator parallel
+        :param drawgreenwich_kwargs: draw kwargs to emphasize greenwich meridian
 
         This method uses (hence requires) 'matplotlib' and 'basemap' libraries.
         """
@@ -227,6 +243,8 @@ class H2DField(D3Field):
         plt.rc('font', family='serif')
         if figsize is None:
             figsize = config.plotsizes
+        drawcoastlines_kwargs = util.ifNone_emptydict(drawcoastlines_kwargs)
+        drawcountries_kwargs = util.ifNone_emptydict(drawcountries_kwargs)
 
         # 0.2 checkings
         if self.spectral:
@@ -270,6 +288,10 @@ class H2DField(D3Field):
             elif use_basemap is not None:
                 bm = use_basemap
             if not academic:
+                if 'color' not in drawcoastlines_kwargs.keys():
+                    drawcoastlines_kwargs['color'] = boundariescolor
+                if 'color' not in drawcountries_kwargs.keys():
+                    drawcountries_kwargs['color'] = boundariescolor
                 util.set_map_up(bm, ax,
                                 drawrivers=drawrivers,
                                 drawcoastlines=drawcoastlines,
@@ -277,9 +299,16 @@ class H2DField(D3Field):
                                 meridians=meridians,
                                 parallels=parallels,
                                 departments=departments,
-                                boundariescolor=boundariescolor,
                                 bluemarble=bluemarble,
-                                background=background)
+                                background=background,
+                                drawmapboundary_kwargs=drawmapboundary_kwargs,
+                                fillcontinents_kwargs=fillcontinents_kwargs,
+                                drawcoastlines_kwargs=drawcoastlines_kwargs,
+                                drawcountries_kwargs=drawcountries_kwargs,
+                                drawparallels_kwargs=drawparallels_kwargs,
+                                drawmeridians_kwargs=drawmeridians_kwargs,
+                                drawequator_kwargs=drawequator_kwargs,
+                                drawgreenwich_kwargs=drawgreenwich_kwargs)
 
             # 3. Prepare data
             #################

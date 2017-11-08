@@ -491,7 +491,11 @@ def write_formatted_table(dest, table, alignments=['<', '^'], precision=6, float
 def add_meridians_and_parallels_to(bm,
                                    meridians='auto',
                                    parallels='auto',
-                                   ax=None):
+                                   ax=None,
+                                   drawparallels_kwargs=None,
+                                   drawmeridians_kwargs=None,
+                                   drawequator_kwargs=None,
+                                   drawgreenwich_kwargs=None):
     """
     Adds meridians and parallels to a basemap instance *bm*.
 
@@ -505,6 +509,12 @@ def add_meridians_and_parallels_to(bm,
       - *meridian* == 'greenwich' // 'datechange' // 'greenwich+datechange'
         *parallel* == 'equator' // 'polarcircles' // 'tropics' or any
         combination (,) will plot only these.
+
+    :param ax: the ax to be plotted on
+    :param drawparallels_kwargs: kwargs to be passed to basemap.drawparallels()
+    :param drawmeridians_kwargs: kwargs to be passed to basemap.drawgreenwich()
+    :param drawequator_kwargs: draw kwargs to emphasize equator parallel
+    :param drawgreenwich_kwargs: draw kwargs to emphasize greenwich meridian
     """
     try:
         parallels = float(parallels)
@@ -514,6 +524,10 @@ def add_meridians_and_parallels_to(bm,
         meridians = float(meridians)
     except (TypeError, ValueError):
         meridians = meridians
+    drawparallels_kwargs = ifNone_emptydict(drawparallels_kwargs)
+    drawmeridians_kwargs = ifNone_emptydict(drawmeridians_kwargs)
+    drawequator_kwargs = ifNone_emptydict(drawequator_kwargs)
+    drawgreenwich_kwargs = ifNone_emptydict(drawgreenwich_kwargs)
 
     Delta_lat = bm.latmax - bm.latmin
     if parallels == 'auto' or isinstance(parallels, int) or isinstance(parallels, float):
@@ -581,27 +595,33 @@ def add_meridians_and_parallels_to(bm,
 
     if parallels is not None:
         if bm.projection in ('ortho', 'nsper'):
-            bm.drawparallels(parallels, labels=[False, False, False, False],
-                             ax=ax)
+            if 'labels' not in drawparallels_kwargs.keys():
+                drawparallels_kwargs['labels'] = [False, False, False, False]
         else:
-            bm.drawparallels(parallels, labels=[True, False, False, False],
-                             ax=ax)
+            if 'labels' not in drawparallels_kwargs.keys():
+                drawparallels_kwargs['labels'] = [True, False, False, False]
+        bm.drawparallels(parallels, ax=ax, **drawparallels_kwargs)
+        if 0. in parallels or 0 in parallels:
+            if 'dashes' not in drawequator_kwargs.keys():
+                drawequator_kwargs['dashes'] = [10, 1]
+            drawequator_kwargs['labels'] = [False] * 4
+            bm.drawparallels([0], ax=ax, **drawequator_kwargs)
     if meridians is not None:
         if bm.projection in ('spstere', 'npstere'):
-            bm.drawmeridians(meridians, labels=[True, False, False, True],
-                             ax=ax)
+            if 'labels' not in drawmeridians_kwargs.keys():
+                drawmeridians_kwargs['labels'] = [True, False, False, True]
         elif bm.projection in ('ortho', 'moll', 'nsper'):
-            bm.drawmeridians(meridians, labels=[False, False, False, False],
-                             ax=ax)
+            if 'labels' not in drawmeridians_kwargs.keys():
+                drawmeridians_kwargs['labels'] = [False, False, False, False]
         else:
-            bm.drawmeridians(meridians, labels=[False, False, False, True],
-                             ax=ax)
-        bm.drawmeridians([0], labels=[False] * 4, linewidth=1,
-                         dashes=[10, 1],
-                         ax=ax)
-        bm.drawparallels([0], labels=[False] * 4, linewidth=1,
-                         dashes=[10, 1],
-                         ax=ax)
+            if 'labels' not in drawmeridians_kwargs.keys():
+                drawmeridians_kwargs['labels'] = [False, False, False, True]
+        bm.drawmeridians(meridians, ax=ax, **drawmeridians_kwargs)
+        if 0. in meridians or 0 in meridians:
+            if 'dashes' not in drawgreenwich_kwargs.keys():
+                drawgreenwich_kwargs['dashes'] = [10, 1]
+            drawgreenwich_kwargs['labels'] = [False] * 4
+            bm.drawmeridians([0], ax=ax, **drawgreenwich_kwargs)
 
 
 def nearlyEqual(a, b, epsilon=config.epsilon):
@@ -768,18 +788,31 @@ def set_map_up(bm, ax,
                meridians='auto',
                parallels='auto',
                departments=False,
-               boundariescolor='0.25',
                bluemarble=0.0,
-               background=False):
+               background=False,
+               drawmapboundary_kwargs=None,
+               fillcontinents_kwargs=None,
+               drawcoastlines_kwargs=None,
+               drawcountries_kwargs=None,
+               drawparallels_kwargs=None,
+               drawmeridians_kwargs=None,
+               drawequator_kwargs=None,
+               drawgreenwich_kwargs=None):
     """Cf. :meth:`H2DField.plotfield` documentation."""
+    if drawmapboundary_kwargs is None:
+        drawmapboundary_kwargs = dict(fill_color='lightskyblue')
+    if fillcontinents_kwargs is None:
+        fillcontinents_kwargs = dict(color='wheat', lake_color='skyblue',
+                                     zorder=0)
+    drawcoastlines_kwargs = ifNone_emptydict(drawcoastlines_kwargs)
+    drawcountries_kwargs = ifNone_emptydict(drawcountries_kwargs)
     if background:
-        bm.drawmapboundary(fill_color='lightskyblue', ax=ax)
-        bm.fillcontinents(color='wheat', lake_color='skyblue',
-                          zorder=0, ax=ax)
+        bm.drawmapboundary(ax=ax, **drawmapboundary_kwargs)
+        bm.fillcontinents(ax=ax, **fillcontinents_kwargs)
     if bluemarble:
         bm.bluemarble(alpha=bluemarble, ax=ax)
     if drawcoastlines:
-        bm.drawcoastlines(color=boundariescolor, ax=ax)
+        bm.drawcoastlines(ax=ax, **drawcoastlines_kwargs)
     if departments:
         import json
         with open(config.installdir + '/data/departments.json', 'r') as dp:
@@ -789,15 +822,19 @@ def set_map_up(bm, ax,
                 dlon = depts[d][part][0]
                 dlat = depts[d][part][1]
                 (x, y) = bm(dlon, dlat)
-                bm.plot(x, y, color=boundariescolor, ax=ax)
+                bm.plot(x, y, color=drawcountries_kwargs.get('color', 'k'), ax=ax)
     elif drawcountries:
-        bm.drawcountries(color=boundariescolor, ax=ax)
+        bm.drawcountries(ax=ax, **drawcountries_kwargs)
     if drawrivers:
         bm.drawrivers(color='blue', ax=ax)
     add_meridians_and_parallels_to(bm,
                                    parallels=parallels,
                                    meridians=meridians,
-                                   ax=ax)
+                                   ax=ax,
+                                   drawparallels_kwargs=drawparallels_kwargs,
+                                   drawmeridians_kwargs=drawmeridians_kwargs,
+                                   drawequator_kwargs=drawequator_kwargs,
+                                   drawgreenwich_kwargs=drawgreenwich_kwargs)
 
 
 def datetimerange(start, stop=None, step=1, stepunit='h', tzinfo=None):
