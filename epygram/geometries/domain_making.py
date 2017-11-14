@@ -366,7 +366,7 @@ def geom2namblocks(geometry, truncated='quadratic'):
 
     :param truncated: the kind of additional truncated spectral geometry to
                       generate, among ('quadratic', 'cubic').
-                      If 'linear', do not produce an additional namelist.
+                      If 'linear', produce an empty additional namelist.
     """
     namelists = {}
 
@@ -414,10 +414,10 @@ def geom2namblocks(geometry, truncated='quadratic'):
     blocks['NEMGEO']['EDELY'] = geometry.grid['Y_resolution']
 
     # truncated grid namelist
-    namelist_name = 'namel_c923_' + truncated
-    if truncated != 'linear':
-        namelists[namelist_name] = {'NAMDIM':{},
+    namelist_name = 'namel_c923_truncated'
+    namelists[namelist_name] = {'NAMDIM':{},
                                     'NAMCLA':{}}
+    if truncated != 'linear':
         blocks = namelists[namelist_name]
         blocks['NAMDIM']['NMSMAX'] = truncation_trunc['in_X']
         blocks['NAMDIM']['NSMAX'] = truncation_trunc['in_Y']
@@ -500,7 +500,7 @@ def format_namelists(blocks, out=None, prefix='', suffix='geoblocks'):
     :param prefix: prefix for output names
     :param suffix: prefix for output names
     """
-    # output routines
+    # output routines TODO: use bronx.datagrip.namelist
     def _write_blocks(out, blocks):
         for b in sorted(blocks.keys()):
             out.write("&" + b + "\n")

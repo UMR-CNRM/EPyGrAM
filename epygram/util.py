@@ -607,7 +607,7 @@ def add_meridians_and_parallels_to(bm,
             drawequator_kwargs['labels'] = [False] * 4
             bm.drawparallels([0], ax=ax, **drawequator_kwargs)
     if meridians is not None:
-        if bm.projection in ('spstere', 'npstere'):
+        if bm.projection in ('spstere', 'npstere', 'stere'):
             if 'labels' not in drawmeridians_kwargs.keys():
                 drawmeridians_kwargs['labels'] = [True, False, False, True]
         elif bm.projection in ('ortho', 'moll', 'nsper'):

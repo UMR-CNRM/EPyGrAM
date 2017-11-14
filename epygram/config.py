@@ -256,7 +256,8 @@ spectral_coeff_order = 'model'
 #: ! Should not be True if using Vortex !
 init_at_import = False
 #: hide messages when guessing format
-silent_guess_format = True
+#: True is dangerous, causes troubles in logging
+silent_guess_format = False
 
 
 # USER CUSTOMIZATION #

@@ -915,6 +915,16 @@ class D3CommonField(Field):
             data[t, ...] = self.getdata(d4=True)[t9:t1, ...].mean(axis=0)
         self.setdata(data)
 
+    def time_reduce(self, reduce_function='mean'):
+        """
+        """
+        reduced = self.getdata(d4=True).mean(axis=3)
+        validity = self.validity[-1].deepcopy()
+        validity.set(cumulativeduration=self.validity[-1].get() -
+                     self.validity[0].get(),
+                     statistical_process_on_duration=reduce_function)
+        self.setdata()  # TODO:
+
 ###################
 # PRE-APPLICATIVE #
 ###################
