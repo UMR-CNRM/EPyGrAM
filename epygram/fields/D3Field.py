@@ -652,6 +652,21 @@ class D3CommonField(Field):
 
         return newfield
 
+    def shave(self, minval=None, maxval=None):
+        """
+        Shave data: cut values greater (resp. lower) than **maxval** to
+        **maxval** (resp. **minval**).
+
+        :param maxval: upper threshold
+        :param minval: lower threshold
+        """
+        data = self.getdata()
+        if maxval is not None:
+            data[data > maxval] = maxval
+        if minval is not None:
+            data[data < minval] = minval
+        self.data = data
+
     def resample(self, target_geometry,
                  weighting='nearest',
                  subzone=None,
@@ -915,15 +930,15 @@ class D3CommonField(Field):
             data[t, ...] = self.getdata(d4=True)[t9:t1, ...].mean(axis=0)
         self.setdata(data)
 
+    """
     def time_reduce(self, reduce_function='mean'):
-        """
-        """
-        reduced = self.getdata(d4=True).mean(axis=3)
+        reduced = getattr(self.getdata(d4=True), reduce_function)(axis=0)
         validity = self.validity[-1].deepcopy()
         validity.set(cumulativeduration=self.validity[-1].get() -
                      self.validity[0].get(),
                      statistical_process_on_duration=reduce_function)
-        self.setdata()  # TODO:
+        self.setdata(reduced)
+    """
 
 ###################
 # PRE-APPLICATIVE #
