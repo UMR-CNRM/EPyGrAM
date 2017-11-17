@@ -827,6 +827,8 @@ class D3CommonField(Field):
         field_kwargs = copy.deepcopy(self._attributes)
         field_kwargs['geometry'] = target_geometry
         newfield = fpx.field(**field_kwargs)
+        if not resampled_data.mask.any():
+            resampled_data = resampled_data.data
         newfield.setdata(resampled_data)
         if with_uncert:
             stddev_field = newfield.deepcopy()
@@ -931,15 +933,24 @@ class D3CommonField(Field):
             data[t, ...] = self.getdata(d4=True)[t9:t1, ...].mean(axis=0)
         self.setdata(data)
 
-    """
     def time_reduce(self, reduce_function='mean'):
-        reduced = getattr(self.getdata(d4=True), reduce_function)(axis=0)
+        """
+        Make a time reduction of field,
+        i.e. apply the requested **reduce_function** on the time dimension of
+        the field. Replace data (and validity) in place.
+
+        :param reduce_function: must be a numpy.ndarray method,
+                                e.g. 'mean', 'sum', 'min', 'max', ...
+        """
+        data = self.getdata(d4=True)
+        assert hasattr(data, reduce_function), 'unknown method:{} for numpy arrays'.format(reduce_function)
+        reduced = getattr(data, reduce_function)(axis=0)
         validity = self.validity[-1].deepcopy()
         validity.set(cumulativeduration=self.validity[-1].get() -
                      self.validity[0].get(),
                      statistical_process_on_duration=reduce_function)
-        self.setdata(reduced)
-    """
+        self.validity = validity
+        self.setdata(reduced.squeeze())
 
 ###################
 # PRE-APPLICATIVE #

@@ -608,7 +608,7 @@ class GRIBmessage(RecursiveObject, dict):
 
         # part 9 --- values
         values = field.getdata(d4=True).copy()
-        if isinstance(values, numpy.ma.masked_array):
+        if isinstance(values, numpy.ma.masked_array) and values.mask.any():
             if self['editionNumber'] == 2:
                 self['bitMapIndicator'] = 0
                 self['bitmapPresent'] = 1

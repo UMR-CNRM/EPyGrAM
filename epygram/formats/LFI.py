@@ -479,7 +479,7 @@ class LFI(FileResource):
             raise epygramError("comment length is superior to the limit.")
         comment = ""
         for i in rawData[2:comment_length + 2]:
-            comment += chr(i)
+            comment += unichr(i)
         data = rawData[comment_length + 2:]
         if getdata:
             if self._compressed is None and fieldname != 'LFI_COMPRESSED':
