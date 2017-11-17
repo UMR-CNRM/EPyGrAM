@@ -866,7 +866,8 @@ class D3CommonField(Field):
                                        vcoordinate=self.geometry.vcoordinate.deepcopy(),
                                        dimensions={'X':X, 'Y':Y},
                                        grid=grid,
-                                       position_on_horizontal_grid='center')
+                                       position_on_horizontal_grid='center',
+                                       geoid=self.geometry.geoid)
         return self.resample(target_geometry, **kwargs)
 
     def extend(self, another_field_with_time_dimension):

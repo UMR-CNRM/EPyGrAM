@@ -646,7 +646,7 @@ class GRIBmessage(RecursiveObject, dict):
         """
         packing = copy.copy(packing)
         if packing.get('bitsPerValue') is not None and packing.get('bitsPerValue') > 24:
-            packing['bitsPerValue'] = 24  # FIXME: problem with bitsPerValue = 30 at least
+            packing['bitsPerValue'] = 24  # FIXME: ? problem with bitsPerValue = 30 at least
         order = ['packingType', 'complexPacking', 'boustrophedonicOrdering',
                  'bitsPerValue']
         for k in order:

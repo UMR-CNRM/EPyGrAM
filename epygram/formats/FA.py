@@ -1075,6 +1075,9 @@ class FA(FileResource):
             else:
                 modified_compression = False
                 compression = self._getrunningcompression()
+            if compression['KNBPDG'] > 24:
+                epylog.warning('FA compression limited to 24 instead of {}'.format(compression['KNBPDG']))
+                compression['KNBPDG'] = 24  # FIXME: ? problem with >= 31
             if modified_compression:
                 self._setrunningcompression(**compression)
             if config.spectral_coeff_order == 'model':

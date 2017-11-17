@@ -324,7 +324,7 @@ def main(filename,
         if operation is not None:
             reffield.operation(**operation)
         if global_shift_center is not None:
-            field.global_shift_center(global_shift_center)
+            reffield.global_shift_center(global_shift_center)
         if pressure_unit_hpa and \
            (reffield.fid['generic'].get('discipline') == 0 and
             reffield.fid['generic'].get('parameterCategory') == 3 and

@@ -117,13 +117,13 @@ def main(filename, refname, fieldseed,
         # open new target
         tobecopied = {'fmt':target.format}
         if source.format == 'FA':
-            tobecopied.update({'headername':source.headername,
-                               'validity':source.validity,
-                               'cdiden':source.cdiden,
-                               'default_compression':source.default_compression,
-                               'processtype':source.processtype})
+            tobecopied.update({'headername':target.headername,
+                               'validity':target.validity,
+                               'cdiden':target.cdiden,
+                               'default_compression':target.default_compression,
+                               'processtype':target.processtype})
         elif source.format == 'LFI':
-            tobecopied.update({'compressed':source.compressed})
+            tobecopied.update({'compressed':target.compressed})
         newtarget = epygram.formats.resource(filename + '.movefield.out',
                                              openmode='w',
                                              **tobecopied)
