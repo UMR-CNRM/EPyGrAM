@@ -198,9 +198,9 @@ class H2DVectorField(Field):
         if self.spectral:
             fieldcopy = self.deepcopy()
             fieldcopy.sp2gp()
-            datagp = fieldcopy.getdata()
+            datagp = fieldcopy.getdata(d4=True)
         else:
-            datagp = self.getdata()
+            datagp = self.getdata(d4=True)
         if isinstance(datagp[0], numpy.ma.MaskedArray):
             loc_sqrt = numpy.ma.sqrt
         else:
@@ -327,6 +327,31 @@ class H2DVectorField(Field):
         div.validity = dudx.validity
 
         return (vor, div)
+
+    def extract_subdomain(self, *args, **kwargs):
+        """Cf. D3Field.extract_subdomain()"""
+        return make_vector_field(self.components[0].extract_subdomain(*args, **kwargs),
+                                 self.components[1].extract_subdomain(*args, **kwargs))
+
+    def extract_zoom(self, *args, **kwargs):
+        """Cf. D3Field.extract_zoom()"""
+        return make_vector_field(self.components[0].extract_zoom(*args, **kwargs),
+                                 self.components[1].extract_zoom(*args, **kwargs))
+
+    def extract_subarray(self, *args, **kwargs):
+        """Cf. D3Field.extract_subarray()"""
+        return make_vector_field(self.components[0].extract_subarray(*args, **kwargs),
+                                 self.components[1].extract_subarray(*args, **kwargs))
+
+    def resample(self, *args, **kwargs):
+        """Cf. D3Field.resample()"""
+        return make_vector_field(self.components[0].resample(*args, **kwargs),
+                                 self.components[1].resample(*args, **kwargs))
+
+    def resample_on_regularll(self, *args, **kwargs):
+        """Cf. D3Field.resample_on_regularll()"""
+        return make_vector_field(self.components[0].resample_on_regularll(*args, **kwargs),
+                                 self.components[1].resample_on_regularll(*args, **kwargs))
 
 ###################
 # PRE-APPLICATIVE #
@@ -482,7 +507,10 @@ class H2DVectorField(Field):
             if plot_module:
                 module = self.to_module()
                 if 'gauss' in self.geometry.name and self.geometry.grid['dilatation_coef'] != 1.:
-                    module.operation_with_other('*', self.geometry.map_factor_field())
+                    if map_factor_correction:
+                        module.operation_with_other('*', self.geometry.map_factor_field())
+                    else:
+                        epylog.warning('check carefully *map_factor_correction* w.r.t. dilatation_coef')
                 fig, ax = module.plotfield(use_basemap=bm,
                                            over=over,
                                            subzone=subzone,
@@ -552,7 +580,7 @@ class H2DVectorField(Field):
         else:
             # (1or2) rotation(s) is(are) necessary
             if components_are_projected_on == 'lonlat' or self.geometry.name == 'regular_lonlat':
-                (u_ll, v_ll) = (u, v)
+                (u_ll, v_ll) = (stretch_array(u), stretch_array(v))
             else:
                 # wind is projected on a grid that is not lonlat: rotate to lonlat
                 (u_ll, v_ll) = self.geometry.reproject_wind_on_lonlat(stretch_array(u), stretch_array(v),

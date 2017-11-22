@@ -13,8 +13,9 @@ import numpy
 import os
 
 from footprints import FootprintBase, FPDict
+from bronx.system import memory
 
-from epygram import config, epygramError
+from epygram import config, epygramError, epylog
 from epygram.util import RecursiveObject
 
 
@@ -66,20 +67,61 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
 
     def __init__(self, *args, **kwargs):
         super(SpectralGeometry, self).__init__(*args, **kwargs)
-        self._total_system_memory = (os.sysconf(b'SC_PAGE_SIZE') *
-                                     os.sysconf(b'SC_PHYS_PAGES'))  # TODO: use bronx.system.mem_tool
-        self._prevent_swapping()
+        if os.name == 'posix':
+            meminfo = memory.LinuxMemInfo()
+        else:
+            raise NotImplementedError('MemInfo for os.name=={}'.format(os.name))
+        self._total_system_memory = meminfo.system_RAM(unit='MiB')
 
     def _prevent_swapping(self):
-        if (self.space == 'legendre' and  # TODO: release condition on space
-            (self.needed_memory >=
+        if (self.space == 'legendre' and  # TODO: release condition on space ?
+            (float(self.needed_memory) / (1024 ** 2.) >=
              config.prevent_swapping_legendre * self._total_system_memory)):
             needed_mem_in_mb = float(self.needed_memory) / (1024 ** 2.)
-            total_mem_in_mb = float(self._total_system_memory) / (1024 ** 2.)
+            total_mem_in_mb = float(self._total_system_memory)
             raise epygramError('Legendre spectral transforms need {:.1f} MB \
                                 memory, while only {:.1f} MB is available: \
                                 SWAPPING prevented !'.format(needed_mem_in_mb,
                                                              total_mem_in_mb))
+
+    def _prevent_limited_stack(self):
+        if (self.space == 'legendre' and self.truncation['max'] > 1200):
+            # TODO: release condition on space ?
+            epylog.warning('Caution: large Legendre truncation may need very large stacksize !')
+
+    def trans_inq(self, gpdims):
+        """
+        Wrapper to arpifs4py TRANS_INQ.
+
+        :param dict gpdims: gridpoints dimensions
+        """
+        from arpifs4py import wtransforms
+        self._prevent_swapping()
+        self._prevent_limited_stack()
+        return wtransforms.w_trans_inq(gpdims['lat_number'],
+                                       self.truncation['max'],
+                                       len(gpdims['lon_number_by_lat']),
+                                       numpy.array(gpdims['lon_number_by_lat']),
+                                       config.KNUMMAXRESOL)
+
+    def etrans_inq(self, gpdims):
+        """
+        Wrapper to arpifs4py ETRANS_INQ.
+
+        :param dict gpdims: gridpoints dimensions
+        """
+        from arpifs4py import wtransforms
+        self._prevent_swapping()
+        self._prevent_limited_stack()
+        return wtransforms.w_etrans_inq(gpdims['X'],
+                                        gpdims['Y'],
+                                        gpdims['X_CIzone'],
+                                        gpdims['Y_CIzone'],
+                                        self.truncation['in_X'],
+                                        self.truncation['in_Y'],
+                                        config.KNUMMAXRESOL,
+                                        gpdims['X_resolution'],
+                                        gpdims['Y_resolution'])
 
     @property
     def needed_memory(self):
@@ -105,6 +147,7 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
         """
         from arpifs4py import wtransforms
         self._prevent_swapping()
+        self._prevent_limited_stack()
         if self.space == 'bi-fourier':
             gpdata = wtransforms.w_spec2gpt_lam(gpdims['X'],
                                                 gpdims['Y'],
@@ -158,16 +201,9 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
         """
         from arpifs4py import wtransforms
         self._prevent_swapping()
+        self._prevent_limited_stack()
         if self.space == 'bi-fourier':
-            SPdatasize = wtransforms.w_etrans_inq(gpdims['X'],
-                                                  gpdims['Y'],
-                                                  gpdims['X_CIzone'],
-                                                  gpdims['Y_CIzone'],
-                                                  self.truncation['in_X'],
-                                                  self.truncation['in_Y'],
-                                                  config.KNUMMAXRESOL,
-                                                  gpdims['X_resolution'],
-                                                  gpdims['Y_resolution'])[1]
+            SPdatasize = self.etrans_inq(gpdims)[1]
             spdata = wtransforms.w_gpt2spec_lam(SPdatasize,
                                                 gpdims['X'],
                                                 gpdims['Y'],
@@ -181,11 +217,7 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
                                                 spectral_coeff_order != 'model',
                                                 data)
         elif self.space == 'legendre':
-            SPdatasize = wtransforms.w_trans_inq(gpdims['lat_number'],
-                                                 self.truncation['max'],
-                                                 len(gpdims['lon_number_by_lat']),
-                                                 numpy.array(gpdims['lon_number_by_lat']),
-                                                 config.KNUMMAXRESOL)[1]
+            SPdatasize = self.trans_inq(gpdims)[1]
             SPdatasize *= 2  # complex coefficients
             spdata = wtransforms.w_gpt2spec_gauss(SPdatasize,
                                                   gpdims['lat_number'],
@@ -198,14 +230,7 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
                                                   data)
         elif self.space == 'fourier':
             # 1D case
-            SPdatasize = wtransforms.w_etrans_inq(gpdims['X'], gpdims['Y'],
-                                                  gpdims['X_CIzone'],
-                                                  gpdims['Y_CIzone'],
-                                                  self.truncation['in_X'],
-                                                  self.truncation['in_Y'],
-                                                  config.KNUMMAXRESOL,
-                                                  gpdims['X_resolution'],
-                                                  gpdims['Y_resolution'])[1]
+            SPdatasize = self.etrans_inq(gpdims)[1]
             if self.truncation['in_Y'] <= 1:
                 spdata = numpy.zeros(SPdatasize)
                 spdata[0] = data[0]
@@ -235,6 +260,7 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
         """
         from arpifs4py import wtransforms
         self._prevent_swapping()
+        self._prevent_limited_stack()
         if self.space == 'bi-fourier':
             gpdata = wtransforms.w_spec2gpt_lam(gpdims['X'],
                                                 gpdims['Y'],

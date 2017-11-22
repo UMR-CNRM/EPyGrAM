@@ -25,7 +25,7 @@ from footprints import FPDict, FPList, proxy as fpx
 from bronx.datagrip.misc import read_dict_in_CSV
 from bronx.meteo.conversion import q2R
 
-from arpifs4py import wfa, wlfi, wtransforms
+from arpifs4py import wfa, wlfi
 
 from epygram import config, epygramError, util
 from epygram.util import Angle, separation_line, write_formatted_fields
@@ -328,11 +328,9 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
         if spectral_geometry is not None:
             KNOZPA[0:KNLATI // 2] = spectral_geometry.truncation['max_zonal_wavenumber_by_lat'][0:KNLATI // 2]
         else:
-            KNOZPA[0:KNLATI // 2] = wtransforms.w_trans_inq(geometry.dimensions['lat_number'],
-                                                            KTRONC,
-                                                            len(geometry.dimensions['lon_number_by_lat']),
-                                                            numpy.array(geometry.dimensions['lon_number_by_lat']),
-                                                            config.KNUMMAXRESOL)[2][0:KNLATI // 2]
+            spgeom = SpectralGeometry(space='legendre',
+                                      truncation={'max':KTRONC})
+            KNOZPA[0:KNLATI // 2] = spgeom.trans_inq(geometry.dimensions)[2][0:KNLATI // 2]
         PSINLA = numpy.zeros((1 + geometry.dimensions['lat_number']) // 2,
                              dtype=numpy.float64)
         PSINLA[0:KNLATI // 2] = numpy.array([s.get('cos_sin')[1] for s in
@@ -812,32 +810,14 @@ class FA(FileResource):
             # Prepare field dimensions
             spectral = encoding['spectral']
             if spectral:
-                truncation = self.spectral_geometry.truncation
                 if 'fourier' in self.spectral_geometry.space:
                     # LAM
-                    SPdatasize = wtransforms.w_etrans_inq(self.geometry.dimensions['X'],
-                                                          self.geometry.dimensions['Y'],
-                                                          self.geometry.dimensions['X_CIzone'],
-                                                          self.geometry.dimensions['Y_CIzone'],
-                                                          truncation['in_X'], truncation['in_Y'],
-                                                          config.KNUMMAXRESOL,
-                                                          self.geometry.grid['X_resolution'],
-                                                          self.geometry.grid['Y_resolution'])[1]
+                    gpdims = copy.deepcopy(self.geometry.dimensions)
+                    gpdims.update({k:v for k,v in self.geometry.grid.items() if 'resolution' in k})
+                    SPdatasize = self.spectral_geometry.etrans_inq(gpdims)[1]
                 elif self.spectral_geometry.space == 'legendre':
                     # Global
-                    total_system_memory = os.sysconf(b'SC_PAGE_SIZE') * os.sysconf(b'SC_PHYS_PAGES')
-                    memory_needed_for_transforms = truncation['max'] ** 3 / 2 * 8
-                    if memory_needed_for_transforms >= config.prevent_swapping_legendre * total_system_memory:
-                        raise epygramError('Legendre spectral transforms need ' +
-                                           str(int(float(memory_needed_for_transforms) / (1024 ** 2.))) +
-                                           ' MB memory, while only ' +
-                                           str(int(float(total_system_memory) / (1024 ** 2.))) +
-                                           ' MB is available: SWAPPING prevented !')
-                    SPdatasize = wtransforms.w_trans_inq(self.geometry.dimensions['lat_number'],
-                                                         truncation['max'],
-                                                         len(self.geometry.dimensions['lon_number_by_lat']),
-                                                         numpy.array(self.geometry.dimensions['lon_number_by_lat']),
-                                                         config.KNUMMAXRESOL)[1]
+                    SPdatasize = self.spectral_geometry.trans_inq(self.geometry.dimensions)[1]
                     SPdatasize *= 2  # complex coefficients
                 datasize = SPdatasize
                 spectral_geometry = self.spectral_geometry
@@ -1457,7 +1437,7 @@ class FA(FileResource):
              out=sys.stdout,
              details=None,
              sortfields=False,
-             **kwargs):
+             **_):
         """
         Writes in file a summary of the contents of the FA.
 

@@ -175,7 +175,7 @@ LFI_field_dictionaries_csv = {'default':os.path.join(installdir,
                                                      'data',
                                                      'Field_Dict_LFI.csv'),
                               'user':os.path.join(userlocaldir,
-                                                  'Field_Dict_LFI.csv')}
+                                                  'user_Field_Dict_LFI.csv')}
 #: geoid of LFI files in pyproj syntax
 LFI_geoid_for_pyproj = {'a':6371229., 'b':6371229.}
 

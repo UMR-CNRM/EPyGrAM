@@ -912,6 +912,7 @@ class GRIBmessage(RecursiveObject, dict):
         Returns a :class:`epygram.base.FieldValidity` object containing the
         validity of the GRIB message.
         """
+        accepted_tRI = (0, 1, 2, 4, 10, 113, 123)
         year = int(str(self['dataDate'])[0:4])
         month = int(str(self['dataDate'])[4:6])
         day = int(str(self['dataDate'])[6:8])
@@ -922,14 +923,16 @@ class GRIBmessage(RecursiveObject, dict):
         cum = None
         if self['stepUnits'] == 1:
             timeunitfactor = 3600
-        if self['timeRangeIndicator'] in (0, 1, 2, 4, 10):
+        if self['timeRangeIndicator'] in accepted_tRI:
             term = self['endStep']
             term = datetime.timedelta(seconds=term * timeunitfactor)
             if self['timeRangeIndicator'] in (2, 4) or self['productDefinitionTemplateNumber'] == 8:
                 cum = self['endStep'] - self['startStep']
                 cum = datetime.timedelta(seconds=cum * timeunitfactor)
+            elif self['timeRangeIndicator'] in (113, 123,):
+                epylog.warning('not able to interpret timeRangeIndicator={}'.format(self['timeRangeIndicator']))
         else:
-            raise NotImplementedError("'timeRangeIndicator' not in (0,2,4).")
+            raise NotImplementedError("'timeRangeIndicator' not in {}.".format(accepted_tRI))
         validity = FieldValidity(basis=basis, term=term, cumulativeduration=cum)
 
         return validity

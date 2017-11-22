@@ -480,6 +480,7 @@ class LFI(FileResource):
         comment = ""
         for i in rawData[2:comment_length + 2]:
             comment += unichr(i)
+        comment = comment.encode(errors='replace')  # FIXME: later problems with footprints. Should be fixed in footprints
         data = rawData[comment_length + 2:]
         if getdata:
             if self._compressed is None and fieldname != 'LFI_COMPRESSED':

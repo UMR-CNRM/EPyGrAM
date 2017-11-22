@@ -201,6 +201,7 @@ def init_env(omp_num_threads=1, no_mpi=True, unlimited_stack=True, lfi_C=True):
         os.environ['LFI_HNDL_SPEC'] = ':1'
     if unlimited_stack and ('beaufix' in os.getenv('HOSTNAME', '') or
                             'prolix' in os.getenv('HOSTNAME', '')):
+        # FIXME: seems to have no effect => pb with T1800
         resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY,
                                                    resource.RLIM_INFINITY))
 

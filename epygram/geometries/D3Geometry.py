@@ -3899,7 +3899,7 @@ class D3GaussGeometry(D3Geometry):
             # zm = self.map_factor(lon, lat) # but redundant computations
         else:
             if self.grid['dilatation_coef'] != 1.:
-                epylog.warning('*map_factor_correction* should be **True** !')
+                epylog.warning('check carefully *map_factor_correction* w.r.t. dilatation_coef')
             zm = numpy.ones(zlat1.shape)
 
         # From rotated sphere to real sphere
