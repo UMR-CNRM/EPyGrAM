@@ -17,6 +17,7 @@ import os
 import datetime
 import copy
 import time
+from contextlib import contextmanager
 
 import footprints
 from bronx.system.mf import prestage
@@ -39,6 +40,28 @@ def set_defaults(**defaults):
                         geometry='franmgsp',
                         origin='hst')
     toolbox.defaults(**defaults)
+
+
+@contextmanager
+def quiet_get(loggers=['vortex.data.stores',
+                       'vortex.data.handlers',
+                       'vortex.tools.net']):
+    """
+    Shut off some loggers (set level to ERROR) while executing action,
+    then restore initial level.
+
+    Example of use::
+
+        with quiet_get():
+            get_resources(...)
+    """
+    old_levels = {l:footprints.loggers.getLogger(l).getEffectiveLevel()
+                  for l in loggers}
+    for l in loggers:
+        footprints.loggers.getLogger(l).setLevel('ERROR')
+    yield
+    for k,v in old_levels.items():
+        footprints.loggers.getLogger(k).setLevel(v)
 
 
 def get_resources(getmode='epygram',
