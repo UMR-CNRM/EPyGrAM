@@ -10,8 +10,19 @@ Functions
 ---------
 
 .. autofunction:: set_defaults
+.. autofunction:: quiet_get
 .. autofunction:: get_resources
 .. autofunction:: extractor
+
+-----------------------------------------------------------
+
+Classes
+-------
+
+.. autoclass:: Extractor
+   :show-inheritance:
+   :members:
+   :member-order: alphabetical
 
 -----------------------------------------------------------
 

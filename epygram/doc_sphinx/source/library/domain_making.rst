@@ -18,6 +18,8 @@ Parameters
 Functions
 ---------
 
+.. autofunction:: default_Iwidth_resolution
+.. autofunction:: nearest_greater_FFT992compliant_int
 .. autofunction:: build_geometry
 .. autofunction:: build_geometry_fromlonlat
 .. autofunction:: geom2namblocks
@@ -31,3 +33,4 @@ Functions
 .. autofunction:: compute_lonlat_included
 .. autofunction:: ask_lonlat
 .. autofunction:: build_lonlat_field
+
