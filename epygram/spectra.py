@@ -134,6 +134,7 @@ class Spectrum(RecursiveObject):
             self.write(_file)
 
     def plotspectrum(self,
+                     together_with=[],
                      over=(None, None),
                      slopes=[{'exp':-3, 'offset':1, 'label':'-3'},
                              {'exp':-5. / 3., 'offset':1, 'label':'-5/3'}],
@@ -143,9 +144,16 @@ class Spectrum(RecursiveObject):
                      figsize=None):
         """
         Plot the spectrum.
-        Cf. function plotspectra() of this module for arguments.
+
+        :param together_with: another spectrum or list of spectra to plot on the
+                              same ax.
+        Cf. function plotspectra() of this module for other arguments.
         """
-        return plotspectra(self,
+        if isinstance(together_with, Spectrum):
+            together_with = [together_with]
+        for s in together_with:
+            assert isinstance(s, Spectrum)
+        return plotspectra([self] + together_with,
                            over=over,
                            slopes=slopes,
                            zoom=zoom,

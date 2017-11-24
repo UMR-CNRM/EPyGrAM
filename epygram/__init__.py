@@ -96,6 +96,8 @@ knowledge of the CeCILL-C license and that you accept its terms.
 
 from __future__ import print_function, absolute_import, unicode_literals, division
 
+import sys
+
 import footprints
 
 __all__ = []
@@ -113,8 +115,17 @@ class epygramError(Exception):
     """Errors class for the package."""
     pass
 
+
 # : Root log for epygram
 epylog = footprints.loggers.getLogger(__name__)
+
+# Check that Python version is compatible
+if sys.version_info.major == 3:
+    epylog.warning('*epygram* is not compatible with Python3 yet !')
+else:
+    if sys.version_info.minor < 7:
+        epylog.warning('*epygram* requires Python2.7 at least. ' +
+                       'It may not work properly with older versions.')
 
 # config
 from . import config
@@ -142,7 +153,6 @@ from . import resources
 
 # User modules
 if len(config.usermodules) > 0:
-    import sys
     footprints.priorities.set_before('debug', 'user')
     for m in config.usermodules:
         if sys.version_info.major == 3 and sys.version_info.minor >= 4:
@@ -170,7 +180,7 @@ def showconfig():
     print(header)
     print("#" * len(header))
 
-    toberemoved = ['os', 'sys', 'imp', 'platform', 'footprints', 'copy',
+    toberemoved = ['os', 'sys', 'imp', 'platform', 'footprints',
                    '__name__', '__doc__', '__package__', '__file__',
                    '__builtins__']
 

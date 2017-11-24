@@ -998,7 +998,7 @@ class FA(FileResource):
             if field.shape in ((1,), ()):
                 if 'int' in field.datatype.name:
                     dataReal = data.view('float64')
-                elif 'str' in field.datatype.name:
+                elif 'str' in field.datatype.name or 'unicode' in field.datatype.name:
                     data = str(data)  # ndarray of str -> simple str
                     dataReal = numpy.array([ord(d) for d in data]).view('float64')
                 elif 'bool' in field.datatype.name:
