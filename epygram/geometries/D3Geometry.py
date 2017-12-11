@@ -3631,6 +3631,24 @@ class D3GaussGeometry(D3Geometry):
         """
         return self.meridian_resolution_j(j)
 
+    def resolution_field(self, direction='meridian'):
+        """
+        Returns a field whose values are the local resolution.
+
+        :param direction: among ('zonal', 'meridian'), direction in which
+                          the resolution is computed.
+        """
+        assert direction in ('zonal', 'meridian')
+        resolutions = [getattr(self, direction + '_resolution_j')(j)
+                       for j in range(self.dimensions['lat_number'])]
+        resol_2d = (numpy.ma.ones(self.get_lonlat_grid()[0].data.shape).transpose() *
+                    numpy.array(resolutions)).transpose()
+        resol_2d.mask = self.get_lonlat_grid()[0].mask
+        f = fpx.field(structure='H2D', geometry=self,
+                      fid={'geometry':direction + ' resolution'})
+        f.setdata(resol_2d)
+        return f
+
     def distance_to_nearest_neighbour_ll(self, lon, lat):
         """
         Returns the local resolution at the nearest point of lon/lat.

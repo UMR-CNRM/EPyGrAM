@@ -53,8 +53,8 @@ rsync -av * $LOC_SXCOOPE
 
 rm site/arpifs4py/libs4py.so
 
-#LOC_PAGRE="pagre:~mary/public/EPyGrAM$version/"
-#rsync -av * $LOC_PAGRE
+LOC_PAGRE="pagre:~mary/public/EPyGrAM$version/"
+rsync -av * $LOC_PAGRE
 
 rm -rf site/epyweb
 

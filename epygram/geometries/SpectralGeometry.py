@@ -19,6 +19,28 @@ from epygram import config, epygramError, epylog
 from epygram.util import RecursiveObject
 
 
+def nearest_greater_FFT992compliant_int(guess):
+    """
+    Returns the first integer *n* greater than *guess* that satisfies
+    n = 2^(1+i) x 3^j x 5^k, with (i,j,k) being positive integers.
+    """
+    # these are defined for dimensions up to 10000 points at least
+    M2 = 14
+    M3 = 10
+    M5 = 7
+    fft_compliant_dims = numpy.zeros((M2, M3, M5))
+    for i in range(M2):
+        for j in range(M3):
+            for k in range(M5):
+                fft_compliant_dims[i, j, k] = 2 ** (1 + i) * 3 ** j * 5 ** k
+    fft_compliant_dims = sorted(list(set(fft_compliant_dims.flatten())))
+    for i in range(len(fft_compliant_dims)):
+        if fft_compliant_dims[i] >= guess:
+            result = int(fft_compliant_dims[i])
+            break
+    return result
+
+
 def truncation_from_gridpoint_dims(dimensions, grid='linear'):
     """
     Compute truncation from gridpoint dimensions, according to the kind of
@@ -45,6 +67,41 @@ def truncation_from_gridpoint_dims(dimensions, grid='linear'):
         truncation['max'] = min(2 * dimensions['lat_number'] - 3,
                                 dimensions['max_lon_number'] - 1) // spfactor
     return truncation
+
+
+def gridpoint_dims_from_truncation(truncation, grid='linear'):
+    """
+    Compute truncation from gridpoint dimensions, according to the kind of
+    **grid**.
+
+    :param truncation: dict containing truncation info, among:
+                       {'in_X':..., 'in_Y':...} for LAM grids,
+                       {'max':...} for Gauss grids
+    :param grid: how to choose the truncation, among ('linear', 'quadratic',
+                 'cubic')
+
+    Formula taken from "Spectral transforms in the cycle 45 of ARPEGE/IFS",
+    http://www.umr-cnrm.fr/gmapdoc/IMG/pdf/ykts45.pdf
+    """
+    dimensions = {}
+    spfactor = {'linear':2, 'quadratic':3, 'cubic':4}[grid]
+    if all([k in truncation.keys() for k in ('in_X', 'in_Y')]):
+        # LAM
+        dimensions['X'] = spfactor * truncation['in_X'] + 1
+        dimensions['X'] = nearest_greater_FFT992compliant_int(dimensions['X'])
+        dimensions['Y'] = spfactor * truncation['in_Y'] + 1
+        dimensions['Y'] = nearest_greater_FFT992compliant_int(dimensions['Y'])
+    elif all([k in truncation.keys() for k in ('max',)]):
+        # Gauss
+        nlon = spfactor * truncation['max'] + 1
+        nlon = nearest_greater_FFT992compliant_int(nlon)
+        if nlon % 4 != 0:
+            nlat = nlon // 2 + 1
+        else:
+            nlat = nlon // 2
+        dimensions['max_lon_number'] = nlon
+        dimensions['lat_number'] = nlat
+    return dimensions
 
 
 class SpectralGeometry(RecursiveObject, FootprintBase):

@@ -1709,8 +1709,12 @@ class FA(FileResource):
             max_zonal_wavenumber_by_lat = [n for n in KNOZPA] + \
                                           [KNOZPA[-(n + 1)] for n in
                                            range(0, len(KNOZPA))]
-            latitudes = [Angle((math.cos(math.asin(sinlat)), sinlat), 'cos_sin') for sinlat in PSINLA] \
-                        + [Angle((math.cos(math.asin(PSINLA[-(n + 1)])), -PSINLA[-(n + 1)]), 'cos_sin') for n in range(0, len(PSINLA))]
+            latitudes = [Angle((math.cos(math.asin(sinlat)), sinlat), 'cos_sin')
+                         for sinlat in PSINLA] \
+                        + [Angle((math.cos(math.asin(PSINLA[-(n + 1)])),
+                                  -PSINLA[-(n + 1)]),
+                                 'cos_sin')
+                           for n in range(0, len(PSINLA))]
             grid = {'dilatation_coef':PCODIL,
                     'latitudes':FPList([l for l in latitudes])
                     }

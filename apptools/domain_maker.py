@@ -7,9 +7,6 @@
 from __future__ import print_function, absolute_import, unicode_literals, division
 
 import argparse
-import numpy
-
-import footprints
 
 import epygram
 from epygram import epylog
@@ -58,10 +55,10 @@ def main(mode,
         retry = True
         while retry:
             # ask and build
-            (geometry, defaults) = dm.ask_and_build_geometry(defaults,
-                                                             maximize_CI_in_E)
+            (geometry, defaults) = dm.ask.ask_and_build_geometry(defaults,
+                                                                 maximize_CI_in_E)
             print("Compute domain...")
-            print(dm.show_geometry(geometry))
+            print(dm.output.summary(geometry))
             if display:
                 plot_lonlat_included = raw_input("Plot a lon/lat domain over model domain ? [n]: ")
                 if plot_lonlat_included in ('y', 'Y', 'yes'):
@@ -69,16 +66,16 @@ def main(mode,
                 else:
                     plot_lonlat_included = False
                 if plot_lonlat_included:
-                    proposed = dm.compute_lonlat_included(geometry)
+                    proposed = dm.build.compute_lonlat_included(geometry)
                     print("Min/Max longitudes & latitudes of the lon/lat domain (defaults to that proposed above):")
-                    ll_boundaries = dm.ask_lonlat(proposed)
+                    ll_boundaries = dm.ask.ask_lonlat(proposed)
                 print("Plot domain...")
-                dm.plot_geometry(geometry,
-                                 lonlat_included=ll_boundaries,
-                                 out=None,
-                                 gisquality=gisquality,
-                                 bluemarble=bluemarble,
-                                 background=background)
+                dm.output.plot_geometry(geometry,
+                                        lonlat_included=ll_boundaries,
+                                        out=None,
+                                        gisquality=gisquality,
+                                        bluemarble=bluemarble,
+                                        background=background)
 
             # retry ?
             retry = raw_input("Do you want to modify something ? [n] ")
@@ -98,18 +95,11 @@ def main(mode,
         retry = True
         while retry:
             # ask and build
-            (geometry, defaults) = dm.ask_lonlat_and_build_geometry(defaults, maximize_CI_in_E)
-            print(dm.show_geometry(geometry))
+            (geometry, defaults) = dm.ask.ask_lonlat_and_build_geometry(defaults, maximize_CI_in_E)
+            print(dm.output.summary(geometry))
             if display:
                 # plot
-                CIEdomain = footprints.proxy.field(structure='H2D',
-                                                   geometry=geometry,
-                                                   fid=footprints.FPDict({'zone':'C+I+E'}))
-                data = numpy.ones((geometry.dimensions['Y'], geometry.dimensions['X'])) * 2.0
-                data[0:geometry.dimensions['Y_CIzone'], 0:geometry.dimensions['X_CIzone']] = 1.0
-                data[geometry.dimensions['Y_Iwidth']:geometry.dimensions['Y_CIzone'] - geometry.dimensions['Y_Iwidth'],
-                     geometry.dimensions['X_Iwidth']:geometry.dimensions['X_CIzone'] - geometry.dimensions['X_Iwidth']] = 0.0
-                CIEdomain.setdata(data)
+                CIEdomain = dm.build.build_CIE_field(geometry)
                 print("Plot domain...")
                 bm = CIEdomain.geometry.make_basemap(specificproj=('nsper', {'sat_height':5000}))
                 fig, ax = CIEdomain.plotfield(use_basemap=bm,
@@ -119,7 +109,7 @@ def main(mode,
                                               gisquality=gisquality,
                                               bluemarble=bluemarble,
                                               background=background)
-                lldomain = dm.build_lonlat_field(defaults, fid={'lon/lat':'included'})
+                lldomain = dm.build.build_lonlat_field(defaults, fid={'lon/lat':'included'})
                 lldomain.plotfield(over=(fig, ax),
                                    use_basemap=bm,
                                    graphicmode='contourlines',
@@ -140,7 +130,7 @@ def main(mode,
     else:
         raise ValueError("invalid value for 'mode' argument")
 
-    dm.write_geometry_as_namelist_blocks(geometry, allinone=True)
+    dm.output.write_geometry_as_namelists(geometry, allinone=True)
 # end of main() ###############################################################
 
 
