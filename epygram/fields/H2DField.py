@@ -354,7 +354,11 @@ class H2DField(D3Field):
                     M = data.max()
 
             if abs(float(m) - float(M)) < config.epsilon:
-                raise epygramError("cannot plot uniform field.")
+                epylog.warning("uniform field: plot as 'points'.")
+                graphicmode = 'points'
+                uniform = True
+            else:
+                uniform = False
             if center_cmap_on_0:
                 vmax = max(abs(m), M)
                 vmin = -vmax
@@ -452,6 +456,11 @@ class H2DField(D3Field):
                 xf = x.flatten()
                 yf = y.flatten()
                 zf = numpy.ma.masked_outside(data.flatten(), m, M)
+                if uniform:
+                    if colormap in cnames or len(colormap) == 1:
+                        zf = colormap
+                    else:
+                        zf = 'seagreen'
                 plot_kwargs = dict(s=pointsize,
                                    norm=norm,
                                    marker=pointsmarker,
@@ -464,7 +473,7 @@ class H2DField(D3Field):
                 else:
                     pf = bm.scatter(xf, yf, c=zf, ax=ax,
                                     **plot_kwargs)
-                if colorbar:
+                if colorbar and not uniform:
                     if colorbar_over is None:
                         cax = make_axes_locatable(ax).append_axes(colorbar,
                                                                   size="5%",
@@ -478,6 +487,12 @@ class H2DField(D3Field):
                                       cax=cax)
                     if minmax_in_title != '':
                         cb.set_label(minmax_in_title)
+                elif uniform:
+                    ax.text(1.02, 0.5, '(uniform field)',
+                            horizontalalignment='center',
+                            verticalalignment='center',
+                            transform=ax.transAxes,
+                            rotation=90.)
             if title is None:
                 ax.set_title("\n".join([str(self.fid[sorted(self.fid.keys())[0]]),
                                         str(self.validity.get())]))
