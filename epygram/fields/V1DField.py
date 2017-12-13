@@ -47,182 +47,28 @@ class V1DCommonField(D3CommonField):
 # [so that, subject to continuation through updated versions,
 #  including suggestions/developments by users...]
 
-    def plotfield(self,
-                  over=(None, None),
-                  labels=None,
-                  fidkey=None,
-                  Ycoordinate=None,
-                  unit='SI',
-                  title=None,
-                  logscale=False,
-                  ema=False,
-                  zoom=None,
-                  colorbar='vertical',
-                  graphicmode='colorshades',
-                  minmax=None,
-                  levelsnumber=21,
-                  center_cmap_on_0=False,
-                  colormap='jet',
-                  minmax_in_title=True,
-                  contourcolor='k',
-                  contourwidth=1,
-                  contourlabel=True,
-                  datefmt=None,
-                  linecolor='black',
-                  linestyle='-',
-                  force_mode=False,
-                  repeat=False,
-                  interval=1000,
-                  figsize=(6., 9.),
-                  **ignored_kwargs):
+    def plotfield(self, *args, **kwargs):
         """
-        Makes a simple (profile) plot of the field.
+        Interface method to methods plotprofiles() and plotverticalhovmoller(),
+        depending on time dimension (or not).
 
-        **Help on arguments can be found in actual plot functions docstrings.**
-
-        :param force_mode: among:\n
-                           - *False* (default), plot an hovmoller plot
-                             if several validities are available,
-                             a simple profile plot otherwise.
-                           - *hovmoller* to force an hovmoller plot
-                           - *profile* to force a simple profile plot
-                           - *animation* to force an animation plot
+        Cf. these functions for arguments.
         """
-        if force_mode is not False:
-            mode = force_mode
+        if len(self.validity) == 1:
+            return self.plotprofiles(*args, **kwargs)
         else:
-            if len(self.validity) == 1:
-                mode = "profile"
-            else:
-                mode = "hovmoller"
-
-        useless_args = []
-        if mode == 'profile':
-            if colorbar != 'vertical':
-                useless_args.append('colorbar')
-            if graphicmode != 'colorshades':
-                useless_args.append('graphicmode')
-            if minmax is not None:
-                useless_args.append('minmax')
-            if levelsnumber != 21:
-                useless_args.append('levelsnumber')
-            if center_cmap_on_0 is not False:
-                useless_args.append('center_cmap_on_0')
-            if colormap != 'jet':
-                useless_args.append('colormap')
-            if minmax_in_title is not True:
-                useless_args.append('minmax_in_title')
-            if contourcolor != 'k':
-                useless_args.append('contourcolor')
-            if contourwidth != 1:
-                useless_args.append('contourwidth')
-            if contourlabel is not True:
-                useless_args.append('contourlabel')
-            if datefmt != "%Y%m%d %H:%M:%S %Z":
-                useless_args.append('datefmt')
-            if linecolor != 'black':
-                useless_args.append('linecolor')
-            if linestyle != '-':
-                useless_args.append('linestyle')
-            if repeat is not False:
-                useless_args.append('repeat')
-            if interval != 1000:
-                useless_args.append('interval')
-            return plotprofiles(self,
-                                over=over,
-                                labels=labels,
-                                fidkey=fidkey,
-                                Ycoordinate=Ycoordinate,
-                                unit=unit,
-                                title=title,
-                                logscale=logscale,
-                                ema=ema,
-                                zoom=zoom,
-                                figsize=figsize)
-        elif mode == 'hovmoller':
-            if labels is not None:
-                useless_args.append('labels')
-            if unit != 'SI':
-                useless_args.append('unit')
-            if ema is not False:
-                useless_args.append('ema')
-            if linecolor != 'black':
-                useless_args.append('linecolor')
-            if linestyle != '-':
-                useless_args.append('linestyle')
-            if repeat is not False:
-                useless_args.append('repeat')
-            if interval != 1000:
-                useless_args.append('interval')
-            return plotverticalhovmoller(self,
-                                         over=over,
-                                         fidkey=fidkey,
-                                         Ycoordinate=Ycoordinate,
-                                         title=title,
-                                         logscale=logscale,
-                                         zoom=zoom,
-                                         colorbar=colorbar,
-                                         graphicmode=graphicmode,
-                                         minmax=minmax,
-                                         levelsnumber=levelsnumber,
-                                         center_cmap_on_0=center_cmap_on_0,
-                                         colormap=colormap,
-                                         minmax_in_title=minmax_in_title,
-                                         contourcolor=contourcolor,
-                                         contourwidth=contourwidth,
-                                         contourlabel=contourlabel,
-                                         datefmt=datefmt,
-                                         figsize=figsize)
-        elif mode == 'animation':
-            if labels is not None:
-                useless_args.append('labels')
-            if colorbar != 'vertical':
-                useless_args.append('colorbar')
-            if graphicmode != 'colorshades':
-                useless_args.append('graphicmode')
-            if minmax is not None:
-                useless_args.append('minmax')
-            if levelsnumber != 21:
-                useless_args.append('levelsnumber')
-            if center_cmap_on_0 is not False:
-                useless_args.append('center_cmap_on_0')
-            if colormap != 'jet':
-                useless_args.append('colormap')
-            if minmax_in_title is not True:
-                useless_args.append('minmax_in_title')
-            if contourcolor != 'k':
-                useless_args.append('contourcolor')
-            if contourwidth != 1:
-                useless_args.append('contourwidth')
-            if contourlabel is not True:
-                useless_args.append('contourlabel')
-            if datefmt != "%Y%m%d %H:%M:%S %Z":
-                useless_args.append('datefmt')
-            return plotanimation(self,
-                                 over=over,
-                                 fidkey=fidkey,
-                                 Ycoordinate=Ycoordinate,
-                                 unit=unit,
-                                 title='__auto__' if title is None else title,
-                                 logscale=logscale,
-                                 ema=ema,
-                                 zoom=zoom,
-                                 repeat=repeat,
-                                 interval=interval,
-                                 figsize=figsize)
-        else:
-            raise NotImplementedError("This graphic mode is not implemented")
-
-        if len(useless_args) != 0:
-            epylog.warning("Some arguments to plotfield are useless and will not be used: " + str(useless_args))
+            return self.plotverticalhovmoller(*args, **kwargs)
 
     def plotprofiles(self, *args, **kwargs):
+        """Cf. eponymous function of module for arguments."""
         return plotprofiles(self, *args, **kwargs)
 
     def plotverticalhovmoller(self, *args, **kwargs):
+        """Cf. eponymous function of module for arguments."""
         return plotverticalhovmoller(self, *args, **kwargs)
 
     def plotanimation(self, *args, **kwargs):
+        """Cf. eponymous function of module for arguments."""
         return plotanimation(self, *args, **kwargs)
 
 
@@ -247,7 +93,8 @@ def plotverticalhovmoller(profile,
                           contourlabel=True,
                           datefmt=None,
                           showgrid=True,
-                          figsize=(6., 9.)):
+                          figsize=(6., 9.),
+                          rcparams=None):
     """
     Makes a simple vertical Hovmöller plot of the field.
 
@@ -289,14 +136,19 @@ def plotverticalhovmoller(profile,
     :param showgrid: True/False to show grid or not
     :param figsize: figure sizes in inches, e.g. (5, 8.5).
                     If None, get the default figsize in config.plotsizes.
+    :param rcparams: list of (*args, **kwargs) to be passed to pyplot.rc()
+                     defaults to [(('font',), dict(family='serif')),]
 
     Warning: requires **matplotlib**.
     """
     import matplotlib
     import matplotlib.pyplot as plt
-    import matplotlib.dates as mdates
     from mpl_toolkits.axes_grid1 import make_axes_locatable
-    plt.rc('font', family='serif')
+
+    if rcparams is None:
+        rcparams = [(('font',), dict(family='serif')),]
+    for args, kwargs in rcparams:
+        plt.rc(*args, **kwargs)
 
     # User colormaps
     if colormap not in plt.colormaps():
@@ -447,7 +299,8 @@ def plotprofiles(profiles,
                  logscale=False,
                  ema=False,
                  zoom=None,
-                 figsize=(6., 9.)):
+                 figsize=(6., 9.),
+                 rcparams=None):
     """
     To plot a series of profiles. Returns a tuple of :mod:`matplotlib`
     (*Figure*, *ax*).
@@ -477,11 +330,17 @@ def plotprofiles(profiles,
       Syntax: e.g. {'ymax':500, ...}.
     :param figsize: figure sizes in inches, e.g. (5, 8.5).
                     If None, get the default figsize in config.plotsizes.
+    :param rcparams: list of (*args, **kwargs) to be passed to pyplot.rc()
+                         defaults to [(('font',), dict(family='serif')),
+                                      (('figure',), dict(autolayout=True))]
     """
     import matplotlib.pyplot as plt
 
-    plt.rc('font', family='serif')
-    plt.rc('figure', autolayout=True)
+    if rcparams is None:
+        rcparams = [(('font',), dict(family='serif')),
+                    (('figure',), dict(autolayout=True))]
+    for args, kwargs in rcparams:
+        plt.rc(*args, **kwargs)
 
     colors = ['red', 'blue', 'green', 'orange', 'magenta', 'darkolivegreen',
               'yellow', 'salmon', 'black']

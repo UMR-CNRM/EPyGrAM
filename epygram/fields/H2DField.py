@@ -127,7 +127,8 @@ class H2DField(D3Field):
                   drawparallels_kwargs=None,
                   drawmeridians_kwargs=None,
                   drawequator_kwargs=None,
-                  drawgreenwich_kwargs=None):
+                  drawgreenwich_kwargs=None,
+                  rcparams=None):
         """
         Makes a simple plot of the field, with a number of options.
 
@@ -231,6 +232,8 @@ class H2DField(D3Field):
         :param drawmeridians_kwargs: kwargs to be passed to basemap.drawgreenwich()
         :param drawequator_kwargs: draw kwargs to emphasize equator parallel
         :param drawgreenwich_kwargs: draw kwargs to emphasize greenwich meridian
+        :param rcparams: list of (*args, **kwargs) to be passed to pyplot.rc()
+                         defaults to [(('font',), dict(family='serif')),]
 
         This method uses (hence requires) 'matplotlib' and 'basemap' libraries.
         """
@@ -240,7 +243,11 @@ class H2DField(D3Field):
         import matplotlib.pyplot as plt
         from matplotlib.colors import cnames
         from mpl_toolkits.axes_grid1 import make_axes_locatable
-        plt.rc('font', family='serif')
+
+        if rcparams is None:
+            rcparams = [(('font',), dict(family='serif')),]
+        for args, kwargs in rcparams:
+            plt.rc(*args, **kwargs)
         if figsize is None:
             figsize = config.plotsizes
         drawcoastlines_kwargs = util.ifNone_emptydict(drawcoastlines_kwargs)

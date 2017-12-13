@@ -45,7 +45,8 @@ class PointField(D3Field):
                   showgrid=True,
                   figsize=None,
                   plot_kwargs=None,
-                  legend_kwargs=None):
+                  legend_kwargs=None,
+                  rcparams=None):
         """
         Plot a PointField if only it has a time dimension.
 
@@ -66,10 +67,15 @@ class PointField(D3Field):
                         Default figsize is config.plotsizes.
         :param plot_kwargs: arguments to be passed to matplotlib.axes.Axes.plot()
         :param legend_kwargs: arguments to be passed to matplotlib.axes.Axes.legend()
+        :param rcparams: list of (*args, **kwargs) to be passed to pyplot.rc()
+                         defaults to [(('font',), dict(family='serif')),]
         """
         import matplotlib.pyplot as plt
         from matplotlib import dates
-        plt.rc('font', family='serif')
+        if rcparams is None:
+            rcparams = [(('font',), {'family':'serif'}),]
+        for args, kwargs in rcparams:
+            plt.rc(*args, **kwargs)
         if figsize is None:
             figsize = config.plotsizes
 
