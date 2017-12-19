@@ -55,12 +55,14 @@ def lam_geom2namelists(geometry,
     nam['NAM_CONF_PROJ_GRID']['XDX'] = geometry.grid['X_resolution']
     nam['NAM_CONF_PROJ_GRID']['XDY'] = geometry.grid['Y_resolution']
 
-    # linclim namelist
+    # c923 namelist
     nam = namelist.NamelistSet()
     namelists['namel_c923'] = nam
+    nam.add(namelist.NamelistBlock('NAMCT0'))
     nam.add(namelist.NamelistBlock('NAMDIM'))
     nam.add(namelist.NamelistBlock('NEMDIM'))
     nam.add(namelist.NamelistBlock('NEMGEO'))
+    nam['NAMCT0']['LRPLANE'] = True
     nam['NAMDIM']['NDLON'] = geometry.dimensions['X']
     nam['NAMDIM']['NDLUXG'] = geometry.dimensions['X_CIzone']
     nam['NAMDIM']['NDGLG'] = geometry.dimensions['Y']
@@ -78,7 +80,7 @@ def lam_geom2namelists(geometry,
 
     # subtruncated grid namelist
     nam = namelist.NamelistSet()
-    namelists['namel_c923_subtruncated-orography'] = nam
+    namelists['namel_c923_orography'] = nam
     nam.add(namelist.NamelistBlock('NAMDIM'))
     nam['NAMDIM']['NMSMAX'] = subtruncation['in_X']
     nam['NAMDIM']['NSMAX'] = subtruncation['in_Y']
@@ -101,6 +103,47 @@ def lam_geom2namelists(geometry,
     nam['NAMFPG']['NMFPMAX'] = truncation['in_X']
     nam['NAMFPG']['NFPMAX'] = truncation['in_Y']
 
+    return namelists
+
+
+def regll_geom2namelists(geometry):
+    """
+    From the regular LonLat geometry, build the namelist blocks for the
+    necessary namelists.
+    """
+    namelists = {}
+
+    # PGD
+    nam = namelist.NamelistSet()
+    namelists['namel_buildpgd'] = nam
+    nam.add(namelist.NamelistBlock('NAM_PGD_GRID'))
+    nam.add(namelist.NamelistBlock('NAM_LONLAT_REG'))
+    corners = geometry.gimme_corners_ll()
+    nam['NAM_PGD_GRID']['CGRID'] = 'LONLAT REG'
+    nam['NAM_LONLAT_REG']['XLONMIN'] = corners['ul'][0]
+    nam['NAM_LONLAT_REG']['XLONMAX'] = corners['lr'][0]
+    nam['NAM_LONLAT_REG']['XLATMIN'] = corners['lr'][1]
+    nam['NAM_LONLAT_REG']['XLATMAX'] = corners['ul'][1]
+    nam['NAM_LONLAT_REG']['NLON'] = geometry.dimensions['X']
+    nam['NAM_LONLAT_REG']['NLAT'] = geometry.dimensions['Y']
+
+    # c923
+    nam = namelist.NamelistSet()
+    namelists['namel_c923'] = nam
+    nam.add(namelist.NamelistBlock('NAMCT0'))
+    nam.add(namelist.NamelistBlock('NAMDIM'))
+    nam.add(namelist.NamelistBlock('NEMGEO'))
+    nam['NAMCT0']['LRPLANE'] = False
+    nam['NAMDIM']['NDGUXG'] = geometry.dimensions['Y']
+    nam['NAMDIM']['NDGLG'] = geometry.dimensions['Y']
+    nam['NAMDIM']['NDLUXG'] = geometry.dimensions['X']
+    nam['NAMDIM']['NDLON'] = geometry.dimensions['X']
+    nam['NEMGEO']['ELAT0'] = 0.
+    nam['NEMGEO']['ELON0'] = 0.
+    nam['NEMGEO']['ELONC'] = geometry.getcenter()[0].get('degrees')
+    nam['NEMGEO']['ELATC'] = geometry.getcenter()[1].get('degrees')
+    nam['NEMGEO']['EDELX'] = geometry.grid['X_resolution'].get('degrees')
+    nam['NEMGEO']['EDELY'] = geometry.grid['Y_resolution'].get('degrees')
     return namelists
 
 
@@ -244,9 +287,9 @@ def plot_geometry(geometry,
     """
     # plot
     CIEdomain = build_CIE_field(geometry)
-    domsize = max(geometry.dimensions['Y'] * geometry.grid['Y_resolution'],
-                  geometry.dimensions['X'] * geometry.grid['X_resolution'])
-    bm = CIEdomain.geometry.make_basemap(specificproj=('nsper', {'sat_height':domsize * 3}))
+    sat_height = geometry.distance(geometry.gimme_corners_ll()['ll'],
+                                   geometry.gimme_corners_ll()['ur']) / 1000
+    bm = CIEdomain.geometry.make_basemap(specificproj=('nsper', {'sat_height':sat_height * 3}))
     fig, ax = CIEdomain.plotfield(use_basemap=bm,
                                   levelsnumber=6,
                                   minmax=[-1.0, 3.0],

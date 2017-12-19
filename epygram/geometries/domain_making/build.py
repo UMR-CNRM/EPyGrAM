@@ -174,31 +174,61 @@ def build_CIE_field(geometry):
     return CIEdomain
 
 
-def build_lonlat_field(ll_boundaries, fid={'lon/lat':'template'}):
+def build_lonlat_geometry(ll_boundaries, resolution=None):
     """
-    Build a lonlat field empty except on the border, given lon/lat boundaries.
+    Build a lonlat geometry given lon/lat boundaries and optionally
+    resolution in degrees.
     """
-    llwidth = 1000
+    if resolution is not None:
+        xres = resolution
+        yres = resolution
+        xwidth = (ll_boundaries['lonmax'] - ll_boundaries['lonmin']) / xres
+        ywidth = (ll_boundaries['latmax'] - ll_boundaries['latmin']) / yres
+        if (xwidth - round(xwidth)) > 1e-6:
+            raise ValueError('resolution:{} cannot divide span [lonmin:lonmax]'.
+                             format(resolution))
+        else:
+            xwidth = int(round(xwidth))
+        if (ywidth - round(ywidth)) > 1e-6:
+            raise ValueError('resolution:{} cannot divide span [latmin:latmax]'.
+                             format(resolution))
+        else:
+            ywidth = int(round(ywidth))
+    elif resolution is None:
+        xwidth = 1000
+        ywidth = 1000
+    xres = (ll_boundaries['lonmax'] - ll_boundaries['lonmin']) / xwidth
+    yres = (ll_boundaries['latmax'] - ll_boundaries['latmin']) / ywidth
     llgrid = {'input_lon':Angle(ll_boundaries['lonmin'], 'degrees'),
               'input_lat':Angle(ll_boundaries['latmin'], 'degrees'),
               'input_position':(0, 0),
-              'X_resolution':Angle((ll_boundaries['lonmax'] - ll_boundaries['lonmin']) / llwidth, 'degrees'),
-              'Y_resolution':Angle((ll_boundaries['latmax'] - ll_boundaries['latmin']) / llwidth, 'degrees')
+              'X_resolution':Angle(xres, 'degrees'),
+              'Y_resolution':Angle(yres, 'degrees')
               }
-    lldims = {'X':llwidth + 1, 'Y':llwidth + 1}
+    lldims = {'X':xwidth + 1, 'Y':ywidth + 1}
     llgeometry = fpx.geometry(structure='H2D',
                               name='regular_lonlat',
                               grid=FPDict(llgrid),
                               dimensions=FPDict(lldims),
                               vcoordinate=vgeom,
                               position_on_horizontal_grid='center')
+    return llgeometry
+
+
+def build_lonlat_field(ll_boundaries,
+                       fid={'lon/lat':'template'},
+                       resolution=None):
+    """
+    Build a lonlat field empty except on the border, given lon/lat boundaries
+    and optionally resolution in degrees.
+    """
+    llgeometry = build_lonlat_geometry(ll_boundaries, resolution=resolution)
     lldomain = fpx.field(structure='H2D',
                          geometry=llgeometry,
                          fid=FPDict(fid))
-    data = numpy.zeros((lldims['Y'], lldims['X']))
+    data = numpy.zeros((llgeometry.dimensions['Y'], llgeometry.dimensions['X']))
     data[1:-1, 1:-1] = 1.
     lldomain.setdata(data)
-
     return lldomain
 
 
@@ -363,34 +393,49 @@ def build_geom_from_e923nam(nam):
     Build geometry and spectral geometry objects, given e923-like namelist
     blocks.
     """
-    if nam['NEMGEO']['ELAT0'] <= epsilon:
-        geometryname = 'mercator'
-    elif 90. - abs(nam['NEMGEO']['ELAT0']) <= epsilon:
-        geometryname = 'polar_stereographic'
-    elif epsilon < abs(nam['NEMGEO']['ELAT0']) < 90. - epsilon:
-        geometryname = 'lambert'
+    if nam['NAMCT0']['LRPLANE']:
+        if nam['NEMGEO']['ELAT0'] <= epsilon:
+            geometryname = 'mercator'
+        elif 90. - abs(nam['NEMGEO']['ELAT0']) <= epsilon:
+            geometryname = 'polar_stereographic'
+        elif epsilon < abs(nam['NEMGEO']['ELAT0']) < 90. - epsilon:
+            geometryname = 'lambert'
+        kwargs = dict(
+            projection=dict(reference_lat=Angle(nam['NEMGEO']['ELAT0'], 'degrees'),
+                            reference_lon=Angle(nam['NEMGEO']['ELON0'], 'degrees'),
+                            rotation=Angle(0.,'degrees')),
+            grid=dict(input_lat=Angle(nam['NEMGEO']['ELATC'], 'degrees'),
+                      input_lon=Angle(nam['NEMGEO']['ELONC'], 'degrees'),
+                      input_position=((nam['NAMDIM']['NDLUXG'] - 1) / 2,
+                                      (nam['NAMDIM']['NDGUXG'] - 1) / 2),
+                      X_resolution=nam['NEMGEO']['EDELX'],
+                      Y_resolution=nam['NEMGEO']['EDELY'],
+                      LAMzone='CI'),
+            dimensions=dict(X=nam['NAMDIM']['NDLUXG'],
+                            Y=nam['NAMDIM']['NDGUXG'],
+                            X_CIzone=nam['NAMDIM']['NDLUXG'],
+                            Y_CIzone=nam['NAMDIM']['NDGUXG'],
+                            X_Czone=nam['NAMDIM']['NDLUXG'] - 2 * nam['NEMDIM']['NBZONL'],
+                            Y_Czone=nam['NAMDIM']['NDGUXG'] - 2 * nam['NEMDIM']['NBZONG'],
+                            X_Iwidth=nam['NEMDIM']['NBZONL'],
+                            Y_Iwidth=nam['NEMDIM']['NBZONG']))
+    else:
+        geometryname = 'regular_lonlat'
+        kwargs = dict(
+            grid=dict(input_lat=Angle(nam['NEMGEO']['ELATC'], 'degrees'),
+                      input_lon=Angle(nam['NEMGEO']['ELONC'], 'degrees'),
+                      input_position=((nam['NAMDIM']['NDLON'] - 1) / 2,
+                                      (nam['NAMDIM']['NDGLG'] - 1) / 2),
+                      X_resolution=nam['NEMGEO']['EDELX'],
+                      Y_resolution=nam['NEMGEO']['EDELY'],
+                      LAMzone=None),
+            dimensions=dict(X=nam['NAMDIM']['NDLON'],
+                            Y=nam['NAMDIM']['NDGLG']))
     geom = fpx.geometry(structure='H2D',
                         name=geometryname,
                         vcoordinate=vgeom,
-                        projection=dict(reference_lat=Angle(nam['NEMGEO']['ELAT0'], 'degrees'),
-                                        reference_lon=Angle(nam['NEMGEO']['ELON0'], 'degrees'),
-                                        rotation=Angle(0.,'degrees')),
-                        grid=dict(input_lat=Angle(nam['NEMGEO']['ELATC'], 'degrees'),
-                                  input_lon=Angle(nam['NEMGEO']['ELONC'], 'degrees'),
-                                  input_position=((nam['NAMDIM']['NDLUXG'] - 1) / 2,
-                                                  (nam['NAMDIM']['NDGUXG'] - 1) / 2),
-                                  X_resolution=nam['NEMGEO']['EDELX'],
-                                  Y_resolution=nam['NEMGEO']['EDELY'],
-                                  LAMzone='CI'),
-                        dimensions=dict(X=nam['NAMDIM']['NDLUXG'],
-                                        Y=nam['NAMDIM']['NDGUXG'],
-                                        X_CIzone=nam['NAMDIM']['NDLUXG'],
-                                        Y_CIzone=nam['NAMDIM']['NDGUXG'],
-                                        X_Czone=nam['NAMDIM']['NDLUXG'] - 2 * nam['NEMDIM']['NBZONL'],
-                                        Y_Czone=nam['NAMDIM']['NDGUXG'] - 2 * nam['NEMDIM']['NBZONG'],
-                                        X_Iwidth=nam['NEMDIM']['NBZONL'],
-                                        Y_Iwidth=nam['NEMDIM']['NBZONG']),
-                        position_on_horizontal_grid='center'
+                        position_on_horizontal_grid='center',
+                        **kwargs
                         )
     if 'NMSMAX' in nam['NAMDIM'].keys() and 'NSMAX' in nam['NAMDIM'].keys():
         spgeom = fpx.geometry(space='bi-fourier',
