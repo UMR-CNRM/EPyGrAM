@@ -237,6 +237,8 @@ name:RELAPROP.RMAX.EA,type:H2D,typeOfFirstFixedSurface:106,discipline:2,paramete
 name:SIM_REFLECT.MAX,type:H2D,typeOfFirstFixedSurface:10,discipline:0,parameterCategory:16,parameterNumber:4
 name:SUNSHI. DURATION,type:H2D,typeOfFirstFixedSurface:1,discipline:0,parameterCategory:6,parameterNumber:33
 name:THETAPWP_FLUX,type:H2D,typeOfFirstFixedSurface:1,discipline:0,parameterCategory:0,parameterNumber:255
+name:VISIHYDRO,type:H2D,typeOfFirstFixedSurface:1,level:2,discipline:0,parameterCategory:19,parameterNumber:236
+name:VISICLD,type:H2D,typeOfFirstFixedSurface:1,level:2,discipline:0,parameterCategory:19,parameterNumber:237
 
 # ISP
 name:C[0-9][0-9][0-9]_METEOSAT_[0-9][0-9],type:H2D,typeOfFirstFixedSurface:8,discipline:3
