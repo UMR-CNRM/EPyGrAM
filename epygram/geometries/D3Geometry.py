@@ -383,6 +383,9 @@ class D3Geometry(RecursiveObject, FootprintBase):
                             figsize=kwargs.get('figsize', config.plotsizes))
         if self.name == 'academic':
             raise epygramError("We cannot plot lon/lat of an academic grid.")
+        sat_height = self.distance(self.gimme_corners_ll()['ll'],
+                                   self.gimme_corners_ll()['ur']) / 1000
+        kwargs.setdefault('specificproj', ('nsper', {'sat_height':sat_height * 3}))
         if kwargs.get('use_basemap') is None:
             bm_args = {k:kwargs[k]
                        for k in ('gisquality', 'subzone', 'specificproj', 'zoom')
@@ -739,6 +742,13 @@ class D3RectangularGridGeometry(D3Geometry):
                 data3D[t, k, :] = data[t, k, :, :].flatten()
 
         return data3D
+
+    def fill_maskedvalues(self, data, fill_value=None):
+        """
+        Returns a copy of *data* with masked values filled with *fill_value*.
+        """
+        assert isinstance(data, numpy.ma.masked_array)
+        return data.filled(fill_value)
 
     def gimme_corners_ij(self, subzone=None):
         """
@@ -2877,7 +2887,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         distance = numpy.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
         # map factor computed as the mean over 100 points along the line
         # between point1 and point2
-        mean_map_factor = numpy.array([self.map_factor(lat) for (_, lat) in self.linspace(end1, end2, 100)]).mean()
+        mean_map_factor = numpy.array([self.map_factor(lat) for (_, lat) in self.linspace(end1, end2, 10)]).mean()
         return distance / mean_map_factor
 
     def resolution_ll(self, lon, lat):
