@@ -24,6 +24,7 @@ import footprints
 from footprints import FPDict, FPList, proxy as fpx
 from bronx.datagrip.misc import read_dict_in_CSV
 from bronx.meteo.conversion import q2R
+from bronx.syntax.arrays import stretch_array
 
 from arpifs4py import wfa, wlfi
 
@@ -586,13 +587,13 @@ class FA(FileResource):
             tmplist = self.listfields()
             for f in tmplist:
                 if fieldtypeslist == [] or\
-                   inquire_field_dict(f)['type'] in fieldtypeslist:
+                   self._field_type(f) in fieldtypeslist:
                     fieldslist.append(f)
         elif isinstance(seed, six.string_types):
             tmplist = util.find_re_in_list(seed, self.listfields())
             for f in tmplist:
                 if fieldtypeslist == [] or\
-                   inquire_field_dict(f)['type'] in fieldtypeslist:
+                   self._field_type(f) in fieldtypeslist:
                     fieldslist.append(f)
         elif isinstance(seed, list):
             tmplist = []
@@ -600,7 +601,7 @@ class FA(FileResource):
                 tmplist += util.find_re_in_list(s, self.listfields())
             for f in tmplist:
                 if fieldtypeslist == [] or\
-                   inquire_field_dict(f)['type'] in fieldtypeslist:
+                   self._field_type(f) in fieldtypeslist:
                     fieldslist.append(f)
         if fieldslist == []:
             raise epygramError("no field matching: " + str(seed) +
@@ -688,7 +689,7 @@ class FA(FileResource):
         for f in self.listfields():
             info = inquire_field_dict(f)
             # separate H2D from Misc
-            if info['type'] == 'H2D':
+            if self._field_type(f) == 'H2D':
                 # separate 3D from 2D
                 if info['typeOfFirstFixedSurface'] in (119, 100, 103, 109, 20):
                     re_ok = re_3D.match(f)
@@ -773,15 +774,16 @@ class FA(FileResource):
                                                          str(fieldname),
                                                          "not found in resource."])
         # Get field info
+        ftype = self._field_type(fieldname)
         field_info = inquire_field_dict(fieldname)
         if footprints_proxy_as_builder:
             builder = fpx.field
         else:
-            if field_info['type'] == 'H2D':
+            if ftype == 'H2D':
                 builder = H2DField
-            elif field_info['type'] == 'Misc':
+            elif ftype == 'Misc':
                 builder = MiscField
-        if field_info['type'] == 'H2D':
+        if ftype == 'H2D':
             encoding = self.fieldencoding(fieldname)
             # Save compression in FA
             compression = {'KNGRIB':encoding['KNGRIB'],
@@ -843,7 +845,7 @@ class FA(FileResource):
 
         # Get data if requested
         if getdata:
-            if field_info['type'] == 'Misc':
+            if ftype == 'Misc':
                 field_length = wlfi.wlfinfo(self._unit, fieldname)[0]
                 data = wfa.wfalais(self._unit, fieldname, field_length)
                 if field_info['dimension'] == 0:
@@ -877,7 +879,7 @@ class FA(FileResource):
                         raise NotImplementedError("reading of datatype " +
                                                   field_info['nature'] + " array.")
                 data = dataOut
-            elif field_info['type'] == 'H2D':
+            elif ftype == 'H2D':
                 if config.spectral_coeff_order == 'model':
                     data = numpy.array(wfa.wfacilo(datasize,
                                                    self._unit,
@@ -896,7 +898,7 @@ class FA(FileResource):
 
         # Create field
         fid = {self.format:fieldname}
-        if field_info['type'] == 'H2D':
+        if ftype == 'H2D':
             # Create H2D field
             fid['generic'] = FPDict(get_generic_fid(fieldname))
             cumul = field_info.get('productDefinitionTemplateNumber', None)
@@ -928,12 +930,12 @@ class FA(FileResource):
                                                           'lats':jgrid,
                                                           'filled':False}
                 field.geometry._buffered_gauss_grid = self.geometry._buffered_gauss_grid
-        elif field_info['type'] == 'Misc':
+        elif ftype == 'Misc':
             # Create Misc field
             fid['generic'] = FPDict()
             field = builder(fid=fid)
         if getdata:
-            if field_info['type'] == 'H2D' and not field.spectral:
+            if ftype == 'H2D' and not field.spectral:
                 data = geometry.reshape_data(data)
             field.setdata(data)
 
@@ -1044,9 +1046,6 @@ class FA(FileResource):
             if self.validity.cumulativeduration() is None and field.validity.cumulativeduration() is not None:
                 self.validity.set(cumulativeduration=field.validity.cumulativeduration())
                 self._set_validity()
-            data = numpy.ma.copy(field.getdata()).flatten()
-            if isinstance(data, numpy.ma.core.MaskedArray):
-                data = numpy.copy(data[data.mask[...] == False].data)  # FIXME: does not work with real masked array fields
             if compression is not None:
                 modified_compression = True
             elif field.fid[self.format] in self.fieldscompression:
@@ -1055,7 +1054,15 @@ class FA(FileResource):
             else:
                 modified_compression = False
                 compression = self._getrunningcompression()
-            if compression['KNBPDG'] > 24:
+            data = field.getdata(d4=True)
+            if isinstance(data, numpy.ma.core.MaskedArray):
+                if compression.get('KNGRIB') == 0:
+                    fill_value = 1e20
+                else:
+                    fill_value = field.mean()
+                data = field.geometry.fill_maskedvalues(data, fill_value=fill_value)
+            data = stretch_array(data.squeeze())
+            if compression.get('KNBPDG', 24) > 24:
                 epylog.warning('FA compression limited to 24 instead of {}'.format(compression['KNBPDG']))
                 compression['KNBPDG'] = 24  # FIXME: ? problem with >= 31
             if modified_compression:
@@ -1448,7 +1455,7 @@ class FA(FileResource):
         :param sortfields: **True** if the fields have to be sorted by type.
         """
         for f in self.listfields():
-            if inquire_field_dict(f)['type'] == 'H2D':
+            if self._field_type(f) == 'H2D':
                 first_H2DField = f
                 break
         if len(self.listfields()) == 0:
@@ -1503,7 +1510,7 @@ class FA(FileResource):
                                    compressionline)
         out.write(separation_line)
         for f in listoffields:
-            if details is not None and inquire_field_dict(f)['type'] == 'H2D':
+            if details is not None and self._field_type(f) == 'H2D':
                 encoding = self.fieldencoding(f)
                 if details == 'spectral':
                     write_formatted_fields(out, f, encoding['spectral'])
@@ -1571,6 +1578,20 @@ class FA(FileResource):
             KDATEF = wfa.wfadiex(self._unit)
             out.write('KDATEF\n')
             out.write(str(KDATEF) + '\n')
+
+    def _field_type(self, fieldname):
+        """Return type of the field, based on FANION."""
+        try:
+            exist = wfa.wfanion(self._unit,
+                                fieldname[0:4],
+                                0,
+                                fieldname[4:])[0]
+        except RuntimeError:
+            exist = False
+        if exist:
+            return 'H2D'
+        else:
+            return 'Misc'
 
     def _read_geometry(self):
         """

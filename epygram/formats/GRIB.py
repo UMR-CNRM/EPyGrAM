@@ -613,10 +613,7 @@ class GRIBmessage(RecursiveObject, dict):
                 self['bitMapIndicator'] = 0
                 self['bitmapPresent'] = 1
                 self['missingValue'] = values.fill_value
-                if 'gauss' in field.geometry.name:
-                    values = field.geometry.fill_maskedvalues(values)  # TOBECHECKED:
-                else:
-                    values = values.filled(values.fill_value)
+                values = field.geometry.fill_maskedvalues(values)
             else:
                 # bitmap in GRIB1 ?
                 raise NotImplementedError("didn't succeed to make this work")
