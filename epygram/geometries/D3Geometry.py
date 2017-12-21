@@ -2681,6 +2681,25 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         f.setdata(data)
         return f
 
+    def mesh_area(self, lat):
+        """
+        Compute the area of a mesh/gridpoint, given its latitude.
+        """
+        return self.grid['X_resolution'] * self.grid['Y_resolution'] / (self.map_factor(lat)**2)
+
+    def mesh_area_field(self, position=None):
+        """
+        Returns a new field whose data is the mesh area of gridpoints.
+
+        :param position: grid position with respect to the model cell.
+          Defaults to self.position_on_horizontal_grid.
+        """
+        m = self.map_factor_field(position=position)
+        dxdy = self.grid['X_resolution'] * self.grid['Y_resolution']
+        m.setdata(dxdy / m.data**2)
+        m.fid['geometry'] = 'Mesh Area'
+        return m
+
     def make_basemap(self,
                      gisquality='i',
                      subzone=None,
