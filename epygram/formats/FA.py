@@ -68,7 +68,7 @@ def find_wind_pair(fieldname):
         return pair
 
 
-def inquire_field_dict(fieldname):
+def inquire_field_dict(fieldname, defaults_to_Misc=True):
     """
     Returns the info contained in the FA _field_dict for the requested
     **fieldname**.
@@ -89,13 +89,14 @@ def inquire_field_dict(fieldname):
             matching_field = fd
             break
 
-    if matching_field is None:
+    if matching_field is None and defaults_to_Misc:
         epylog.info("field '" + fieldname + "' is not referenced in" +
                     " Field_Dict_FA. Assume its type being a MiscField.")
         matching_field = {'name':fieldname, 'type':'Misc',
                           'nature':'float', 'dimension':'1'}
-
-    return copy.deepcopy(matching_field)
+    elif matching_field is not None:
+        matching_field = copy.deepcopy(matching_field)
+    return matching_field
 
 
 def _complete_generic_fid_from_name(generic_fid, fieldname):
@@ -1580,7 +1581,7 @@ class FA(FileResource):
             out.write(str(KDATEF) + '\n')
 
     def _field_type(self, fieldname):
-        """Return type of the field, based on FANION."""
+        """Return type of the field, based on FANION or FA_Field_Dict."""
         try:
             exist = wfa.wfanion(self._unit,
                                 fieldname[0:4],
@@ -1589,9 +1590,14 @@ class FA(FileResource):
         except RuntimeError:
             exist = False
         if exist:
-            return 'H2D'
+            ftype = 'H2D'
         else:
-            return 'Misc'
+            ftype = 'Misc'
+        # enable field dict to overspecify
+        type_from_fd = inquire_field_dict(fieldname, defaults_to_Misc=False)
+        if type_from_fd is not None:
+            ftype = type_from_fd['type']
+        return ftype
 
     def _read_geometry(self):
         """
