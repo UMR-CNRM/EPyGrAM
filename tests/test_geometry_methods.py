@@ -121,7 +121,7 @@ class Test_lambert_HS(abtc.Test_RectGeometryMethods):
 
     def test_distance(self):
         self.assertAlmostEqual(self.geo.distance(*self.transect),
-                               128585.10421692148,
+                               128584.74836666879,
                                delta=epsilon)
 
     @skipIf(fast, 'slow test')
@@ -176,7 +176,7 @@ class Test_lambert_HS(abtc.Test_RectGeometryMethods):
 
     def test_resolution_ll(self):
         self.assertAlmostEqual(self.geo.resolution_ll(*self.point),
-                               7967.6821594830908, delta=epsilon)
+                               7967.6820416615528, delta=epsilon)
 
 
 class Test_mercator(abtc.Test_RectGeometryMethods):
@@ -200,7 +200,7 @@ class Test_mercator(abtc.Test_RectGeometryMethods):
 
     def test_distance(self):
         self.assertAlmostEqual(self.geo.distance(*self.transect),
-                               154053.58670729026,
+                               154053.15702760589,
                                delta=epsilon)
 
     @skipIf(fast, 'slow test')
@@ -255,7 +255,7 @@ class Test_mercator(abtc.Test_RectGeometryMethods):
 
     def test_resolution_ll(self):
         self.assertAlmostEqual(self.geo.resolution_ll(*self.point),
-                               15371.771945773886, delta=epsilon)
+                               15371.771129769251, delta=epsilon)
 
 
 class Test_stereopol(abtc.Test_RectGeometryMethods):
@@ -279,7 +279,7 @@ class Test_stereopol(abtc.Test_RectGeometryMethods):
 
     def test_distance(self):
         self.assertAlmostEqual(self.geo.distance(*self.transect),
-                               112699.14287003415,
+                               112698.99343243973,
                                delta=epsilon)
 
     @skipIf(fast, 'slow test')
@@ -334,7 +334,7 @@ class Test_stereopol(abtc.Test_RectGeometryMethods):
 
     def test_resolution_ll(self):
         self.assertAlmostEqual(self.geo.resolution_ll(*self.point),
-                               15876.558945361001, delta=epsilon)
+                               15876.558527170644, delta=epsilon)
 
 
 class Test_regLL(abtc.Test_RectGeometryMethods):
