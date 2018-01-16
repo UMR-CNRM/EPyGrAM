@@ -689,7 +689,6 @@ class netCDF(FileResource):
                                 'input_position':(0, 0),
                                 'X_resolution':Angle(grid_mapping.x_resolution, 'degrees'),
                                 'Y_resolution':Angle(grid_mapping.y_resolution, 'degrees')}
-                    print("#########", kwargs_geom)
                 else:
                     raise NotImplementedError('grid_mapping.grid_mapping_name == ' + grid_mapping.grid_mapping_name)
             else:

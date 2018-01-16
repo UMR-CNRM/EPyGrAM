@@ -44,6 +44,8 @@ FA
 .. autodata:: FA_fandax
 .. autodata:: FA_buffered_gauss_grid
 .. autodata:: FA_allow_MOCAGE_multivalidities
+.. autodata:: FA_max_encoding
+.. autodata:: FA_mute_FA4py
 
 LFA
 ...

@@ -190,7 +190,8 @@ def showconfig():
         print('- ' + k + ' = ' + str(cfg[k]))
 
 
-def init_env(omp_num_threads=1, no_mpi=True, unlimited_stack=True, lfi_C=True):
+def init_env(omp_num_threads=1, no_mpi=True, unlimited_stack=True, lfi_C=True,
+             mute_FA4py=None):
     """
     A function to modify execution environment (to be called early in
     execution).
@@ -198,7 +199,8 @@ def init_env(omp_num_threads=1, no_mpi=True, unlimited_stack=True, lfi_C=True):
     :param no_mpi: environment variable DR_HOOK_NOT_MPI set to 1
     :param omp_num_threads: sets OMP_NUM_THREADS
     :param lfi_C: if True, LFI_HNDL_SPEC set to ':1', to use the C version of LFI
-    :param unlimited_stack: stack size unlimited on Bull supercomputers.
+    :param unlimited_stack: stack size unlimited on Bull supercomputers
+    :param mute_FA4py: mute messages from FAIPAR in FA4py library
     """
     import os
     import resource
@@ -211,9 +213,13 @@ def init_env(omp_num_threads=1, no_mpi=True, unlimited_stack=True, lfi_C=True):
         os.environ['LFI_HNDL_SPEC'] = ':1'
     if unlimited_stack and ('beaufix' in os.getenv('HOSTNAME', '') or
                             'prolix' in os.getenv('HOSTNAME', '')):
-        # FIXME: seems to have no effect => pb with T1800
+        # FIXME: seems to have no effect => pb with T1800 (need a proper ulimit -s unlimited)
         resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY,
                                                    resource.RLIM_INFINITY))
+    if mute_FA4py is None:
+        mute_FA4py = config.FA_mute_FA4py
+    if mute_FA4py:
+        os.environ['FA4PY_MUTE'] = '1'
 
 
 if config.init_at_import:
