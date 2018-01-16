@@ -1063,9 +1063,11 @@ class FA(FileResource):
                     fill_value = field.mean()
                 data = field.geometry.fill_maskedvalues(data, fill_value=fill_value)
             data = stretch_array(data.squeeze())
-            if compression.get('KNBPDG', 24) > 24:
-                epylog.warning('FA compression limited to 24 instead of {}'.format(compression['KNBPDG']))
-                compression['KNBPDG'] = 24  # FIXME: ? problem with >= 31
+            if compression.get('KNBPDG', config.FA_max_encoding) > config.FA_max_encoding:  # FIXME: ? problem with >= 31
+                epylog.warning(('FA compression higher than {} ' +
+                                '(bits per gridpoint): {} : may be untrustful.').
+                               format(config.FA_max_encoding,
+                                      compression['KNBPDG']))
             if modified_compression:
                 self._setrunningcompression(**compression)
             if config.spectral_coeff_order == 'model':
