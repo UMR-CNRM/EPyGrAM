@@ -106,7 +106,7 @@ class DDHLFA(LFA):
                                 seed=None,
                                 fieldtype=None,
                                 generic=False,
-                                **kwargs):
+                                **_):
         """
         Returns a list of the fields from resource whose name match the given
         *seed*.
@@ -279,7 +279,7 @@ class DDHLFA(LFA):
 #################
 
     @FileResource._openbeforedelayed
-    def what(self, out=sys.stdout, sortfields=False, **kwargs):
+    def what(self, out=sys.stdout, sortfields=False, **_):
         """
         Writes in file a summary of the contents of the DDHLFA.
 

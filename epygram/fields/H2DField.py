@@ -433,13 +433,19 @@ class H2DField(D3Field):
                     yf = y.compressed()
                     zf = data.compressed()
                     tri = True
-                    # FIXME: problem of duplicate points with arpege grid
+                    epylog.warning(" ".join(["There is a remaining bug in",
+                                             "plotting data from non-rectangular",
+                                             "grids in basemap, cf.",
+                                             "https://github.com/matplotlib/basemap/issues/265"]))
                 elif self.geometry.dimensions['Y'] == 1:
                     xf = x.flatten()
                     yf = y.flatten()
                     zf = data.flatten()
                     tri = True
-                    # FIXME: problem of triangulation for contourlines
+                    epylog.warning(" ".join(["There is a remaining bug in",
+                                             "plotting data from non-rectangular",
+                                             "grids in basemap, cf.",
+                                             "https://github.com/matplotlib/basemap/issues/265"]))
                 else:
                     xf = x
                     yf = y

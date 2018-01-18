@@ -506,7 +506,7 @@ class GeoPoints(FileResource):
 # pre-app #
 ###########
     @FileResource._openbeforedelayed
-    def what(self, out=sys.stdout, **kwargs):
+    def what(self, out=sys.stdout, **_):
         """
         Writes in file-like a summary of the contents of the GeoPoints.
 

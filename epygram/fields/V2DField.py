@@ -166,7 +166,6 @@ class V2DCommonField(D3CommonField):
         data = numpy.ma.masked_outside(self.getdata(),
                                        mask_outside['min'],
                                        mask_outside['max'])
-        # FIXME: mask_threshold does not produce expected results
         if self.geometry.vcoordinate.typeoffirstfixedsurface in (119, 100, 160):
             reverseY = True
         else:
@@ -231,6 +230,8 @@ class V2DCommonField(D3CommonField):
                             linewidths=contourwidth)
             if contourlabel:
                 ax.clabel(pf, colors=contourcolor)
+        else:
+            raise NotImplementedError('graphicmode="{}"'.format(graphicmode))
         # decoration
         surf = z[-1, :]
         bottom = max(surf) if reverseY else min(surf)
