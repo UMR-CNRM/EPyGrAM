@@ -31,6 +31,9 @@ from epygram.util import (Angle, RecursiveObject,
                           separation_line, write_formatted_dict)
 from epygram.fields import H2DField
 from epygram.geometries.VGeometry import pressure2altitude
+from epygram.geometries.SpectralGeometry import (SpectralGeometry,
+                                                 gridpoint_dims_from_truncation,
+                                                 nearest_greater_FFT992compliant_int)
 from . import grib_utilities
 
 import gribapi
@@ -52,6 +55,12 @@ onetotwo = {1:1,  # ground or water surface
             117:109,  # potential vorticity surface
             }
 twotoone = {v:k for (k, v) in onetotwo.items()}
+
+
+def gauss_latitudes(nlat):
+    """Compute the Gauss latitudes for a **nlat** points grid."""
+    x, _ = numpy.polynomial.legendre.leggauss(nlat)
+    return numpy.degrees(numpy.arcsin(x[::-1]))
 
 
 def parse_GRIBstr_todict(strfid):
@@ -169,18 +178,18 @@ class GRIBmessage(RecursiveObject, dict):
 
     def __setitem__(self, key, value):
         if value is not None:
-            if gribapi.__version__ <= '1.10.4':  # FIXME: 1.10.4 needs this; 1.14.0 does not; in between ???
+            if gribapi.__version__ <= '1.10.4':
                 if isinstance(value, numpy.float):
                     value = float(value)
                 elif isinstance(value, numpy.int):
                     value = int(value)
-            if isinstance(value, six.string_types):  # FIXME: gribapi str/unicode incompatibility
+            if isinstance(value, six.string_types):  # gribapi str/unicode incompatibility
                 v = str(value)
             else:
                 v = value
-            gribapi.grib_set(self._gid, str(key), v)  # FIXME: gribapi str/unicode incompatibility
+            gribapi.grib_set(self._gid, str(key), v)  # gribapi str/unicode incompatibility
         else:
-            gribapi.grib_set_missing(self._gid, str(key))  # FIXME: gribapi str/unicode incompatibility
+            gribapi.grib_set_missing(self._gid, str(key))  # gribapi str/unicode incompatibility
         super(GRIBmessage, self).__setitem__(key, value)
 
     def get(self, key, default=None):
@@ -193,7 +202,7 @@ class GRIBmessage(RecursiveObject, dict):
 
     def _clone_from_sample(self, sample):
         """Clone a sample GRIB message."""
-        sample_gid = gribapi.grib_new_from_samples(str(sample))  # FIXME: gribapi str/unicode incompatibility
+        sample_gid = gribapi.grib_new_from_samples(str(sample))  # gribapi str/unicode incompatibility
         gid = gribapi.grib_clone(sample_gid)
         gribapi.grib_release(sample_gid)
         return gid
@@ -213,30 +222,30 @@ class GRIBmessage(RecursiveObject, dict):
             if not array:
                 try:
                     # force to get as integer
-                    if attribute in (# bug in GRIB_API ? 1, 103 & 105 => 'sfc'
-                                     'typeOfFirstFixedSurface',
+                    # bug in GRIB_API ? 1, 103 & 105 => 'sfc'
+                    if attribute in ('typeOfFirstFixedSurface',
                                      'indicatorOfTypeOfLevel',
                                      'typeOfSecondFixedSurface',
                                      # type error when setting key 'centre' if str
                                      'centre', 'originatingCentre'):
-                        attr = gribapi.grib_get(self._gid, str(attribute), int)  # FIXME: gribapi str/unicode incompatibility
+                        attr = gribapi.grib_get(self._gid, str(attribute), int)  # gribapi str/unicode incompatibility
                     else:
-                        attr = gribapi.grib_get(self._gid, str(attribute))  # FIXME: gribapi str/unicode incompatibility
+                        attr = gribapi.grib_get(self._gid, str(attribute))  # gribapi str/unicode incompatibility
                 except gribapi.GribInternalError as e:
                     # differenciation not well done... PB in gribapi
                     if str(e) == 'Passed array is too small':
-                        attr = gribapi.grib_get_double_array(self._gid, str(attribute))  # FIXME: gribapi str/unicode incompatibility
+                        attr = gribapi.grib_get_double_array(self._gid, str(attribute))  # gribapi str/unicode incompatibility
                     else:
                         raise type(e)(str(e) + ' : "' + attribute + '"')
             else:
-                attr = gribapi.grib_get_double_array(self._gid, str(attribute))  # FIXME: gribapi str/unicode incompatibility
+                attr = gribapi.grib_get_double_array(self._gid, str(attribute))  # gribapi str/unicode incompatibility
         else:
             attr = gribapi.grib_get_values(self._gid)
         super(GRIBmessage, self).__setitem__(attribute, attr)
 
     def _set_array_attribute(self, attribute, value):
         """Setter for array attributes."""
-        gribapi.grib_set_array(self._gid, str(attribute), value)  # FIXME: gribapi str/unicode incompatibility
+        gribapi.grib_set_array(self._gid, str(attribute), value)  # gribapi str/unicode incompatibility
 
     def _build_msg_from_field(self, field,
                               ordering=config.GRIB_default_ordering,
@@ -335,7 +344,7 @@ class GRIBmessage(RecursiveObject, dict):
                 self[p] = config.GRIB_default_production_parameters[p]
         try:
             process_id = int(field.processtype)
-        except:
+        except ValueError:
             process_id = config.GRIB_default_production_parameters['generatingProcessIdentifier']
         self['generatingProcessIdentifier'] = process_id
 
@@ -494,8 +503,9 @@ class GRIBmessage(RecursiveObject, dict):
         else:
             # spectral case
             if field.spectral_geometry.space == 'bi-fourier':
+                # TODO: update when spectral LAM accepted by WMO and implemented in grib_api
                 self['gridType'] = 'sh'  # in bi-fourier case, this is a bypass
-                self['J'] = max(field.spectral_geometry.truncation['in_X'],  # TOBECHECKED:
+                self['J'] = max(field.spectral_geometry.truncation['in_X'],
                                 field.spectral_geometry.truncation['in_Y'])
                 self['K'] = self['J']
                 self['M'] = self['J']
@@ -521,7 +531,7 @@ class GRIBmessage(RecursiveObject, dict):
                 self._set_array_attribute('pv', ab)
             else:
                 pass
-                # FIXME: this should be done but it changes gridType !!!
+                # !!! this should be done but it changes gridType !!!
                 # self['numberOfVerticalCoordinateValues'] = 0
         elif grib_edition == 2:
             if len(field.geometry.vcoordinate.levels) > 1:
@@ -539,7 +549,7 @@ class GRIBmessage(RecursiveObject, dict):
             if hasattr(field.geometry.vcoordinate, 'typeofsecondfixedsurface'):
                 self['typeOfSecondFixedSurface'] = field.geometry.vcoordinate.typeofsecondfixedsurface
             else:
-                self['typeOfSecondFixedSurface'] = 255  # TODO: None instead ? (=MISSING in GRIB)
+                self['typeOfSecondFixedSurface'] = 255
             if hasattr(field.geometry.vcoordinate, 'toplevel'):
                 self['topLevel'] = field.geometry.vcoordinate.toplevel
             else:
@@ -639,11 +649,18 @@ class GRIBmessage(RecursiveObject, dict):
         Specific method to set **packing** because the order of the elements is
         important.
 
-        :param dict packing: GRIB keys fro packing.
+        :param dict packing: GRIB keys from packing.
         """
         packing = copy.copy(packing)
-        if packing.get('bitsPerValue') is not None and packing.get('bitsPerValue') > 24:
-            packing['bitsPerValue'] = 24  # FIXME: ? problem with bitsPerValue = 30 at least
+        if packing.get('bitsPerValue') is not None and \
+           packing.get('bitsPerValue') > config.GRIB_max_bitspervalue:
+            # problem with bitsPerValue = 30 at least
+            epylog.warning(('GRIB encoding higher than {} ' +
+                            '(bits per value): {} : may be untrustful.').
+                           format(config.GRIB_max_bitspervalue,
+                                  packing.get('bitsPerValue')))
+            if config.GRIB_force_bitspervalue:
+                packing['bitsPerValue'] = config.GRIB_max_bitspervalue
         order = ['packingType', 'complexPacking', 'boustrophedonicOrdering',
                  'bitsPerValue']
         for k in order:
@@ -706,6 +723,20 @@ class GRIBmessage(RecursiveObject, dict):
             raise NotImplementedError('this ordering: not yet.')
         gribapi.grib_set_values(self._gid, data1d)
 
+    def _read_spectralgeometry(self):
+        """
+        Returns a SpectralGeometry object containing
+        the spectral geometry information of the GRIB message.
+        """
+        if self['gridType'] == 'sh':
+            if not self['J'] == self['K'] == self['M']:
+                raise NotImplementedError("case: not J==K==M")
+            spgeom = SpectralGeometry(space='legendre',
+                                      truncation={'max':self['J']})
+        else:
+            raise NotImplementedError('gridType==' + self['gridType'])
+        return spgeom
+
     def _read_geometry(self):
         """
         Returns a geometry object containing
@@ -730,6 +761,8 @@ class GRIBmessage(RecursiveObject, dict):
                 geoid = {'a':a, 'b':b}
             else:
                 raise
+        except gribapi.GribInternalError:
+            pass
 
         kwargs_vcoord = {'structure': 'V'}
         kwargs_vcoord['position_on_grid'] = 'mass'
@@ -755,21 +788,18 @@ class GRIBmessage(RecursiveObject, dict):
                                                           i in range(len(Ai))]),
                                      'ABgrid_position':'flux'}
         vcoordinate = fpx.geometry(**kwargs_vcoord)
-        if self['gridType'] == 'sh':
-            raise NotImplementedError('not yet')  # TODO: or not to do ?
-            dimensions = {'X':self['Nx'],
-                          'Y':self['Ny']}
-        else:
+
+        if self['gridType'] != 'sh' and 'gg' not in self['gridType']:
             dimensions = {'X':self.get('Nx', self['Ni']),
                           'Y':self.get('Ny', self['Nj'])}
-        if self['iScansNegatively'] == 0 and self['jScansPositively'] == 0:
-            input_position = (0, dimensions['Y'] - 1)
-        elif self['iScansNegatively'] == 0 and self['jScansPositively'] == 1:
-            input_position = (0, 0)
-        elif self['iScansNegatively'] == 1 and self['jScansPositively'] == 0:
-            input_position = (dimensions['X'] - 1, dimensions['Y'] - 1)
-        elif self['iScansNegatively'] == 1 and self['jScansPositively'] == 1:
-            input_position = (dimensions['X'] - 1, 0)
+            if self['iScansNegatively'] == 0 and self['jScansPositively'] == 0:
+                input_position = (0, dimensions['Y'] - 1)
+            elif self['iScansNegatively'] == 0 and self['jScansPositively'] == 1:
+                input_position = (0, 0)
+            elif self['iScansNegatively'] == 1 and self['jScansPositively'] == 0:
+                input_position = (dimensions['X'] - 1, dimensions['Y'] - 1)
+            elif self['iScansNegatively'] == 1 and self['jScansPositively'] == 1:
+                input_position = (dimensions['X'] - 1, 0)
 
         if self['gridType'] == 'regular_ll':
             geometryname = 'regular_lonlat'
@@ -853,10 +883,7 @@ class GRIBmessage(RecursiveObject, dict):
                     'LAMzone':None}
         elif 'gg' in self['gridType']:
             projection = None
-            # NOTE: this is a (good) approximation actually, the true latitudes are the roots of Legendre polynoms
-            latitudes = numpy.linspace(self['latitudeOfFirstGridPointInDegrees'],
-                                       self['latitudeOfLastGridPointInDegrees'],
-                                       self['Nj'])
+            latitudes = gauss_latitudes(self('Nj'))
             grid = {'latitudes':FPList([Angle(l, 'degrees') for l in latitudes])}
             if self['gridType'] == 'reduced_gg':
                 geometryname = 'reduced_gauss'
@@ -888,7 +915,22 @@ class GRIBmessage(RecursiveObject, dict):
                           }
         elif self['gridType'] == 'sh':
             # spherical harmonics: => forced to a linear gauss grid
-            raise NotImplementedError("need to recompute a default Gauss Grid.")
+            projection = None
+            spgeom = self._read_spectralgeometry()
+            gpdims = gridpoint_dims_from_truncation(spgeom.truncation,
+                                                    grid='linear')
+            latitudes = gauss_latitudes(gpdims['lat_number'])
+            grid = {'latitudes':FPList([Angle(l, 'degrees')
+                                        for l in latitudes]),
+                    'dilatation_coef':1.}
+            dimensions = gpdims
+            geometryname = 'reduced_gauss'
+            # try to have roughly the same zonal resolution as on equator
+            lon_number_by_lat = 2 * gpdims['lat_number'] * numpy.cos(numpy.radians(latitudes))
+            lon_number_by_lat = [min(nearest_greater_FFT992compliant_int(n),
+                                     dimensions['max_lon_number'])
+                                 for n in lon_number_by_lat]
+            dimensions['lon_number_by_lat'] = FPList(lon_number_by_lat)
         else:
             raise NotImplementedError("not yet !")
         # Make geometry object
@@ -974,7 +1016,7 @@ class GRIBmessage(RecursiveObject, dict):
           - 'mars': to get the keys used by MARS.
         """
         if isinstance(namespace, six.string_types):
-            namespace = str(namespace)  # FIXME: gribapi str/unicode incompatibility
+            namespace = str(namespace)  # gribapi str/unicode incompatibility
         key_iter = gribapi.grib_keys_iterator_new(self._gid,
                                                   namespace=namespace)
         namespace = []
@@ -1031,6 +1073,8 @@ class GRIBmessage(RecursiveObject, dict):
         field_kwargs['spectral_geometry'] = None
         field_kwargs['processtype'] = self['generatingProcessIdentifier']
         geometry = self._read_geometry()
+        if self['gridType'] == 'sh':
+            field_kwargs['spectral_geometry'] = self._read_spectralgeometry()
         field_kwargs['geometry'] = geometry
         field_kwargs['structure'] = geometry.structure
         try:
@@ -1192,20 +1236,20 @@ class GRIB(FileResource):
             gid = gribapi.grib_new_from_file(_file, headers_only=True)
             if gid is None:
                 break
-            n = gribapi.grib_get(gid, b'editionNumber')  # FIXME: gribapi str/unicode incompatibility
+            n = gribapi.grib_get(gid, b'editionNumber')  # gribapi str/unicode incompatibility
             for k in GRIBmessage.fid_keys[n] + additional_keys:
-                if k in (# bug in GRIB_API ? 1, 103 & 105 => 'sfc'
-                         'typeOfFirstFixedSurface',
+                # bug in GRIB_API ? 1, 103 & 105 => 'sfc'
+                if k in ('typeOfFirstFixedSurface',
                          'indicatorOfTypeOfLevel',
                          'typeOfSecondFixedSurface',
                          # type error when setting key 'centre' if str
                          'centre', 'originatingCentre'):
-                    fid[k] = gribapi.grib_get(gid, str(k), int)  # FIXME: gribapi str/unicode incompatibility
+                    fid[k] = gribapi.grib_get(gid, str(k), int)  # gribapi str/unicode incompatibility
                 elif k in ('topLevel', 'bottomLevel'):
-                    if gribapi.grib_get(gid, b'topLevel') != gribapi.grib_get(gid, b'bottomLevel'):  # FIXME: gribapi str/unicode incompatibility
-                        fid[k] = gribapi.grib_get(gid, str(k))  # FIXME: gribapi str/unicode incompatibility
+                    if gribapi.grib_get(gid, b'topLevel') != gribapi.grib_get(gid, b'bottomLevel'):  # gribapi str/unicode incompatibility
+                        fid[k] = gribapi.grib_get(gid, str(k))  # gribapi str/unicode incompatibility
                 else:
-                    fid[k] = gribapi.grib_get(gid, str(k))  # FIXME: gribapi str/unicode incompatibility
+                    fid[k] = gribapi.grib_get(gid, str(k))  # gribapi str/unicode incompatibility
             gribapi.grib_release(gid)
             fidlist.append(fid)
         _file.close()
@@ -1296,14 +1340,14 @@ class GRIB(FileResource):
             except KeyError:
                 category = 'None'
             field = onlykeylistoffields[f]
-            if category in sortedfields:  # FIXME: sortedfields is empty
+            if category in sortedfields:
                 sortedfields[category].append(field)
             else:
                 sortedfields[category] = [field]
 
         return sortedfields
 
-    def find_fields_in_resource(self, seed=None, generic=False, **kwargs):
+    def find_fields_in_resource(self, seed=None, generic=False, **_):
         """
         Returns a list of the fields from resource whose name match the given
         seed.
@@ -1412,10 +1456,10 @@ class GRIB(FileResource):
         """
         matchingfields = FieldSet()
         idx = gribapi.grib_index_new_from_file(self.container.abspath,
-                                               [str(k) for k in handgrip.keys()])  # FIXME: gribapi str/unicode incompatibility
+                                               [str(k) for k in handgrip.keys()])  # gribapi str/unicode incompatibility
         # filter
         for k, v in handgrip.items():
-            # FIXME: ? BUG in gribapi ? type conversion seems not to work for index
+            # BUG in gribapi ? type conversion seems not to work for index
             if k == 'indicatorOfTypeOfLevel' and isinstance(v, int):  # GRIB1
                 type_conv_GRIB1 = {1:'sfc',
                                    8:'sfc',
@@ -1441,9 +1485,9 @@ class GRIB(FileResource):
                                    109:'pv',
                                    119:'hpl', }
                 v = type_conv_GRIB2.get(v, str(v))
-            if isinstance(v, six.string_types):  # FIXME: gribapi str/unicode incompatibility
+            if isinstance(v, six.string_types):  # gribapi str/unicode incompatibility
                 v = str(v)
-            gribapi.grib_index_select(idx, str(k), v)  # FIXME: gribapi str/unicode incompatibility
+            gribapi.grib_index_select(idx, str(k), v)  # gribapi str/unicode incompatibility
         # load messages
         while True:
             gid = gribapi.grib_new_from_index(idx)
@@ -1634,6 +1678,7 @@ class GRIB(FileResource):
           ('altitude', 'height'), the computation of heights is done without
           taking hydrometeors into account (in R computation) nor NH Pressure
           departure (Non-Hydrostatic data). Computation therefore faster.
+          # TODO: not implemented yet
         """
         if field3d is None:
             field3d = fpx.field(fid={'GRIB':handgrip},
@@ -1679,7 +1724,7 @@ class GRIB(FileResource):
                 R = q2R(*[side_profiles[p] for p in
                           ['q']])
                 if vertical_coordinate == 102:
-                    raise NotImplementedError("not yet.")
+                    raise NotImplementedError("vertical_coordinate=={}.".format(vertical_coordinate))
                     # surface_geopotential = geopotential.getvalue_ll(*geometry.get_lonlat_grid(),
                     #                                                 interpolation=interpolation,
                     #                                                 one=False,
@@ -1708,7 +1753,7 @@ class GRIB(FileResource):
              mode='one+list',
              sortfields=None,
              details=None,
-             **kwargs):
+             **_):
         """
         Writes in file a summary of the contents of the GRIB.
 
@@ -1747,9 +1792,9 @@ class GRIB(FileResource):
                 if v.get() != onefield.validity.get():
                     epylog.error(str(m._read_validity()))
                     epylog.error(str(onefield.validity))
-                    raise epygramError("all fields do not share their" +
-                                       " validity; 'one+list' mode" +
-                                       " disabled.")
+                    raise epygramError("several validities found in file: " +
+                                       "'one+list' mode disabled; " +
+                                       "try mode 'ls' or 'mars'.")
             onefield.what(out, vertical_geometry=False,
                           cumulativeduration=False,
                           fid=True)
@@ -1764,7 +1809,7 @@ class GRIB(FileResource):
             while True:
                 m = self.iter_messages()
                 if m is None:
-                    break
+                    break  # end of file
                 if mode == 'what':
                     _ = m.asfield(getdata=False)
                     if details == 'compression':

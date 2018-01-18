@@ -172,6 +172,10 @@ sensors_local_GRIB2 = {'MVIRI':192,
 GRIB_packing_fatal = True
 #: GRIB: ignore errors while trying to decode validity
 GRIB_ignore_validity_decoding_errors = False
+#: Maximum recommended encoding for GRIB (bitsPerValue)
+GRIB_max_bitspervalue = 30
+#: Force bitspervalue to GRIB_max_bitspervalue if requested higher
+GRIB_force_bitspervalue = False
 
 #: LFI field dictionaries
 LFI_field_dictionaries_csv = {'default':os.path.join(installdir,
