@@ -39,7 +39,7 @@ class V2DGeometry(D3Geometry):
             raise epygramError("V2DGeometry must have only one point in y-direction.")
         super(V2DGeometry, self)._consistency_check()
 
-    def what(self, out=sys.stdout, **kwargs):
+    def what(self, out=sys.stdout, **_):
         """
         Writes in file a summary of the geometry.
 

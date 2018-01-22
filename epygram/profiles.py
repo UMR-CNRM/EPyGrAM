@@ -320,8 +320,9 @@ def pressure2altitude(R, T, vertical_mean,
         if k == L:
             partialsum[ik] = 0.
         else:
-            partialsum[ik] = partialsum[ik + 1] + R[ik + 1] * T[ik + 1] * \
-                             delta[ik + 1] / (1. + myPdep[ik + 1] / pi[ik + 1])
+            partialsum[ik] = (partialsum[ik + 1] +
+                              R[ik + 1] * T[ik + 1] * delta[ik + 1] /
+                              (1. + myPdep[ik + 1] / pi[ik + 1]))
         Phi[ik] = myPhi_surf + partialsum[ik] + R[ik] * T[ik] * alpha[ik] / \
                   (1. + myPdep[ik] / pi[ik])
     # Altitude

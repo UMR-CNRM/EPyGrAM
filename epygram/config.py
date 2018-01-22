@@ -224,8 +224,7 @@ netCDF_default_compression = 4
 #: netCDF, replace dots in variable names by...
 netCDF_replace_dot_in_variable_names = '.'
 #: netCDF default standard global attributes
-netCDF_default_global_attributes = {'Conventions':'CF-1.6',
-                                    'made_with':'epygram-' + __version__}
+netCDF_default_global_attributes = {'made_with':'epygram-' + __version__}
 #: netCDF variables data type
 netCDF_default_variables_dtype = 'f8'
 

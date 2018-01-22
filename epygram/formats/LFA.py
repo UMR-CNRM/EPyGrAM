@@ -134,7 +134,7 @@ class LFA(FileResource):
     @FileResource._openbeforedelayed
     def writefield(self, field):
         """Writes a Field in resource."""
-        # TOBECHECKED: writing not tested
+        # DEAD-END: we should not need to write with this comdemned format
         raise epygramError("writefield routine has not been tested..." +
                            " If you need to, you might face problems...")
 
@@ -176,7 +176,7 @@ class LFA(FileResource):
     @FileResource._openbeforedelayed
     def what(self, out=sys.stdout,
              sortfields=False,
-             **kwargs):
+             **_):
         """
         Writes in file a summary of the contents of the LFA.
 

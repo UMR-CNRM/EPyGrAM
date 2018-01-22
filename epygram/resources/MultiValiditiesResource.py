@@ -36,27 +36,16 @@ class MultiValiditiesResource(Resource):
 
     def __init__(self, *args, **kwargs):
         super(Resource, self).__init__(*args, **kwargs)
-
         if len(self.resources) == 0:
             raise epygramError("There must be at least one resource in *resources*")
-
         for r in self.resources:
             if r.openmode != self.openmode:
                 raise epygramError("All low level resources must be opened using the same mode as this high-level resource.")
-
         if len(set([r.format for r in self.resources])) != 1:
             raise epygramError("All low level resources must have the same format.")
-
         self.format = "MultiValidities"
         self.lowLevelFormat = self.resources[0].format
-
         self.isopen = True  # resource always appear to be open
-
-#    def open(self):
-#        """Opens all resources"""
-
-#        for r in self.resources:
-#            if not r.isopen: r.open()
 
     def close(self):
         """Closes all resources."""

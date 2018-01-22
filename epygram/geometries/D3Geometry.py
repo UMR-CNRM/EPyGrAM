@@ -1293,7 +1293,7 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
                      specificproj=None,
                      zoom=None,
                      ax=None,
-                     **kwargs):
+                     **_):
         """
         Returns a :class:`matplotlib.basemap.Basemap` object of the 'ad hoc'
         projection (if available). This is designed to avoid explicit handling
@@ -1631,11 +1631,11 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
         return list(zip(numpy.linspace(end1[0], end2[0], num=num),
                         numpy.linspace(end1[1], end2[1], num=num)))
 
-    def resolution_ll(self, *args, **kwargs):
+    def resolution_ll(self, *_, **__):
         """Returns the minimum of X and Y resolution."""
         return min(self.grid['X_resolution'], self.grid['Y_resolution'])
 
-    def resolution_ij(self, *args, **kwargs):
+    def resolution_ij(self, *_, **__):
         """Returns the minimum of X and Y resolution."""
         return min(self.grid['X_resolution'], self.grid['Y_resolution'])
 
@@ -1662,7 +1662,7 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
         if 'longitude' in self.grid:
             write_formatted(out, "Longitude", self.grid['longitude'])
 
-    def _what_projection(self, out=sys.stdout, **kwargs):
+    def _what_projection(self, out=sys.stdout, **_):
         """
         Writes in file a summary of the projection of the field's grid.
 
@@ -2457,6 +2457,8 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         if set(self.dimensions.keys()) != set(dimensions_keys):
             raise epygramError("dimensions attribute must consist in keys: " +
                                str(dimensions_keys))
+        if self.projection['rotation'].get('degrees') != 0.0:
+            epylog.warning('*rotation* != 0. may not have been thoroughly tested...')  # TOBECHECKED: here and there, ...
 
     def select_subzone(self, subzone):
         """
@@ -3335,7 +3337,7 @@ class D3GaussGeometry(D3Geometry):
             del self._buffered_gauss_grid
 
     @property
-    def gridpoints_number(self, **useless):
+    def gridpoints_number(self, **_):
         """Returns the number of gridpoints of the grid."""
         return sum(self.dimensions['lon_number_by_lat'])
 
@@ -3343,7 +3345,7 @@ class D3GaussGeometry(D3Geometry):
                         position=None,
                         d4=False,
                         nb_validities=0,
-                        **useless):
+                        **_):
         """
         Returns a tuple of two tables containing one the longitude of each
         point, the other the latitude, with 2D shape.
@@ -3391,7 +3393,7 @@ class D3GaussGeometry(D3Geometry):
             raise ValueError("*nb_validities* must be 0 when d4==False")
         return (lons, lats)
 
-    def get_datashape(self, force_dimZ=None, dimT=None, d4=False, **useless):
+    def get_datashape(self, force_dimZ=None, dimT=None, d4=False, **_):
         """
         Returns the data shape according to the geometry.
 
@@ -3515,11 +3517,11 @@ class D3GaussGeometry(D3Geometry):
         return data3D
 
     def make_basemap(self,
-                     gisquality='i',
+                     # gisquality='i',
                      specificproj=None,
                      zoom=None,
                      ax=None,
-                     **kwargs):
+                     **_):
         """
         Returns a :class:`matplotlib.basemap.Basemap` object of the 'ad hoc'
         projection (if available). This is designed to avoid explicit handling
@@ -3527,6 +3529,7 @@ class D3GaussGeometry(D3Geometry):
 
         :param gisquality: defines the quality of GIS contours, cf. Basemap doc. \n
           Possible values (by increasing quality): 'c', 'l', 'i', 'h', 'f'.
+          WARNING: this is forced to 'l' inside, for time-consumption reasons.
         :param specificproj: enables to make basemap on the specified projection,
           among: 'kav7', 'cyl', 'ortho', ('nsper', {...}) (cf. Basemap doc). \n
           In 'nsper' case, the {} may contain:\n
@@ -3541,7 +3544,7 @@ class D3GaussGeometry(D3Geometry):
         :param ax: a matplotlib ax on which to plot; if None, plots will be done
           on matplotlib.pyplot.gca()
         """
-        # !!! **kwargs enables the method to receive arguments specific to
+        # !!! **_ enables the method to receive arguments specific to
         #     other geometries, useless here ! Do not remove.
         from mpl_toolkits.basemap import Basemap
         gisquality = 'l'  # forced for Gauss, for time-consumption reasons...
@@ -3713,9 +3716,7 @@ class D3GaussGeometry(D3Geometry):
                                           self.ij2ll(*p))
                             for p in points_list]).min()
 
-    def point_is_inside_domain_ll(self, lon, lat,
-                                  margin=-0.1,
-                                  position=None):
+    def point_is_inside_domain_ll(self, lon, *_, **__):
         """
         Returns True if the point(s) of lon/lat coordinates is(are) inside the
         field.

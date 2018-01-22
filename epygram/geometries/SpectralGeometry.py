@@ -131,7 +131,7 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
         self._total_system_memory = meminfo.system_RAM(unit='MiB')
 
     def _prevent_swapping(self):
-        if (self.space == 'legendre' and  # TODO: release condition on space ?
+        if (self.space == 'legendre' and
             (float(self.needed_memory) / (1024 ** 2.) >=
              config.prevent_swapping_legendre * self._total_system_memory)):
             needed_mem_in_mb = float(self.needed_memory) / (1024 ** 2.)
@@ -143,7 +143,6 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
 
     def _prevent_limited_stack(self):
         if (self.space == 'legendre' and self.truncation['max'] > 1200):
-            # TODO: release condition on space ?
             epylog.warning('Caution: large Legendre truncation may need very large stacksize !')
 
     def trans_inq(self, gpdims):
@@ -183,7 +182,7 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
     @property
     def needed_memory(self):
         """Memory needed for transforms, in bytes."""
-        if self.space == 'legendre':  # TODO: release condition on space
+        if self.space == 'legendre':
             return self.truncation['max'] ** 3 / 2 * 8
         else:
             raise NotImplementedError('space:' + self.space)

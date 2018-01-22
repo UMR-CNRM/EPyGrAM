@@ -144,7 +144,7 @@ class CombineLevelsResource(Resource):
             except KeyError:
                 category = 'None'
             field = onlykeylistoffields[f]
-            if category in sortedfields:  # FIXME: ? sortedfields is empty...
+            if category in sortedfields:
                 sortedfields[category].append(field)
             else:
                 sortedfields[category] = [field]
@@ -184,14 +184,14 @@ class CombineLevelsResource(Resource):
             if 'parameterNumber' not in fid or fid['parameterNumber'] == 255:
                 # We do not join levels when parameterNumber is not known
                 for original_fid in cont[found]['original_fid']:
-                    field = self.resource.readfield(original_fid[0])
+                    field = self.resource.readfield(original_fid[0], getdata=getdata)
                     field.fid[self.format] = fid
                     fieldset.append(field)
             else:
                 fidList = [original_fid[0] for original_fid in cont[found]['original_fids']]
 
                 if len(fidList) == 1:
-                    field = self.resource.readfield(fidList[0])
+                    field = self.resource.readfield(fidList[0], getdata=getdata)
                     field.fid[self.format] = fid
                     fieldset.append(field)
                 else:

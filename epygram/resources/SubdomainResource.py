@@ -57,7 +57,7 @@ class SubdomainResource(Resource):
         """Closes the low level resource."""
         try:
             self.resource.close()
-        except:
+        except IOError:
             pass
 
     def find_fields_in_resource(self, *args, **kwargs):

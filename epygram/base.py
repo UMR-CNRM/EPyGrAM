@@ -581,12 +581,11 @@ class FieldSet(RecursiveObject, list):
         - by: the kind of filter; on what to filter ?
         - criteria: how to filter on that ?
 
-        Available filters, examples:
+        Examples of filters:
 
         - by='id', criteria={typefmt:identifier} will return only fields whose
           id[typefmt] match value...
         """
-        # TODO: id=, fieldtype=, spectral, (...)
         raise NotImplementedError("not yet...")
 
 

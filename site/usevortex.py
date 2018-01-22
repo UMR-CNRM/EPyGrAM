@@ -26,8 +26,8 @@ import taylorism
 
 import vortex
 from vortex import toolbox
-import common
-import olive
+import common  # for footprints to load classes
+import olive  # for footprints to load classes
 
 
 def set_defaults(**defaults):
@@ -135,7 +135,7 @@ def get_resources(getmode='epygram',
       + vconf='reunion',  # name of config in operation namespace
       + model='aladin',  # name of the model
     """
-    import common.util.usepygram
+    import common.util.usepygram  # to load Epygram FormatAdapters
     t = vortex.ticket()
 
     if uselocalcache:

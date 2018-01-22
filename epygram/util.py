@@ -64,7 +64,6 @@ class RecursiveObject(object):
                 itemstring += "\n" + offset + key + ": " + self._strItem(item[key], reclevel + 1)
         else:
             itemstring = str(item)
-
         return itemstring
 
     def __str__(self):
@@ -135,7 +134,6 @@ class RecursiveObject(object):
                         break
         else:
             ok = False
-
         return ok
 
     def __ne__(self, other):
@@ -164,7 +162,6 @@ class Angle(RecursiveObject):
     rad = 'radians'
     trig = 'cos_sin'
     dms = 'DMS'
-
     units = set([deg, dms, rad, trig])
 
     def __init__(self, value, unit):
@@ -189,7 +186,6 @@ class Angle(RecursiveObject):
                     self.__dict__['_' + unit] += circle
         else:
             raise ValueError("this angle unit is not implemented: " + str(unit))
-
         self._origin_unit = unit
         self._origin_value = value
 
@@ -220,7 +216,6 @@ class Angle(RecursiveObject):
                 self._compute(unit)
         else:
             raise ValueError("this angle unit is not implemented: " + str(unit))
-
         return self.__dict__['_' + unit]
 
     def _compute(self, unit):
@@ -357,7 +352,6 @@ def find_re_in_list(regexp, a_list):
     else:
         raise NotImplementedError("this type of regexp is not (yet?)\
                                    implemented.")
-
     return found
 
 
@@ -385,7 +379,6 @@ def degrees_nearest_mod(d, ref):
             result[i] = d_sup[i]
     if scalar:
         result = result[0]
-
     return result
 
 
@@ -398,7 +391,6 @@ def positive_longitude(lon, unit='degrees'):
             lon += 2. * numpy.pi
         else:
             raise NotImplementedError()
-
     return lon
 
 
@@ -458,7 +450,8 @@ def write_formatted_dict(dest, fid):
         dest.write('  ' + str(k) + ': ' + str(fid[k]) + '\n')
 
 
-def write_formatted_table(dest, table, alignments=['<', '^'], precision=6, float_type='E'):
+def write_formatted_table(dest, table,
+                          alignments=['<', '^'], precision=6, float_type='E'):
     """
     A table is meant to be :
     <str> <str> <str> ...
@@ -480,11 +473,14 @@ def write_formatted_table(dest, table, alignments=['<', '^'], precision=6, float
             if isinstance(elem, six.string_types):
                 elements.append(elem)
             elif isinstance(elem, float) or isinstance(elem, int) :
-                elements.append(float_style.format(elem, precision=precision, type=float_type))
+                elements.append(float_style.format(elem,
+                                                   precision=precision,
+                                                   type=float_type))
             else:
                 elements.append('-')
         line = ('{:' + alignments[0] + '{width}}').format(table[i][0], width=columns_dimension[0])
-        line += ''.join([('{:' + alignments[1] + '{width}}').format(elements[j], width=columns_dimension[j + 1]) for j in range(len(elements))])
+        line += ''.join([('{:' + alignments[1] + '{width}}').format(elements[j], width=columns_dimension[j + 1])
+                         for j in range(len(elements))])
         dest.write(line + '\n')
 
 
@@ -733,7 +729,6 @@ def restrain_to_index_i_of_dim_d(a, i, d, n=None):
             ra = a[:, :, :, :, :, [i]]
     else:
         raise NotImplementedError("more than 5 dimensions in array.")
-
     return ra
 
 
@@ -748,7 +743,6 @@ def datetimes2fieldvaliditylist(datetimes, basis=None):
                   - a list of the same length as datetimes
     """
     from epygram.base import FieldValidityList
-
     if isinstance(datetimes, datetime.datetime):
         assert (isinstance(basis, datetime.datetime) or
                 (isinstance(basis, list) and
@@ -770,12 +764,14 @@ def datetimes2fieldvaliditylist(datetimes, basis=None):
                                 basis=basis)
     else:
         raise TypeError("'datetimes' must be a datetime.datetime or a list of.")
-
     return fvl
 
 
 def ifNone_emptydict(arg):
-    """ Transforms a None into a {}. """
+    """
+    Transforms a None into a {}.
+    To be used as workaround for empty dicts in default values of methods.
+    """
     if arg is None:
         arg = {}
     return arg
@@ -837,103 +833,12 @@ def set_map_up(bm, ax,
                                    drawgreenwich_kwargs=drawgreenwich_kwargs)
 
 
-def datetimerange(start, stop=None, step=1, stepunit='h', tzinfo=None):
+def datetimerange(*_, **__):
     """
     .. deprecated:: 1.2.11
-
-    A generator of datetime.datetime objects ranging from *start* to *stop*
-    (included) by *step*.
-
-    *start* and *stop* being either:\n
-      - a string: 'YYYYMMDDhhmmssx', hh, mm, ss and x being optional (x = microseconds)
-                  or a date/time in ISO 8601 format (cf. datetime.datetime.isoformat())
-      - a tuple or list: (year, month, day[, hour[, minute[, seconde[, microsecond]]]])
-      - a datetime.datetime instance
-      if *stop* is None, returns [datetime(start)]
-    :param step: either an integer, which unit is specified in *stepunit*
-                 or a datetime.timedelta instance
-    :param stepunit: among ('D', 'h', 'm', 's', 'x')
-    :param tzinfo: time zone info, cf. datetime.datetime
     """
-    def parse_iterable(i):
-        return datetime.datetime(*i, tzinfo=tzinfo)
-
-    def parse_str(s):
-        try:
-            from dateutil.parser import parse
-            dt = parse(s)
-        except (ImportError, ValueError):
-            hour = 0
-            minute = 0
-            second = 0
-            microsecond = 0
-            try:
-                year = int(s[:4])
-                month = int(s[4:6])
-                day = int(s[6:8])
-                if len(s) >= 10:
-                    hour = int(s[8:10])
-                if len(s) >= 12:
-                    minute = int(s[10:12])
-                if len(s) >= 12:
-                    second = int(s[12:14])
-                if len(s) > 12:
-                    microsecond = int(s[12:])
-            except ValueError:
-                raise ValueError('please check syntax of date/time string.')
-            dt = parse_iterable((year, month, day,
-                                 hour, minute, second, microsecond))
-        return dt
-
-    if not isinstance(start, datetime.datetime):
-        if isinstance(start, six.string_types):
-            start = parse_str(start)
-        elif isinstance(start, list) or isinstance(start, tuple):
-            start = parse_iterable(start)
-        else:
-            raise TypeError("unknown type for *start*: " + str(type(start)))
-    if not isinstance(stop, datetime.datetime):
-        if stop is None:
-            stop = start
-        elif isinstance(stop, six.string_types):
-            stop = parse_str(stop)
-        elif isinstance(stop, list) or isinstance(stop, tuple):
-            stop = parse_iterable(stop)
-        else:
-            raise TypeError("unknown type for *stop*: " + str(type(stop)))
-    if not isinstance(step, datetime.timedelta):
-        if isinstance(stop, six.string_types):
-            step = int(step)
-        assert isinstance(step, int)
-        assert stepunit in ('D', 'h', 'm', 's', 'x')
-        if stepunit == 'D':
-            step = datetime.timedelta(step)
-        elif stepunit == 'h':
-            step = datetime.timedelta(0, step * 3600)
-        elif stepunit == 'm':
-            step = datetime.timedelta(0, step * 60)
-        elif stepunit == 's':
-            step = datetime.timedelta(0, step)
-        elif stepunit == 'x':
-            step = datetime.timedelta(0, microseconds=step)
-
-    if start < stop:
-        assert step > datetime.timedelta(0), 'step must be > 0 for start < stop'
-    elif start > stop:
-        assert step < datetime.timedelta(0), 'step must be < 0 for start > stop'
-
-    rng = [start]
-    dt = start + step
-    if start < stop:
-        while dt <= stop:
-            rng.append(dt)
-            dt += step
-    elif start > stop:
-        while dt >= stop:
-            rng.append(dt)
-            dt += step  # step < 0
-
-    return rng
+    raise DeprecationWarning("You should use function daterange/daterangex " +
+                             "from bronx.stdtypes.date")
 
 
 def fmtfid(fmt, fid):

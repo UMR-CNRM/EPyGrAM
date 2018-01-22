@@ -106,7 +106,7 @@ class netCDF(FileResource):
         """Return the number of variables in resource."""
         return len(self._variables)
 
-    def find_fields_in_resource(self, seed=None, generic=False, **kwargs):
+    def find_fields_in_resource(self, seed=None, generic=False, **_):
         """
         Returns a list of the fields from resource whose name match the given
         seed.
@@ -336,8 +336,6 @@ class netCDF(FileResource):
                                  'position_on_grid':'mass',
                                  'grid':{'gridlevels': []},
                                  'levels':[0]}
-        # TODO: complete with field dict when we have one
-        # + fid generic ?
         kwargs_vcoord = default_kwargs_vcoord
 
         # 3.3 Specific parts
@@ -982,7 +980,7 @@ class netCDF(FileResource):
                         check_or_add_variable('hybrid_coef_B', vartype, ZP1)
                         self._variables['hybrid_coef_B'][:] = [iab[1]['Bi'] for iab in field.geometry.vcoordinate.grid['gridlevels']]
                     elif field.geometry.vcoordinate.typeoffirstfixedsurface == 118:
-                        # TOBECHECKED: seb ?
+                        # TOBECHECKED:
                         zgrid.positive = "up"
                         zgrid.formula_terms = "a: hybrid_coef_A b: hybrid_coef_B orog: orography"
                         check_or_add_variable('hybrid_coef_A', vartype, ZP1)
@@ -992,8 +990,7 @@ class netCDF(FileResource):
                 else:
                     epylog.info('assume 118/119 type vertical grid matches.')
             else:
-                # if len(numpy.shape(field.geometry.vcoordinate.grid['gridlevels'])) > 1:
-                if len(numpy.shape(field.geometry.vcoordinate.levels)) > 1:  # TOBECHECKED:
+                if len(numpy.shape(field.geometry.vcoordinate.levels)) > 1:
                     dims_Z = [d for d in [Z, Y, X, G, N] if d is not None]
                 else:
                     dims_Z = Z
@@ -1002,10 +999,8 @@ class netCDF(FileResource):
                 if u is not None:
                     zgrid.units = u
                 if _status == 'created':
-                    # zgrid[:] = field.geometry.vcoordinate.grid['gridlevels']
-                    zgrid[:] = field.geometry.vcoordinate.levels  # TOBECHECKED:
+                    zgrid[:] = field.geometry.vcoordinate.levels
                 else:
-                    # assert zgrid[:].all() == numpy.array(field.geometry.vcoordinate.grid['gridlevels']).all(), \# TOBECHECKED:
                     assert zgrid[:].all() == numpy.array(field.geometry.vcoordinate.levels).all(), \
                            ' '.join(['variable', zgrid, 'mismatch.'])
             if _typeoffirstfixedsurface_short_dict_inv.get(field.geometry.vcoordinate.typeoffirstfixedsurface, False):
@@ -1208,7 +1203,7 @@ class netCDF(FileResource):
         """
         self.behaviour.update(kwargs)
 
-    def what(self, out=sys.stdout, **ignored_kwargs):
+    def what(self, out=sys.stdout, **_):
         """Writes in file a summary of the contents of the GRIB."""
 
         # adapted from http://schubert.atmos.colostate.edu/~cslocum/netcdf_example.html
