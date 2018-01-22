@@ -274,7 +274,8 @@ def plot_geometry(geometry,
                   out=None,
                   gisquality='i',
                   bluemarble=0.0,
-                  background=True):
+                  background=True,
+                  departments=False):
     """
     Plot the built geometry, along with lonlat included domain if given.
 
@@ -284,6 +285,8 @@ def plot_geometry(geometry,
     :param bluemarble: if >0., displays NASA's "blue marble" as background with
                        given transparency.
     :param background: if True, set a background color to continents and oceans.
+    :param departments: if True, adds the french departments on map (instead
+                         of countries).
     """
     # plot
     CIEdomain = build_CIE_field(geometry)
@@ -299,7 +302,8 @@ def plot_geometry(geometry,
                                   parallels=None,
                                   gisquality=gisquality,
                                   bluemarble=bluemarble,
-                                  background=background)
+                                  background=background,
+                                  departments=departments)
     if lonlat_included is not None:
         ll_domain = build_lonlat_field(lonlat_included)
         ll_domain.plotfield(over=(fig, ax),
@@ -310,7 +314,8 @@ def plot_geometry(geometry,
                             contourcolor='red',
                             contourwidth=2,
                             contourlabel=False,
-                            gisquality=gisquality)
+                            gisquality=gisquality,
+                            departments=departments)
     if out is not None:
         fig.savefig(out, bbox_inches='tight')
     else:

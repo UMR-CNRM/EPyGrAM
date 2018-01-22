@@ -23,6 +23,7 @@ def main(mode,
          display=True,
          maximize_CI_in_E=False,
          gisquality='i',
+         french_depts=False,
          bluemarble=0.0,
          background=True):
     """
@@ -34,6 +35,7 @@ def main(mode,
     :param maximize_CI_in_E: boolean deciding to force the E-zone to be at its
                              minimum.
     :param gisquality: quality of coastlines and countries boundaries.
+    :param french_depts: draws french departments instead of countries boundaries.
     :param bluemarble: if >0., displays NASA's "blue marble" as background with
                        given transparency.
     :param background: if True, set a background color to continents and oceans.
@@ -69,11 +71,14 @@ def main(mode,
                     proposed = dm.build.compute_lonlat_included(geometry)
                     print("Min/Max longitudes & latitudes of the lon/lat domain (defaults to that proposed above):")
                     ll_boundaries = dm.ask.ask_lonlat(proposed)
+                else:
+                    ll_boundaries = None
                 print("Plot domain...")
                 dm.output.plot_geometry(geometry,
                                         lonlat_included=ll_boundaries,
                                         out=None,
                                         gisquality=gisquality,
+                                        departments=french_depts,
                                         bluemarble=bluemarble,
                                         background=background)
 
@@ -107,6 +112,7 @@ def main(mode,
                                               minmax=[-1.0, 3.0],
                                               colorbar=False,
                                               gisquality=gisquality,
+                                              departments=french_depts,
                                               bluemarble=bluemarble,
                                               background=background)
                 lldomain = dm.build.build_lonlat_field(defaults, fid={'lon/lat':'included'})
@@ -118,7 +124,8 @@ def main(mode,
                                    contourcolor='red',
                                    contourwidth=2,
                                    contourlabel=False,
-                                   gisquality=gisquality)
+                                   gisquality=gisquality,
+                                   departments=french_depts)
                 plt.show()
 
             # retry ?
@@ -148,6 +155,7 @@ if __name__ == '__main__':
     add_arg_to_parser(parser, domain_maker_options['maximize_CI_in_E'])
     add_arg_to_parser(parser, runtime_options['verbose'])
     add_arg_to_parser(parser, graphical_options['gis_quality'])
+    add_arg_to_parser(parser, graphical_options['french_departments'])
     add_arg_to_parser(parser, graphical_options['bluemarble'], default=1.0)
     add_arg_to_parser(parser, graphical_options['background'])
 
@@ -166,5 +174,6 @@ if __name__ == '__main__':
          display=not args.no_display,
          maximize_CI_in_E=args.maximize_CI_in_E,
          gisquality=args.gisquality,
+         french_depts=args.depts,
          bluemarble=args.bluemarble,
          background=args.background)
