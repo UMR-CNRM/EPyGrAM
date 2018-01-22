@@ -20,8 +20,10 @@ Ezone_minimum_width = 11
 threshold_mercator_lambert = 1.
 #: threshold in degrees towards Pole for the min/max latitude, to choose lambert/polar_stereographic
 threshold_pole_distance_lambert = 1.
-maxdims_security_barrier = 10000
+#: default width of Izone, to compute width in number of points according to resolution
 default_Izone_width_in_m = 20000.
+
+maxdims_security_barrier = 10000
 vkw = {'structure': 'V',
        'typeoffirstfixedsurface': 1,
        'levels': [1]}

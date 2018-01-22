@@ -133,13 +133,19 @@ Evolutivity
         ...
         rn,gn,bn
     
-    into file ``mycolormap.cmap``. You may need the help of http://colormap.org
+    into file ``mycolormap.cmap``.
     
     Then in ``$HOME/.epygram/userconfig.py`` add:
     
-    >>> usercolormaps = {'mycolormap', '/path/to/mycolormap.cmap'}
+    >>> usercolormaps = {'mycolormap':'/path/to/mycolormap.cmap'}
     
-    and the colormap is now accesible to ``epygram``. 
+    and the colormap is now accesible to ``epygram``.
+    
+    If you also want to scale it (i.e. associate the changes of color to discrete, specific values:
+    
+    in ``$HOME/.epygram/userconfig.py`` add:
+    
+    >>> usercolormaps_scaling = {'mycolormap':[val_min, val1, val2, ..., val_max]}
 
 -----------------------------------------------------------
 
