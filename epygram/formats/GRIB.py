@@ -883,7 +883,7 @@ class GRIBmessage(RecursiveObject, dict):
                     'LAMzone':None}
         elif 'gg' in self['gridType']:
             projection = None
-            latitudes = gauss_latitudes(self('Nj'))
+            latitudes = gauss_latitudes(self['Nj'])
             grid = {'latitudes':FPList([Angle(l, 'degrees') for l in latitudes])}
             if self['gridType'] == 'reduced_gg':
                 geometryname = 'reduced_gauss'

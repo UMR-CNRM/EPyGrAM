@@ -1178,6 +1178,9 @@ class FA(FileResource):
         """
         if geometry is None:
             if None in [lon, lat]:
+                if not (lon is None and lat is None):
+                    raise ValueError('*lon* and *lat* arguments must be ' +
+                                     'both None or both not None')
                 # mean profile, vertical_coordinate is forgotten
                 field3d = self._mk_3dvirtuelfield(pseudoname)
                 if field3d.spectral:
