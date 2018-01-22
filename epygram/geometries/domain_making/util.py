@@ -9,6 +9,8 @@ Contains utilities for building a LAM domain.
 
 from __future__ import print_function, absolute_import, unicode_literals, division
 
+import math
+
 from footprints import proxy as fpx
 
 # parameters
@@ -19,6 +21,7 @@ threshold_mercator_lambert = 1.
 #: threshold in degrees towards Pole for the min/max latitude, to choose lambert/polar_stereographic
 threshold_pole_distance_lambert = 1.
 maxdims_security_barrier = 10000
+default_Izone_width_in_m = 20000.
 vkw = {'structure': 'V',
        'typeoffirstfixedsurface': 1,
        'levels': [1]}
@@ -29,8 +32,15 @@ projections_s2p = {'L':'Lambert (conformal conic)', 'M':'Mercator', 'PS':'Polar 
 projections_g2s = {v:k for k, v in projections_s2g.items()}
 
 
-def default_Iwidth(resolution):
+def default_Iwidth(resolution, Izone_width_in_m=default_Izone_width_in_m):
     """
     Return default Iwidth depending on the resolution.
+
+    Algo:
+    make it at least **Izone_width_in_m** wide, and not less than 8 points.
     """
-    return 16 if resolution < 2000. else 8  # FIXME: go beyond for smaller resolutions ?
+    n = int(math.ceil(float(Izone_width_in_m) / resolution))
+    if n % 2 != 0:  # make it even
+        n += 1
+    n = max(n, 8)  # not less than 8 points
+    return n
