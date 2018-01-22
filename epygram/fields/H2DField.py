@@ -169,6 +169,7 @@ class H2DField(D3Field):
                          is min/max of the field.
         :param graphicmode: among ('colorshades', 'contourlines', 'points').
         :param levelsnumber: number of levels for contours and colorbar.
+                             (A list of levels also works).
         :param colormap: name of the ``matplotlib`` colormap to use (or an
                          ``epygram`` one, or a user-defined one, cf.
                          config.usercolormaps).
@@ -343,7 +344,9 @@ class H2DField(D3Field):
             # handle min/max values
             m = data.min()
             M = data.max()
-            if minmax_in_title and (minmax is not None or colormap in config.colormaps_scaling):
+            if minmax_in_title and (minmax is not None or
+                                    colormap in config.colormaps_scaling or
+                                    isinstance(levelsnumber, list)):
                 minmax_in_title = '(min: ' + \
                                   '{: .{precision}{type}}'.format(m, type='E', precision=3) + \
                                   ' // max: ' + \
@@ -359,6 +362,11 @@ class H2DField(D3Field):
                     M = float(minmax[1])
                 except ValueError:
                     M = data.max()
+            if isinstance(levelsnumber, list):
+                if minmax is not None:
+                    epylog.warning('**minmax** overwritten by **levelsnumber**')
+                m = min(levelsnumber)
+                M = max(levelsnumber)
 
             if abs(float(m) - float(M)) < config.epsilon:
                 epylog.warning("uniform field: plot as 'points'.")
@@ -373,11 +381,15 @@ class H2DField(D3Field):
                 vmin = m
                 vmax = M
             # set levels and ticks levels
-            levels = numpy.linspace(m, M, levelsnumber)
-            L = int((levelsnumber - 1) // 15) + 1
-            tick_levels = [levels[l]
-                           for l in range(len(levels) - (L // 3 + 1))
-                           if l % L == 0] + [levels[-1]]
+            if isinstance(levelsnumber, list):
+                levels = levelsnumber
+                tick_levels = levelsnumber
+            else:
+                levels = numpy.linspace(m, M, levelsnumber)
+                L = int((levelsnumber - 1) // 15) + 1
+                tick_levels = [levels[l]
+                               for l in range(len(levels) - (L // 3 + 1))
+                               if l % L == 0] + [levels[-1]]
             if colormap in config.colormaps_scaling:
                 (norm, levels) = util.scale_colormap(colormap)
                 tick_levels = levels
