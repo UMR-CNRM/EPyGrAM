@@ -59,41 +59,6 @@ class TestFunctions(TestCase):
         self.assertEqual(util.positive_longitude(-pi, 'radians'),
                          pi)
 
-    def test_make_custom_cmap(self):
-        radar_cmap = '../epygram/data/radar.cmap'
-        self.assertIsInstance(util.make_custom_cmap(radar_cmap),
-                              matplotlib.colors.ListedColormap)
-
-    # TODO: move test to bronx
-    def test_read_CSV_as_dict(self):
-        import tempfile
-        f = tempfile.mktemp()
-        with open(f, 'w') as tmp:
-            tmp.writelines([l + '\n' for l in [',',
-                                               'main',
-                                               'int:1,other:nonint']])
-        self.assertEqual(util.read_CSV_as_dict(f),
-                         ([{'int':1, 'other':'nonint'}], 'main'))
-
-    def test_str_or_int_to_datetime(self):
-        self.assertEqual(util.str_or_int_to_datetime('20000101'),
-                         datetime.datetime(2000, 1, 1))
-        self.assertEqual(util.str_or_int_to_datetime('2000010101'),
-                         datetime.datetime(2000, 1, 1, 1))
-        self.assertEqual(util.str_or_int_to_datetime('200001010101'),
-                         datetime.datetime(2000, 1, 1, 1, 1))
-        self.assertEqual(util.str_or_int_to_datetime('20000101010101'),
-                         datetime.datetime(2000, 1, 1, 1, 1, 1))
-
-    # TODO: move test to bronx
-    def test_parse_str2dict(self):
-        self.assertEqual(util.parse_str2dict('a:1,b=2'),
-                         {'a':'1', 'b':'2'})
-        self.assertEqual(util.parse_str2dict('a:1,b=2', int),
-                         {'a':1, 'b':2})
-        self.assertEqual(util.parse_str2dict('a:1,b=2', float),
-                         {'a':1., 'b':2.})
-
     def test_datetimes2fieldvaliditylist(self):
         util.datetimes2fieldvaliditylist(datetime.datetime(2000, 1, 1))
         util.datetimes2fieldvaliditylist(datetime.datetime(2000, 1, 1),
