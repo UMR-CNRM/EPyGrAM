@@ -144,6 +144,23 @@ def regll_geom2namelists(geometry):
     nam['NEMGEO']['ELATC'] = geometry.getcenter()[1].get('degrees')
     nam['NEMGEO']['EDELX'] = geometry.grid['X_resolution'].get('degrees')
     nam['NEMGEO']['EDELY'] = geometry.grid['Y_resolution'].get('degrees')
+
+    # FullPos
+    nam = namelist.NamelistSet()
+    namelists['namel_fpos'] = nam
+    nam.add(namelist.NamelistBlock('NAMFPC'))
+    nam.add(namelist.NamelistBlock('NAMFPD'))
+    nam.add(namelist.NamelistBlock('NAMFPF'))
+    nam['NAMFPC']['CFPFMT'] = 'LALON'
+    nam['NAMFPC']['CFPDOM'] = '__YOUR_DOM_NAME__'
+    nam['NAMFPD']['NLON(1)'] = geometry.dimensions['X']
+    nam['NAMFPD']['NLAT(1)'] = geometry.dimensions['Y']
+    nam['NAMFPD']['RLONC(1)'] = geometry.getcenter()[0].get('degrees')
+    nam['NAMFPD']['RLATC(1)'] = geometry.getcenter()[1].get('degrees')
+    nam['NAMFPD']['RDELX(1)'] = geometry.grid['X_resolution'].get('degrees')
+    nam['NAMFPD']['RDELY(1)'] = geometry.grid['Y_resolution'].get('degrees')
+    # nam['NAMFPF']['NFPMAX(1)'] = int(max(geometry.dimensions['X'],
+    #                                      geometry.dimensions['Y'])) / 2
     return namelists
 
 

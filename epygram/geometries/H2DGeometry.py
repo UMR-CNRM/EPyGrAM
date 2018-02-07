@@ -9,11 +9,19 @@ Contains the classes for Horizontal 2D geometries of fields.
 
 from __future__ import print_function, absolute_import, unicode_literals, division
 
+import numpy
+
 from epygram import epygramError
 from .D3Geometry import (D3Geometry, D3RectangularGridGeometry,
                          D3AcademicGeometry, D3RegLLGeometry,
                          D3ProjectedGeometry, D3GaussGeometry,
                          D3UnstructuredGeometry)
+
+
+def gauss_latitudes(nlat):
+    """Compute the Gauss latitudes for a **nlat** points grid."""
+    x, _ = numpy.polynomial.legendre.leggauss(nlat)
+    return numpy.degrees(numpy.arcsin(x[::-1]))
 
 
 class H2DGeometry(D3Geometry):

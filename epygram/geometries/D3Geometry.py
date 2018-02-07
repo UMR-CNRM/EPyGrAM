@@ -3517,7 +3517,7 @@ class D3GaussGeometry(D3Geometry):
         return data3D
 
     def make_basemap(self,
-                     # gisquality='i',
+                     gisquality='l',
                      specificproj=None,
                      zoom=None,
                      ax=None,
@@ -3529,7 +3529,8 @@ class D3GaussGeometry(D3Geometry):
 
         :param gisquality: defines the quality of GIS contours, cf. Basemap doc. \n
           Possible values (by increasing quality): 'c', 'l', 'i', 'h', 'f'.
-          WARNING: this is forced to 'l' inside, for time-consumption reasons.
+          WARNING: this is forced to 'l' inside (except if a zoom is given),
+          for time-consumption reasons.
         :param specificproj: enables to make basemap on the specified projection,
           among: 'kav7', 'cyl', 'ortho', ('nsper', {...}) (cf. Basemap doc). \n
           In 'nsper' case, the {} may contain:\n
@@ -3547,7 +3548,8 @@ class D3GaussGeometry(D3Geometry):
         # !!! **_ enables the method to receive arguments specific to
         #     other geometries, useless here ! Do not remove.
         from mpl_toolkits.basemap import Basemap
-        gisquality = 'l'  # forced for Gauss, for time-consumption reasons...
+        if zoom is None:
+            gisquality = 'l'  # forced for Gauss, for time-consumption reasons...
 
         # corners
         llcrnrlon = -180

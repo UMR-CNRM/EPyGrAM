@@ -678,17 +678,33 @@ class netCDF(FileResource):
                     Xgrid, Ygrid = find_grid_in_variables()
                     grid = {'longitudes':Xgrid,
                             'latitudes':Ygrid}
-                    if (hasattr(self._variables[variable.grid_mapping], 'x_resolution')
-                        and len(Xgrid.shape) == 2):
+                    if ((hasattr(self._variables[variable.grid_mapping],
+                                 'x_resolution') and
+                         hasattr(self._variables[variable.grid_mapping],
+                                 'y_resolution') or
+                         hasattr(self._variables[variable.grid_mapping],
+                                 'resolution')) and
+                        len(Xgrid.shape) == 2):
                         # then this is a regular lon lat
                         kwargs_geom['name'] = 'regular_lonlat'
+                        if hasattr(self._variables[variable.grid_mapping],
+                                   'x_resolution'):
+                            x_res = grid_mapping.x_resolution
+                        else:
+                            x_res = grid_mapping.resolution
+                        if hasattr(self._variables[variable.grid_mapping],
+                                   'y_resolution'):
+                            y_res = grid_mapping.y_resolution
+                        else:
+                            y_res = grid_mapping.resolution
                         grid = {'input_lon':Angle(Xgrid[0, 0], 'degrees'),
                                 'input_lat':Angle(Ygrid[0, 0], 'degrees'),
                                 'input_position':(0, 0),
-                                'X_resolution':Angle(grid_mapping.x_resolution, 'degrees'),
-                                'Y_resolution':Angle(grid_mapping.y_resolution, 'degrees')}
+                                'X_resolution':Angle(x_res, 'degrees'),
+                                'Y_resolution':Angle(y_res, 'degrees')}
                 else:
-                    raise NotImplementedError('grid_mapping.grid_mapping_name == ' + grid_mapping.grid_mapping_name)
+                    raise NotImplementedError('grid_mapping.grid_mapping_name == ' +
+                                              grid_mapping.grid_mapping_name)
             else:
                 if hasattr(variable, 'grid_mapping'):
                     epylog.info('grid_mapping ignored: unknown case')

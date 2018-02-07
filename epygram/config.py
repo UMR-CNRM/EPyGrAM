@@ -176,6 +176,10 @@ GRIB_ignore_validity_decoding_errors = False
 GRIB_max_bitspervalue = 30
 #: Force bitspervalue to GRIB_max_bitspervalue if requested higher
 GRIB_force_bitspervalue = False
+#: Use temporary links to workaround a bug in grib indexes
+#: set either a directory to use for that purpose (e.g. /tmp) or
+#: False not to use this option
+GRIB_safe_indexes = '/tmp'
 
 #: LFI field dictionaries
 LFI_field_dictionaries_csv = {'default':os.path.join(installdir,

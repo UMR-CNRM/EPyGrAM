@@ -128,7 +128,8 @@ class H2DField(D3Field):
                   drawmeridians_kwargs=None,
                   drawequator_kwargs=None,
                   drawgreenwich_kwargs=None,
-                  rcparams=None):
+                  rcparams=None,
+                  colorbar_ax_kwargs=None):
         """
         Makes a simple plot of the field, with a number of options.
 
@@ -235,6 +236,9 @@ class H2DField(D3Field):
         :param drawgreenwich_kwargs: draw kwargs to emphasize greenwich meridian
         :param rcparams: list of (*args, **kwargs) to be passed to pyplot.rc()
                          defaults to [(('font',), dict(family='serif')),]
+        :param colorbar_ax_kwargs: kwargs to be passed to
+                                   make_axes_locatable(ax).append_axes(colorbar,
+                                                                       **kwargs)
 
         This method uses (hence requires) 'matplotlib' and 'basemap' libraries.
         """
@@ -253,6 +257,8 @@ class H2DField(D3Field):
             figsize = config.plotsizes
         drawcoastlines_kwargs = util.ifNone_emptydict(drawcoastlines_kwargs)
         drawcountries_kwargs = util.ifNone_emptydict(drawcountries_kwargs)
+        if colorbar_ax_kwargs is None:
+            colorbar_ax_kwargs = dict(size="5%", pad=0.2)
 
         # 0.2 checkings
         if self.spectral:
@@ -428,8 +434,7 @@ class H2DField(D3Field):
                 if colorbar:
                     if colorbar_over is None:
                         cax = make_axes_locatable(ax).append_axes(colorbar,
-                                                                  size="5%",
-                                                                  pad=0.2)
+                                                                  **colorbar_ax_kwargs)
                     else:
                         cax = colorbar_over
                     orientation = 'vertical' if colorbar in ('right', 'left') else 'horizontal'
@@ -501,8 +506,7 @@ class H2DField(D3Field):
                 if colorbar and not uniform:
                     if colorbar_over is None:
                         cax = make_axes_locatable(ax).append_axes(colorbar,
-                                                                  size="5%",
-                                                                  pad=0.2)
+                                                                  **colorbar_ax_kwargs)
                     else:
                         cax = colorbar_over
                     orientation = 'vertical' if colorbar in ('right', 'left') else 'horizontal'
