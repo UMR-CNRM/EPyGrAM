@@ -18,6 +18,8 @@ import numpy
 import copy
 import sys
 import six
+import tempfile
+import uuid
 
 import footprints
 from footprints import proxy as fpx, FPDict, FPList
@@ -30,6 +32,7 @@ from epygram.resources import FileResource
 from epygram.util import (Angle, RecursiveObject,
                           separation_line, write_formatted_dict)
 from epygram.fields import H2DField
+from epygram.geometries.H2DGeometry import gauss_latitudes
 from epygram.geometries.VGeometry import pressure2altitude
 from epygram.geometries.SpectralGeometry import (SpectralGeometry,
                                                  gridpoint_dims_from_truncation,
@@ -55,12 +58,6 @@ onetotwo = {1:1,  # ground or water surface
             117:109,  # potential vorticity surface
             }
 twotoone = {v:k for (k, v) in onetotwo.items()}
-
-
-def gauss_latitudes(nlat):
-    """Compute the Gauss latitudes for a **nlat** points grid."""
-    x, _ = numpy.polynomial.legendre.leggauss(nlat)
-    return numpy.degrees(numpy.arcsin(x[::-1]))
 
 
 def parse_GRIBstr_todict(strfid):
@@ -780,8 +777,12 @@ class GRIBmessage(RecursiveObject, dict):
                 kwargs_vcoord['toplevel'] = self['topLevel']
                 kwargs_vcoord['bottomlevel'] = self['bottomLevel']
         if kwargs_vcoord['typeoffirstfixedsurface'] == 119:
-            self._readattribute('pv', array=True)
-            A_and_B = self['pv']
+            try:
+                self._readattribute('pv', array=True)
+                A_and_B = self['pv']
+            except gribapi.GribInternalError:
+                epylog.warning('Error while reading A/B vertical levels coefficients ! Ignore.')
+                A_and_B = []
             Ai = A_and_B[:len(A_and_B) // 2]
             Bi = A_and_B[len(A_and_B) // 2:]
             kwargs_vcoord['grid'] = {'gridlevels': tuple([(i + 1, FPDict({'Ai':Ai[i], 'Bi':Bi[i]})) for
@@ -1454,8 +1455,34 @@ class GRIB(FileResource):
           *get_info_as_json* as json in field.comment.
         *handgrip* is a dict where you can store all requested GRIB keys...
         """
+        if config.GRIB_safe_indexes:  # FIXME: well not me, gribapi: grib index workaround
+            # find an available AND unique filename
+            self._index_alias = str(tempfile.mkstemp(dir=config.GRIB_safe_indexes,
+                                                     suffix=str(uuid.uuid4()))[1])
+            os.remove(self._index_alias)
+            os.symlink(self.container.abspath, self._index_alias)
+            print(self._index_alias)
+        else:
+            self._index_alias = self.container.abspath
+        # try:finally: ensure the removal of the temporary link
+        try:
+            matchingfields = self._readfields(handgrip,
+                                              getdata=getdata,
+                                              footprints_proxy_as_builder=footprints_proxy_as_builder,
+                                              get_info_as_json=get_info_as_json)
+        finally:
+            if config.GRIB_safe_indexes:
+                os.unlink(self._index_alias)
+            del self._index_alias
+        return matchingfields
+
+    def _readfields(self, handgrip,
+                    getdata=True,
+                    footprints_proxy_as_builder=config.footprints_proxy_as_builder,
+                    get_info_as_json=None):
+        """Actual method."""
         matchingfields = FieldSet()
-        idx = gribapi.grib_index_new_from_file(self.container.abspath,
+        idx = gribapi.grib_index_new_from_file(self._index_alias,
                                                [str(k) for k in handgrip.keys()])  # gribapi str/unicode incompatibility
         # filter
         for k, v in handgrip.items():
@@ -1501,7 +1528,6 @@ class GRIB(FileResource):
         gribapi.grib_index_release(idx)
         if len(matchingfields) == 0:
             raise epygramError("no field matching *handgrip* was found.")
-
         return matchingfields
 
     @FileResource._openbeforedelayed
