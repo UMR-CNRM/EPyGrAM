@@ -126,7 +126,10 @@ def main(mode,
                                    contourlabel=False,
                                    gisquality=gisquality,
                                    departments=french_depts)
-                plt.show()
+                if epygram.config.noninteractive_backend and epygram.config.default_graphical_output:
+                    fig.savefig('domain_maker.out.' + epygram.config.default_graphical_output)
+                else:
+                    plt.show()
 
             # retry ?
             retry = raw_input("Do you want to modify something ? [n] ")
