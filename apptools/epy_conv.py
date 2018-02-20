@@ -422,8 +422,11 @@ def main(filenames,
     individual_instructions = {'filename':filenames}
 
     # run !
+    assert taylorism.__version__ >= '1.0.7', \
+        ("This version of epy_conv needs an up-to-date 'taylorism' package: " +
+         "within vortex-1.2.2 at least. Update your environment.")
     taylorism.batch_main(common_instructions, individual_instructions,
-                         scheduler=taylorism.MaxThreadsScheduler(threads_number),
+                         scheduler=footprints.proxy.scheduler(limit='threads', max_threads=threads_number),
                          verbose=(progressmode == 'verbose'))
 # end of main() ###############################################################
 
