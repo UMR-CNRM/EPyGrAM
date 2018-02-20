@@ -102,7 +102,7 @@ import footprints
 
 __all__ = []
 
-__version__ = '1.2.14'
+__version__ = '1.2.14+'
 
 __license__ = 'CeCILL-C'
 
@@ -156,7 +156,7 @@ if len(config.usermodules) > 0:
     footprints.priorities.set_before('debug', 'user')
     for m in config.usermodules:
         if sys.version_info.major == 3 and sys.version_info.minor >= 4:
-            import importlib.util as imputil
+            import importlib.util as imputil  # @UnresolvedImport
             spec = imputil.spec_from_file_location(m['name'],
                                                    m['abspath'])
             spec.loader.exec_module(imputil.module_from_spec(spec))

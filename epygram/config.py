@@ -294,7 +294,7 @@ usercolormaps_scaling = {}
 ##############################
 if os.path.exists(userconfigfile):
     if sys.version_info.major == 3 and sys.version_info.minor >= 4:
-        import importlib.util as imputil
+        import importlib.util as imputil  # @UnresolvedImport
         spec = imputil.spec_from_file_location('userconfig',
                                                userconfigfile)
         userconfig = imputil.module_from_spec(spec)

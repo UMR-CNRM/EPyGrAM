@@ -1431,7 +1431,6 @@ class GRIB(FileResource):
         elif len(filtered_matchingfields) == 0:
             raise epygramError("inconsistency in *handgrip*; check again" +
                                " values and types of values")
-
         return filtered_matchingfields[0]
 
     def readfields(self, handgrip,
@@ -1461,7 +1460,6 @@ class GRIB(FileResource):
                                                      suffix=str(uuid.uuid4()))[1])
             os.remove(self._index_alias)
             os.symlink(self.container.abspath, self._index_alias)
-            print(self._index_alias)
         else:
             self._index_alias = self.container.abspath
         # try:finally: ensure the removal of the temporary link
@@ -1481,6 +1479,8 @@ class GRIB(FileResource):
                     footprints_proxy_as_builder=config.footprints_proxy_as_builder,
                     get_info_as_json=None):
         """Actual method."""
+        if isinstance(handgrip, six.string_types):
+            handgrip = parse_GRIBstr_todict(handgrip)
         matchingfields = FieldSet()
         idx = gribapi.grib_index_new_from_file(self._index_alias,
                                                [str(k) for k in handgrip.keys()])  # gribapi str/unicode incompatibility
