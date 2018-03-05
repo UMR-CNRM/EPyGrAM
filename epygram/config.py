@@ -150,8 +150,6 @@ GRIB_default_packing = {1:{'packingType':'grid_second_order',
                            # 'additionalFlagPresent':1,
                            },
                         2:{'packingType':'grid_second_order',
-                        # 2:{'packingType':'grid_simple',
-                        # 2:{'packingType':'grid_ieee',
                            'bitsPerValue':12,
                            }
                         }

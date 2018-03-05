@@ -727,9 +727,10 @@ class FieldValidity(RecursiveObject):
 
     An additional optional *cumulativeduration* parameter can define
     the duration for which cumulative fields (e.g. precipitation) are valid.
+
     If such, optional *statistical_process_on_duration* can be supplied as a
-    string or an int to describe the kind of statistical process that runs over the
-    *cumulativeduration*.
+    string or an int (cf. GRIB2 table typeOfStatisticalProcessing) to describe
+    the kind of statistical process that runs over the *cumulativeduration*.
 
     Constructor arguments: cf. *set()* method.
     """

@@ -73,6 +73,10 @@ GRIB
 .. autodata:: satellites_local_GRIB2
 .. autodata:: sensors_local_GRIB2
 .. autodata:: GRIB_packing_fatal
+.. autodata:: GRIB_ignore_validity_decoding_errors
+.. autodata:: GRIB_max_bitspervalue
+.. autodata:: GRIB_force_bitspervalue
+.. autodata:: GRIB_safe_indexes
 
 LFI
 ...
@@ -106,6 +110,8 @@ Options
 .. autodata:: default_figures_dpi
 .. autodata:: spectral_coeff_order
 .. autodata:: init_at_import
+.. autodata:: silent_guess_format
+.. autodata:: margin_points_within_Czone
 
 -----------------------------------------------------------
 

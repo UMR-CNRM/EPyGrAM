@@ -1798,6 +1798,7 @@ class GRIB(FileResource):
           parameters of field packing. Only with 'what' mode.
         """
         out.write("### FORMAT: " + self.format + "\n")
+        out.write("(For a more thorough insight into GRIB files, use 'grib_dump')")
         out.write("\n")
 
         if mode == 'one+list':
