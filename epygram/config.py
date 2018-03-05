@@ -268,6 +268,8 @@ init_at_import = False
 #: hide messages when guessing format
 #: True is dangerous, causes troubles in logging
 silent_guess_format = False
+#: Number or margin within C-zone to generate a lonlat-included domain
+margin_points_within_Czone = 3
 
 
 # USER CUSTOMIZATION #

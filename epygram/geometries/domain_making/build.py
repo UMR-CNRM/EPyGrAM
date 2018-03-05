@@ -22,7 +22,7 @@ from .util import (Ezone_minimum_width, maxdims_security_barrier,
                    projections_g2p, projections_g2s,
                    projections_s2g, projections_s2p)
 from epygram import epygramError, epylog
-from epygram.config import epsilon
+from epygram.config import epsilon, margin_points_within_Czone
 from epygram.util import Angle
 from epygram.geometries.SpectralGeometry import nearest_greater_FFT992compliant_int
 
@@ -371,10 +371,15 @@ def build_geometry_fromlonlat(lonmin, lonmax,
                           ((lonmin + lonmax) / 2., latmax), ((lonmin + lonmax) / 2., latmin)]
         IminC, JminC = geometry.gimme_corners_ij('C')['ll']
         ImaxC, JmaxC = geometry.gimme_corners_ij('C')['ur']
-        xlonlat_included = all([1. + IminC < geometry.ll2ij(*c)[0] < ImaxC - 1.
-                                for c in points_to_test])
-        ylonlat_included = all([1. + JminC < geometry.ll2ij(*c)[1] < JmaxC - 1.
-                                for c in points_to_test])
+        # we cannot use geometry.point_is_inside_domain_ll() because we need to
+        # know in which direction we need to extend
+        margin = float(margin_points_within_Czone)
+        xlonlat_included = all(
+            [margin + IminC < geometry.ll2ij(*c)[0] < ImaxC - margin
+             for c in points_to_test])
+        ylonlat_included = all(
+            [margin + JminC < geometry.ll2ij(*c)[1] < JmaxC - margin
+             for c in points_to_test])
         lonlat_included = xlonlat_included and ylonlat_included
         if not lonlat_included:
             if not xlonlat_included:
