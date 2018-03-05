@@ -30,8 +30,9 @@ var basemap_pickle_name = generateUUID()+"_bm.cPickle";
 //VORTEX SUGGESTIONS 
 var vortex_autocomplete = {} ;
 vortex_autocomplete["vapp"] = ["arome", "aladin", "arpege"] ;
-vortex_autocomplete["vconf"] = ["3dvarfr", "reunion", "indien", "polynesie", "caledonie",
-                                "antilles","guyane", "4dvarfr", "pearp", "pefrance", "pifrance"] ;
+vortex_autocomplete["vconf"] = ["3dvarfr","pefrance", "pifrance", "ifsfr",
+                                "indien", "polynesie", "caledonie", "antilles","guyane",
+                                "4dvarfr", "pearp"] ;
 vortex_autocomplete["model"] = ["arome", "aladin","surfex", "arpege"] ;
 vortex_autocomplete["kind"] = ["historic", "gridpoint", "ic"] ;
 vortex_autocomplete["cutoff"] = ["assim", "production"] ;
@@ -151,7 +152,7 @@ AromeFranceForecastGrib: {
             vapp: "arome",
             vconf: "france",
             model: "arome",
-            geometry: "FRANGP0025",
+            geometry: "EURW1S40",
             kind: "gridpoint",
             nativefmt: "grib",
             member: ""
@@ -169,7 +170,7 @@ PearoGrib: {
             vapp: "arome",
             vconf: "pefrance",
             model: "arome",
-            geometry: "FRANGP0025",
+            geometry: "EURW1S40",
             kind: "gridpoint",
             nativefmt: "grib",
             cutoff: "production",
@@ -179,7 +180,7 @@ AromeAntillesForecastGrib: {
             vapp: "arome",
             vconf: "antilles",
             model: "arome",
-            geometry: "ANTIL0025",
+            geometry: "CARAIB0025",
             kind: "gridpoint",
             nativefmt: "grib",
             cutoff: "production",
