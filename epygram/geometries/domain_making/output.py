@@ -47,7 +47,7 @@ def lam_geom2namelists(geometry,
     nam['NAM_CONF_PROJ']['XLON0'] = geometry.projection['reference_lon'].get('degrees')
     nam['NAM_CONF_PROJ']['XLAT0'] = geometry.projection['reference_lat'].get('degrees')
     nam['NAM_CONF_PROJ']['XRPK'] = geometry.projection['reference_lat'].get('cos_sin')[1]
-    nam['NAM_CONF_PROJ']['XBETA'] = geometry.projection['reference_lon'].get('degrees') - geometry.getcenter()[0].get('degrees')
+    nam['NAM_CONF_PROJ']['XBETA'] = 0.  # geometry.projection['reference_lon'].get('degrees') - geometry.getcenter()[0].get('degrees')
     nam['NAM_CONF_PROJ_GRID']['XLONCEN'] = geometry.getcenter()[0].get('degrees')
     nam['NAM_CONF_PROJ_GRID']['XLATCEN'] = geometry.getcenter()[1].get('degrees')
     nam['NAM_CONF_PROJ_GRID']['NIMAX'] = geometry.dimensions['X_CIzone']
