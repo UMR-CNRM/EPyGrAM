@@ -2677,7 +2677,10 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         :param position: grid position with respect to the model cell.
           Defaults to self.position_on_horizontal_grid.
         """
-        f = fpx.field(structure='H2D', geometry=self, fid={'geometry':'Map Factor'})
+        f = fpx.field(structure='H2D',
+                      geometry=self,
+                      fid={'geometry':'Map Factor'},
+                      units='-')
         lats = self.get_lonlat_grid(position=position)[1]
         data = self.map_factor(lats)
         f.setdata(data)
@@ -2691,15 +2694,17 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
 
     def mesh_area_field(self, position=None):
         """
-        Returns a new field whose data is the mesh area of gridpoints.
+        Returns a new field whose data is the mesh area of gridpoints,
+        i.e. X_resolution x Y_resolution / m^2, where m is the local map factor.
 
         :param position: grid position with respect to the model cell.
-          Defaults to self.position_on_horizontal_grid.
+                         Defaults to self.position_on_horizontal_grid.
         """
         m = self.map_factor_field(position=position)
         dxdy = self.grid['X_resolution'] * self.grid['Y_resolution']
         m.setdata(dxdy / m.data**2)
         m.fid['geometry'] = 'Mesh Area'
+        m.units = 'm^2'
         return m
 
     def make_basemap(self,
@@ -3667,7 +3672,7 @@ class D3GaussGeometry(D3Geometry):
 
     def resolution_field(self, direction='meridian'):
         """
-        Returns a field whose values are the local resolution.
+        Returns a field whose values are the local resolution in m.
 
         :param direction: among ('zonal', 'meridian'), direction in which
                           the resolution is computed.
@@ -3678,8 +3683,10 @@ class D3GaussGeometry(D3Geometry):
         resol_2d = (numpy.ma.ones(self.get_lonlat_grid()[0].data.shape).transpose() *
                     numpy.array(resolutions)).transpose()
         resol_2d.mask = self.get_lonlat_grid()[0].mask
-        f = fpx.field(structure='H2D', geometry=self,
-                      fid={'geometry':direction + ' resolution'})
+        f = fpx.field(structure='H2D',
+                      geometry=self,
+                      fid={'geometry':direction + ' resolution'},
+                      units='m')
         f.setdata(resol_2d)
         return f
 
@@ -3896,7 +3903,10 @@ class D3GaussGeometry(D3Geometry):
         :param position: grid position with respect to the model cell.
           Defaults to self.position_on_horizontal_grid.
         """
-        f = fpx.field(structure='H2D', geometry=self, fid={'geometry':'Map Factor'})
+        f = fpx.field(structure='H2D',
+                      geometry=self,
+                      fid={'geometry':'Map Factor'},
+                      units='-')
         (lons, lats) = self.get_lonlat_grid(position=position)
         data = self.map_factor(stretch_array(lons), stretch_array(lats))
         data = self.reshape_data(data)
@@ -3914,8 +3924,8 @@ class D3GaussGeometry(D3Geometry):
         :param v: the v == meridian-on-the-grid component of wind
         :param lon: longitudes of points in degrees
         :param lat: latitudes of points in degrees
-        :param map_factor_correction:, applies a correction of magnitude due
-          to map factor.
+        :param map_factor_correction: applies a correction of magnitude due
+                                      to map factor.
         :param reverse: if True, apply the reverse reprojection.
 
         lon/lat are coordinates on real sphere.
@@ -4249,5 +4259,6 @@ class D3GaussGeometry(D3Geometry):
         else:
             ok = False
         return ok
+
 
 footprints.collectors.get(tag='geometrys').fasttrack = ('structure', 'name')

@@ -114,7 +114,7 @@ class VGeometry(RecursiveObject, FootprintBase):
 def hybridP2pressure(hybridP_geometry, Psurf, vertical_mean,
                      gridposition=None):
     """
-    Converts a 'hybrid_pressure' VGeometry to a 'pressure' VGeometry.
+    Converts a 'hybrid_pressure' VGeometry to a 'pressure' (in hPa) VGeometry.
 
     :param Psurf: the surface pressure in Pa, needed for integration of Ai and Bi.
     :param gridposition: (= 'mass' or 'flux') is the target grid position. By
@@ -152,7 +152,7 @@ def hybridP2pressure(hybridP_geometry, Psurf, vertical_mean,
 
 def hybridH2pressure(hybridH_geometry, P, position):
     """
-    Converts a hybrid_height coordinate grid into pressure.
+    Converts a hybrid_height coordinate grid into pressure (in hPa).
 
     :param P: the vertical profile of pressure to use
     :param position: the position of P values on the grid ('mass' or 'flux')
@@ -324,4 +324,34 @@ def pressure2altitude(pressure_geometry, R, T, vertical_mean,
                         hlocation=pressure_geometry.hlocation,
                         position_on_grid=pressure_geometry.position_on_grid)
 
-footprints.collectors.get(tag='geometrys').fasttrack = ('format',)
+
+def hybridP_coord_and_surfpressure_to_3D_pressure_field(
+        hybridP_geometry, Psurf, vertical_mean,
+        gridposition=None):
+    """
+    From a hybridP Vgeometry and a surface pressure (in Pa) H2D field,
+    compute a 3D field containing the pressure (in hPa) at each hybridP level
+    for each gridpoint.
+
+    :param hybridP_geometry: the hybridP VGeometry
+    :param Psurf: the surface pressure field in Pa, needed for integration of
+                  Ai and Bi.
+    :param vertical_mean: defines the kind of averaging done on the vertical
+      to compute half-levels from full-levels, or inverse: 'geometric' or
+      'arithmetic'.
+    :param gridposition: (= 'mass' or 'flux') is the target grid position. By
+      default the data position in the origin geometry is taken.
+    """
+    pressures = hybridP2pressure(hybridP_geometry, Psurf.data, vertical_mean,
+                                 gridposition=gridposition).levels
+    vgeom = fpx.geometrys.almost_clone(hybridP_geometry,
+                                       levels=range(1, len(pressures) + 1))
+    geom = fpx.geometrys.almost_clone(Psurf.geometry,
+                                      structure='3D',
+                                      vcoordinate=vgeom)
+    d3pressure = fpx.field(fid={'computed':'pressure'},
+                           structure='3D',
+                           geometry=geom,
+                           units='hPa')
+    d3pressure.setdata(numpy.array(pressures))
+    return d3pressure

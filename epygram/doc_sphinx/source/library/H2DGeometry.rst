@@ -1,15 +1,13 @@
-:mod:`epygram.geometries.H2DGeometry` --- Horizontal 2-D Geometry class
-=======================================================================
+:mod:`epygram.geometries.H2DGeometry` --- Horizontal 2-D Geometry classes
+=========================================================================
 
 .. automodule:: epygram.geometries.H2DGeometry
-   :synopsis: Horizontal 2-D Geometry class
+   :synopsis: Horizontal 2-D Geometry classes
 
 -----------------------------------------------------------
 
-.. autoclass:: H2DGeometry
-   :show-inheritance:
-   :members:
-   :member-order: alphabetical
+**These classes have many methods defined in their parent classes,
+one shall navigate through inheritance to explore the available methods !**
 
 -----------------------------------------------------------
 
