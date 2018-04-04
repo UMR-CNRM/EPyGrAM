@@ -144,6 +144,7 @@ class GRIBmessage(RecursiveObject, dict):
                     gribapi.grib_release(gid)
             # load message in memory and save gribid
             self._gid = gribapi.grib_new_from_file(self._file)
+            self._file.close()  # TOBECHECKED: not too early ?
         elif self.built_from == 'field':
             self._build_msg_from_field(source[1],
                                        ordering=ordering,
@@ -425,6 +426,13 @@ class GRIBmessage(RecursiveObject, dict):
                 self['gridType'] = 'regular_ll'
                 self['iDirectionIncrementInDegrees'] = field.geometry.grid['X_resolution'].get('degrees')
                 self['jDirectionIncrementInDegrees'] = field.geometry.grid['Y_resolution'].get('degrees')
+            elif field.geometry.name == 'rotated_lonlat':
+                self['gridType'] = 'rotated_ll'
+                self['iDirectionIncrementInDegrees'] = field.geometry.grid['X_resolution'].get('degrees')
+                self['jDirectionIncrementInDegrees'] = field.geometry.grid['Y_resolution'].get('degrees')
+                self['longitudeOfSouthernPoleInDegrees'] = field.geometry.grid['pole_lon'].get('degrees')
+                self['latitudeOfSouthernPoleInDegrees'] = field.geometry.grid['pole_lat'].get('degrees')
+                raise NotImplementedError('gridType=='+'rotated_ll')  # TODO:
             elif field.geometry.projected_geometry:
                 self['gridType'] = field.geometry.name
                 if field.geometry.name == 'lambert':
@@ -813,6 +821,18 @@ class GRIBmessage(RecursiveObject, dict):
                                          'degrees')
                     }
             projection = None
+        elif self['gridType'] == 'rotated_ll':
+            geometryname = 'rotated_lonlat'
+            grid = {'input_lon':Angle(self['longitudeOfFirstGridPointInDegrees'], 'degrees'),
+                    'input_lat':Angle(self['latitudeOfFirstGridPointInDegrees'], 'degrees'),
+                    'input_position':input_position,
+                    'X_resolution':Angle(self['iDirectionIncrementInDegrees'], 'degrees'),
+                    'Y_resolution':Angle(self['jDirectionIncrementInDegrees'], 'degrees'),
+                    'pole_lon':Angle(self['longitudeOfSouthernPoleInDegrees'], 'degrees'),
+                    'pole_lat':Angle(self['latitudeOfSouthernPoleInDegrees'], 'degrees')
+                    }
+            projection = None
+            raise NotImplementedError('gridType=='+self['gridType'])  # TODO: ad hoc Geometry is missing
         elif self['gridType'] in ('polar_stereographic',):
             geometryname = self['gridType']
             if self['projectionCentreFlag'] == 0:
@@ -933,7 +953,8 @@ class GRIBmessage(RecursiveObject, dict):
                                  for n in lon_number_by_lat]
             dimensions['lon_number_by_lat'] = FPList(lon_number_by_lat)
         else:
-            raise NotImplementedError("not yet !")
+            raise NotImplementedError("gridType == {} : not yet !".
+                                      format(self['gridType']))
         # Make geometry object
         kwargs_geom = dict(structure='H2D',
                            name=geometryname,
@@ -1162,12 +1183,20 @@ class GRIB(FileResource):
     def __init__(self, *args, **kwargs):
         self.isopen = False
         super(GRIB, self).__init__(*args, **kwargs)
+        self._open_through = self.container.abspath
         if self.openmode in ('r', 'a'):
             _file = open(self.container.abspath, 'r')
             isgrib = _file.readline()
             _file.close()
             if isgrib[0:4] != 'GRIB':
                 raise IOError("this resource is not a GRIB one.")
+        # grib index bug workaround
+        if config.GRIB_safe_indexes:  # FIXME: well not me, gribapi
+            # find an available AND unique filename
+            self._open_through = str(tempfile.mkstemp(dir=config.GRIB_safe_indexes,
+                                                      suffix=str(uuid.uuid4()))[1])
+            os.remove(self._open_through)
+            os.symlink(self.container.abspath, self._open_through)
         if not self.fmtdelayedopen:
             self.open()
 
@@ -1179,7 +1208,7 @@ class GRIB(FileResource):
           different from the one specified at initialization.
         """
         super(GRIB, self).open(openmode=openmode)
-        self._file = open(self.container.abspath, self.openmode)
+        self._file = open(self._open_through, self.openmode)
         self.isopen = True
 
     def close(self):
@@ -1188,6 +1217,15 @@ class GRIB(FileResource):
         """
         if hasattr(self, '_file'):
             self._file.close()
+        if config.GRIB_safe_indexes and \
+           hasattr(self, '_open_through') and \
+           os.path.exists(self._open_through) and \
+           self._open_through != self.container.abspath:  # ceinture et bretelles
+            os.unlink(self._open_through)
+        if hasattr(self, '_sequential_file'):
+            if hasattr(self._sequential_file, 'closed') and \
+               not self._sequential_file.closed:
+                self._sequential_file.close()
         self.isopen = False
 
     @property
@@ -1231,7 +1269,7 @@ class GRIB(FileResource):
     def _listfields(self, additional_keys=[]):
         """Returns a list of GRIB-type fid of the fields inside the resource."""
         fidlist = []
-        _file = open(self.container.abspath, 'r')
+        _file = open(self._open_through, 'r')
         while True:
             fid = {}
             gid = gribapi.grib_new_from_file(_file, headers_only=True)
@@ -1288,7 +1326,7 @@ class GRIB(FileResource):
 
         Should not be used sequentially, probably very inefficient.
         """
-        return GRIBmessage(('file', self.container.abspath, position))
+        return GRIBmessage(('file', self._open_through, position))
 
     def iter_messages(self, headers_only=True):
         """
@@ -1301,7 +1339,7 @@ class GRIB(FileResource):
             if not ok:
                 self._sequential_file.open()
         except AttributeError:
-            self._sequential_file = open(self.container.abspath, 'r')
+            self._sequential_file = open(self._open_through, 'r')
 
         gid = gribapi.grib_new_from_file(self._sequential_file,
                                          headers_only=headers_only)
@@ -1454,24 +1492,12 @@ class GRIB(FileResource):
           *get_info_as_json* as json in field.comment.
         *handgrip* is a dict where you can store all requested GRIB keys...
         """
-        if config.GRIB_safe_indexes:  # FIXME: well not me, gribapi: grib index workaround
-            # find an available AND unique filename
-            self._index_alias = str(tempfile.mkstemp(dir=config.GRIB_safe_indexes,
-                                                     suffix=str(uuid.uuid4()))[1])
-            os.remove(self._index_alias)
-            os.symlink(self.container.abspath, self._index_alias)
-        else:
-            self._index_alias = self.container.abspath
-        # try:finally: ensure the removal of the temporary link
-        try:
-            matchingfields = self._readfields(handgrip,
-                                              getdata=getdata,
-                                              footprints_proxy_as_builder=footprints_proxy_as_builder,
-                                              get_info_as_json=get_info_as_json)
-        finally:
-            if config.GRIB_safe_indexes:
-                os.unlink(self._index_alias)
-            del self._index_alias
+        # TODO: since the moving of GRIB_safe_indexes workaround,
+        # we can merge again readfields and _readfields
+        matchingfields = self._readfields(handgrip,
+                                          getdata=getdata,
+                                          footprints_proxy_as_builder=footprints_proxy_as_builder,
+                                          get_info_as_json=get_info_as_json)
         return matchingfields
 
     def _readfields(self, handgrip,
@@ -1482,7 +1508,7 @@ class GRIB(FileResource):
         if isinstance(handgrip, six.string_types):
             handgrip = parse_GRIBstr_todict(handgrip)
         matchingfields = FieldSet()
-        idx = gribapi.grib_index_new_from_file(self._index_alias,
+        idx = gribapi.grib_index_new_from_file(self._open_through,
                                                [str(k) for k in handgrip.keys()])  # gribapi str/unicode incompatibility
         # filter
         for k, v in handgrip.items():
