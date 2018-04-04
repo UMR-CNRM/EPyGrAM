@@ -11,7 +11,6 @@ Installation
 
 .. autodata:: installdir
 .. autodata:: userlocaldir
-.. autodata:: userconfigfile
 .. autodata:: epygram_colormaps
 .. autodata:: epygram_colormaps_scaling
 
@@ -94,6 +93,7 @@ netCDF
 .. autodata:: netCDF_default_compression
 .. autodata:: netCDF_replace_dot_in_variable_names
 .. autodata:: netCDF_default_global_attributes
+.. autodata:: netCDF_default_variables_dtype
 
 Options
 -------

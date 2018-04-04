@@ -3039,7 +3039,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         elif self.name == 'polar_stereographic':
             k = self.projection['reference_lat'].get('cos_sin')[1]
         theta = k * (lons - self.projection['reference_lon'].get('degrees')) - \
-                self.projection.get('rotation', 0.).get('degrees')  # TOBECHECKED: rotation
+                self.projection.get('rotation', 0.).get('degrees')
         return theta
 
     def reproject_wind_on_lonlat(self, u, v,

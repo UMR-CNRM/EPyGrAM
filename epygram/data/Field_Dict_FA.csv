@@ -437,6 +437,14 @@ name:SFX.LOPO,type:Misc,nature:float,dimension:0
 name:SFX.CODIL,type:Misc,nature:float,dimension:0
 name:SFX.NLATI,type:Misc,nature:int,dimension:0
 name:SFX.NLOPA,type:Misc,nature:int,dimension:1
+name:SFX.LCPL_GCM,type:Misc,nature:bool,dimension:0
+name:SFX.HANDLE_SIC,type:Misc,nature:bool,dimension:0
+name:SFX.SSS,type:Misc,nature:float,dimension:1
+name:SFX.VEGTYPE*,type:Misc,nature:float,dimension:1
+name:SFX.LONINF,type:Misc,nature:float,dimension:1
+name:SFX.LONSUP,type:Misc,nature:float,dimension:1
+name:SFX.LATINF,type:Misc,nature:float,dimension:1
+name:SFX.LATSUP,type:Misc,nature:float,dimension:1
 #TOBECHECKED:
 name:SFX.GWKEY,type:Misc,nature:int,dimension:0
 name:SFX.MEB_PATCH,type:Misc,nature:int,dimension:0

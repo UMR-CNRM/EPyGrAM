@@ -34,6 +34,13 @@ Errors
   - use the ``fa_sp2gp.py`` tool on Bull (using the above alias) to convert your
     file to all-gridpoint then work in gridpoint space
 
++ How to hide LFI/FA messages ?
+
+  => either:
+  
+  - ``export FA4PY_MUTE=1``
+  - edit ``$HOME/.epygram/userconfig.py`` and set ``FA_mute_FA4py = True``
+
 -----------------------------------------------------------
 
 How can I... ?
