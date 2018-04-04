@@ -388,6 +388,14 @@ class H2DVectorField(Field):
                   map_factor_correction=True,
                   mask_threshold=None,
                   figsize=None,
+                  drawmapboundary_kwargs=None,
+                  fillcontinents_kwargs=None,
+                  drawcoastlines_kwargs=None,
+                  drawcountries_kwargs=None,
+                  drawparallels_kwargs=None,
+                  drawmeridians_kwargs=None,
+                  drawequator_kwargs=None,
+                  drawgreenwich_kwargs=None,
                   rcparams=None):
         """
         Makes a simple plot of the field, with a number of options.
@@ -471,6 +479,14 @@ class H2DVectorField(Field):
         :param mask_threshold: dict with min and/or max value(s) to mask outside.
         :param figsize: figure sizes in inches, e.g. (5, 8.5).
                         Default figsize is config.plotsizes.
+        :param drawmapboundary_kwargs: kwargs to be passed to basemap.drawmapboundary()
+        :param fillcontinents_kwargs: kwargs to be passed to basemap.fillcontinents()
+        :param drawcoastlines_kwargs: kwargs to be passed to basemap.drawcoastlines()
+        :param drawcountries_kwargs: kwargs to be passed to basemap.drawcountries()
+        :param drawparallels_kwargs: kwargs to be passed to basemap.drawparallels()
+        :param drawmeridians_kwargs: kwargs to be passed to basemap.drawgreenwich()
+        :param drawequator_kwargs: draw kwargs to emphasize equator parallel
+        :param drawgreenwich_kwargs: draw kwargs to emphasize greenwich meridian
         :param rcparams: list of (*args, **kwargs) to be passed to pyplot.rc()
                          defaults to [(('font',), dict(family='serif')),]
 
@@ -483,6 +499,8 @@ class H2DVectorField(Field):
             plt.rc(*args, **kwargs)
         if figsize is None:
             figsize = config.plotsizes
+        drawcoastlines_kwargs = util.ifNone_emptydict(drawcoastlines_kwargs)
+        drawcountries_kwargs = util.ifNone_emptydict(drawcountries_kwargs)
 
         plot_module_options = util.ifNone_emptydict(plot_module_options)
         quiver_options = util.ifNone_emptydict(quiver_options)
@@ -533,6 +551,10 @@ class H2DVectorField(Field):
                                            background=background,
                                            **plot_module_options)
             else:
+                if 'color' not in drawcoastlines_kwargs.keys():
+                    drawcoastlines_kwargs['color'] = boundariescolor
+                if 'color' not in drawcountries_kwargs.keys():
+                    drawcountries_kwargs['color'] = boundariescolor
                 util.set_map_up(bm, ax,
                                 drawrivers=drawrivers,
                                 drawcoastlines=drawcoastlines,
@@ -540,9 +562,16 @@ class H2DVectorField(Field):
                                 meridians=meridians,
                                 parallels=parallels,
                                 departments=departments,
-                                boundariescolor=boundariescolor,
                                 bluemarble=bluemarble,
-                                background=background)
+                                background=background,
+                                drawmapboundary_kwargs=drawmapboundary_kwargs,
+                                fillcontinents_kwargs=fillcontinents_kwargs,
+                                drawcoastlines_kwargs=drawcoastlines_kwargs,
+                                drawcountries_kwargs=drawcountries_kwargs,
+                                drawparallels_kwargs=drawparallels_kwargs,
+                                drawmeridians_kwargs=drawmeridians_kwargs,
+                                drawequator_kwargs=drawequator_kwargs,
+                                drawgreenwich_kwargs=drawgreenwich_kwargs)
         # 3. Prepare data
         # mask values
         mask_outside = {'min':-config.mask_outside,
