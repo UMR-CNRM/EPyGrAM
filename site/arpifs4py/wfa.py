@@ -48,9 +48,9 @@ def wfaitou(*args):
     1) KNUMER: logical unit number associated to file
     """
     return [(c_char_p(args[0].encode("utf-8")), IN),
-            (c_char_p(args[1]), IN),
+            (c_char_p(args[1].encode("utf-8")), IN),
             (c_longlong(), OUT),
-            (c_char_p(args[2].ljust(16)), IN)]
+            (c_char_p(args[2].ljust(16).encode("utf-8")), IN)]
 
 
 @treatReturnCode
@@ -94,7 +94,7 @@ def wfalsif(*args):
     1) CDIDEN: identifier of file
     """
     return [(c_longlong(args[0]), IN),
-            (c_char_p(" " * 80), OUT)]
+            (c_char_p((" " * 80).encode("utf-8")), OUT)]
 
 
 @treatReturnCode
@@ -119,9 +119,9 @@ def wfanion(*args):
     6) KPUILA: potential laplacian power
     """
     return [(c_longlong(args[0]), IN),
-            (c_char_p(args[1].ljust(4)), IN),
+            (c_char_p(args[1].ljust(4).encode("utf-8")), IN),
             (c_longlong(args[2]), IN),
-            (c_char_p(args[3].ljust(12)), IN),
+            (c_char_p(args[3].ljust(12).encode("utf-8")), IN),
             (c_bool(), OUT), (c_bool(), OUT),
             (c_longlong(), OUT),
             (c_longlong(), OUT),
@@ -160,7 +160,7 @@ def wfacies(*args):
             (c_longlong(args[1]), IN),
             (c_longlong(args[2]), IN),
             (c_longlong(args[3]), IN),
-            (c_char_p(args[4].ljust(16)), IN),
+            (c_char_p(args[4].ljust(16).encode("utf-8")), IN),
             (c_longlong(), OUT),
             (c_double(), OUT),
             (c_double(), OUT),
@@ -240,7 +240,7 @@ def wfacade(*args):
     19) PBHYBR: Values of "B" function of the hybrid coordinate at LAYERiS BOUNDARIES
     20) LDGARD: True if "cadre" must be kept even after the last file attached is closed
     """
-    return [(c_char_p(args[0].ljust(16)), IN),
+    return [(c_char_p(args[0].ljust(16).encode("utf-8")), IN),
             (c_longlong(args[1]), IN),
             (c_double(args[2]), IN),
             (c_double(args[3]), IN),
@@ -299,7 +299,7 @@ def wfautif(*args):
     2) CDIDEN: identifier of file
     """
     return [(c_longlong(args[0]), IN),
-            (c_char_p(args[1].ljust(80)), IN)]
+            (c_char_p(args[1].ljust(80).encode("utf-8")), IN)]
 
 
 @treatReturnCode
@@ -352,9 +352,9 @@ def wfacile(*args):
     """
     return [(c_longlong(args[0]), IN),
             (c_longlong(args[1]), IN),
-            (c_char_p(args[2].ljust(4)), IN),
+            (c_char_p(args[2].ljust(4).encode("utf-8")), IN),
             (c_longlong(args[3]), IN),
-            (c_char_p(args[4].ljust(12)), IN),
+            (c_char_p(args[4].ljust(12).encode("utf-8")), IN),
             (np.ndarray((args[0],), dtype=np.float64), OUT),
             (c_bool(args[5]), IN)]
 
@@ -379,9 +379,9 @@ def wfacilo(*args):
     """
     return [(c_longlong(args[0]), IN),
             (c_longlong(args[1]), IN),
-            (c_char_p(args[2].ljust(4)), IN),
+            (c_char_p(args[2].ljust(4).encode("utf-8")), IN),
             (c_longlong(args[3]), IN),
-            (c_char_p(args[4].ljust(12)), IN),
+            (c_char_p(args[4].ljust(12).encode("utf-8")), IN),
             (np.ndarray((args[0],), dtype=np.float64), OUT),
             (c_bool(args[5]), IN)]
 
@@ -403,9 +403,9 @@ def wfaienc(*args):
     7) LDCOSP: true if spectral
     """
     return [(c_longlong(args[0]), IN),
-            (c_char_p(args[1].ljust(4)), IN),
+            (c_char_p(args[1].ljust(4).encode("utf-8")), IN),
             (c_longlong(args[2]), IN),
-            (c_char_p(args[3].ljust(12)), IN),
+            (c_char_p(args[3].ljust(12).encode("utf-8")), IN),
             (c_longlong(args[4]), IN),
             (args[5], IN),
             (c_bool(args[6]), IN)]
@@ -428,9 +428,9 @@ def wfaieno(*args):
     7) LDCOSP: true if spectral
     """
     return [(c_longlong(args[0]), IN),
-            (c_char_p(args[1].ljust(4)), IN),
+            (c_char_p(args[1].ljust(4).encode("utf-8")), IN),
             (c_longlong(args[2]), IN),
-            (c_char_p(args[3].ljust(12)), IN),
+            (c_char_p(args[3].ljust(12).encode("utf-8")), IN),
             (c_longlong(args[4]), IN),
             (args[5], IN),
             (c_bool(args[6]), IN)]
@@ -452,7 +452,7 @@ def wfalais(*args):
     1) PDONNE: data to read
     """
     return [(c_longlong(args[0]), IN),
-            (c_char_p(args[1].ljust(16)), IN),
+            (c_char_p(args[1].ljust(16).encode("utf-8")), IN),
             (np.ndarray((args[2],), dtype=np.float64), OUT),
             (c_longlong(args[2]), IN)]
 
@@ -471,7 +471,7 @@ def wfaisan(*args):
     4) PDONNE: data to write
     """
     return [(c_longlong(args[0]), IN),
-            (c_char_p(args[1].ljust(16)), IN),
+            (c_char_p(args[1].ljust(16).encode("utf-8")), IN),
             (c_longlong(args[2]), IN),
             (args[3], IN)]
 
@@ -488,4 +488,4 @@ def wfairme(*args):
     2) CDSTTU: status ('KEEP', 'DELETE', 'DEFAUT')
     """
     return[(c_longlong(args[0]), IN),
-           (c_char_p(args[1].ljust(7)), IN)]
+           (c_char_p(args[1].ljust(7).encode("utf-8")), IN)]

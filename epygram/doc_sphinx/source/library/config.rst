@@ -94,6 +94,8 @@ netCDF
 .. autodata:: netCDF_replace_dot_in_variable_names
 .. autodata:: netCDF_default_global_attributes
 .. autodata:: netCDF_default_variables_dtype
+.. autodata:: netCDF_default_metavariables_dtype
+.. autodata:: netCDF_default_variables_fill_value
 
 Options
 -------

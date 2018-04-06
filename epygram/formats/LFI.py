@@ -373,7 +373,8 @@ class LFI(FileResource):
             wlfi.wlfipos(self._unit)  # rewind
             self._listLFInamesCache = []
             for _ in range(records_number):
-                self._listLFInamesCache.append(wlfi.wlficas(self._unit, True)[0].strip())
+                fname = wlfi.wlficas(self._unit, True)[0].decode().strip()
+                self._listLFInamesCache.append(fname)
 
         return self._listLFInamesCache
 
@@ -1194,7 +1195,7 @@ class LFI(FileResource):
             import scipy.optimize as op
             latin2 = Angle(op.fsolve(k, math.degrees(2 * math.asin(rpk)) - lat0)[0],
                            'degrees')
-            latin1 = Angle(lat0, 'degrees')
+            latin1 = Angle(float(lat0), 'degrees')
         except Exception:
             def solve(function, x0):
                 """A solver adapted to this problem. Do not try to use it elsewhere!"""
@@ -1208,7 +1209,7 @@ class LFI(FileResource):
                 return x2
             latin2 = Angle(solve(k, math.degrees(2 * math.asin(rpk)) - lat0),
                            'degrees')
-            latin1 = Angle(lat0, 'degrees')
+            latin1 = Angle(float(lat0), 'degrees')
         return (latin1, latin2)
 
     @FileResource._openbeforedelayed
@@ -1244,8 +1245,8 @@ class LFI(FileResource):
             grid = {'X_resolution':xhat[1] - xhat[0],
                     'Y_resolution':yhat[1] - yhat[0],
                     'LAMzone':'CIE',
-                    'latitude':Angle(lat0, 'degrees'),
-                    'longitude':Angle(lon0, 'degrees'),
+                    'latitude':Angle(float(lat0), 'degrees'),
+                    'longitude':Angle(float(lon0), 'degrees'),
                     'input_lon':1,
                     'input_lat':1,
                     'input_position':(0, 0)
@@ -1261,7 +1262,7 @@ class LFI(FileResource):
                           'X_CIoffset':1,
                           'Y_CIoffset':1
                           }
-            projection = {'rotation':Angle(0, 'degrees'),
+            projection = {'rotation':Angle(0., 'degrees'),
                           'reference_dX':grid['X_resolution'],
                           'reference_dY':grid['X_resolution']}
             geometryname = 'academic'
@@ -1291,17 +1292,17 @@ class LFI(FileResource):
             else:
                 kmax = 0
 
-            projection = {'reference_lon':Angle(lon0, 'degrees'),
-                          'rotation': Angle(beta, 'degrees')
+            projection = {'reference_lon':Angle(float(lon0), 'degrees'),
+                          'rotation': Angle(float(beta), 'degrees')
                           }
             if abs(rpk - math.sin(math.radians(lat0))) <= config.epsilon:
                 # non secant
-                projection['reference_lat'] = Angle(lat0, 'degrees')
+                projection['reference_lat'] = Angle(float(lat0), 'degrees')
             else:
                 if abs(rpk) in [0., 1.]:
                     # mercator or polar stereographic: one secant latitude
-                    projection['reference_lat'] = Angle(numpy.copysign(90, lat0), 'degrees')
-                    projection['secant_lat'] = Angle(lat0, 'degrees')
+                    projection['reference_lat'] = Angle(float(numpy.copysign(90, lat0)), 'degrees')
+                    projection['secant_lat'] = Angle(float(lat0), 'degrees')
                 else:
                     # lambert: two secant latitudes
                     latin1, latin2 = self._get_latin1_latin2_lambert(lat0, rpk)
@@ -1310,8 +1311,8 @@ class LFI(FileResource):
             grid = {'X_resolution':xhat[1] - xhat[0],
                     'Y_resolution':yhat[1] - yhat[0],
                     'LAMzone':'CIE',
-                    'input_lon':Angle(lon1, 'degrees'),
-                    'input_lat':Angle(lat1, 'degrees'),
+                    'input_lon':Angle(float(lon1), 'degrees'),
+                    'input_lat':Angle(float(lat1), 'degrees'),
                     'input_position':(0, 0),
                     }
             dimensions = {'X':imax + 2,

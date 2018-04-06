@@ -59,3 +59,19 @@ class V1DGeometry(V2DUnstructuredGeometry):
         write_formatted(out, "Kind of Geometry", 'Unstructured')
         write_formatted(out, "Longitude in deg", lons[0])
         write_formatted(out, "Latitude in deg", lats[0])
+
+    def __eq__(self, other):
+        """Test of equality by recursion on the object's attributes."""
+        if self.__class__ == other.__class__ and \
+           set(self._attributes.keys()) == set(other._attributes.keys()):
+            for attr in self._attributes.keys():
+                ok = self._attributes[attr] == other._attributes[attr]
+                if not ok:
+                    break
+        else:
+            ok = False
+        return ok
+
+    def __hash__(self):
+        # known issue __eq__/must be defined both or none, else inheritance is broken
+        return super(V1DGeometry, self).__hash__()

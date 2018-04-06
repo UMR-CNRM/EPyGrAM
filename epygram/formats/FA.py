@@ -505,7 +505,7 @@ class FA(FileResource):
             self.isopen = True
             self.empty = False
             # read info
-            self._attributes['cdiden'] = wfa.wfalsif(self._unit)
+            self._attributes['cdiden'] = wfa.wfalsif(self._unit).decode()
             self._read_geometry()
             self._read_validity()
             if self.openmode == 'a':
@@ -633,7 +633,7 @@ class FA(FileResource):
         wlfi.wlfipos(self._unit)  # rewind
         fieldslist = []
         for i in range(records_number):
-            fieldname = wlfi.wlficas(self._unit, True)[0]
+            fieldname = (wlfi.wlficas(self._unit, True)[0]).decode()
             if i >= 7 and fieldname != 'DATX-DES-DONNEES':
                 fieldslist.append(fieldname.strip())
             # i >= 7: 7 first fields in LFI are the header ("cadre")

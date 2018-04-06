@@ -29,7 +29,7 @@ def wlfaouv(*args):
         kul         logical unit of LFA file.
     """
     return[(c_char_p(args[0].encode("utf-8")), IN),
-           (c_char_p(args[1]), IN),
+           (c_char_p(args[1].encode("utf-8")), IN),
            (c_longlong(), OUT)]
 
 
@@ -180,7 +180,7 @@ def wlfacas(*args):
     """
     return[(c_longlong(args[0]), IN),
            (c_char_p(args[1].encode("utf-8")), IN),
-           (c_char_p(" " * 2), OUT),
+           (c_char_p((" " * 2).encode("utf-8")), OUT),
            (c_longlong(), OUT)]
 
 

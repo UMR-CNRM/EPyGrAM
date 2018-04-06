@@ -116,6 +116,7 @@ class LFA(FileResource):
         field = MiscField(fid={'LFA':fieldname})
         if getdata:
             (fieldtype, fieldlength) = wlfa.wlfacas(self._unit, fieldname)
+            fieldtype = fieldtype.decode()
             if fieldtype[0] == 'R':
                 (data, fieldlength) = wlfa.wlfalecr(self._unit, fieldname,
                                                     fieldlength)

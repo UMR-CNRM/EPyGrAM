@@ -68,7 +68,7 @@ def wlficas(*args):
     3) KPOSEX: position in file of the first word of next record
     """
     return [(c_longlong(args[0]), IN),
-            (c_char_p(" " * 16), OUT),
+            (c_char_p((" " * 16).encode("utf-8")), OUT),
             (c_longlong(), OUT),
             (c_longlong(), OUT),
             (c_bool(args[1]), IN)]
@@ -88,8 +88,8 @@ def wlfiouv(*args):
     Returns:\n
     1) KNUMER: logical unit number associated to file
     """
-    return[(c_char_p(args[0]), IN),
-           (c_char_p(args[1]), IN),
+    return[(c_char_p(args[0].encode("utf-8")), IN),
+           (c_char_p(args[1].encode("utf-8")), IN),
            (c_longlong(), OUT)]
 
 
@@ -105,7 +105,7 @@ def wlfifer(*args):
     2) CDSTTC: close status ('KEEP', 'SCRATCH', 'DELETE')
     """
     return[(c_longlong(args[0]), IN),
-           (c_char_p(args[1].ljust(7)), IN)]
+           (c_char_p(args[1].ljust(7).encode("utf-8")), IN)]
 
 
 @treatReturnCode
@@ -124,7 +124,7 @@ def wlfinfo(*args):
     2) KPOSEX: position in file of the first word of next record
     """
     return[(c_longlong(args[0]), IN),
-           (c_char_p(args[1].ljust(16)), IN),
+           (c_char_p(args[1].ljust(16).encode("utf-8")), IN),
            (c_longlong(), OUT),
            (c_longlong(), OUT)]
 
@@ -146,7 +146,7 @@ def wlfilec(*args):
     1) KTAB: integer array read
     """
     return[(c_longlong(args[0]), IN),
-           (c_char_p(args[1].ljust(16)), IN),
+           (c_char_p(args[1].ljust(16).encode("utf-8")), IN),
            (c_longlong(args[2]), IN),
            (c_bool(args[3]), IN),
            (np.ndarray((args[2],), dtype=np.int64), OUT)]
@@ -166,7 +166,7 @@ def wlfiecr(*args):
     4) KTAB: integer array to write
     """
     return[(c_longlong(args[0]), IN),
-           (c_char_p(args[1].ljust(16)), IN),
+           (c_char_p(args[1].ljust(16).encode("utf-8")), IN),
            (c_longlong(args[2]), IN),
            (args[3], IN)]
 
@@ -184,8 +184,8 @@ def wlfiren(*args):
     3) CDNOM2: new name of record
     """
     return[(c_longlong(args[0]), IN),
-           (c_char_p(args[1].ljust(16)), IN),
-           (c_char_p(args[2].ljust(16)), IN)]
+           (c_char_p(args[1].ljust(16).encode("utf-8")), IN),
+           (c_char_p(args[2].ljust(16).encode("utf-8")), IN)]
 
 
 @treatReturnCode
@@ -200,7 +200,7 @@ def wlfisup(*args):
     2) CDNOMA: name of record to delete
     """
     return[(c_longlong(args[0]), IN),
-           (c_char_p(args[1].ljust(16)), IN)]
+           (c_char_p(args[1].ljust(16).encode("utf-8")), IN)]
 
 
 @ctypesFF

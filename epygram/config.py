@@ -7,7 +7,8 @@
 The module is used throughout the package to share constant parameters.
 
 The standard default parameters lie below. They can be overwritten by
-the user in the User config file :attr:`userconfigfile`.
+the user in the User config file ``userconfig.py`` to be found under
+:attr:`userlocaldir`.
 """
 
 from __future__ import print_function, absolute_import, unicode_literals, division
@@ -28,8 +29,6 @@ installdir = __file__[:-(len(os.path.basename(__file__)) + 1)]
 home = os.getenv('HOME')
 #: User customization directory
 userlocaldir = os.path.join(home, '.epygram')
-#: User config (overwrites standard config)
-userconfigfile = os.path.join(userlocaldir, 'userconfig.py')
 #: epygram Colormaps
 epygram_colormaps = {'aspect':os.path.join(installdir, 'data', 'aspect.cmap'),
                      'gaspect':os.path.join(installdir, 'data', 'gaspect.cmap'),
@@ -229,6 +228,11 @@ netCDF_replace_dot_in_variable_names = '.'
 netCDF_default_global_attributes = {'made_with':'epygram-' + __version__}
 #: netCDF variables data type
 netCDF_default_variables_dtype = 'f8'
+#: netCDF metavariables data type
+netCDF_default_metavariables_dtype = 'f8'
+#: netCDF variables fill value.
+#: None will make netCDF ignore existence of a _FillValue
+netCDF_default_variables_fill_value = -999999.9
 
 
 # OPTIONS #
@@ -292,19 +296,11 @@ usercolormaps_scaling = {}
 
 # OVERWRITE WITH USER CONFIG #
 ##############################
-if os.path.exists(userconfigfile):
-    if sys.version_info.major == 3 and sys.version_info.minor >= 4:
-        import importlib.util as imputil  # @UnresolvedImport
-        spec = imputil.spec_from_file_location('userconfig',
-                                               userconfigfile)
-        userconfig = imputil.module_from_spec(spec)
-        spec.loader.exec_module(userconfig)
-        del spec
-    else:
-        import imp
-        userconfig = imp.load_source('userconfig', userconfigfile)
+
+if os.path.exists(os.path.join(userlocaldir, 'userconfig.py')):
+    sys.path.insert(0, userlocaldir)
     from userconfig import *
-    del userconfig
+    sys.path.remove(userlocaldir)
 #: colormaps gathers epygram and user colormaps
 colormaps = {}
 colormaps.update(epygram_colormaps)

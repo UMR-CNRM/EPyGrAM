@@ -20,7 +20,7 @@ epygram.init_env()
 test_plot = False  # To plot some figures during the test
 terms = range(2)  # terms of the run to use
 # Distant Directory in which ICMSHAROM+* files are stored:
-baseDir = "/cnrm/mesonh/data1/riette/Public/epygram/smallRunFa"
+baseDir = "/cnrm/phynh/data1/riette/Public/epygram/smallRunFa"
 coords_profile = (8.77, 41.9)
 coords_section = (8.77, 41.9), (8.9, 41.4)
 FA_name = 'S*TEMPERATURE'

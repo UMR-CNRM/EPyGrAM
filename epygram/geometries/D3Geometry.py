@@ -1071,6 +1071,34 @@ class D3RectangularGridGeometry(D3Geometry):
                             dimensions['Y'])
         out.write(separation_line)
 
+    def __eq__(self, other):
+        """Test of equality by recursion on the object's attributes."""
+        if self.__class__ == other.__class__ and \
+           set(self._attributes.keys()) == set(other._attributes.keys()):
+            for attr in self._attributes.keys():
+                if attr == 'grid':
+                    selfgrid = {k:v for k, v in self.grid.items() if
+                                k not in ['input_lon',
+                                          'input_lat',
+                                          'input_position']}
+                    othergrid = {k:v for k, v in self.grid.items() if
+                                 k not in ['input_lon',
+                                           'input_lat',
+                                           'input_position']}
+                    ok = (selfgrid == othergrid and
+                          self.getcenter() == other.getcenter())
+                else:
+                    ok = self._attributes[attr] == other._attributes[attr]
+                if not ok:
+                    break
+        else:
+            ok = False
+        return ok
+
+    def __hash__(self):
+        # known issue __eq__/must be defined both or none, else inheritance is broken
+        return super(D3RectangularGridGeometry, self).__hash__()
+
 
 class D3UnstructuredGeometry(D3RectangularGridGeometry):
     """Handles the geometry for an unstructured 3-Dimensions Field."""
@@ -1079,7 +1107,10 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
     _footprint = dict(
         attr=dict(
             name=dict(
-                values=set(['unstructured']))
+                values=set(['unstructured'])),
+            position_on_horizontal_grid=dict(
+                default='center',
+                values=set(['center'])),
         )
     )
 
@@ -1239,14 +1270,14 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
         """
         return self.resolution_ij(*self.nearest_points(lon, lat, 'nearest'))
 
-    def resolution_ij(self, i, j):
+    def resolution_ij(self, i, j, position=None):
         """
         Returns the distance to the nearest point of (i,j) point.
 
         :param i: X index of point in the 2D matrix of gridpoints
         :param j: Y index of point in the 2D matrix of gridpoints
         """
-        (lons, lats) = self.get_lonlat_grid()
+        (lons, lats) = self.get_lonlat_grid(position=position)
         result = None
         for jp in range(lons.shape[0]):
             for ip in range(lons.shape[1]):
@@ -1257,6 +1288,18 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
         if result is None:
             raise epygramError("Resolution cannot be computed on one point grid.")
         return result
+
+    def getcenter(self, position=None):
+        """
+        Returns the coordinate of the grid center as a tuple of Angles
+        (center_lon, center_lat).
+
+        Caution: this is computed as the raw average of all grid points.
+        A barycentric computation would be more adequate.
+        """
+        (lons, lats) = self.get_lonlat_grid(position=position)
+        return (Angle(lons.mean(), 'degrees'),
+                Angle(lats.mean(), 'degrees'))
 
     def _what_grid(self, out=sys.stdout):
         """
@@ -1809,7 +1852,8 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
 
     def getcenter(self):
         """
-        Returns the coordinate of the grid center as a tuple (center_lon, center_lat).
+        Returns the coordinate of the grid center as a tuple of Angles
+        (center_lon, center_lat).
         """
         return (self._center_lon, self._center_lat)
 
@@ -2200,22 +2244,6 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
         write_formatted(out, "Upper-Right corner Latitude in deg",
                         corners['ur'][1])
 
-    def __eq__(self, other):
-        """Test of equality by recursion on the object's attributes."""
-        if self.__class__ == other.__class__ and \
-           set(self.__dict__.keys()) == set(other.__dict__.keys()):
-            selfcp = self.copy()
-            othercp = other.copy()
-            for obj in [selfcp, othercp]:
-                obj.grid.pop('input_lon', None)
-                obj.grid.pop('input_lat', None)
-                obj.grid.pop('input_position', None)
-                obj._proj = None
-            ok = super(D3RegLLGeometry, selfcp).__eq__(othercp)
-        else:
-            ok = False
-        return ok
-
 
 class D3ProjectedGeometry(D3RectangularGridGeometry):
     """
@@ -2504,7 +2532,8 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
 
     def getcenter(self):
         """
-        Returns the coordinate of the grid center as a tuple (center_lon, center_lat).
+        Returns the coordinate of the grid center as a tuple of Angles
+        (center_lon, center_lat).
         """
         return (self._center_lon, self._center_lat)
 
@@ -3212,19 +3241,32 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
     def __eq__(self, other):
         """Test of equality by recursion on the object's attributes."""
         if self.__class__ == other.__class__ and \
-           set(self.__dict__.keys()) == set(other.__dict__.keys()):
-            selfcp = self.deepcopy()
-            othercp = other.deepcopy()
-            for obj in [selfcp, othercp]:
-                obj.grid.pop('input_lon', None)
-                obj.grid.pop('input_lat', None)
-                obj.grid.pop('input_position', None)
-                obj._proj = None
-            ok = super(D3ProjectedGeometry, selfcp).__eq__(othercp)
-            ok = ok and (self.getcenter() == other.getcenter())
+           set(self._attributes.keys()) == set(other._attributes.keys()):
+            for attr in self._attributes.keys():
+                if attr == 'grid':
+                    selfgrid = {k:v for k, v in self.grid.items() if
+                                k not in ['input_lon',
+                                          'input_lat',
+                                          'input_position']}
+                    othergrid = {k:v for k, v in self.grid.items() if
+                                 k not in ['input_lon',
+                                           'input_lat',
+                                           'input_position']}
+                    ok = (selfgrid == othergrid and
+                          self.getcenter() == other.getcenter())
+                else:
+                    ok = self._attributes[attr] == other._attributes[attr]
+                if not ok:
+                    break
         else:
             ok = False
         return ok
+
+    def __hash__(self):
+        # known issue __eq__/must be defined both or none, else inheritance is broken
+        # return super().__hash__()
+        # return object.__hash__(self)
+        return super(D3ProjectedGeometry, self).__hash__()
 
 
 class D3GaussGeometry(D3Geometry):
@@ -4249,16 +4291,18 @@ class D3GaussGeometry(D3Geometry):
     def __eq__(self, other):
         """Test of equality by recursion on the object's attributes."""
         if self.__class__ == other.__class__ and \
-           set(self.__dict__.keys()).discard('_buffered_gauss_grid') == \
-           set(other.__dict__.keys()).discard('_buffered_gauss_grid'):
-            selfcp = self.deepcopy()
-            selfcp._clear_buffered_gauss_grid()
-            othercp = other.deepcopy()
-            othercp._clear_buffered_gauss_grid()
-            ok = super(D3GaussGeometry, selfcp).__eq__(othercp)
+           set(self._attributes.keys()) == set(other._attributes.keys()):
+            for attr in self._attributes.keys():
+                ok = self._attributes[attr] == other._attributes[attr]
+                if not ok:
+                    break
         else:
             ok = False
         return ok
+
+    def __hash__(self):
+        # known issue __eq__/must be defined both or none, else inheritance is broken
+        return super(D3GaussGeometry, self).__hash__()
 
 
 footprints.collectors.get(tag='geometrys').fasttrack = ('structure', 'name')

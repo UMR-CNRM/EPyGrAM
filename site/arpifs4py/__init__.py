@@ -35,6 +35,7 @@ def addReturnCode(func):
         """
         return [(c_longlong(), OUT)] + func(*args)
     wrapper.__name__ = func.__name__
+    wrapper.__doc__ = func.__doc__
     return wrapper
 
 
@@ -59,6 +60,8 @@ def treatReturnCode(func):
         elif len(result) == 0:
             result = None
         return result
+    wrapper.__name__ = func.__name__
+    wrapper.__doc__ = func.__doc__
     return wrapper
 
 
@@ -92,6 +95,8 @@ def treatReturnCode_LFA(func):
         elif len(result) == 0:
             result = None
         return result
+    wrapper.__name__ = func.__name__
+    wrapper.__doc__ = func.__doc__
     return wrapper
 
 
@@ -100,7 +105,7 @@ def complete_GRIB_samples_path_from_dynamic_gribapi(lib):
     ldd_out = subprocess.check_output(['ldd', lib])
     libs_grib_api = {}
     for line in ldd_out.splitlines():
-        match = re.match('\s*(libgrib_api.*) => (.*)(/lib/libgrib_api.*\.so.*)\s\(0x.*', line)
+        match = re.match('\s*(libgrib_api.*) => (.*)(/lib/libgrib_api.*\.so.*)\s\(0x.*', str(line))
         if match:
             libs_grib_api[match.group(1)] = match.group(2)
     gsp = os.getenv('GRIB_SAMPLES_PATH', '.')

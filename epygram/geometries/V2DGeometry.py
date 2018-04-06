@@ -96,7 +96,10 @@ class V2DUnstructuredGeometry(V2DRectangularGridGeometry, D3UnstructuredGeometry
             structure=dict(
                 values=set(['V2D'])),  # inheritance priority problem
             name=dict(
-                values=set(['unstructured']))
+                values=set(['unstructured'])),
+            position_on_horizontal_grid=dict(
+                default='center',
+                values=set(['center'])),
         )
     )
 

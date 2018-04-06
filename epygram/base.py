@@ -962,7 +962,7 @@ class FieldValidityList(RecursiveObject, list):
         - other kwargs: same as :class:`FieldValidity` constructor.
 
         """
-        super(list, self).__init__([])
+        list.__init__(self, [])
 
         if validity_instance is not None:
             if len(kwargs) != 0:
@@ -1008,6 +1008,13 @@ class FieldValidityList(RecursiveObject, list):
         elif isinstance(length, int):
             for _ in range(length):
                 self.append(FieldValidity())
+
+    def __str__(self):
+        strout = '<List of FieldValidity which date/time are:\n'
+        for v in self:
+            strout += str(v.get()) + '\n'
+        strout += '>'
+        return strout
 
     def __getitem__(self, key):
         result = super(FieldValidityList, self).__getitem__(key)
