@@ -1190,13 +1190,6 @@ class GRIB(FileResource):
             _file.close()
             if isgrib[0:4] != 'GRIB':
                 raise IOError("this resource is not a GRIB one.")
-        # grib index bug workaround
-        if config.GRIB_safe_indexes:  # FIXME: well not me, gribapi
-            # find an available AND unique filename
-            self._open_through = str(tempfile.mkstemp(dir=config.GRIB_safe_indexes,
-                                                      suffix=str(uuid.uuid4()))[1])
-            os.remove(self._open_through)
-            os.symlink(self.container.abspath, self._open_through)
         if not self.fmtdelayedopen:
             self.open()
 
@@ -1208,6 +1201,13 @@ class GRIB(FileResource):
           different from the one specified at initialization.
         """
         super(GRIB, self).open(openmode=openmode)
+        if self.openmode != 'w' and config.GRIB_safe_indexes:
+            # grib index bug workaround # FIXME: well not me, gribapi:
+            # find an available AND unique filename
+            self._open_through = str(tempfile.mkstemp(dir=config.GRIB_safe_indexes,
+                                                      suffix=str(uuid.uuid4()))[1])
+            os.remove(self._open_through)
+            os.symlink(self.container.abspath, self._open_through)
         self._file = open(self._open_through, self.openmode)
         self.isopen = True
 
@@ -1221,7 +1221,8 @@ class GRIB(FileResource):
            hasattr(self, '_open_through') and \
            os.path.exists(self._open_through) and \
            self._open_through != self.container.abspath:  # ceinture et bretelles
-            os.unlink(self._open_through)
+                os.unlink(self._open_through)
+                self._open_through = self.container.abspath  # keep a valid filename
         if hasattr(self, '_sequential_file'):
             if hasattr(self._sequential_file, 'closed') and \
                not self._sequential_file.closed:
@@ -1266,6 +1267,7 @@ class GRIB(FileResource):
 
         return fidlist
 
+    @FileResource._openbeforedelayed
     def _listfields(self, additional_keys=[]):
         """Returns a list of GRIB-type fid of the fields inside the resource."""
         fidlist = []
@@ -1318,6 +1320,7 @@ class GRIB(FileResource):
 
         return (sorted(Ufid), sorted(Vfid))
 
+    @FileResource._openbeforedelayed
     def get_message_at_position(self, position):
         """
         Returns the message at position *position*, from 0 (first message)
@@ -1328,6 +1331,7 @@ class GRIB(FileResource):
         """
         return GRIBmessage(('file', self._open_through, position))
 
+    @FileResource._openbeforedelayed
     def iter_messages(self, headers_only=True):
         """
         Iterates sequentially on messages, returning messages.
@@ -1500,6 +1504,7 @@ class GRIB(FileResource):
                                           get_info_as_json=get_info_as_json)
         return matchingfields
 
+    @FileResource._openbeforedelayed
     def _readfields(self, handgrip,
                     getdata=True,
                     footprints_proxy_as_builder=config.footprints_proxy_as_builder,
