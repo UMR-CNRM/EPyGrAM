@@ -117,6 +117,8 @@ GeoPoints_precision = 6
 #: GeoPoints write width of columns
 GeoPoints_col_width = 12
 
+#: GRIB lowlevel API library to be used, among ('eccodes', 'gribapi')
+GRIB_lowlevel_api = 'eccodes'
 #: GRIB default edition (1 or 2)
 GRIB_default_edition = 2
 #: GRIB_default tablesVersion

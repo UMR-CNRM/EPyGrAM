@@ -62,6 +62,7 @@ GeoPoints
 GRIB
 ....
 
+.. autodata:: GRIB_lowlevel_api
 .. autodata:: GRIB_default_edition
 .. autodata:: GRIB_default_tablesVersion
 .. autodata:: GRIB_default_sample

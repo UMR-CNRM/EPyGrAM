@@ -3,12 +3,19 @@
 VORTEX_INSTALL_DIR=/home/common/sync/vortex/vortex-olive
 PYTHONPATH=$VORTEX_INSTALL_DIR:$VORTEX_INSTALL_DIR/src:$VORTEX_INSTALL_DIR/site:$PYTHONPATH
 export PYTHONPATH
+export PATH=PATH=$VORTEX_INSTALL_DIR/bin:$VORTEX_INSTALL_DIR/site/arpifs_listings/bin:$PATH
+
+# ecCodes
+ECCODES_PYTHON=/home/common/epygram/ext/eccodes/lib64/python2.7/site-packages
+PYTHONPATH=$ECCODES_PYTHON:$PYTHONPATH
+# or grib_api (deprecated)
+#GRIBAPI_COMPATIBLE=/home/common/epygram/ext/grib_api$VERSION
+#PYTHONPATH=$GRIBAPI_COMPATIBLE:$PYTHONPATH
+export PYTHONPATH
 
 # EPyGrAM
 VERSION='' # or '-1.x.x', '-current', '-next'
 EPYGRAM_INSTALL_DIR=/home/common/epygram/EPyGrAM$VERSION
-GRIBAPI_COMPATIBLE=/home/common/epygram/ext/grib_api$VERSION
-PYTHONPATH=$GRIBAPI_COMPATIBLE:$PYTHONPATH
 PYTHONPATH=$EPYGRAM_INSTALL_DIR:$EPYGRAM_INSTALL_DIR/site:$PYTHONPATH
 export PYTHONPATH
 export PATH=$PATH:$EPYGRAM_INSTALL_DIR/apptools
