@@ -685,23 +685,23 @@ class netCDF(FileResource):
                          hasattr(self._variables[variable.grid_mapping],
                                  'resolution')) and
                         len(Xgrid.shape) == 2):
-                        # then this is a regular lon lat
-                        kwargs_geom['name'] = 'regular_lonlat'
-                        if hasattr(self._variables[variable.grid_mapping],
-                                   'x_resolution'):
-                            x_res = grid_mapping.x_resolution
-                        else:
-                            x_res = grid_mapping.resolution
-                        if hasattr(self._variables[variable.grid_mapping],
-                                   'y_resolution'):
-                            y_res = grid_mapping.y_resolution
-                        else:
-                            y_res = grid_mapping.resolution
-                        grid = {'input_lon':Angle(Xgrid[0, 0], 'degrees'),
-                                'input_lat':Angle(Ygrid[0, 0], 'degrees'),
-                                'input_position':(0, 0),
-                                'X_resolution':Angle(x_res, 'degrees'),
-                                'Y_resolution':Angle(y_res, 'degrees')}
+                            # then this is a regular lon lat
+                            kwargs_geom['name'] = 'regular_lonlat'
+                            if hasattr(self._variables[variable.grid_mapping],
+                                       'x_resolution'):
+                                x_res = grid_mapping.x_resolution
+                            else:
+                                x_res = grid_mapping.resolution
+                            if hasattr(self._variables[variable.grid_mapping],
+                                       'y_resolution'):
+                                y_res = grid_mapping.y_resolution
+                            else:
+                                y_res = grid_mapping.resolution
+                            grid = {'input_lon':Angle(Xgrid[0, 0], 'degrees'),
+                                    'input_lat':Angle(Ygrid[0, 0], 'degrees'),
+                                    'input_position':(0, 0),
+                                    'X_resolution':Angle(x_res, 'degrees'),
+                                    'Y_resolution':Angle(y_res, 'degrees')}
                 else:
                     raise NotImplementedError('grid_mapping.grid_mapping_name == ' +
                                               grid_mapping.grid_mapping_name)
@@ -840,7 +840,8 @@ class netCDF(FileResource):
     def writefield(self, field,
                    compression=4,
                    metadata=None,
-                   adhoc_behaviour=None):
+                   adhoc_behaviour=None,
+                   fill_value=config.netCDF_default_variables_fill_value):
         """
         Write a field in resource.
 
@@ -853,8 +854,6 @@ class netCDF(FileResource):
           dimensions or grids, ...).
         """
         metadata = util.ifNone_emptydict(metadata)
-        vartype = 'f8'
-        fill_value = -999999.9
         adhoc_behaviour = util.ifNone_emptydict(adhoc_behaviour)
         behaviour = self.behaviour.copy()
         behaviour.update(adhoc_behaviour)
@@ -868,8 +867,8 @@ class netCDF(FileResource):
                 self._nc.createDimension(d, size=size)
             else:
                 assert len(self._dimensions[d]) == size, \
-                       "dimensions mismatch: " + d + ": " + \
-                       str(self._dimensions[d]) + " != " + str(size)
+                    "dimensions mismatch: " + d + ": " + \
+                    str(self._dimensions[d]) + " != " + str(size)
         def check_or_add_variable(varname, vartype,
                                   dimensions=(),
                                   **kwargs):
@@ -880,9 +879,9 @@ class netCDF(FileResource):
                 status = 'created'
             else:
                 assert self._variables[varname].dtype == vartype, \
-                       ' '.join(['variable', varname,
-                                 'already exist with other type:',
-                                 self._variables[varname].dtype])
+                    ' '.join(['variable', varname,
+                              'already exist with other type:',
+                              str(self._variables[varname].dtype)])
                 if isinstance(dimensions, six.string_types):
                     dimensions = (dimensions,)
                 assert self._variables[varname].dimensions == tuple(dimensions), \
@@ -971,7 +970,7 @@ class netCDF(FileResource):
                 self._variables[tgrid].units = ' '.join(['seconds', 'since', datetime0])
             else:
                 assert (self._variables[tgrid][:] == datetimes).all(), \
-                       ' '.join(['variable', tgrid, 'mismatch.'])
+                    ' '.join(['variable', tgrid, 'mismatch.'])
 
         # 3. geometry
         # 3.1 vertical part
@@ -991,17 +990,29 @@ class netCDF(FileResource):
                     if field.geometry.vcoordinate.typeoffirstfixedsurface == 119:
                         zgrid.positive = "down"
                         zgrid.formula_terms = "ap: hybrid_coef_A b: hybrid_coef_B ps: surface_air_pressure"
-                        check_or_add_variable('hybrid_coef_A', vartype, ZP1)
+                        check_or_add_variable('hybrid_coef_A',
+                                              behaviour.get('meta_var_type',
+                                                            config.netCDF_default_metavariables_dtype),
+                                              ZP1)
                         self._variables['hybrid_coef_A'][:] = [iab[1]['Ai'] for iab in field.geometry.vcoordinate.grid['gridlevels']]
-                        check_or_add_variable('hybrid_coef_B', vartype, ZP1)
+                        check_or_add_variable('hybrid_coef_B',
+                                              behaviour.get('meta_var_type',
+                                                            config.netCDF_default_metavariables_dtype),
+                                              ZP1)
                         self._variables['hybrid_coef_B'][:] = [iab[1]['Bi'] for iab in field.geometry.vcoordinate.grid['gridlevels']]
                     elif field.geometry.vcoordinate.typeoffirstfixedsurface == 118:
                         # TOBECHECKED:
                         zgrid.positive = "up"
                         zgrid.formula_terms = "a: hybrid_coef_A b: hybrid_coef_B orog: orography"
-                        check_or_add_variable('hybrid_coef_A', vartype, ZP1)
+                        check_or_add_variable('hybrid_coef_A',
+                                              behaviour.get('meta_var_type',
+                                                            config.netCDF_default_metavariables_dtype),
+                                              ZP1)
                         self._variables['hybrid_coef_A'][:] = [iab[1]['Ai'] for iab in field.geometry.vcoordinate.grid['gridlevels']]
-                        check_or_add_variable('hybrid_coef_B', vartype, ZP1)
+                        check_or_add_variable('hybrid_coef_B',
+                                              behaviour.get('meta_var_type',
+                                                            config.netCDF_default_metavariables_dtype),
+                                              ZP1)
                         self._variables['hybrid_coef_B'][:] = [iab[1]['Bi'] for iab in field.geometry.vcoordinate.grid['gridlevels']]
                 else:
                     epylog.info('assume 118/119 type vertical grid matches.')
@@ -1010,7 +1021,10 @@ class netCDF(FileResource):
                     dims_Z = [d for d in [Z, Y, X, G, N] if d is not None]
                 else:
                     dims_Z = Z
-                zgrid, _status = check_or_add_variable(zgridname, vartype, dims_Z)
+                zgrid, _status = check_or_add_variable(zgridname,
+                                                       behaviour.get('vartype',
+                                                                     config.netCDF_default_variables_dtype),
+                                                       dims_Z)
                 u = {102:'m', 103:'m', 100:'hPa'}.get(field.geometry.vcoordinate.typeoffirstfixedsurface, None)
                 if u is not None:
                     zgrid.units = u
@@ -1018,7 +1032,7 @@ class netCDF(FileResource):
                     zgrid[:] = field.geometry.vcoordinate.levels
                 else:
                     assert zgrid[:].all() == numpy.array(field.geometry.vcoordinate.levels).all(), \
-                           ' '.join(['variable', zgrid, 'mismatch.'])
+                        ' '.join(['variable', zgrid, 'mismatch.'])
             if _typeoffirstfixedsurface_short_dict_inv.get(field.geometry.vcoordinate.typeoffirstfixedsurface, False):
                 zgrid.short_name = _typeoffirstfixedsurface_short_dict_inv[field.geometry.vcoordinate.typeoffirstfixedsurface]
         # 3.2 grid (lonlat)
@@ -1037,10 +1051,11 @@ class netCDF(FileResource):
             dims.append(N)
         # else: pass (single point or profile)
         if isinstance(lons, numpy.ma.masked_array):
-            lons = lons.filled(fill_value)
-            lats = lats.filled(fill_value)
+            lonlat_fill_value = fill_value
+            lons = lons.filled(lonlat_fill_value)
+            lats = lats.filled(lonlat_fill_value)
         else:
-            fill_value = None
+            lonlat_fill_value = None
         try:
             _ = float(stretch_array(lons)[0])
         except ValueError:
@@ -1049,13 +1064,15 @@ class netCDF(FileResource):
             write_lonlat_grid = behaviour.get('write_lonlat_grid', True)
         if write_lonlat_grid:
             lons_var, _status = check_or_add_variable(behaviour.get('X_grid', 'longitude'),
-                                                      config.netCDF_default_variables_dtype,
+                                                      behaviour.get('vartype',
+                                                                     config.netCDF_default_variables_dtype),
                                                       dims_lonlat,
-                                                      fill_value=fill_value)
+                                                      fill_value=lonlat_fill_value)
             lats_var, _status = check_or_add_variable(behaviour.get('Y_grid', 'latitude'),
-                                                      config.netCDF_default_variables_dtype,
+                                                      behaviour.get('vartype',
+                                                                     config.netCDF_default_variables_dtype),
                                                       dims_lonlat,
-                                                      fill_value=fill_value)
+                                                      fill_value=lonlat_fill_value)
             if _status == 'match':
                 epylog.info('assume lons/lats match.')
             else:
@@ -1173,7 +1190,8 @@ class netCDF(FileResource):
         # 4. Variable
         varname = field.fid['netCDF'].replace('.', config.netCDF_replace_dot_in_variable_names)
         _, _status = check_or_add_variable(varname,
-                                           config.netCDF_default_variables_dtype,
+                                           behaviour.get('vartype',
+                                                         config.netCDF_default_variables_dtype),
                                            dims,
                                            zlib=bool(compression),
                                            complevel=compression,
