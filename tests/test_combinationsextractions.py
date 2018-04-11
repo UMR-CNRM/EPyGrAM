@@ -7,7 +7,7 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy
-from unittest import main, TestCase
+from unittest import main, TestCase, skipIf
 
 from footprints import proxy as fpx
 
@@ -30,6 +30,7 @@ GRIB_handgrip = {'discipline': 0,
                  'typeOfFirstFixedSurface': 119}
 
 
+@skipIf('FA' not in epygram.config.implemented_formats, "format not activated")
 class TestMisc(TestCase):
 
     @classmethod

@@ -23,6 +23,7 @@ basemap_ok = True
 
 # H2D
 #####
+@skipIf('FA' not in epygram.config.implemented_formats, "format not activated")
 class Test_gauss(abtc.Test_GeometryMethods):
     fid = 'SURFGEOPOTENTIEL'
     basename = 'gauss.fa'
@@ -100,6 +101,7 @@ class Test_gauss(abtc.Test_GeometryMethods):
                                118861.43703733847, delta=epsilon)
 
 
+@skipIf('FA' not in epygram.config.implemented_formats, "format not activated")
 class Test_lambert_HS(abtc.Test_RectGeometryMethods):
     fid = 'SURFGEOPOTENTIEL'
     basename = 'lambert_HS.fa'
@@ -179,6 +181,7 @@ class Test_lambert_HS(abtc.Test_RectGeometryMethods):
                                7967.6820416615528, delta=epsilon)
 
 
+@skipIf('FA' not in epygram.config.implemented_formats, "format not activated")
 class Test_mercator(abtc.Test_RectGeometryMethods):
     fid = 'SURFGEOPOTENTIEL'
     basename = 'mercator_HN.fa'
@@ -258,6 +261,7 @@ class Test_mercator(abtc.Test_RectGeometryMethods):
                                15371.771129769251, delta=epsilon)
 
 
+@skipIf('FA' not in epygram.config.implemented_formats, "format not activated")
 class Test_stereopol(abtc.Test_RectGeometryMethods):
     fid = 'SURFGEOPOTENTIEL'
     basename = 'stereopol_HN.fa'
@@ -337,6 +341,7 @@ class Test_stereopol(abtc.Test_RectGeometryMethods):
                                15876.558527170644, delta=epsilon)
 
 
+@skipIf('FA' not in epygram.config.implemented_formats, "format not activated")
 class Test_regLL(abtc.Test_RectGeometryMethods):
     fid = 'SURFGEOPOTENTIEL'
     basename = 'regLL_small.fa'

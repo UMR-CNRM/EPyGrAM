@@ -23,74 +23,101 @@ fast = False  # skips some slow tests
 
 # H2D
 #####
+fmts = ['FA', 'GRIB2', 'netCDF']
+@skipIf(len(util.activate(*fmts)) == 0, "format not activated")
 @skipIf(fast, 'slow test')
-@util.add_tests_for_attrs('FA', 'GRIB2', 'netCDF')
+@util.add_tests_for_attrs(*util.activate(*fmts))
 class Test_gaussC1(abtc.Test_H2DGeometry):
     fileprefix = 'gaussC1'
 
 
+fmts = ['FA', 'GRIB2', 'netCDF']
+@skipIf(len(util.activate(*fmts)) == 0, "format not activated")
 @skipIf(fast, 'slow test')
-@util.add_tests_for_attrs('FA', 'GRIB2', 'netCDF')
+@util.add_tests_for_attrs(*util.activate(*fmts))
 class Test_gaussC2p4(abtc.Test_H2DGeometry):
     fileprefix = 'gaussC2.4'
 
 
-@util.add_tests_for_attrs('FA', 'GRIB2', 'netCDF', 'LFI')
+fmts = ['FA', 'GRIB2', 'netCDF', 'LFI']
+@skipIf(len(util.activate(*fmts)) == 0, "format not activated")
+@util.add_tests_for_attrs(*util.activate(*fmts))
 class Test_lambertHN(abtc.Test_H2DGeometry):
     fileprefix = 'lambert_HN'
 
 
-@util.add_tests_for_attrs('FA', 'GRIB2', 'netCDF', 'LFI')
+fmts = ['FA', 'GRIB2', 'netCDF', 'LFI']
+@skipIf(len(util.activate(*fmts)) == 0, "format not activated")
+@util.add_tests_for_attrs(*util.activate(*fmts))
 class Test_lambertHS(abtc.Test_H2DGeometry):
     fileprefix = 'lambert_HS'
 
 
-@util.add_tests_for_attrs('LFI')
+fmts = ['LFI']
+@skipIf(len(util.activate(*fmts)) == 0, "format not activated")
+@util.add_tests_for_attrs(*util.activate(*fmts))
 class Test_lambertHS_rot_sec(abtc.Test_H2DGeometry):
     fileprefix = 'lambert_HS_rotated_secant'
 
 
-@util.add_tests_for_attrs('FA', 'GRIB1', 'GRIB2', 'netCDF', 'LFI')
+fmts = ['FA', 'GRIB1', 'GRIB2', 'netCDF', 'LFI']
+@skipIf(len(util.activate(*fmts)) == 0, "format not activated")
+@util.add_tests_for_attrs(*util.activate(*fmts))
 class Test_mercatorHN(abtc.Test_H2DGeometry):
     fileprefix = 'mercator_HN'
 
 
-@util.add_tests_for_attrs('FA', 'GRIB1', 'GRIB2', 'netCDF')
+fmts = ['FA', 'GRIB1', 'GRIB2', 'netCDF']
+@skipIf(len(util.activate(*fmts)) == 0, "format not activated")
+@util.add_tests_for_attrs(*util.activate(*fmts))
 class Test_mercatorHS(abtc.Test_H2DGeometry):
     fileprefix = 'mercator_HS'
 
 
-@util.add_tests_for_attrs('LFI')
+fmts = ['LFI']
+@skipIf(len(util.activate(*fmts)) == 0, "format not activated")
+@util.add_tests_for_attrs(*util.activate(*fmts))
 class Test_mercatorHN_rot_sec(abtc.Test_H2DGeometry):
     fileprefix = 'mercator_HN_rotated_secant'
 
 
-@util.add_tests_for_attrs('FA', 'GRIB2', 'netCDF', 'LFI')
+fmts = ['FA', 'GRIB2', 'netCDF', 'LFI']
+@skipIf(len(util.activate(*fmts)) == 0, "format not activated")
+@util.add_tests_for_attrs(*util.activate(*fmts))
 class Test_stereopolHN(abtc.Test_H2DGeometry):
     fileprefix = 'stereopol_HN'
 
 
-@util.add_tests_for_attrs('FA', 'GRIB2', 'netCDF', 'LFI')
+fmts = ['FA', 'GRIB2', 'netCDF', 'LFI']
+@skipIf(len(util.activate(*fmts)) == 0, "format not activated")
+@util.add_tests_for_attrs(*util.activate(*fmts))
 class Test_stereopolHS(abtc.Test_H2DGeometry):
     fileprefix = 'stereopol_HS'
 
 
-@util.add_tests_for_attrs('LFI')
+fmts = ['LFI']
+@skipIf(len(util.activate(*fmts)) == 0, "format not activated")
+@util.add_tests_for_attrs(*util.activate(*fmts))
 class Test_stereopolHS_rot_sec(abtc.Test_H2DGeometry):
     fileprefix = 'stereopol_HS_rotated_secant'
 
 
-@util.add_tests_for_attrs('FA', 'GRIB1', 'GRIB2', 'netCDF')
+fmts = ['FA', 'GRIB1', 'GRIB2', 'netCDF']
+@skipIf(len(util.activate(*fmts)) == 0, "format not activated")
+@util.add_tests_for_attrs(*util.activate(*fmts))
 class Test_regLLsmall(abtc.Test_H2DGeometry):
     fileprefix = 'regLL_small'
 
 
-@util.add_tests_for_attrs('FA', 'GRIB1', 'GRIB2', 'netCDF')
+fmts = ['FA', 'GRIB1', 'GRIB2', 'netCDF']
+@skipIf(len(util.activate(*fmts)) == 0, "format not activated")
+@util.add_tests_for_attrs(*util.activate(*fmts))
 class Test_regLLlarge(abtc.Test_H2DGeometry):
     fileprefix = 'regLL_large'
 
 
 # Special ones
+@skipIf(len(util.activate('DDHLFA')) == 0, "format not activated")
 @util.add_tests_for_attrs('gridpoint', 'zonalband')
 class Test_DDHLFA_PointGeometry(abtc.Test_DDHLFA_Geometry):
     fid_to_test = 'SVGFS01'
@@ -98,6 +125,7 @@ class Test_DDHLFA_PointGeometry(abtc.Test_DDHLFA_Geometry):
     update_pickle = False  # set to True if necessary to make a new pickle
 
 
+@skipIf(len(util.activate('DDHLFA')) == 0, "format not activated")
 @util.add_tests_for_attrs('gridpoint', 'zonalband')
 class Test_DDHLFA_V1DGeometry(abtc.Test_DDHLFA_Geometry):
     fid_to_test = 'VCT1'
@@ -108,6 +136,7 @@ class Test_DDHLFA_V1DGeometry(abtc.Test_DDHLFA_Geometry):
 netCDF_Ndimensions = ['0D', 'V1D', 'V2D', 'H2D', '3D', '4D']  # , '5D']
 
 
+@skipIf(len(util.activate('netCDF')) == 0, "format not activated")
 @util.add_tests_for_attrs(*netCDF_Ndimensions)
 class Test_netCDF_Ndimensions(abtc.Test_GeometryInterfaces):
 
@@ -163,6 +192,7 @@ class Test_netCDF_Ndimensions(abtc.Test_GeometryInterfaces):
         self._test_rwr(filename, self.fid_to_test)
 
 
+@skipIf(len(util.activate('netCDF')) == 0, "format not activated")
 @util.add_tests_for_attrs('A', 'H', 'P', 'hybridP')
 class Test_netCDF_VGeometries(abtc.Test_GeometryInterfaces):
 
@@ -190,7 +220,9 @@ class Test_netCDF_VGeometries(abtc.Test_GeometryInterfaces):
         self._test_rwr(filename, self.fid_to_test)
 
 
-@util.add_tests_for_attrs('FA', 'GRIB2')
+fmts = ['FA', 'GRIB2']
+@skipIf(len(util.activate(*fmts)) == 0, "format not activated")
+@util.add_tests_for_attrs(*util.activate(*fmts))
 class Test_VGeometry_hybridP(abtc.Test_GeometryInterfaces):
 
     fid_to_test = {'FA':'S090TEMPERATURE',
@@ -211,6 +243,7 @@ class Test_VGeometry_hybridP(abtc.Test_GeometryInterfaces):
         self._test_rwr(filename, self.fid_to_test[fmt])
 
 
+@skipIf(len(util.activate('FA')) == 0, "format not activated")
 @util.add_tests_for_attrs('LAM', 'global')
 class Test_SpectralGeometry(abtc.Test_GeometryInterfaces):
 
@@ -235,11 +268,13 @@ class Test_SpectralGeometry(abtc.Test_GeometryInterfaces):
                                             str(f_rwr.spectral_geometry)]))
 
 
+@skipIf(len(util.activate('FA')) == 0, "format not activated")
 @util.add_tests_for_attrs('gaussC1', 'lambert_HN')
 class Test_GeoPointsFull_WR_fromFA(abtc.Test_GeoPoints_WR_fromFA):
     llv = False
 
 
+@skipIf(len(util.activate('FA')) == 0, "format not activated")
 @util.add_tests_for_attrs('gaussC1', 'lambert_HN')
 class Test_GeoPointsLLV_WR_fromFA(abtc.Test_GeoPoints_WR_fromFA):
     llv = True

@@ -6,6 +6,8 @@
 
 from __future__ import print_function, absolute_import, division, unicode_literals
 
+from epygram import config
+
 
 def _build_test_for_attr(attr):
     def test_(obj):
@@ -39,6 +41,14 @@ def add_tests_for_mtd(mtd, args, kwargs, assertion, expected, suffix=''):
         setattr(cls, tst.__name__, tst)
         return cls
     return decocls
+
+
+def activate(*formats):
+    """
+    Activate format(s) only if it is in epygram.config.implemented_formats.
+    """
+    fmap = {'GRIB1':'GRIB', 'GRIB2':'GRIB'}
+    return [f for f in formats if fmap.get(f, f) in config.implemented_formats]
 
 
 suffixes = {'FA': 'fa',

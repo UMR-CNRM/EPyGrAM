@@ -8,7 +8,6 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 from unittest import TestCase, main
 from numpy import pi
-import matplotlib
 import datetime
 
 from epygram import util
