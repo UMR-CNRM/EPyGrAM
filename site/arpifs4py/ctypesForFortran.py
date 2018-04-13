@@ -8,7 +8,7 @@ See these function documentations for more help on them.
 The module also exposes a dlclose function to try closing lib
 """
 
-#from __future__ import print_function, absolute_import, unicode_literals, division
+from __future__ import print_function, absolute_import, unicode_literals, division
 
 import ctypes
 import numpy
@@ -527,7 +527,7 @@ def ctypesForFortranFactory(solib):
                                     argument = numpy.asfortranarray(numpy.core.defchararray.ljust(argument, s[1][0]))
                             argtypes.append(numpy.ctypeslib.ndpointer(dtype=effective_dtype,
                                                                       ndim=len(argument.shape),
-                                                                      flags='F_CONTIGUOUS'))
+                                                                      flags=str('F_CONTIGUOUS')))  # Note: str() needed in Python2 for unicode/str obscure inner incompatibility
                             effectiveArgs.append(argument)
                             if s[2] in [OUT, INOUT]:
                                 resultArgs.append(argument)

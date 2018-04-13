@@ -95,7 +95,10 @@ class GeoPoints(FileResource):
         if self.openmode in ('r', 'a'):
             self._file = open(self.container.abspath, 'r')
             # check format is GeoPoints
-            isgeo = self._file.readline()
+            try:
+                isgeo = self._file.readline()
+            except UnicodeDecodeError:
+                isgeo = 'False'
             if isgeo[0:4] != '#GEO':
                 raise IOError("this resource is not a GeoPoints one.")
             # read header
