@@ -72,6 +72,7 @@ def get_resources(getmode='epygram',
     Get resources, given their description.
 
     :param getmode: controls the action and returned object:\n
+                    - 'check' return True only if the description is complete
                     - 'epygram' return the epygram resources
                     - 'locate' return the physical resolved location of the
                       resource

@@ -41,12 +41,12 @@ if not vortex_cache_dir:
         if not vortex_cache_dir:
             location_of_vortex_cache = 'TMPDIR'
             vortex_cache_dir = os.getenv(location_of_vortex_cache)
+if not vortex_cache_dir:
+    raise ValueError('no rootdir has been defined for the Vortex cache: please export $MTOOLDIR.')
 if location_of_vortex_cache == 'MTOOLDIR':
     vortex_cache = os.path.join(vortex_cache_dir, 'cache')
 elif location_of_vortex_cache in ('FTDIR', 'WORKDIR', 'TMPDIR'):
     vortex_cache = os.path.join(vortex_cache_dir, 'mtool', 'cache')
-if not vortex_cache_dir:
-    raise ValueError('no rootdir has been defined for the Vortex cache: please export $MTOOLDIR.')
 if not os.path.exists(vortex_cache):
     os.makedirs(vortex_cache)
 
