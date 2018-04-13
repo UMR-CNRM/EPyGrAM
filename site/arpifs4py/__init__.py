@@ -15,10 +15,8 @@ Contains the interface routines to arpifs code:
 
 from __future__ import print_function, absolute_import, unicode_literals, division
 
-from ctypes import c_longlong, c_char_p, PyDLL, c_bool, c_double
 import os
 import numpy as np
-import subprocess
 
 from . import ctypesForFortran
 
@@ -28,12 +26,14 @@ _libs4py = "libs4py.so"  # local name in the directory
 # helpers
 #########
 def addReturnCode(func):
-    def wrapper(*args):
+    def wrapper(*args, **kwargs):
         """
         This decorator adds an integer at the beginning of the "returned"
         signature of the Python function.
         """
-        return [(c_longlong(), OUT)] + func(*args)
+        out = func(*args, **kwargs)
+        out[1].insert(0, (np.int64, None, OUT))
+        return out
     wrapper.__name__ = func.__name__
     wrapper.__doc__ = func.__doc__
     return wrapper
@@ -101,6 +101,7 @@ def treatReturnCode_LFA(func):
 
 
 def complete_GRIB_samples_path_from_dynamic_gribapi(lib):
+    import subprocess
     import re
     ldd_out = subprocess.check_output(['ldd', lib])
     libs_grib_api = {}
@@ -126,9 +127,7 @@ shared_objects_library = os.path.join(os.path.dirname(os.path.realpath(__file__)
                                       _libs4py)
 complete_GRIB_samples_path_from_dynamic_gribapi(shared_objects_library)
 os.environ.pop('GRIB_DEFINITION_PATH', None)
-
-so = PyDLL(shared_objects_library)
-ctypesFF = ctypesForFortran.ctypesForFortranFactory(so)
+ctypesFF, handle = ctypesForFortran.ctypesForFortranFactory(shared_objects_library)
 
 
 # sub-modules

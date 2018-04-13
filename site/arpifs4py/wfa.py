@@ -9,33 +9,43 @@ Wrappers for FA library.
 
 from __future__ import print_function, absolute_import, unicode_literals, division
 
-from ctypes import c_longlong, c_char_p, c_bool, c_double
 import numpy as np
 
 from . import ctypesFF, IN, OUT, treatReturnCode, addReturnCode
+# Note to developers:
+# Using the ctypesFF decorator, the Python function return a tuple containing:
+#    tup[0]:
+#        [the arguments of the Python function,
+#         to be passed as in/inout arguments to the Fortran subroutine]
+#    tup[1]:
+#        [the python signature of all Fortran subroutine arguments]
+#    tup[2]:
+#        None in case of a Fortran subroutine, the output in case of a Fortran function)
 
 
-@ctypesFF
-def get_facst(*args):
+@ctypesFF()
+def get_facst():
     """
     Export maximum sizes used for fa format.
 
-    Args:\n
+    Returns:\n
     1) JPXPAH
     2) JPXIND
     3) JPXGEO
     4) JPXNIV
     """
-    return [(c_longlong(), OUT),
-            (c_longlong(), OUT),
-            (c_longlong(), OUT),
-            (c_longlong(), OUT)]
+    return ([],
+            [(np.int64, None, OUT),
+             (np.int64, None, OUT),
+             (np.int64, None, OUT),
+             (np.int64, None, OUT)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wfaitou(*args):
+def wfaitou(CDFILE, CDSTATE, CDNOMC):
     """
     Open a FA file.
 
@@ -47,16 +57,18 @@ def wfaitou(*args):
     Returns:\n
     1) KNUMER: logical unit number associated to file
     """
-    return [(c_char_p(args[0].encode("utf-8")), IN),
-            (c_char_p(args[1].encode("utf-8")), IN),
-            (c_longlong(), OUT),
-            (c_char_p(args[2].ljust(16).encode("utf-8")), IN)]
+    return ([CDFILE, CDSTATE, CDNOMC],
+            [(np.str, (len(CDFILE),), IN),
+             (np.str, (len(CDSTATE),), IN),
+             (np.int64, None, OUT),
+             (np.str, (16,), IN)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wfaveur(*args):
+def wfaveur(KNUMER):
     """
     Get compression parameters of a field in file.
 
@@ -71,19 +83,21 @@ def wfaveur(*args):
     5) KPUILA: laplacian power
     6) KDMOPL: KPUILA level of modulation
     """
-    return [(c_longlong(args[0]), IN),
-            (c_longlong(), OUT),
-            (c_longlong(), OUT),
-            (c_longlong(), OUT),
-            (c_longlong(), OUT),
-            (c_longlong(), OUT),
-            (c_longlong(), OUT)]
+    return ([KNUMER],
+            [(np.int64, None, IN),
+             (np.int64, None, OUT),
+             (np.int64, None, OUT),
+             (np.int64, None, OUT),
+             (np.int64, None, OUT),
+             (np.int64, None, OUT),
+             (np.int64, None, OUT)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wfalsif(*args):
+def wfalsif(KNUMER):
     """
     Get identifier of file.
 
@@ -93,14 +107,16 @@ def wfalsif(*args):
     Returns:\n
     1) CDIDEN: identifier of file
     """
-    return [(c_longlong(args[0]), IN),
-            (c_char_p((" " * 80).encode("utf-8")), OUT)]
+    return ([KNUMER],
+            [(np.int64, None, IN),
+             (np.str, (80,), OUT)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wfanion(*args):
+def wfanion(KNUMER, CDPREF, KNIVAU, CDSUFF):
     """
     Get the characteristics of a field.
 
@@ -118,19 +134,22 @@ def wfanion(*args):
     5) KSTRON: potential under-trocature
     6) KPUILA: potential laplacian power
     """
-    return [(c_longlong(args[0]), IN),
-            (c_char_p(args[1].ljust(4).encode("utf-8")), IN),
-            (c_longlong(args[2]), IN),
-            (c_char_p(args[3].ljust(12).encode("utf-8")), IN),
-            (c_bool(), OUT), (c_bool(), OUT),
-            (c_longlong(), OUT),
-            (c_longlong(), OUT),
-            (c_longlong(), OUT),
-            (c_longlong(), OUT)]
+    return ([KNUMER, CDPREF, KNIVAU, CDSUFF],
+            [(np.int64, None, IN),
+             (np.str, (4,), IN),
+             (np.int64, None, IN),
+             (np.str, (12,), IN),
+             (np.bool, None, OUT),
+             (np.bool, None, OUT),
+             (np.int64, None, OUT),
+             (np.int64, None, OUT),
+             (np.int64, None, OUT),
+             (np.int64, None, OUT),],
+            None)
 
 
-@ctypesFF
-def wfacies(*args):
+@ctypesFF()
+def wfacies(KXPAH, KXIND, KXGEO, KXNIV, CDNOMC):
     """
     Get parameters in header.
 
@@ -156,33 +175,35 @@ def wfacies(*args):
     15) PBHYBR: Values of "B" function of the hybrid coordinate at LAYERiS BOUNDARIES
     16) LDGARD: True if "cadre" must be kept even after the last file attached is closed
     """
-    return [(c_longlong(args[0]), IN),
-            (c_longlong(args[1]), IN),
-            (c_longlong(args[2]), IN),
-            (c_longlong(args[3]), IN),
-            (c_char_p(args[4].ljust(16).encode("utf-8")), IN),
-            (c_longlong(), OUT),
-            (c_double(), OUT),
-            (c_double(), OUT),
-            (c_double(), OUT),
-            (c_double(), OUT),
-            (c_longlong(), OUT),
-            (c_longlong(), OUT),
-            (c_longlong(), OUT),
-            (np.ndarray((args[0],), dtype=np.int64), OUT),
-            (np.ndarray((args[1],), dtype=np.int64), OUT),
-            (np.ndarray((args[1],), dtype=np.float64), OUT),
-            (c_longlong(), OUT),
-            (c_double(), OUT),
-            (np.ndarray((args[3] + 1,), dtype=np.float64), OUT),
-            (np.ndarray((args[3] + 1,), dtype=np.float64), OUT),
-            (c_bool(), OUT)]
+    return ([KXPAH, KXIND, KXGEO, KXNIV, CDNOMC],
+            [(np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.str, (16,), IN),
+             (np.int64, None, OUT),
+             (np.float64, None, OUT),
+             (np.float64, None, OUT),
+             (np.float64, None, OUT),
+             (np.float64, None, OUT),
+             (np.int64, None, OUT),
+             (np.int64, None, OUT),
+             (np.int64, None, OUT),
+             (np.int64, (KXPAH,), OUT),
+             (np.int64, (KXIND,), OUT),
+             (np.float64, (KXIND,), OUT),
+             (np.int64, None, OUT),
+             (np.float64, None, OUT),
+             (np.float64, (KXNIV + 1,), OUT),
+             (np.float64, (KXNIV + 1,), OUT),
+             (np.bool, None, OUT),],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wfadies(*args):
+def wfadies(KNUMER):
     """
     Get the date and time of a field.
 
@@ -192,14 +213,16 @@ def wfadies(*args):
     Returns:\n
     1) KDATEF: array of date elements
     """
-    return [(c_longlong(args[0]), IN),
-            (np.ndarray((11,), dtype=np.int64), OUT)]
+    return ([KNUMER],
+            [(np.int64, None, IN),
+             (np.int64, (11), OUT)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wfadiex(*args):
+def wfadiex(KNUMER):
     """
     Get the date and time of a field (precision to the second).
 
@@ -209,12 +232,22 @@ def wfadiex(*args):
     Returns:\n
     1) KDATEF: array of date elements (precision to the second)
     """
-    return [(c_longlong(args[0]), IN),
-            (np.ndarray((22,), dtype=np.int64), OUT)]
+    return ([KNUMER],
+            [(np.int64, None, IN),
+             (np.int64, (22,), OUT)],
+            None)
 
 
-@ctypesFF
-def wfacade(*args):
+@ctypesFF()
+def wfacade(CDNOMC, KTYPTR,
+            PSLAPO, PCLOPO, PSLOPO,
+            PCODIL,
+            KTRONC, KNLATI, KNXLON,
+            KSNLOPA, KNLOPA,
+            KSNOZPA, KNOZPA,
+            KSSINLA, PSINLA,
+            KNIVER, PREFER, PAHYBR, PBHYBR,
+            LDGARD):
     """
     Set parameters in header.
 
@@ -240,32 +273,42 @@ def wfacade(*args):
     19) PBHYBR: Values of "B" function of the hybrid coordinate at LAYERiS BOUNDARIES
     20) LDGARD: True if "cadre" must be kept even after the last file attached is closed
     """
-    return [(c_char_p(args[0].ljust(16).encode("utf-8")), IN),
-            (c_longlong(args[1]), IN),
-            (c_double(args[2]), IN),
-            (c_double(args[3]), IN),
-            (c_double(args[4]), IN),
-            (c_double(args[5]), IN),
-            (c_longlong(args[6]), IN),
-            (c_longlong(args[7]), IN),
-            (c_longlong(args[8]), IN),
-            (c_longlong(args[9]), IN),
-            (args[10], IN),
-            (c_longlong(args[11]), IN),
-            (args[12], IN),
-            (c_longlong(args[13]), IN),
-            (args[14], IN),
-            (c_longlong(args[15]), IN),
-            (c_double(args[16]), IN),
-            (args[17], IN),
-            (args[18], IN),
-            (c_bool(args[19]), IN)]
+    return ([CDNOMC, KTYPTR,
+             PSLAPO, PCLOPO, PSLOPO,
+             PCODIL,
+             KTRONC, KNLATI, KNXLON,
+             KSNLOPA, KNLOPA,
+             KSNOZPA, KNOZPA,
+             KSSINLA, PSINLA,
+             KNIVER, PREFER, PAHYBR, PBHYBR,
+             LDGARD],
+            [(np.str, (16,), IN),
+             (np.int64, None, IN),
+             (np.float64, None, IN),
+             (np.float64, None, IN),
+             (np.float64, None, IN),
+             (np.float64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, (KSNLOPA,), IN),
+             (np.int64, None, IN),
+             (np.int64, (KSNOZPA,), IN),
+             (np.int64, None, IN),
+             (np.float64, (KSSINLA,), IN),
+             (np.int64, None, IN),
+             (np.float64, None, IN),
+             (np.float64, (KNIVER + 1,), IN),
+             (np.float64, (KNIVER + 1,), IN),
+             (np.bool, None, IN)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wfagote(*args):
+def wfagote(KNUMER, KNGRIB, KNBPDG, KNBCSP, KSTRON, KPUILA, KDMOPL):
     """
     Set compression parameters of a field in file.
 
@@ -278,19 +321,21 @@ def wfagote(*args):
     6) KPUILA: laplacian power
     7) KDMOPL: KPUILA level of modulation
     """
-    return [(c_longlong(args[0]), IN),
-            (c_longlong(args[1]), IN),
-            (c_longlong(args[2]), IN),
-            (c_longlong(args[3]), IN),
-            (c_longlong(args[4]), IN),
-            (c_longlong(args[5]), IN),
-            (c_longlong(args[6]), IN)]
+    return ([KNUMER, KNGRIB, KNBPDG, KNBCSP, KSTRON, KPUILA, KDMOPL],
+            [(np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wfautif(*args):
+def wfautif(KNUMER, CDIDEN):
     """
     Set identifier of file.
 
@@ -298,14 +343,16 @@ def wfautif(*args):
     1) KNUMER: logical unit number associated to file
     2) CDIDEN: identifier of file
     """
-    return [(c_longlong(args[0]), IN),
-            (c_char_p(args[1].ljust(80).encode("utf-8")), IN)]
+    return ([KNUMER, CDIDEN],
+            [(np.int64, None, IN),
+             (np.str, (80,), IN),],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wfandar(*args):
+def wfandar(KNUMER, KDATEF):
     """
     Set the date and time of a field.
 
@@ -313,14 +360,16 @@ def wfandar(*args):
     1) KNUMER: logical unit number associated to file
     2) KDATEF: array of date elements
     """
-    return [(c_longlong(args[0]), IN),
-            (args[1], IN)]
+    return ([KNUMER, KDATEF],
+            [(np.int64, None, IN),
+             (np.int64, (11,), IN)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wfandax(*args):
+def wfandax(KNUMER, KDATEF):
     """
     Set the date and time of a field (precision to the second).
 
@@ -328,14 +377,16 @@ def wfandax(*args):
     1) KNUMER: logical unit number associated to file
     2) KDATEF: array of date elements (precision to the second)
     """
-    return [(c_longlong(args[0]), IN),
-            (args[1], IN)]
+    return ([KNUMER, KDATEF],
+            [(np.int64, None, IN),
+             (np.int64, (22,), IN)],
+            None)
 
 
 @treatReturnCode
 @ctypesFF
 @addReturnCode
-def wfacile(*args):
+def wfacile(KSIZE, KNUMER, CDPREF, KNIVAU, CDSUFF, LDCOSP):
     """
     Read a 2D field.
 
@@ -348,23 +399,25 @@ def wfacile(*args):
     6) LDCOSP: true if spectral
 
     Returns:\n
-    6) PCHAMP: float values read
+    1) PCHAMP: float values read
     """
-    return [(c_longlong(args[0]), IN),
-            (c_longlong(args[1]), IN),
-            (c_char_p(args[2].ljust(4).encode("utf-8")), IN),
-            (c_longlong(args[3]), IN),
-            (c_char_p(args[4].ljust(12).encode("utf-8")), IN),
-            (np.ndarray((args[0],), dtype=np.float64), OUT),
-            (c_bool(args[5]), IN)]
+    return ([KSIZE, KNUMER, CDPREF, KNIVAU, CDSUFF, LDCOSP],
+            [(np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.str, (4,), IN),
+             (np.int64, None, IN),
+             (np.str, (12,), IN),
+             (np.float64, (KSIZE,), OUT),
+             (np.bool, None, IN)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wfacilo(*args):
+def wfacilo(KSIZE, KNUMER, CDPREF, KNIVAU, CDSUFF, LDCOSP):
     """
-    Read a 2D field. With reordering of spectral fields.
+    Read a 2D field.
 
     Args:\n
     1) KSIZE: size of array to read
@@ -375,21 +428,23 @@ def wfacilo(*args):
     6) LDCOSP: true if spectral
 
     Returns:\n
-    6) PCHAMP: float values read
+    1) PCHAMP: float values read
     """
-    return [(c_longlong(args[0]), IN),
-            (c_longlong(args[1]), IN),
-            (c_char_p(args[2].ljust(4).encode("utf-8")), IN),
-            (c_longlong(args[3]), IN),
-            (c_char_p(args[4].ljust(12).encode("utf-8")), IN),
-            (np.ndarray((args[0],), dtype=np.float64), OUT),
-            (c_bool(args[5]), IN)]
+    return ([KSIZE, KNUMER, CDPREF, KNIVAU, CDSUFF, LDCOSP],
+            [(np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.str, (4,), IN),
+             (np.int64, None, IN),
+             (np.str, (12,), IN),
+             (np.float64, (KSIZE,), OUT),
+             (np.bool, None, IN)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wfaienc(*args):
+def wfaienc(KNUMER, CDPREF, KNIVAU, CDSUFF, KSIZE, PCHAMP, LDCOSP):
     """
     Write a 2D field.
 
@@ -402,19 +457,21 @@ def wfaienc(*args):
     6) PCHAMP: float values to write
     7) LDCOSP: true if spectral
     """
-    return [(c_longlong(args[0]), IN),
-            (c_char_p(args[1].ljust(4).encode("utf-8")), IN),
-            (c_longlong(args[2]), IN),
-            (c_char_p(args[3].ljust(12).encode("utf-8")), IN),
-            (c_longlong(args[4]), IN),
-            (args[5], IN),
-            (c_bool(args[6]), IN)]
+    return ([KNUMER, CDPREF, KNIVAU, CDSUFF, KSIZE, PCHAMP, LDCOSP],
+            [(np.int64, None, IN),
+             (np.str, (4,), IN),
+             (np.int64, None, IN),
+             (np.str, (12,), IN),
+             (np.int64, None, IN),
+             (np.float64, (KSIZE,), IN),
+             (np.bool, None, IN)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wfaieno(*args):
+def wfaieno(KNUMER, CDPREF, KNIVAU, CDSUFF, KSIZE, PCHAMP, LDCOSP):
     """
     Write a 2D field. With reordering of spectral fields.
 
@@ -427,21 +484,23 @@ def wfaieno(*args):
     6) PCHAMP: float values to write
     7) LDCOSP: true if spectral
     """
-    return [(c_longlong(args[0]), IN),
-            (c_char_p(args[1].ljust(4).encode("utf-8")), IN),
-            (c_longlong(args[2]), IN),
-            (c_char_p(args[3].ljust(12).encode("utf-8")), IN),
-            (c_longlong(args[4]), IN),
-            (args[5], IN),
-            (c_bool(args[6]), IN)]
+    return ([KNUMER, CDPREF, KNIVAU, CDSUFF, KSIZE, PCHAMP, LDCOSP],
+            [(np.int64, None, IN),
+             (np.str, (4,), IN),
+             (np.int64, None, IN),
+             (np.str, (12,), IN),
+             (np.int64, None, IN),
+             (np.float64, (KSIZE,), IN),
+             (np.bool, None, IN)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wfalais(*args):
+def wfalais(KNUMER, CDNOMA, KLONGD):
     """
-    Write a meta-field.
+    Read a meta-field.
 
     Args:\n
     1) KNUMER: logical unit number associated to file
@@ -451,16 +510,18 @@ def wfalais(*args):
     Returns:\n
     1) PDONNE: data to read
     """
-    return [(c_longlong(args[0]), IN),
-            (c_char_p(args[1].ljust(16).encode("utf-8")), IN),
-            (np.ndarray((args[2],), dtype=np.float64), OUT),
-            (c_longlong(args[2]), IN)]
+    return ([KNUMER, CDNOMA, KLONGD],
+            [(np.int64, None, IN),
+             (np.str, (16,), IN),
+             (np.float64, (KLONGD,), OUT),
+             (np.int64, None, IN)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wfaisan(*args):
+def wfaisan(KNUMER, CDNOMA, KSIZE, PDONNE):
     """
     Write a meta-field.
 
@@ -470,16 +531,18 @@ def wfaisan(*args):
     3) KSIZE: Size of PDONNE
     4) PDONNE: data to write
     """
-    return [(c_longlong(args[0]), IN),
-            (c_char_p(args[1].ljust(16).encode("utf-8")), IN),
-            (c_longlong(args[2]), IN),
-            (args[3], IN)]
+    return ([KNUMER, CDNOMA, KSIZE, PDONNE],
+            [(np.int64, None, IN),
+             (np.str, (16,), IN),
+             (np.int64, None, IN),
+             (np.float64, (KSIZE,), OUT)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wfairme(*args):
+def wfairme(KNUMER, CDSTTU):
     """
     Close the FA file.
 
@@ -487,5 +550,7 @@ def wfairme(*args):
     1) KNUMER: logical unit number associated to file
     2) CDSTTU: status ('KEEP', 'DELETE', 'DEFAUT')
     """
-    return[(c_longlong(args[0]), IN),
-           (c_char_p(args[1].ljust(7).encode("utf-8")), IN)]
+    return ([KNUMER, CDSTTU],
+            [(np.int64, None, IN),
+             (np.str, (7,), IN),],
+            None)

@@ -9,16 +9,24 @@ Wrappers for LFI library.
 
 from __future__ import print_function, absolute_import, unicode_literals, division
 
-from ctypes import c_longlong, c_char_p, c_bool
 import numpy as np
 
 from . import ctypesFF, IN, OUT, INOUT, treatReturnCode, addReturnCode
+# Note to developers:
+# Using the ctypesFF decorator, the Python function return a tuple containing:
+#    tup[0]:
+#        [the arguments of the Python function,
+#         to be passed as in/inout arguments to the Fortran subroutine]
+#    tup[1]:
+#        [the python signature of all Fortran subroutine arguments]
+#    tup[2]:
+#        None in case of a Fortran subroutine, the output in case of a Fortran function)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wlfinaf(*args):
+def wlfinaf(KNUMER):
     """
     Get info about number of records in file.
 
@@ -31,30 +39,34 @@ def wlfinaf(*args):
     3) KNARES: Number of logical records which can be written in the reserved part of index (holes included)
     4) KNAMAX: Maximum number of logical records which one can write on logical unit
     """
-    return [(c_longlong(args[0]), IN),
-            (c_longlong(), OUT),
-            (c_longlong(), OUT),
-            (c_longlong(), OUT),
-            (c_longlong(), OUT)]
+    return ([KNUMER],
+            [(np.int64, None, IN),
+             (np.int64, None, OUT),
+             (np.int64, None, OUT),
+             (np.int64, None, OUT),
+             (np.int64, None, OUT)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wlfipos(*args):
+def wlfipos(KNUMER):
     """
     Rewind record.
 
     Args:\n
     1) KNUMER: logical unit number associated to file
     """
-    return [(c_longlong(args[0]), IN)]
+    return ([KNUMER],
+            [(np.int64, None, IN)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wlficas(*args):
+def wlficas(KNUMER, LDAVAN):
     """
     Run through records getting their names and lengths.
 
@@ -67,17 +79,19 @@ def wlficas(*args):
     2) KLONG: length of next record
     3) KPOSEX: position in file of the first word of next record
     """
-    return [(c_longlong(args[0]), IN),
-            (c_char_p((" " * 16).encode("utf-8")), OUT),
-            (c_longlong(), OUT),
-            (c_longlong(), OUT),
-            (c_bool(args[1]), IN)]
+    return ([KNUMER, LDAVAN],
+            [(np.int64, None, IN),
+             (np.str, (16,), OUT),
+             (np.int64, None, OUT),
+             (np.int64, None, OUT),
+             (np.bool, None, IN)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wlfiouv(*args):
+def wlfiouv(CDFILE, CDSTATE):
     """
     Open a LFI file.
 
@@ -88,15 +102,17 @@ def wlfiouv(*args):
     Returns:\n
     1) KNUMER: logical unit number associated to file
     """
-    return[(c_char_p(args[0].encode("utf-8")), IN),
-           (c_char_p(args[1].encode("utf-8")), IN),
-           (c_longlong(), OUT)]
+    return ([CDFILE, CDSTATE],
+            [(np.str, (len(CDFILE),), IN),
+             (np.str, (len(CDSTATE),), IN),
+             (np.int64, None, OUT)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wlfifer(*args):
+def wlfifer(KNUMER, CDSTTC):
     """
     Close a LFI file.
 
@@ -104,14 +120,16 @@ def wlfifer(*args):
     1) KNUMER: logical unit number associated to file
     2) CDSTTC: close status ('KEEP', 'SCRATCH', 'DELETE')
     """
-    return[(c_longlong(args[0]), IN),
-           (c_char_p(args[1].ljust(7).encode("utf-8")), IN)]
+    return ([KNUMER, CDSTTC],
+            [(np.int64, None, IN),
+             (np.str, (7,), IN)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wlfinfo(*args):
+def wlfinfo(KNUMER, CDNOMA):
     """
     Get length of a record.
 
@@ -123,16 +141,18 @@ def wlfinfo(*args):
     1) KLONG: length of record
     2) KPOSEX: position in file of the first word of next record
     """
-    return[(c_longlong(args[0]), IN),
-           (c_char_p(args[1].ljust(16).encode("utf-8")), IN),
-           (c_longlong(), OUT),
-           (c_longlong(), OUT)]
+    return ([KNUMER, CDNOMA],
+            [(np.int64, None, IN),
+             (np.str, (16,), IN),
+             (np.int64, None, OUT),
+             (np.int64, None, OUT)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wlfilec(*args):
+def wlfilec(KNUMER, CDNOMA, KLONG, LDABORT):
     """
     Read a record.
 
@@ -145,17 +165,19 @@ def wlfilec(*args):
     Returns:\n
     1) KTAB: integer array read
     """
-    return[(c_longlong(args[0]), IN),
-           (c_char_p(args[1].ljust(16).encode("utf-8")), IN),
-           (c_longlong(args[2]), IN),
-           (c_bool(args[3]), IN),
-           (np.ndarray((args[2],), dtype=np.int64), OUT)]
+    return ([KNUMER, CDNOMA, KLONG, LDABORT],
+            [(np.int64, None, IN),
+             (np.str, (16,), IN),
+             (np.int64, None, IN),
+             (np.bool, None, IN),
+             (np.int64, (KLONG,), OUT)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wlfiecr(*args):
+def wlfiecr(KNUMER, CDNOMA, KSIZE, KTAB):
     """
     Write a record.
 
@@ -165,16 +187,18 @@ def wlfiecr(*args):
     3) KSIZE: Size of KTAB
     4) KTAB: integer array to write
     """
-    return[(c_longlong(args[0]), IN),
-           (c_char_p(args[1].ljust(16).encode("utf-8")), IN),
-           (c_longlong(args[2]), IN),
-           (args[3], IN)]
+    return ([KNUMER, CDNOMA, KSIZE, KTAB],
+            [(np.int64, None, IN),
+             (np.str, (16,), IN),
+             (np.int64, None, IN),
+             (np.int64, (KSIZE,), IN)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wlfiren(*args):
+def wlfiren(KNUMER, CDNOM1, CDNOM2):
     """
     Rename a record.
 
@@ -183,15 +207,17 @@ def wlfiren(*args):
     2) CDNOM1: name of record to rename
     3) CDNOM2: new name of record
     """
-    return[(c_longlong(args[0]), IN),
-           (c_char_p(args[1].ljust(16).encode("utf-8")), IN),
-           (c_char_p(args[2].ljust(16).encode("utf-8")), IN)]
+    return ([KNUMER, CDNOM1, CDNOM2],
+            [(np.int64, None, IN),
+             (np.str, (16,), IN),
+             (np.str, (16,), IN)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wlfisup(*args):
+def wlfisup(KNUMER, CDNOMA):
     """
     Delete a record.
 
@@ -199,12 +225,14 @@ def wlfisup(*args):
     1) KNUMER: logical unit number associated to file
     2) CDNOMA: name of record to delete
     """
-    return[(c_longlong(args[0]), IN),
-           (c_char_p(args[1].ljust(16).encode("utf-8")), IN)]
+    return ([KNUMER, CDNOMA],
+            [(np.int64, None, IN),
+             (np.str, (16,), IN)],
+            None)
 
 
-@ctypesFF
-def wget_compheader(*args):
+@ctypesFF()
+def wget_compheader(KSIZE, KDATA, KLONG):
     """
     Wrapper to GET_COMPHEADER.
 
@@ -217,15 +245,17 @@ def wget_compheader(*args):
     1) KLONU: length of uncompressed data
     2) KTYPECOMP: type of compression
     """
-    return[(c_longlong(args[0]), IN),
-           (args[1], IN),
-           (c_longlong(args[2]), IN),
-           (c_longlong(), OUT),
-           (c_longlong(), OUT)]
+    return ([KSIZE, KDATA, KLONG],
+            [(np.int64, None, IN),
+             (np.int64, (KSIZE,), IN),
+             (np.int64, None, IN),
+             (np.int64, None, OUT),
+             (np.int64, None, OUT),],
+            None)
 
 
-@ctypesFF
-def wdecompress_field(*args):
+@ctypesFF()
+def wdecompress_field(KSIZE, KCOMP, KTYPECOMP, KLDECOMP):
     """
     Wrapper to DECOMPRESS_FIELD
 
@@ -238,15 +268,17 @@ def wdecompress_field(*args):
     Returns:\n
     1) KDECOMP: decompressed data integer array
     """
-    return[(c_longlong(args[0]), IN),
-           (args[1], IN),
-           (c_longlong(args[2]), IN),
-           (c_longlong(args[3]), IN),
-           (np.ndarray((args[3],), dtype=np.int64), OUT)]
+    return ([KSIZE, KCOMP, KTYPECOMP, KLDECOMP],
+            [(np.int64, None, IN),
+             (np.int64, (KSIZE,), IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, (KLDECOMP,), OUT)],
+            None)
 
 
-@ctypesFF
-def wcompress_field(*args):
+@ctypesFF()
+def wcompress_field(KTAB, KX, KY, KSIZEDECOMP):
     """
     Wrapper to COMPRESS_FIELD
 
@@ -259,8 +291,10 @@ def wcompress_field(*args):
     1) KTAB: compressed data integer array (OUT)
     2) KSIZECOMP: size of compressed integer array
     """
-    return[(args[0], INOUT),
-           (c_longlong(args[1]), IN),
-           (c_longlong(args[2]), IN),
-           (c_longlong(args[3]), IN),
-           (c_longlong(), OUT)]
+    return ([KTAB, KX, KY, KSIZEDECOMP],
+            [(np.int64, (KSIZEDECOMP), INOUT),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, OUT)],
+            None)

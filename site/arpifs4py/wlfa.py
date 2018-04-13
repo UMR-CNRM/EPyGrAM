@@ -9,16 +9,24 @@ Wrappers for LFA library.
 
 from __future__ import print_function, absolute_import, unicode_literals, division
 
-from ctypes import c_longlong, c_char_p, c_bool
 import numpy as np
 
 from . import ctypesFF, IN, OUT, treatReturnCode_LFA, addReturnCode
+# Note to developers:
+# Using the ctypesFF decorator, the Python function return a tuple containing:
+#    tup[0]:
+#        [the arguments of the Python function,
+#         to be passed as in/inout arguments to the Fortran subroutine]
+#    tup[1]:
+#        [the python signature of all Fortran subroutine arguments]
+#    tup[2]:
+#        None in case of a Fortran subroutine, the output in case of a Fortran function)
 
 
 @treatReturnCode_LFA
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wlfaouv(*args):
+def wlfaouv(cdnomf, cdtypo):
     """
     Open a LFA file.
 
@@ -28,99 +36,87 @@ def wlfaouv(*args):
     Output:
         kul         logical unit of LFA file.
     """
-    return[(c_char_p(args[0].encode("utf-8")), IN),
-           (c_char_p(args[1].encode("utf-8")), IN),
-           (c_longlong(), OUT)]
+    return ([cdnomf, cdtypo],
+            [(np.str, (len(cdnomf),), IN),
+             (np.str, (len(cdtypo),), IN),
+             (np.int64, None, OUT),],
+            None)
 
 
-@ctypesFF
-def wlfafer(*args):
+@ctypesFF()
+def wlfafer(kul):
     """
     Close a LFA file.
 
     Input:
         kul        logical unit of LFA file.
     """
-    return[(c_longlong(args[0]), IN)]
+    return ([kul],
+            [(np.int64, None, IN)],
+            None)
 
 
-@ctypesFF
-def wlfaecrr(*args):
+@ctypesFF()
+def wlfaecrr(kul, cdna, preel, klong):
     """
     Write real data on LFA file.
 
     Input:
         kul              logical unit of LFA file.
         cdna             name of article to write.
-        preel(1,klong)   real data to write.
+        preel(klong)     real data to write.
         klong            length of article to write.
     """
-    return[(c_longlong(args[0]), IN),
-           (c_char_p(args[1].encode("utf-8")), IN),
-           (args[2], IN),
-           (c_longlong(args[3]), IN)]
+    return ([kul, cdna, preel, klong],
+            [(np.int64, None, IN),
+             (np.str, (len(cdna),), IN),
+             (np.float64, (klong,), IN),
+             (np.int64, None, IN)],
+            None)
 
 
-@ctypesFF
-def wlfaecri(*args):
+@ctypesFF()
+def wlfaecri(kul, cdna, kentier, klong):
     """
     Write integer data of LFA file.
 
     Input:
         kul                  logical unit of LFA file.
         cdna                 name of article to write.
-        kentier(1,klong)     integers to write.
+        kentier(klong)       integers to write.
         klong                length of article to write.
     """
-    return[(c_longlong(args[0]), IN),
-           (c_char_p(args[1].encode("utf-8")), IN),
-           (args[2], IN),
-           (c_longlong(args[3]), IN)]
+    return ([kul, cdna, kentier, klong],
+            [(np.int64, None, IN),
+             (np.str, (len(cdna),), IN),
+             (np.float64, (klong,), IN),
+             (np.int64, None, IN)],
+            None)
 
 
-@ctypesFF
-def wlfaecrc(*args):
+@ctypesFF()
+def wlfaecrc(kul, cdna, cdcar, klong):
     """
     Write character data on LFA file.
 
     Input:
         kul              logical unit of LFA file.
         cdna             name of article to write.
-        cdcar(1,klong)   characters to write.
+        cdcar(klong)     characters to write.
         klong            length of article to write.
     """
-    return[(c_longlong(args[0]), IN),
-           (c_char_p(args[1].encode("utf-8")), IN),
-           (args[2], IN),
-           (c_longlong(args[3]), IN)]
+    return ([kul, cdna, cdcar, klong],
+            [(np.int64, None, IN),
+             (np.str, (len(cdna),), IN),
+             (np.str, (klong,), IN),  # FIXME: how to dimension ?
+             (np.int64, None, IN)],
+            None)
 
 
 @treatReturnCode_LFA
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wlfaleci(*args):
-    """
-    Read real data on LFA file.
-
-    Input:
-        kul              logical unit of LFA file.
-        cdna             article name.
-        kdimb            physical dimension of array preel.
-    Output:
-        preel(1,klong)   real elements read.
-        klong            number of real elements read.
-    """
-    return[(c_longlong(args[0]), IN),
-           (c_char_p(args[1].encode("utf-8")), IN),
-           (c_longlong(args[2]), IN),
-           (np.ndarray((args[2],), dtype=np.int64), OUT),
-           (c_longlong(), OUT)]
-
-
-@treatReturnCode_LFA
-@ctypesFF
-@addReturnCode
-def wlfalecr(*args):
+def wlfaleci(kul, cdna, kdimb):
     """
     Read integer data on LFA file.
 
@@ -129,20 +125,46 @@ def wlfalecr(*args):
         cdna             article name.
         kdimb            physical dimension of array kentier.
     Output:
-        kentier(1,klong) integer elements read.
+        kentier(klong)   integer elements read.
         klong            number of integer elements read.
     """
-    return[(c_longlong(args[0]), IN),
-           (c_char_p(args[1].encode("utf-8")), IN),
-           (c_longlong(args[2]), IN),
-           (np.ndarray((args[2],), dtype=np.float64), OUT),
-           (c_longlong(), OUT)]
+    return ([kul, cdna, kdimb],
+            [(np.int64, None, IN),
+             (np.str, (len(cdna),), IN),
+             (np.int64, None, IN),
+             (np.int64, (kdimb,), OUT),
+             (np.int64, None, OUT)],
+            None)
 
 
 @treatReturnCode_LFA
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wlfalecc(*args):
+def wlfalecr(kul, cdna, kdimb):
+    """
+    Read real data on LFA file.
+
+    Input:
+        kul              logical unit of LFA file.
+        cdna             article name.
+        kdimb            physical dimension of array preel.
+    Output:
+        preel(klong)     real elements read.
+        klong            number of real elements read.
+    """
+    return ([kul, cdna, kdimb],
+            [(np.int64, None, IN),
+             (np.str, (len(cdna),), IN),
+             (np.int64, None, IN),
+             (np.float64, (kdimb,), OUT),
+             (np.int64, None, OUT)],
+            None)
+
+
+@treatReturnCode_LFA
+@ctypesFF()
+@addReturnCode
+def wlfalecc(kul, cdna, kdimb, klenc):
     """
     Read character data on LFA file.
 
@@ -152,22 +174,23 @@ def wlfalecc(*args):
         kdimb            physical dimension of array clcar.
         klenc            max length of strings in clcar
     Output:
-        kreturncode      error code
         clcar            array of elements read.
         klong            number of character elements read.
     """
-    return[(c_longlong(args[0]), IN),
-           (c_char_p(args[1].encode("utf-8")), IN),
-           (c_longlong(args[2]), IN),
-           (c_longlong(args[3]), IN),
-           (np.ndarray((args[2],), dtype=np.dtype((np.str, args[3]))), OUT),
-           (c_longlong(), OUT)]
+    return ([kul, cdna, kdimb, klenc],
+            [(np.int64, None, IN),
+             (np.str, (len(cdna),), IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.str, (klenc, kdimb), OUT),  # TOBECHECKED:
+             (np.int64, None, OUT)],
+            None)
 
 
 @treatReturnCode_LFA
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wlfacas(*args):
+def wlfacas(kul, cdna):
     """
     Get documentation about a LFA article.
 
@@ -178,14 +201,16 @@ def wlfacas(*args):
         cdtype            article type: 'R4', 'I8', 'C '.
         klong             number of elements in this article.
     """
-    return[(c_longlong(args[0]), IN),
-           (c_char_p(args[1].encode("utf-8")), IN),
-           (c_char_p((" " * 2).encode("utf-8")), OUT),
-           (c_longlong(), OUT)]
+    return ([kul, cdna],
+            [(np.int64, None, IN),
+             (np.str, (len(cdna),), IN),
+             (np.str, (2,), OUT),
+             (np.int64, None, OUT)],
+            None)
 
 
-@ctypesFF
-def wlfalaft(*args):
+@ctypesFF()
+def wlfalaft(kul, kdlis, klenc):
     """
     Article list of a LFA file, on an array.
 
@@ -198,17 +223,19 @@ def wlfalaft(*args):
                        the number of elements written on cclis.
         cclis          array of article names.
     """
-    return[(c_longlong(args[0]), IN),
-           (c_longlong(args[1]), IN),
-           (c_longlong(args[2]), IN),
-           (c_longlong(), OUT),
-           (np.ndarray((args[1],), dtype=np.dtype((np.str, args[2]))), OUT)]
+    return ([kul, kdlis, klenc],
+            [(np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, OUT),
+             (np.str, (klenc, kdlis), OUT)],
+            None)
 
 
 @treatReturnCode_LFA
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def wlfatest(*args):
+def wlfatest(cdnomf):
     """
     Test if a file is a LFA one.
 
@@ -217,5 +244,7 @@ def wlfatest(*args):
     Output:
         ldlfa=.true. if the file is a LFA one, .false. else case.
     """
-    return[(c_char_p(args[0].encode("utf-8")), IN),
-           (c_bool(), OUT)]
+    return ([cdnomf],
+            [(np.str, (len(cdnomf),), IN),
+             (np.bool, None, OUT)],
+            None)

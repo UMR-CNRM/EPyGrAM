@@ -9,16 +9,28 @@ Wrappers for trans/etrans library.
 
 from __future__ import print_function, absolute_import, unicode_literals, division
 
-from ctypes import c_longlong, c_bool, c_double
 import numpy as np
 
 from . import ctypesFF, IN, OUT, treatReturnCode, addReturnCode
+# Note to developers:
+# Using the ctypesFF decorator, the Python function return a tuple containing:
+#    tup[0]:
+#        [the arguments of the Python function,
+#         to be passed as in/inout arguments to the Fortran subroutine]
+#    tup[1]:
+#        [the python signature of all Fortran subroutine arguments]
+#    tup[2]:
+#        None in case of a Fortran subroutine, the output in case of a Fortran function)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def w_etrans_inq(*args):
+def w_etrans_inq(KSIZEI, KSIZEJ,
+                 KPHYSICALSIZEI, KPHYSICALSIZEJ,
+                 KTRUNCX, KTRUNCY,
+                 KNUMMAXRESOL,
+                 PDELATX, PDELATY):
     """
     Simplified wrapper to ETRANS_INQ.
 
@@ -27,30 +39,35 @@ def w_etrans_inq(*args):
     3,4) KPHYSICALSIZEI, KPHYSICALSIZEJ: size of physical part of grid-point field
     5,6) KTRUNCX, KTRUNCY: troncatures
     7) KNUMMAXRESOL: maximum number of troncatures handled
-    8) PDELATX: resolution along x axis
-    9) PDELATY: resolution along y axis
+    8,9) PDELTAX, PDELTAY: resolution along x,y axis
 
     Returns:\n
     1) KGPTOT: number of gridpoints
     2) KSPEC: number of spectral coefficients
     """
-    return [(c_longlong(args[0]), IN),
-            (c_longlong(args[1]), IN),
-            (c_longlong(args[2]), IN),
-            (c_longlong(args[3]), IN),
-            (c_longlong(args[4]), IN),
-            (c_longlong(args[5]), IN),
-            (c_longlong(args[6]), IN),
-            (c_double(args[7]), IN),
-            (c_double(args[8]), IN),
-            (c_longlong(), OUT),
-            (c_longlong(), OUT)]
+    return ([KSIZEI, KSIZEJ,
+             KPHYSICALSIZEI, KPHYSICALSIZEJ,
+             KTRUNCX, KTRUNCY,
+             KNUMMAXRESOL,
+             PDELATX, PDELATY],
+            [(np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.float64, None, IN),
+             (np.float64, None, IN),
+             (np.int64, None, OUT),
+             (np.int64, None, OUT)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def w_trans_inq(*args):
+def w_trans_inq(KSIZEJ, KTRUNC, KSLOEN, KLOEN, KNUMMAXRESOL):
     """
     Simplified wrapper to TRANS_INQ.
 
@@ -66,20 +83,30 @@ def w_trans_inq(*args):
     2) KSPEC: number of spectral coefficients
     3) KNMENG: cut-off zonal wavenumber
     """
-    return [(c_longlong(args[0]), IN),
-            (c_longlong(args[1]), IN),
-            (c_longlong(args[2]), IN),
-            (args[3], IN),
-            (c_longlong(args[4]), IN),
-            (c_longlong(), OUT),
-            (c_longlong(), OUT),
-            (np.ndarray((args[0],), dtype=np.int64), OUT)]
+    return ([KSIZEJ, KTRUNC, KSLOEN, KLOEN, KNUMMAXRESOL],
+            [(np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, (KSLOEN,), IN),
+             (np.int64, None, IN),
+             (np.int64, None, OUT),
+             (np.int64, None, OUT),
+             (np.int64, (KSLOEN,), OUT)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def w_spec2gpt_lam(*args):
+def w_spec2gpt_lam(KSIZEI, KSIZEJ,
+                   KPHYSICALSIZEI, KPHYSICALSIZEJ,
+                   KTRUNCX, KTRUNCY,
+                   KNUMMAXRESOL,
+                   KSIZE,
+                   LGRADIENT,
+                   LREORDER,
+                   PDELTAX, PDELTAY,
+                   PSPEC):
     """
     Transform spectral coefficients into grid-point values.
 
@@ -91,8 +118,7 @@ def w_spec2gpt_lam(*args):
     8) KSIZE: size of PSPEC
     9) LGRADIENT: gradient computation
     10) LREORDER: reorder spectral coefficients or not
-    11) PDELTAX: resolution along x axis
-    12) PDELTAY: resolution along y axis
+    11,12) PDELTAX,PDELTAY: resolution along x,y axis
     13) PSPEC: spectral coefficient array
 
     Returns:\n
@@ -100,28 +126,45 @@ def w_spec2gpt_lam(*args):
     2) PGPTM: N-S derivative if LGRADIENT
     3) PGPTL: E-W derivative if LGRADIENT
     """
-    return [(c_longlong(args[0]), IN),
-            (c_longlong(args[1]), IN),
-            (c_longlong(args[2]), IN),
-            (c_longlong(args[3]), IN),
-            (c_longlong(args[4]), IN),
-            (c_longlong(args[5]), IN),
-            (c_longlong(args[6]), IN),
-            (c_longlong(args[7]), IN),
-            (c_bool(args[8]), IN),
-            (c_bool(args[9]), IN),
-            (c_double(args[10]), IN),
-            (c_double(args[11]), IN),
-            (args[12], IN),
-            (np.ndarray((args[0] * args[1],), dtype=np.float64), OUT),
-            (np.ndarray((args[0] * args[1],), dtype=np.float64), OUT),
-            (np.ndarray((args[0] * args[1],), dtype=np.float64), OUT)]
+    return ([KSIZEI, KSIZEJ,
+             KPHYSICALSIZEI, KPHYSICALSIZEJ,
+             KTRUNCX, KTRUNCY,
+             KNUMMAXRESOL,
+             KSIZE,
+             LGRADIENT,
+             LREORDER,
+             PDELTAX, PDELTAY,
+             PSPEC],
+            [(np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.bool, None, IN),
+             (np.bool, None, IN),
+             (np.float64, None, IN),
+             (np.float64, None, IN),
+             (np.float64, (KSIZE,), IN),
+             (np.float64, (KSIZEI * KSIZEJ,), OUT),
+             (np.float64, (KSIZEI * KSIZEJ,), OUT),
+             (np.float64, (KSIZEI * KSIZEJ,), OUT)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def w_gpt2spec_lam(*args):
+def w_gpt2spec_lam(KSIZE,
+                   KSIZEI, KSIZEJ,
+                   KPHYSICALSIZEI, KPHYSICALSIZEJ,
+                   KTRUNCX, KTRUNCY,
+                   KNUMMAXRESOL,
+                   PDELTAX, PDELTAY,
+                   LREORDER,
+                   PGPT):
     """
     Transform grid point values into spectral coefficients.
 
@@ -131,33 +174,50 @@ def w_gpt2spec_lam(*args):
     4,5) KPHYSICALSIZEI, KPHYSICALSIZEJ: size of physical part of grid-point field
     6,7) KTRUNCX, KTRUNCY: troncatures
     8) KNUMMAXRESOL: maximum number of troncatures handled
-    9) PDELTAX: resolution along x axis
-    10) PDELTAY: resolution along y axis
+    9,10) PDELTAX, PDELTAY: resolution along x,y axis
     11) LREORDER: reorder spectral coefficients or not
     12) PGPT: grid-point field
 
     Returns:\n
     1) PSPEC: spectral coefficient array
     """
-    return[(c_longlong(args[0]), IN),
-           (c_longlong(args[1]), IN),
-           (c_longlong(args[2]), IN),
-           (c_longlong(args[3]), IN),
-           (c_longlong(args[4]), IN),
-           (c_longlong(args[5]), IN),
-           (c_longlong(args[6]), IN),
-           (c_longlong(args[7]), IN),
-           (c_double(args[8]), IN),
-           (c_double(args[9]), IN),
-           (c_bool(args[10]), IN),
-           (args[11], IN),
-           (np.ndarray((args[0],), dtype=np.float64), OUT)]
+    return ([KSIZE,
+             KSIZEI, KSIZEJ,
+             KPHYSICALSIZEI, KPHYSICALSIZEJ,
+             KTRUNCX, KTRUNCY,
+             KNUMMAXRESOL,
+             PDELTAX, PDELTAY,
+             LREORDER,
+             PGPT],
+            [(np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.float64, None, IN),
+             (np.float64, None, IN),
+             (np.bool, None, IN),
+             (np.float64, (KSIZEI * KSIZEJ,), IN),
+             (np.float64, (KSIZE,), OUT)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def w_spec2gpt_gauss(*args):
+def w_spec2gpt_gauss(KSIZEJ,
+                     KTRUNC,
+                     KNUMMAXRESOL,
+                     KGPTOT,
+                     KSLOEN,
+                     KLOEN,
+                     KSIZE,
+                     LGRADIENT,
+                     LREORDER,
+                     PSPEC):
     """
     Transform spectral coefficients into grid-point values.
 
@@ -178,25 +238,44 @@ def w_spec2gpt_gauss(*args):
     2) PGPTM: N-S derivative if LGRADIENT
     3) PGPTL: E-W derivative if LGRADIENT
     """
-    return [(c_longlong(args[0]), IN),
-            (c_longlong(args[1]), IN),
-            (c_longlong(args[2]), IN),
-            (c_longlong(args[3]), IN),
-            (c_longlong(args[4]), IN),
-            (args[5], IN),
-            (c_longlong(args[6]), IN),
-            (c_bool(args[7]), IN),
-            (c_bool(args[8]), IN),
-            (args[9], IN),
-            (np.ndarray((args[3],), dtype=np.float64), OUT),
-            (np.ndarray((args[3],), dtype=np.float64), OUT),
-            (np.ndarray((args[3],), dtype=np.float64), OUT)]
+    return ([KSIZEJ,
+             KTRUNC,
+             KNUMMAXRESOL,
+             KGPTOT,
+             KSLOEN,
+             KLOEN,
+             KSIZE,
+             LGRADIENT,
+             LREORDER,
+             PSPEC],
+            [(np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, (KSLOEN,), IN),
+             (np.int64, None, IN),
+             (np.bool, None, IN),
+             (np.bool, None, IN),
+             (np.float64, (KSIZE,), IN),
+             (np.float64, (KGPTOT,), OUT),
+             (np.float64, (KGPTOT,), OUT),
+             (np.float64, (KGPTOT,), OUT)],
+            None)
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
-def w_gpt2spec_gauss(*args):
+def w_gpt2spec_gauss(KSPEC,
+                     KSIZEJ,
+                     KTRUNC,
+                     KNUMMAXRESOL,
+                     KSLOEN,
+                     KLOEN,
+                     KSIZE,
+                     LREORDER,
+                     PGPT):
     """
     Transform grid-point values into spectral coefficients.
 
@@ -214,20 +293,30 @@ def w_gpt2spec_gauss(*args):
     Returns:\n
     1) PSPEC: spectral coefficient array
     """
-    return [(c_longlong(args[0]), IN),
-            (c_longlong(args[1]), IN),
-            (c_longlong(args[2]), IN),
-            (c_longlong(args[3]), IN),
-            (c_longlong(args[4]), IN),
-            (args[5], IN),
-            (c_longlong(args[6]), IN),
-            (c_bool(args[7]), IN),
-            (args[8], IN),
-            (np.ndarray((args[0],), dtype=np.float64), OUT)]
+    return ([KSPEC,
+             KSIZEJ,
+             KTRUNC,
+             KNUMMAXRESOL,
+             KSLOEN,
+             KLOEN,
+             KSIZE,
+             LREORDER,
+             PGPT],
+            [(np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.int64, (KSLOEN,), IN),
+             (np.int64, None, IN),
+             (np.bool, None, IN),
+             (np.float64, (KSIZE,), IN),
+             (np.float64, (KSPEC,), OUT)],
+            None)
 
 
-@ctypesFF
-def w_spec2gpt_fft1d(*args):
+@ctypesFF()
+def w_spec2gpt_fft1d(KSIZES, KTRUNC, PSPEC, KSIZEG):
     """
     Transform spectral coefficients into grid-point values,
     for a 1D array (vertical section academic model)
@@ -241,8 +330,10 @@ def w_spec2gpt_fft1d(*args):
     Returns:\n
     1) PGPT: grid-point field
     """
-    return[(c_longlong(args[0]), IN),
-           (c_longlong(args[1]), IN),
-           (args[2], IN),
-           (c_longlong(args[3]), IN),
-           (np.ndarray((args[3],), dtype=np.float64), OUT)]
+    return ([KSIZES, KTRUNC, PSPEC, KSIZEG],
+            [(np.int64, None, IN),
+             (np.int64, None, IN),
+             (np.float64, (KSIZES,), IN),
+             (np.int64, None, IN),
+             (np.float64, (KSIZEG,), OUT)],
+            None)
