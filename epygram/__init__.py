@@ -143,7 +143,6 @@ from . import containers
 
 from . import args_catalog
 from . import profiles
-from . import myproj
 from . import spectra
 
 from . import geometries

@@ -93,7 +93,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
     @property
     def projected_geometry(self):
         """ Is the geometry a projection ? """
-        return 'projtool' in self._attributes
+        return 'projection' in self._attributes
 
     @property
     def datashape(self):
@@ -212,8 +212,10 @@ class D3Geometry(RecursiveObject, FootprintBase):
 
         Warning: requires the :mod:`pyproj` module.
         """
-        import pyproj
-        g = pyproj.Geod(ellps='sphere')
+        if not hasattr(self, '_pyproj_geod'):
+            import pyproj
+            self._pyproj_geod = pyproj.Geod(**self.geoid)
+        g = self._pyproj_geod
         distance = g.inv(end1[0], end1[1], end2[0], end2[1])[2]
         return distance
 
@@ -228,10 +230,12 @@ class D3Geometry(RecursiveObject, FootprintBase):
 
         Warning: requires the :mod:`pyproj` module.
         """
-        import pyproj
+        if not hasattr(self, '_pyproj_geod'):
+            import pyproj
+            self._pyproj_geod = pyproj.Geod(**self.geoid)
+        g = self._pyproj_geod
         if num < 2:
             raise epygramError("'num' must be at least 2.")
-        g = pyproj.Geod(ellps='sphere')
         transect = g.npts(end1[0], end1[1], end2[0], end2[1], num - 2)
         transect.insert(0, end1)
         transect.append(end2)
@@ -246,8 +250,10 @@ class D3Geometry(RecursiveObject, FootprintBase):
 
         Warning: requires the :mod:`pyproj` module.
         """
-        import pyproj
-        g = pyproj.Geod(ellps='sphere')
+        if not hasattr(self, '_pyproj_geod'):
+            import pyproj
+            self._pyproj_geod = pyproj.Geod(**self.geoid)
+        g = self._pyproj_geod
         return g.inv(end1[0], end1[1], end2[0], end2[1])[0]
 
     def make_point_geometry(self, lon, lat):
@@ -1685,9 +1691,10 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
         """Returns the minimum of X and Y resolution."""
         return min(self.grid['X_resolution'], self.grid['Y_resolution'])
 
-    def azimuth(self, end1, end2):
+    def plane_azimuth(self, end1, end2):
         """
-        Initial bearing from *end1* to *end2* points in geometry.
+        Initial bearing from *end1* to *end2* points in plane local referential
+        geometry.
 
         :param end1: must be a tuple (lon, lat) in degrees.
         :param end2: must be a tuple (lon, lat) in degrees.
@@ -1695,6 +1702,10 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
         (x1, y1) = self.ll2xy(*end1)
         (x2, y2) = self.ll2xy(*end2)
         return (numpy.degrees(numpy.arctan2(x2 - x1, y2 - y1)) + 180.) % 360. - 180.
+
+    def azimuth(self, end1, end2):
+        """Same as plane_azimuth in this geometry."""
+        return self.plane_azimuth(self, end1, end2)
 
     def _what_position(self, out=sys.stdout):
         """
@@ -1801,7 +1812,12 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
     _footprint = dict(
         attr=dict(
             name=dict(
-                values=set(['regular_lonlat']))
+                values=set(['regular_lonlat'])),
+            geoid=dict(
+                type=FPDict,
+                optional=True,
+                default=FPDict(config.default_geoid),
+                info="Geoid definition for great circle computations.")
         )
     )
 
@@ -2140,10 +2156,12 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
 
         Warning: requires the :mod:`pyproj` module.
         """
-        import pyproj
+        if not hasattr(self, '_pyproj_geod'):
+            import pyproj
+            self._pyproj_geod = pyproj.Geod(**self.geoid)
+        g = self._pyproj_geod
         plast = end1
         distance = 0
-        g = pyproj.Geod(ellps='sphere')
         for p in self.linspace(end1, end2, 1000)[1:]:
             distance += g.inv(plast[0], plast[1], *p)[2]
             plast = p
@@ -2176,16 +2194,16 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
                                           self.ij2ll(*p))
                             for p in points_list]).min()
 
-    def azimuth(self, end1, end2):
+    def plane_azimuth(self, end1, end2):
         """
-        Initial bearing from *end1* to *end2* points in geometry.
+        Initial bearing from *end1* to *end2* points in plane local referential
+        geometry.
 
         :param end1: must be a tuple (lon, lat) in degrees.
         :param end2: must be a tuple (lon, lat) in degrees.
         """
         (x1, y1) = self.ll2xy(*end1)
         (x2, y2) = self.ll2xy(*end2)
-
         return (numpy.degrees(numpy.arctan2(x2 - x1, y2 - y1)) + 180.) % 360. - 180.
 
     def _what_grid(self, out=sys.stdout, arpifs_var_names=False):
@@ -2658,10 +2676,6 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
             projection=dict(
                 type=FPDict,
                 info="Handles projection information."),
-            projtool=dict(
-                optional=True,
-                default=config.default_projtool,
-                info="To use pyproj or epygram.myproj."),
             geoid=dict(
                 type=FPDict,
                 optional=True,
@@ -2678,6 +2692,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
 
     def __init__(self, *args, **kwargs):
         super(D3ProjectedGeometry, self).__init__(*args, **kwargs)
+        import pyproj
 
         def compute_center_proj(p, center):
             if center == self.grid['input_position']:
@@ -2700,21 +2715,10 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                 self._center_lon = Angle(center_lon, 'degrees')
                 self._center_lat = Angle(center_lat, 'degrees')
 
-        if self.projtool == 'pyproj':
-            import pyproj
-            projtool = pyproj
-            projdict = {'lambert':'lcc',
-                        'mercator':'merc',
-                        'polar_stereographic':'stere',
-                        'space_view':'geos'}
-        elif self.projtool == 'myproj':
-            raise Warning("use of 'myproj' projtool is DEPRECATED ! Should rather use 'pyproj' instead, check config.")
-            from epygram import myproj
-            projtool = myproj
-            projdict = {'lambert':'lambert',
-                        'mercator':'mercator',
-                        'polar_stereographic':'polar_stereographic',
-                        'space_view':'space_view'}
+        projdict = {'lambert':'lcc',
+                    'mercator':'merc',
+                    'polar_stereographic':'stere',
+                    'space_view':'geos'}
         proj = projdict[self.name]
         # build proj
         if self.grid['LAMzone'] is not None:
@@ -2745,69 +2749,69 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                 lat_1 = self.projection['reference_lat'].get('degrees')
                 lat_2 = self.projection['reference_lat'].get('degrees')
                 self._K = abs(self.projection['reference_lat'].get('cos_sin')[1])
-            p = projtool.Proj(proj=proj,
-                              lon_0=self.projection['reference_lon'].get('degrees'),
-                              lat_1=lat_1, lat_2=lat_2,
-                              **self.geoid)
+            p = pyproj.Proj(proj=proj,
+                            lon_0=self.projection['reference_lon'].get('degrees'),
+                            lat_1=lat_1, lat_2=lat_2,
+                            **self.geoid)
             compute_center_proj(p, centerPoint)
             x0, y0 = p(self._center_lon.get('degrees'),
                        self._center_lat.get('degrees'))
-            self._proj = projtool.Proj(proj=proj,
-                                       lon_0=self.projection['reference_lon'].get('degrees'),
-                                       lat_1=lat_1, lat_2=lat_2,
-                                       x_0=-x0, y_0=-y0,
-                                       **self.geoid)
+            self._proj = pyproj.Proj(proj=proj,
+                                     lon_0=self.projection['reference_lon'].get('degrees'),
+                                     lat_1=lat_1, lat_2=lat_2,
+                                     x_0=-x0, y_0=-y0,
+                                     **self.geoid)
         elif self.name == 'mercator':
             if self.secant_projection:
                 lat_ts = self.projection['secant_lat'].get('degrees')
             else:
                 lat_ts = 0.
-            p = projtool.Proj(proj=proj,
-                              lon_0=self.projection['reference_lon'].get('degrees'),
-                              lat_ts=lat_ts,
-                              **self.geoid)
+            p = pyproj.Proj(proj=proj,
+                            lon_0=self.projection['reference_lon'].get('degrees'),
+                            lat_ts=lat_ts,
+                            **self.geoid)
             compute_center_proj(p, centerPoint)
             x0, y0 = p(self._center_lon.get('degrees'),
                        self._center_lat.get('degrees'))
-            self._proj = projtool.Proj(proj=proj,
-                                       lon_0=self.projection['reference_lon'].get('degrees'),
-                                       lat_ts=lat_ts,
-                                       x_0=-x0, y_0=-y0,
-                                       **self.geoid)
+            self._proj = pyproj.Proj(proj=proj,
+                                     lon_0=self.projection['reference_lon'].get('degrees'),
+                                     lat_ts=lat_ts,
+                                     x_0=-x0, y_0=-y0,
+                                     **self.geoid)
         elif self.name == 'polar_stereographic':
             lat_0 = self.projection['reference_lat'].get('degrees')
             if self.secant_projection:
                 lat_ts = self.projection['secant_lat'].get('degrees')
             else:
                 lat_ts = self.projection['reference_lat'].get('degrees')
-            p = projtool.Proj(proj=proj,
-                              lon_0=self.projection['reference_lon'].get('degrees'),
-                              lat_0=lat_0, lat_ts=lat_ts,
-                              **self.geoid)
+            p = pyproj.Proj(proj=proj,
+                            lon_0=self.projection['reference_lon'].get('degrees'),
+                            lat_0=lat_0, lat_ts=lat_ts,
+                            **self.geoid)
             compute_center_proj(p, centerPoint)
             x0, y0 = p(self._center_lon.get('degrees'),
                        self._center_lat.get('degrees'))
-            self._proj = projtool.Proj(proj=proj,
-                                       lon_0=self.projection['reference_lon'].get('degrees'),
-                                       lat_0=lat_0, lat_ts=lat_ts,
-                                       x_0=-x0, y_0=-y0,
-                                       **self.geoid)
+            self._proj = pyproj.Proj(proj=proj,
+                                     lon_0=self.projection['reference_lon'].get('degrees'),
+                                     lat_0=lat_0, lat_ts=lat_ts,
+                                     x_0=-x0, y_0=-y0,
+                                     **self.geoid)
         elif self.name == 'space_view':
             latSat = self.projection['satellite_lat'].get('degrees')
             lonSat = self.projection['satellite_lon'].get('degrees')
             height = self.projection['satellite_height']  # Height above ellipsoid
             if latSat != 0:
                 raise epygramError("Only space views with satellite_lat=0 are allowed")
-            p = projtool.Proj(proj=proj,
-                              h=height,
-                              lon_0=lonSat)
+            p = pyproj.Proj(proj=proj,
+                            h=height,
+                            lon_0=lonSat)
             compute_center_proj(p, centerPoint)
             x0, y0 = p(self._center_lon.get('degrees'),
                        self._center_lat.get('degrees'))
-            self._proj = projtool.Proj(proj=proj,
-                                       h=height,
-                                       lon_0=lonSat,
-                                       x_0=-x0, y_0=-y0)
+            self._proj = pyproj.Proj(proj=proj,
+                                     h=height,
+                                     lon_0=lonSat,
+                                     x_0=-x0, y_0=-y0)
         else:
             raise NotImplementedError("projection: " + self.name)
 
@@ -3370,9 +3374,10 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                                           self.ij2ll(*p))
                             for p in points_list]).min()
 
-    def azimuth(self, end1, end2):
+    def plane_azimuth(self, end1, end2):
         """
-        Initial bearing from *end1* to *end2* points in geometry.
+        Initial bearing from *end1* to *end2* points in plane local referential
+        geometry.
 
         :param end1: must be a tuple (lon, lat) in degrees.
         :param end2: must be a tuple (lon, lat) in degrees.
@@ -3675,6 +3680,11 @@ class D3GaussGeometry(D3Geometry):
         attr=dict(
             name=dict(
                 values=set(['rotated_reduced_gauss', 'reduced_gauss', 'regular_gauss'])),
+            geoid=dict(
+                type=FPDict,
+                optional=True,
+                default=FPDict(config.default_geoid),
+                info="Geoid definition for great circle computations.")
         )
     )
 
@@ -4101,6 +4111,13 @@ class D3GaussGeometry(D3Geometry):
         jint = numpy.rint(j).astype('int')
         return self.distance(self.ij2ll(0, jint),
                              self.ij2ll(1, jint))
+
+    def stretching_resolution_field(self):
+        """
+        Returns a field whose values are the local resolution computed as the
+        equatorial zonal resolution stretched locally by the map factor.
+        """
+        zonal_equatorial_resolution = self.zonal_resolution_j() # TODO:
 
     def resolution_j(self, j):
         """

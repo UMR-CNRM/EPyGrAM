@@ -542,7 +542,10 @@ def add_meridians_and_parallels_to(bm,
     drawequator_kwargs = ifNone_emptydict(drawequator_kwargs)
     drawgreenwich_kwargs = ifNone_emptydict(drawgreenwich_kwargs)
 
-    Delta_lat = bm.latmax - bm.latmin
+    if bm.projection == 'rotpole':
+        Delta_lat = bm.ymax - bm.ymin
+    else:
+        Delta_lat = bm.latmax - bm.latmin
     if parallels == 'auto' or isinstance(parallels, int) or isinstance(parallels, float):
         if Delta_lat <= 10:
             delta_lat = 1
@@ -574,7 +577,10 @@ def add_meridians_and_parallels_to(bm,
         pl.sort()
         parallels = pl
 
-    Delta_lon = bm.lonmax - bm.lonmin
+    if bm.projection == 'rotpole':
+        Delta_lon = bm.xmax - bm.xmin
+    else:
+        Delta_lon = bm.lonmax - bm.lonmin
     if meridians == 'auto' or isinstance(meridians, int) or isinstance(meridians, float):
         if Delta_lon <= 10:
             delta_lon = 1

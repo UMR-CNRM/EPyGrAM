@@ -40,7 +40,7 @@ class Test_gauss(abtc.Test_GeometryMethods):
 
     def test_distance(self):
         self.assertAlmostEqual(self.geo.distance(*self.transect),
-                               1626146.444843353,
+                               1626205.6610029594,
                                delta=epsilon)
 
     @skipIf(fast, 'slow test')
@@ -98,7 +98,7 @@ class Test_gauss(abtc.Test_GeometryMethods):
 
     def test_resolution_ll(self):
         self.assertAlmostEqual(self.geo.resolution_ll(*self.point),
-                               118861.43703733847, delta=epsilon)
+                               118865.76537925933, delta=epsilon)
 
 
 @skipIf('FA' not in epygram.config.implemented_formats, "format not activated")
@@ -113,7 +113,7 @@ class Test_lambert_HS(abtc.Test_RectGeometryMethods):
 
     def test_azimuth(self):
         self.assertAlmostEqual(self.geo.azimuth(*self.transect),
-                               35.889107796530737,
+                               30.551886114115945,
                                delta=epsilon)
 
     def test_compass_grid(self):
@@ -193,7 +193,7 @@ class Test_mercator(abtc.Test_RectGeometryMethods):
 
     def test_azimuth(self):
         self.assertAlmostEqual(self.geo.azimuth(*self.transect),
-                               - 43.795221249130975,
+                               -43.65472178477298,
                                delta=epsilon)
 
     def test_compass_grid(self):
@@ -273,7 +273,7 @@ class Test_stereopol(abtc.Test_RectGeometryMethods):
 
     def test_azimuth(self):
         self.assertAlmostEqual(self.geo.azimuth(*self.transect),
-                               - 3.8723909400079606,
+                               -8.879229021068737,
                                delta=epsilon)
 
     def test_compass_grid(self):
@@ -353,12 +353,12 @@ class Test_regLL(abtc.Test_RectGeometryMethods):
 
     def test_azimuth(self):
         self.assertAlmostEqual(self.geo.azimuth(*self.transect),
-                               45.0,
+                               34.18007181227207,
                                delta=epsilon)
 
     def test_distance(self):
         self.assertAlmostEqual(self.geo.distance(*self.transect),
-                               134992.09125666993,
+                               134997.0069967294,
                                delta=epsilon)
 
     @skipIf(fast, 'slow test')
@@ -404,7 +404,72 @@ class Test_regLL(abtc.Test_RectGeometryMethods):
 
     def test_resolution_ll(self):
         self.assertAlmostEqual(self.geo.resolution_ll(*self.point),
-                               1860.0973413526367, delta=epsilon)
+                               1860.1650768394161, delta=epsilon)
+
+
+@skipIf('GRIB' not in epygram.config.implemented_formats, "format not activated")
+class Test_rotLL(abtc.Test_RectGeometryMethods):
+    fid = 'shortName:lsm'
+    basename = 'rotLL.grb1'
+    point = (-8, 54)
+    transect = ((-8, 54), (-7, 55))
+
+    def test_name(self):
+        self.assertTrue('rotated_lonlat' in self.geo.name)
+
+    def test_azimuth(self):
+        self.assertAlmostEqual(self.geo.azimuth(*self.transect),
+                               29.737732627377536,
+                               delta=epsilon)
+
+    def test_distance(self):
+        self.assertAlmostEqual(self.geo.distance(*self.transect),
+                               128585.15940057031,
+                               delta=epsilon)
+
+    @skipIf(fast, 'slow test')
+    def test_get_lonlat_grid(self):
+        lons, lats = self.geo.get_lonlat_grid()
+        self.assertAlmostEqualSeq((lons[0, 0], lats[0, 0]),
+                                  (-11.775274419835736, 51.53774202636567),
+                                  delta=epsilon)
+
+    def test_gridpoints_number(self):
+        self.assertEqual(self.geo.gridpoints_number,
+                         1750)
+
+    def test_ij2ll(self):
+        self.assertAlmostEqualSeq(self.geo.ij2ll(*self.ij_test),
+                                  (-6.1496819413341575, 54.214225938172234),
+                                  delta=epsilon)
+
+    def test_linspace(self):
+        self.assertAlmostEqualSeq(
+            numpy.array(self.geo.linspace(*self.transect, num=3)).flatten(),
+            numpy.array([self.transect[0],
+                         (-7.5062143255327785, 54.501057252618409),
+                         self.transect[1]]).flatten(),
+            delta=epsilon)
+
+    def test_ll2ij(self):
+        self.assertAlmostEqualSeq(self.geo.ll2ij(*self.point),
+                                  (14.496222602385814, 30.317538778674113),
+                                  delta=epsilon)
+
+    def test_nearest_points1(self):
+        self._test_nearest_points({'n':'1'}, (14, 30))
+
+    def test_nearest_points2(self):
+        self._test_nearest_points({'n':'2*2'}, [(14, 30), (14, 31),
+                                                (15, 30), (15, 31)])
+
+    def test_nearest_points3(self):
+        self._test_nearest_points({'radius':15000}, [(14, 30), (14, 31),
+                                                     (15, 30), (15, 31)])
+
+    def test_resolution_ll(self):
+        self.assertAlmostEqual(self.geo.resolution_ll(*self.point),
+                               11094.141774775859, delta=epsilon)
 
 
 if __name__ == '__main__':

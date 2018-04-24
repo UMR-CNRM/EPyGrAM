@@ -441,9 +441,8 @@ class GRIBmessage(RecursiveObject, dict):
                 self['shapeOfTheEarth'] = 6
             else:
                 if (field.geometry.geoid.get('a') == grib_utilities.pyproj_geoid_shapes[6]['a'] and
-                    field.geometry.geoid.get('b') == grib_utilities.pyproj_geoid_shapes[6]['b']) or \
-                   field.geometry.geoid.get('geoidradius') == grib_utilities.myproj_geoid_shapes[6]['geoidradius']:
-                    self['shapeOfTheEarth'] = 6
+                    field.geometry.geoid.get('b') == grib_utilities.pyproj_geoid_shapes[6]['b']):
+                        self['shapeOfTheEarth'] = 6
                 else:
                     found = False
                     for s, g in grib_utilities.pyproj_geoid_shapes.items():
@@ -643,6 +642,9 @@ class GRIBmessage(RecursiveObject, dict):
         if not field.spectral:
             if field.geometry.rectangular_grid:
                 corners = field.geometry.gimme_corners_ll()
+                if field.geometry.name == 'rotated_lonlat':  # special case: coordinates to be given in the rotated referential
+                    for k, v in corners.items():
+                        corners[k] = field.geometry.ll2xy(*v)
                 if self['iScansNegatively'] == 0 and \
                    self['jScansPositively'] == 0:
                     self['longitudeOfFirstGridPointInDegrees'] = util.positive_longitude(corners['ul'][0])

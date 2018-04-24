@@ -116,6 +116,13 @@ class Test_regLLlarge(abtc.Test_H2DGeometry):
     fileprefix = 'regLL_large'
 
 
+fmts = ['GRIB1']
+@skipIf(len(util.activate(*fmts)) == 0, "format not activated")
+@util.add_tests_for_attrs(*util.activate(*fmts))
+class Test_rotLL(abtc.Test_H2DGeometry):
+    fileprefix = 'rotLL'
+
+
 # Special ones
 @skipIf(len(util.activate('DDHLFA')) == 0, "format not activated")
 @util.add_tests_for_attrs('gridpoint', 'zonalband')

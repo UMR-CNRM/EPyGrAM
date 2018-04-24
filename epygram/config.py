@@ -84,7 +84,7 @@ FA_default_compression = {'KNGRIB': 2, 'KDMOPL': 0, 'KPUILA': 0, 'KSTRON': 0,
 #: in FA
 FA_default_reference_pressure = 101325.
 #: geoid of FA files in pyproj syntax
-FA_geoid_for_pyproj = {'a':6371229., 'b':6371229.}
+FA_default_geoid = {'a':6371229., 'b':6371229.}
 #: FA field dictionaries
 FA_field_dictionaries_csv = {'default':os.path.join(installdir,
                                                     'data',
@@ -187,7 +187,7 @@ LFI_field_dictionaries_csv = {'default':os.path.join(installdir,
                               'user':os.path.join(userlocaldir,
                                                   'user_Field_Dict_LFI.csv')}
 #: geoid of LFI files in pyproj syntax
-LFI_geoid_for_pyproj = {'a':6371229., 'b':6371229.}
+LFI_default_geoid = {'a':6371229., 'b':6371229.}
 
 #: netCDF standard dimensions
 netCDF_standard_dimensions = ['N_dimension',  # numerotation (obs, profile, ...)
@@ -239,12 +239,8 @@ netCDF_default_variables_fill_value = -999999.9
 
 # OPTIONS #
 ###########
-#: Use home-made projection formulas (:mod:`epygram.myproj`) vs of *pyproj*.
-default_projtool = 'pyproj'
-#: arpifs geoid for :mod:`epygram.myproj`
-myproj_default_geoid = {'geoidshape':'sphere', 'geoidradius':6371229.}
 #: A classical default geoid for *pyproj*
-pyproj_default_geoid = {'ellps':'WGS84'}
+default_geoid = {'ellps':'WGS84'}
 #: Protect unhappy writes: ask before opening a new file on an existing path
 protect_unhappy_writes = False
 #: Threshold on field absolute values to mask meaningless field values
@@ -317,22 +313,6 @@ colormaps_scaling.update(usercolormaps_scaling)
 ###########################
 if hide_footprints_warnings:
     footprints.logger.setLevel(footprints.loggers.logging.ERROR)
-
-# Projtool defaults
-if default_projtool == 'pyproj':
-    #: Default geoid (case *pyproj*)
-    default_geoid = pyproj_default_geoid
-    #: FA default geoid (case *pyproj*)
-    FA_default_geoid = FA_geoid_for_pyproj
-    #: LFI default geoid (case *pyproj*)
-    LFI_default_geoid = LFI_geoid_for_pyproj
-elif default_projtool == 'myproj':
-    #: Default geoid (case *myproj*)
-    default_geoid = myproj_default_geoid
-    #: FA default geoid (case *myproj*)
-    FA_default_geoid = myproj_default_geoid
-    #: LFI default geoid (case *myproj*)
-    LFI_default_geoid = myproj_default_geoid
 
 # Update $GRIB_SAMPLES_PATH
 _gsp = ':'.join([os.getenv('GRIB_SAMPLES_PATH', '.'), GRIB_samples_path])
