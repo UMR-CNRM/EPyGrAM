@@ -14,6 +14,7 @@ import numpy
 from epygram import epygramError
 from .D3Geometry import (D3Geometry, D3RectangularGridGeometry,
                          D3AcademicGeometry, D3RegLLGeometry,
+                         D3RotLLGeometry,
                          D3ProjectedGeometry, D3GaussGeometry,
                          D3UnstructuredGeometry)
 
@@ -105,6 +106,22 @@ class H2DRegLLGeometry(H2DRectangularGridGeometry, D3RegLLGeometry):
                 values=set(['H2D'])),  # inheritance priority problem
             name=dict(
                 values=set(['regular_lonlat']))
+        )
+    )
+
+
+class H2DRotLLGeometry(H2DRectangularGridGeometry, D3RotLLGeometry):
+    """
+    Handles the geometry for a Regular Lon/Lat Horizontal 2-Dimensions Field.
+    """
+
+    _collector = ('geometry',)
+    _footprint = dict(
+        attr=dict(
+            structure=dict(
+                values=set(['H2D'])),  # inheritance priority problem
+            name=dict(
+                values=set(['rotated_lonlat']))
         )
     )
 

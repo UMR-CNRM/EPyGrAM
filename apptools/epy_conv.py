@@ -151,6 +151,7 @@ def convert(filename,
                                                            openmode='w',
                                                            fmt=fmt_dict[output_format_suffix],
                                                            other_attributes=({'FORMAT':'XYV'} if kwargs.pop('llv') else None),
+                                                           # TODO: add a "columns" command-line option to specify it more customly
                                                            # columns=(['LAT', 'LON', 'VALUE'] if kwargs.pop('llv') else None)
                                                            )
             else:

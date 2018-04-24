@@ -487,9 +487,9 @@ class GRIBmessage(RecursiveObject, dict):
                 self['gridType'] = 'rotated_ll'
                 self['iDirectionIncrementInDegrees'] = field.geometry.grid['X_resolution'].get('degrees')
                 self['jDirectionIncrementInDegrees'] = field.geometry.grid['Y_resolution'].get('degrees')
-                self['longitudeOfSouthernPoleInDegrees'] = field.geometry.grid['pole_lon'].get('degrees')
-                self['latitudeOfSouthernPoleInDegrees'] = field.geometry.grid['pole_lat'].get('degrees')
-                raise NotImplementedError('gridType=='+'rotated_ll')  # TODO:
+                self['longitudeOfSouthernPoleInDegrees'] = field.geometry.grid['southern_pole_lon'].get('degrees')
+                self['latitudeOfSouthernPoleInDegrees'] = field.geometry.grid['southern_pole_lat'].get('degrees')
+                self['angleOfRotation'] = field.geometry.grid['rotation'].get('degrees')
             elif field.geometry.projected_geometry:
                 self['gridType'] = field.geometry.name
                 if field.geometry.name == 'lambert':
@@ -885,11 +885,11 @@ class GRIBmessage(RecursiveObject, dict):
                     'input_position':input_position,
                     'X_resolution':Angle(self['iDirectionIncrementInDegrees'], 'degrees'),
                     'Y_resolution':Angle(self['jDirectionIncrementInDegrees'], 'degrees'),
-                    'pole_lon':Angle(self['longitudeOfSouthernPoleInDegrees'], 'degrees'),
-                    'pole_lat':Angle(self['latitudeOfSouthernPoleInDegrees'], 'degrees')
+                    'southern_pole_lon':Angle(self['longitudeOfSouthernPoleInDegrees'], 'degrees'),
+                    'southern_pole_lat':Angle(self['latitudeOfSouthernPoleInDegrees'], 'degrees'),
+                    'rotation':Angle(self['angleOfRotation'], 'degrees')
                     }
             projection = None
-            raise NotImplementedError('gridType=='+self['gridType'])  # TODO: ad hoc Geometry is missing
         elif self['gridType'] in ('polar_stereographic',):
             geometryname = self['gridType']
             if self['projectionCentreFlag'] == 0:

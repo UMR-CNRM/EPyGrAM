@@ -485,7 +485,7 @@ class GeoPoints(FileResource):
 
         # WRITE
         for pt in range(len(writebuffer['VALUE'])):
-            pointstr = ' {: .{precision}{type}} '.format(writebuffer['LAT'][pt],
+            pointstr = ' {: .{precision}{type}} '.format(writebuffer['LAT'][pt],  # FIXME: follow order of columns
                                                          type='F',
                                                          precision=llprecision) + \
                        ' {: .{precision}{type}} '.format(writebuffer['LON'][pt],

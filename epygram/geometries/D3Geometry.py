@@ -47,7 +47,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
                 info="Name of geometrical type of representation of points on \
                       the Globe.",
                 values=set(['lambert', 'mercator', 'polar_stereographic',
-                            'regular_lonlat',
+                            'regular_lonlat', 'rotated_lonlat',
                             'rotated_reduced_gauss', 'reduced_gauss', 'regular_gauss',
                             'unstructured'])),
             grid=dict(
@@ -450,6 +450,8 @@ class D3Geometry(RecursiveObject, FootprintBase):
                 self._what_projection(out, arpifs_var_names=arpifs_var_names)
             elif self.name == 'regular_lonlat':
                 self._what_grid(out, arpifs_var_names=arpifs_var_names)
+            elif self.name == 'rotated_lonlat':
+                self._what_grid(out)
             elif self.name == 'academic':
                 self._what_position(out)
             elif self.name == 'unstructured':
@@ -473,7 +475,8 @@ class D3RectangularGridGeometry(D3Geometry):
         attr=dict(
             name=dict(
                 values=set(['lambert', 'mercator', 'polar_stereographic',
-                            'regular_lonlat', 'academic', 'unstructured']))
+                            'regular_lonlat', 'rotated_lonlat',
+                            'academic', 'unstructured']))
         )
     )
 
@@ -652,7 +655,7 @@ class D3RectangularGridGeometry(D3Geometry):
             dimY = self.dimensions['Y']
         else:
             assert self.grid.get('LAMzone', False), \
-                   "*subzone* cannot be requested for this geometry"
+                "*subzone* cannot be requested for this geometry"
             assert subzone in ('C', 'CI')
             if self.grid['LAMzone'] == 'CIE':
                 if subzone == 'CI':
@@ -709,7 +712,7 @@ class D3RectangularGridGeometry(D3Geometry):
         nb_validities = 1
         if len(shp_in) == 2:
             assert first_dimension in ('T', 'Z'), \
-                   "*first_dimension* must be among ('T', 'Z') if *data*.shape == 2"
+                "*first_dimension* must be among ('T', 'Z') if *data*.shape == 2"
             if first_dimension == 'T':
                 nb_validities = shp_in[0]
 
@@ -938,7 +941,7 @@ class D3RectangularGridGeometry(D3Geometry):
         nsquare_match = _re_nearest_sq.match(request.get('n', ''))
         if nsquare_match:
             assert nsquare_match.group('n') == nsquare_match.group('m'), \
-                   "anisotropic request {'n':'N*M'} is not supported."
+                "anisotropic request {'n':'N*M'} is not supported."
         if external_distance is not None:
             assert request == {'n':'1'}
 
@@ -2245,6 +2248,402 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
                         corners['ur'][1])
 
 
+class D3RotLLGeometry(D3RegLLGeometry):
+    """
+    Handles the geometry for a Rotated Lon/Lat 3-Dimensions Field.
+    """
+
+    _collector = ('geometry',)
+    _footprint = dict(
+        attr=dict(
+            name=dict(
+                values=set(['rotated_lonlat']))
+        )
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(D3RegLLGeometry, self).__init__(*args, **kwargs)
+        if self.grid['input_position'] == ((float(self.dimensions['X']) - 1) / 2.,
+                                           (float(self.dimensions['Y']) - 1) / 2.):
+            self._center_rlon = self.grid['input_lon']
+            self._center_rlat = self.grid['input_lat']
+        elif self.grid['input_position'] == (0, 0):
+            self._center_rlon = Angle(self.grid['input_lon'].get('degrees') +
+                                      self.grid['X_resolution'].get('degrees') *
+                                      (self.dimensions['X'] - 1) / 2,
+                                      'degrees')
+            self._center_rlat = Angle(self.grid['input_lat'].get('degrees') +
+                                      self.grid['Y_resolution'].get('degrees') *
+                                      (self.dimensions['Y'] - 1) / 2,
+                                      'degrees')
+        elif self.grid['input_position'] == (0, self.dimensions['Y'] - 1):
+            self._center_rlon = Angle(self.grid['input_lon'].get('degrees') +
+                                      self.grid['X_resolution'].get('degrees') *
+                                      (self.dimensions['X'] - 1) / 2,
+                                      'degrees')
+            self._center_rlat = Angle(self.grid['input_lat'].get('degrees') -
+                                      self.grid['Y_resolution'].get('degrees') *
+                                      (self.dimensions['Y'] - 1) / 2,
+                                      'degrees')
+        elif self.grid['input_position'] == (self.dimensions['X'] - 1, 0):
+            self._center_rlon = Angle(self.grid['input_lon'].get('degrees') -
+                                      self.grid['X_resolution'].get('degrees') *
+                                      (self.dimensions['X'] - 1) / 2,
+                                      'degrees')
+            self._center_rlat = Angle(self.grid['input_lat'].get('degrees') +
+                                      self.grid['Y_resolution'].get('degrees') *
+                                      (self.dimensions['Y'] - 1) / 2,
+                                      'degrees')
+        elif self.grid['input_position'] == (self.dimensions['X'] - 1,
+                                             self.dimensions['Y'] - 1):
+            self._center_rlon = Angle(self.grid['input_lon'].get('degrees') -
+                                      self.grid['X_resolution'].get('degrees') *
+                                      (self.dimensions['X'] - 1) / 2,
+                                      'degrees')
+            self._center_rlat = Angle(self.grid['input_lat'].get('degrees') -
+                                      self.grid['Y_resolution'].get('degrees') *
+                                      (self.dimensions['Y'] - 1) / 2,
+                                      'degrees')
+        else:
+            raise NotImplementedError("this 'input_position': " +
+                                      str(self.grid['input_position']))
+        if self.grid.get('rotation', Angle(0., 'degrees')).get('degrees') != 0.:
+            raise NotImplementedError("rotation != Angle(0.)")
+
+        lon, lat = self.xy2ll(self._center_rlon.get('degrees'),
+                              self._center_rlat.get('degrees'))
+        self._center_lon = Angle(lon, 'degrees')
+        self._center_lat = Angle(lat, 'degrees')
+
+    def getcenter(self):
+        """
+        Returns the coordinate of the grid center as a tuple of Angles
+        (center_lon, center_lat) in true lon/lat coordinates.
+        """
+        return (self._center_lon, self._center_lat)
+
+    def _consistency_check(self):
+        """
+        Check that the geometry is consistent.
+
+        Note:
+        **input_lon** and **input_lat** parameters are supposed to be
+        longitude/latitude of input point in the Rotated Lon/lat referential.
+        """
+        grid_keys = ['input_lon', 'input_lat', 'input_position',
+                     'X_resolution', 'Y_resolution',
+                     'southern_pole_lon', 'southern_pole_lat',
+                     'rotation']
+        if set(self.grid.keys()) != set(grid_keys):
+            raise epygramError("grid attribute must consist in keys: " +
+                               str(grid_keys))
+        assert isinstance(self.grid['input_lon'], Angle)
+        assert isinstance(self.grid['input_lat'], Angle)
+        assert isinstance(self.grid['X_resolution'], Angle)
+        assert isinstance(self.grid['Y_resolution'], Angle)
+        assert isinstance(self.grid['southern_pole_lon'], Angle)
+        assert isinstance(self.grid['southern_pole_lat'], Angle)
+        assert isinstance(self.grid['rotation'], Angle)
+        dimensions_keys = ['X', 'Y']
+        if set(self.dimensions.keys()) != set(dimensions_keys):
+            raise epygramError("dimensions attribute must consist in keys: " + str(dimensions_keys))
+
+    def ij2xy(self, i, j, position=None):
+        """
+        Return the (x, y) == (rot'lon, rot'lat) coordinates of point *(i,j)*,
+        in the rotated coordinates system.
+
+        :param i: X index of point in the 2D matrix of gridpoints
+        :param j: Y index of point in the 2D matrix of gridpoints
+        :param position: position to return with respect to the model cell.
+          Defaults to self.position_on_horizontal_grid.
+        """
+        if isinstance(i, list) or isinstance(i, tuple):
+            i = numpy.array(i)
+        if isinstance(j, list) or isinstance(j, tuple):
+            j = numpy.array(j)
+        (oi, oj) = self._getoffset(position)
+        Xpoints = self.dimensions['X']
+        Ypoints = self.dimensions['Y']
+        Xresolution = self.grid['X_resolution'].get('degrees')
+        Yresolution = self.grid['Y_resolution'].get('degrees')
+        Xorigin = self._center_rlon.get('degrees')
+        Yorigin = self._center_rlat.get('degrees')
+        # origin of coordinates is the center of domain
+        i0 = float(Xpoints - 1) / 2.
+        j0 = float(Ypoints - 1) / 2.
+        x = Xorigin + (i - i0 + oi) * Xresolution
+        y = Yorigin + (j - j0 + oj) * Yresolution
+        return (x, y)
+
+    def xy2ij(self, x, y, position=None):
+        """
+        Return the (i, j) indexes of point *(x, y)* == (rot'lon, rot'lat),
+        in the 2D matrix of gridpoints.
+
+        :param x: rotated lon coordinate of point
+        :param y: rotated lat coordinate of point
+        :param position: position to return with respect to the model cell.
+          Defaults to self.position_on_horizontal_grid.
+
+        Caution: (*i,j*) are float (the nearest grid point is the nearest
+        integer).
+        """
+        if isinstance(x, list) or isinstance(x, tuple):
+            x = numpy.array(x)
+        if isinstance(y, list) or isinstance(y, tuple):
+            y = numpy.array(y)
+
+        (oi, oj) = self._getoffset(position)
+        Xpoints = self.dimensions['X']
+        Ypoints = self.dimensions['Y']
+        Xresolution = self.grid['X_resolution'].get('degrees')
+        Yresolution = self.grid['Y_resolution'].get('degrees')
+        Xorigin = self._center_rlon.get('degrees')
+        Yorigin = self._center_rlat.get('degrees')
+        # origin of coordinates is the center of domain
+        i0 = float(Xpoints - 1) / 2.
+        j0 = float(Ypoints - 1) / 2.
+        i = i0 + (x - Xorigin) / Xresolution - oi
+        j = j0 + (y - Yorigin) / Yresolution - oj
+        return (i, j)
+
+    def ij2ll(self, i, j, position=None):
+        """
+        Return the (lon, lat) true coordinates of point *(i,j)*, in degrees.
+
+        :param i: X index of point in the 2D matrix of gridpoints
+        :param j: Y index of point in the 2D matrix of gridpoints
+        :param position: lat lon position to return with respect to the model cell.
+          Defaults to self.position_on_horizontal_grid.
+        """
+        return self.xy2ll(*self.ij2xy(i, j, position=position))
+
+    def ll2ij(self, lon, lat, position=None):
+        """
+        Return the (i, j) indexes of point *(lon, lat)* in degrees,
+        in the 2D matrix of gridpoints.
+
+        :param lon: true longitude of point in degrees
+        :param lat: true latitude of point in degrees
+        :param position: lat lon position to return with respect to the model cell.
+          Defaults to self.position_on_horizontal_grid.
+
+        Caution: (*i,j*) are float.
+        """
+        lon = degrees_nearest_mod(lon, self._center_lon.get('degrees'))
+        return self.xy2ij(*self.ll2xy(lon, lat), position=position)
+
+    def ll2xy(self, lon, lat):
+        """
+        Return the (x, y) == (rot'lon, rot'lat) coordinates of
+        point *(lon, lat)* in degrees, in the rotated system.
+
+        :param lon: true longitude of point in degrees
+        :param lat: true latitude of point in degrees
+        """
+        if isinstance(lon, list) or isinstance(lon, tuple):
+            lon = numpy.array(lon)
+        if isinstance(lat, list) or isinstance(lat, tuple):
+            lat = numpy.array(lat)
+        return self._lonlat_to_rotatedlonlat(lon, lat, reverse=False)
+
+    def xy2ll(self, x, y):
+        """
+        Return the (lon, lat) coordinates of point *(x, y)* == (rot'lon, rot'lat)
+        in the rotated system, in degrees.
+
+        :param x: rotated lon coordinate of point in the projection
+        :param y: rotated lat coordinate of point in the projection
+        """
+        if isinstance(x, list) or isinstance(x, tuple):
+            x = numpy.array(x)
+        if isinstance(y, list) or isinstance(y, tuple):
+            y = numpy.array(y)
+        return self._lonlat_to_rotatedlonlat(x, y, reverse=True)
+
+    def _lonlat_to_rotatedlonlat(self, lon, lat, reverse=False):
+        """
+        Conversion formula from true lon/lat to rotated lon/lat, or **reverse**.
+        Inspired from https://gis.stackexchange.com/questions/10808/manually-transforming-rotated-lat-lon-to-regular-lat-lon
+        """
+        lon = numpy.radians(lon)
+        lat = numpy.radians(lat)
+
+        theta = numpy.pi / 2. + self.grid['southern_pole_lat'].get('radians')
+        phi = self.grid['southern_pole_lon'].get('radians')
+        # spherical to cartesian
+        x = numpy.cos(lon) * numpy.cos(lat)
+        y = numpy.sin(lon) * numpy.cos(lat)
+        z = numpy.sin(lat)
+        # conversion
+        if not reverse:
+            x_new = (numpy.cos(theta) * numpy.cos(phi) * x +
+                     numpy.cos(theta) * numpy.sin(phi) * y +
+                     numpy.sin(theta) * z)
+            y_new = -numpy.sin(phi) * x + numpy.cos(phi) * y
+            z_new = (-numpy.sin(theta) * numpy.cos(phi) * x -
+                     numpy.sin(theta) * numpy.sin(phi) * y +
+                     numpy.cos(theta) * z)
+        else:
+            phi = -phi
+            theta = -theta
+            x_new = (numpy.cos(theta) * numpy.cos(phi) * x +
+                     numpy.sin(phi) * y +
+                     numpy.sin(theta) * numpy.cos(phi) * z)
+            y_new = (-numpy.cos(theta) * numpy.sin(phi) * x +
+                     numpy.cos(phi) * y -
+                     numpy.sin(theta) * numpy.sin(phi) * z)
+            z_new = -numpy.sin(theta) * x + numpy.cos(theta) * z
+        # cartesian back to spherical coordinates
+        lon_new = numpy.degrees(numpy.arctan2(y_new, x_new))
+        lat_new = numpy.degrees(numpy.arcsin(z_new))
+        return (lon_new, lat_new)
+
+    def make_basemap(self,
+                     gisquality='i',
+                     subzone=None,
+                     specificproj=None,
+                     zoom=None,
+                     ax=None):
+        """
+        Returns a :class:`matplotlib.basemap.Basemap` object of the 'ad hoc'
+        projection (if available). This is designed to avoid explicit handling
+        of deep horizontal geometry attributes.
+
+        :param gisquality: defines the quality of GIS contours, cf. Basemap doc. \n
+          Possible values (by increasing quality): 'c', 'l', 'i', 'h', 'f'.
+        :param subzone: defines the LAM subzone to be included, in LAM case,
+          among: 'C', 'CI'.
+        :param specificproj: enables to make basemap on the specified projection,
+          among: 'kav7', 'cyl', 'ortho', ('nsper', {...}) (cf. Basemap doc). \n
+          In 'nsper' case, the {} may contain:\n
+          - 'sat_height' = satellite height in km;
+          - 'lon' = longitude of nadir in degrees;
+          - 'lat' = latitude of nadir in degrees. \n
+          Overwritten by *zoom*.
+        :param zoom: specifies the lon/lat borders of the map, implying hereby
+          a 'cyl' projection.
+          Must be a dict(lonmin=, lonmax=, latmin=, latmax=).\n
+          Overwrites *specificproj*.
+        :param ax: a matplotlib ax on which to plot; if None, plots will be done
+          on matplotlib.pyplot.gca()
+        """
+        from mpl_toolkits.basemap import Basemap
+
+        # corners
+        (llcrnrlon, llcrnrlat) = self.ij2ll(*self.gimme_corners_ij(subzone)['ll'])
+        (urcrnrlon, urcrnrlat) = self.ij2ll(*self.gimme_corners_ij(subzone)['ur'])
+
+        # make basemap
+        if zoom is not None:
+            # zoom case
+            llcrnrlon = zoom['lonmin']
+            llcrnrlat = zoom['latmin']
+            urcrnrlon = zoom['lonmax']
+            urcrnrlat = zoom['latmax']
+        if specificproj is None:
+            # defaults
+            proj = 'rotpole'
+            north_pole = self.xy2ll(0,90)
+            b = Basemap(resolution=gisquality, projection=proj,
+                        lon_0=self.xy2ll(0,0)[0],
+                        o_lon_p=north_pole[0],
+                        o_lat_p=north_pole[1],
+                        llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
+                        urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
+                        ax=ax)
+        else:
+            # specificproj
+            lon0 = self._center_lon.get('degrees')
+            lat0 = self._center_lat.get('degrees')
+            if specificproj == 'kav7':
+                b = Basemap(resolution=gisquality, projection=specificproj,
+                            lon_0=lon0,
+                            llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
+                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
+                            ax=ax)
+            elif specificproj == 'ortho':
+                b = Basemap(resolution=gisquality, projection=specificproj,
+                            lon_0=lon0,
+                            lat_0=lat0,
+                            ax=ax)
+            elif specificproj == 'cyl':
+                b = Basemap(resolution=gisquality, projection=specificproj,
+                            llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
+                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
+                            ax=ax)
+            elif specificproj == 'moll':
+                b = Basemap(resolution=gisquality, projection=specificproj,
+                            lon_0=lon0,
+                            llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
+                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
+                            ax=ax)
+            elif isinstance(specificproj, tuple) and \
+                 specificproj[0] == 'nsper' and \
+                 isinstance(specificproj[1], dict):
+                sat_height = specificproj[1].get('sat_height', 3000) * 1000.
+                b = Basemap(resolution=gisquality,
+                            projection=specificproj[0],
+                            lon_0=specificproj[1].get('lon', lon0),
+                            lat_0=specificproj[1].get('lat', lat0),
+                            satellite_height=sat_height,
+                            ax=ax)
+        return b
+
+    def _what_grid(self, out=sys.stdout):
+        """
+        Writes in file a summary of the grid of the field.
+
+        :param out: the output open file-like object
+        """
+        grid = self.grid
+        dimensions = self.dimensions
+        (lons, lats) = self.get_lonlat_grid()
+        corners = self.gimme_corners_ll()
+        write_formatted(out, "Kind of Geometry", 'Rotated Lon/Lat')
+        write_formatted(out, "Southern Pole Longitude in deg",
+                        grid['southern_pole_lon'].get('degrees'))
+        write_formatted(out, "Southern Pole Latitude in deg",
+                        grid['southern_pole_lat'].get('degrees'))
+        write_formatted(out, "Center Longitude (in rotated referential) in deg",
+                        self._center_rlon.get('degrees'))
+        write_formatted(out, "Center Latitude (in rotated referential) in deg",
+                        self._center_rlat.get('degrees'))
+        write_formatted(out, "Center Longitude (true) in deg",
+                        self._center_lon.get('degrees'))
+        write_formatted(out, "Center Latitude (true) in deg",
+                        self._center_lat.get('degrees'))
+        write_formatted(out, "Resolution in X, in deg",
+                        grid['X_resolution'].get('degrees'))
+        write_formatted(out, "Resolution in Y, in deg",
+                        grid['Y_resolution'].get('degrees'))
+        write_formatted(out, "Domain width in X, in deg",
+                        grid['X_resolution'].get('degrees') * dimensions['X'])
+        write_formatted(out, "Domain width in Y, in deg",
+                        grid['Y_resolution'].get('degrees') * dimensions['Y'])
+        write_formatted(out, "Max Longitude in deg", lons.max())
+        write_formatted(out, "Min Longitude in deg", lons.min())
+        write_formatted(out, "Max Latitude in deg", lats.max())
+        write_formatted(out, "Min Latitude in deg", lats.min())
+        write_formatted(out, "Low-Left corner Longitude in deg",
+                        corners['ll'][0])
+        write_formatted(out, "Low-Left corner Latitude in deg",
+                        corners['ll'][1])
+        write_formatted(out, "Low-Right corner Longitude in deg",
+                        corners['lr'][0])
+        write_formatted(out, "Low-Right corner Latitude in deg",
+                        corners['lr'][1])
+        write_formatted(out, "Upper-Left corner Longitude in deg",
+                        corners['ul'][0])
+        write_formatted(out, "Upper-Left corner Latitude in deg",
+                        corners['ul'][1])
+        write_formatted(out, "Upper-Right corner Longitude in deg",
+                        corners['ur'][0])
+        write_formatted(out, "Upper-Right corner Latitude in deg",
+                        corners['ur'][1])
+
+
 class D3ProjectedGeometry(D3RectangularGridGeometry):
     """
     Handles the geometry for a Projected 3-Dimensions Field.
@@ -2850,7 +3249,6 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                 llcrnrlat = zoom['latmin']
                 urcrnrlon = zoom['lonmax']
                 urcrnrlat = zoom['latmax']
-                #specificproj = 'cyl'
                 if llcrnrlat <= -89.0 or \
                    urcrnrlat >= 89.0:
                     specificproj = 'cyl'
@@ -3264,8 +3662,6 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
 
     def __hash__(self):
         # known issue __eq__/must be defined both or none, else inheritance is broken
-        # return super().__hash__()
-        # return object.__hash__(self)
         return super(D3ProjectedGeometry, self).__hash__()
 
 
@@ -3459,7 +3855,7 @@ class D3GaussGeometry(D3Geometry):
             dimZ = len(self.vcoordinate.levels)
         if d4:
             assert dimT is not None, \
-                   "*dimT* must be supplied with *d4*=True"
+                "*dimT* must be supplied with *d4*=True"
             shape = [dimT, dimZ, dimY, dimX]
         else:
             shape = []
@@ -3489,7 +3885,7 @@ class D3GaussGeometry(D3Geometry):
         nb_validities = 1
         if len(shp_in) == 2:
             assert first_dimension in ('T', 'Z'), \
-                   "*first_dimension* must be among ('T', 'Z') if *data*.shape == 2"
+                "*first_dimension* must be among ('T', 'Z') if *data*.shape == 2"
             if first_dimension == 'T':
                 nb_validities = shp_in[0]
             elif first_dimension == 'Z':
@@ -4191,7 +4587,7 @@ class D3GaussGeometry(D3Geometry):
         nsquare_match = _re_nearest_sq.match(request.get('n', ''))
         if nsquare_match:
             assert nsquare_match.group('n') == nsquare_match.group('m'), \
-                   "anisotropic request {'n':'N*M'} is not supported."
+                "anisotropic request {'n':'N*M'} is not supported."
         if external_distance is not None:
             assert request == {'n':'1'}
 
