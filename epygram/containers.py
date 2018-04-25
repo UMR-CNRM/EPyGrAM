@@ -23,7 +23,6 @@ class File(RecursiveObject, FootprintBase):
     _footprint = dict(
         attr=dict(
             filename=dict(
-                type=str,
                 alias=('f',),
                 info='Relative or absolute pathname.')
         )

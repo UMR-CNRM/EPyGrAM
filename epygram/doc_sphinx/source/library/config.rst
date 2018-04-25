@@ -38,7 +38,7 @@ FA
 
 .. autodata:: FA_default_compression
 .. autodata:: FA_default_reference_pressure
-.. autodata:: FA_geoid_for_pyproj
+.. autodata:: FA_default_geoid
 .. autodata:: FA_field_dictionaries_csv
 .. autodata:: FA_fandax
 .. autodata:: FA_buffered_gauss_grid
@@ -82,7 +82,7 @@ LFI
 ...
 
 .. autodata:: LFI_field_dictionaries_csv
-.. autodata:: LFI_geoid_for_pyproj
+.. autodata:: LFI_default_geoid
 
 netCDF
 ......
@@ -101,9 +101,7 @@ netCDF
 Options
 -------
 
-.. autodata:: default_projtool
-.. autodata:: myproj_default_geoid
-.. autodata:: pyproj_default_geoid
+.. autodata:: default_geoid
 .. autodata:: protect_unhappy_writes
 .. autodata:: mask_outside
 .. autodata:: hide_footprints_warnings

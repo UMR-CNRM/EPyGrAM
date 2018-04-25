@@ -75,7 +75,6 @@ class D3Geometry(RecursiveObject, FootprintBase):
                 type=VGeometry,
                 info="Handles vertical geometry parameters."),
             position_on_horizontal_grid=dict(
-                type=str,
                 optional=True,
                 access='rwx',
                 info="Position of points w/r to the horizontal.",
