@@ -151,8 +151,8 @@ def convert(filename,
                                                            openmode='w',
                                                            fmt=fmt_dict[output_format_suffix],
                                                            other_attributes=({'FORMAT':'XYV'} if kwargs.pop('llv') else None),
-                                                           # TODO: add a "columns" command-line option to specify it more customly
-                                                           # columns=(['LAT', 'LON', 'VALUE'] if kwargs.pop('llv') else None)
+                                                           columns=kwargs.pop('columns'),
+                                                           no_header=kwargs.pop('no_header', False)
                                                            )
             else:
                 output_resource = epygram.formats.resource('.'.join([filename,
@@ -355,6 +355,17 @@ class GeoPointsWriter(Converter):
                 type=bool,
                 default=False,
                 access='rwx'),
+            columns=dict(
+                info="simplified GeoPoints, specify columns to be written.",
+                optional=True,
+                type=FPList,
+                default=None,
+                access='rwx'),
+            no_header=dict(
+                info="If True, do not write header (openmode='w').",
+                optional=True,
+                type=bool,
+                default=False)
         )
     )
 
@@ -380,7 +391,9 @@ class GeoPointsWriter(Converter):
                        order=self.order,
                        precision=self.precision,
                        lonlat_precision=self.lonlat_precision,
-                       llv=self.llv)
+                       llv=self.llv,
+                       columns=self.columns,
+                       no_header=self.no_header)
 
         return done
 
@@ -449,7 +462,6 @@ if __name__ == '__main__':
     # compression/precision options
     add_arg_to_parser(parser, fields_management['netCDF_compression'])
     add_arg_to_parser(parser, fields_management['GRIB2_packing'])
-    add_arg_to_parser(parser, output_options['GeoPoints_llv'])
     add_arg_to_parser(parser, output_options['GeoPoints_lonlat_precision'])
     add_arg_to_parser(parser, output_options['GeoPoints_precision'])
     # GRIB specifics
@@ -459,6 +471,10 @@ if __name__ == '__main__':
     add_arg_to_parser(parser, output_options['GRIB_other_options'])
     # GeoPoints specific
     add_arg_to_parser(parser, misc_options['array_flattening_order'])
+    cols = parser.add_mutually_exclusive_group()
+    add_arg_to_parser(cols, output_options['GeoPoints_llv'])
+    add_arg_to_parser(cols, output_options['GeoPoints_columns'])
+    add_arg_to_parser(parser, output_options['GeoPoints_noheader'])
     # netCDF
     add_arg_to_parser(parser, misc_options['flatten_horizontal_grids'])
     # others
@@ -494,6 +510,8 @@ if __name__ == '__main__':
         other_GRIB_options = {}
     if args.numod is not None:
         other_GRIB_options['generatingProcessIdentifier'] = args.numod
+    if args.geopoints_cols is not None:
+        args.geopoints_cols = [c.strip() for c in args.geopoints_cols.split(',')]
     assert args.filenames != [], \
            "must supply one or several filenames."
     threads_number = min(args.threads_number, len(args.filenames))
@@ -541,4 +559,7 @@ if __name__ == '__main__':
          order=args.order,
          lonlat_precision=args.lonlat_precision,
          precision=args.precision,
-         llv=args.llv)
+         llv=args.llv,
+         columns=args.geopoints_cols,
+         no_header=args.geopoints_noheader
+         )

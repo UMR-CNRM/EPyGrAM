@@ -60,6 +60,11 @@ class GeoPoints(FileResource):
                 optional=True,
                 info="The columns of the geopoints, i.e. the set of" +
                      " keys describing each point."),
+            no_header=dict(
+                type=bool,
+                optional=True,
+                default=False,
+                info="If True, do not write header (openmode='w')."),
             other_attributes=dict(
                 type=FPDict,
                 optional=True,
@@ -144,23 +149,27 @@ class GeoPoints(FileResource):
                     else:
                         raise NotImplementedError("Not yet. Cf. https://software.ecmwf.int/wiki/display/METV/Geopoints for implementing.")
 
-            # header initializations
-            if self.parameter is not None and self.columns is not None:
-                self._file = open(self.container.abspath, self.openmode)
-                self._file.write('#GEO\n')
-                for k, v in self.other_attributes.items():
-                    self._file.write('#' + k + ' = ' + str(v) + '\n')
-                self._file.write('#PARAMETER = ' + self.parameter + '\n')
-                self._file.write('#')
-                for i in self.columns:
-                    self._file.write(i + ' ')
-                self._file.write('\n')
-                self._file.write('#DATA\n')
-                self.isopen = True
+            if not self.no_header:
+                # header initializations
+                if self.parameter is not None and self.columns is not None:
+                    self._file = open(self.container.abspath, self.openmode)
+                    self._file.write('#GEO\n')
+                    for k, v in self.other_attributes.items():
+                        self._file.write('#' + k + ' = ' + str(v) + '\n')
+                    self._file.write('#PARAMETER = ' + self.parameter + '\n')
+                    self._file.write('#')
+                    for i in self.columns:
+                        self._file.write(i + ' ')
+                    self._file.write('\n')
+                    self._file.write('#DATA\n')
+                    self.isopen = True
+                else:
+                    epylog.debug("cannot open GeoPoints in 'w' mode without" +
+                                 " attributes *parameter* and *columns* set." +
+                                 " Not open yet.")
             else:
-                epylog.debug("cannot open GeoPoints in 'w' mode without" +
-                             " attributes *parameter* and *columns* set." +
-                             " Not open yet.")
+                self._file = open(self.container.abspath, self.openmode)
+                self.isopen = True
 
     def close(self):
         """
@@ -384,14 +393,17 @@ class GeoPoints(FileResource):
 
         if not self.isopen:
             open_kwargs = {}
-            columns = ['LAT', 'LON', 'LEVEL']
+            if self.columns:
+                columns = self.columns
+            else:
+                columns = ['LAT', 'LON', 'LEVEL']
             if isinstance(field, D3Field):
                 if parameter == 'UNKNOWN':
                     if fidkey_for_parameter is None:
                         open_kwargs['parameter'] = str(field.fid.get(self.format, field.fid))
                     else:
                         open_kwargs['parameter'] = str(field.fid[fidkey_for_parameter])
-                if field.validity.get() is not None:
+                if field.validity.get() is not None and not self.columns:
                     columns.extend(['DATE', 'TIME'])
             elif isinstance(field, FieldSet) or isinstance(field, PointField):
                 if isinstance(field, PointField):
@@ -401,9 +413,9 @@ class GeoPoints(FileResource):
                         open_kwargs['parameter'] = str(field[0].fid.get(self.format, field[0].fid))
                     else:
                         open_kwargs['parameter'] = str(field[0].fid[fidkey_for_parameter])
-                if field[0].validity.get() is not None:
+                if field[0].validity.get() is not None and not self.columns:
                     columns.extend(['DATE', 'TIME'])
-            elif isinstance(field, dict):
+            elif isinstance(field, dict) and not self.columns:
                 if 'lat' not in field:
                     raise epygramError("'lat' must be in field.keys().")
                 if 'lon' not in field:
@@ -413,7 +425,8 @@ class GeoPoints(FileResource):
                 for i in field.keys():
                     if i.upper() not in ('LAT', 'LON', 'VALUE'):
                         columns.append(i.upper())
-            columns.append('VALUE')
+            if not self.columns:
+                columns.append('VALUE')
             if self.columns is None:
                 open_kwargs['columns'] = columns
             self.open(**open_kwargs)
@@ -481,17 +494,15 @@ class GeoPoints(FileResource):
         for i in self.columns:
             if i not in writebuffer:
                 writebuffer[i] = [0] * len(writebuffer['VALUE'])
-        substruct = self.columns[2:]
 
         # WRITE
         for pt in range(len(writebuffer['VALUE'])):
-            pointstr = ' {: .{precision}{type}} '.format(writebuffer['LAT'][pt],  # FIXME: follow order of columns
-                                                         type='F',
-                                                         precision=llprecision) + \
-                       ' {: .{precision}{type}} '.format(writebuffer['LON'][pt],
-                                                         type='F',
-                                                         precision=llprecision)
-            for i in substruct:
+            pointstr = ''
+            for i in self.columns[:2]:
+                pointstr += ' {: .{precision}{type}} '.format(writebuffer[i][pt],
+                                                              type='F',
+                                                              precision=llprecision)
+            for i in self.columns[2:]:
                 x = writebuffer[i][pt]
                 if type(x) in (float, numpy.float64):
                     x = ' {: .{precision}{type}} '.format(x, type='E',

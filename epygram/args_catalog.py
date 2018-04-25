@@ -393,7 +393,18 @@ output_options = {
              help='if diffonly and activated, only print the maximum absolute\
                    difference (and min/max values of fields for magnitude',
              dest='only_maxdiff',
-             default=False)]
+             default=False)],
+    'GeoPoints_columns':[
+        '--geopoints_cols',
+        dict(dest='geopoints_cols',
+             help="set manually the columns of GeoPoints, for instance 'LAT,LON,VALUE'.",
+             default=None)],
+    'GeoPoints_noheader':[
+        '--geopoints_noheader',
+        dict(action='store_true',
+             dest='geopoints_noheader',
+             help="discard the header of GeoPoints.",
+             default=False)],
                   }
 
 # : Miscellaneous arguments
