@@ -19,6 +19,7 @@ import footprints
 from footprints import FootprintBase, FPDict, proxy as fpx
 from bronx.graphics.axes import set_figax
 from bronx.syntax.arrays import stretch_array
+from bronx.syntax.decorators import nicedeco
 
 from epygram import epygramError, config
 from epygram.util import (RecursiveObject, degrees_nearest_mod, Angle,
@@ -28,6 +29,19 @@ from .VGeometry import VGeometry
 
 epylog = footprints.loggers.getLogger(__name__)
 _re_nearest_sq = re.compile('(?P<n>\d+)\*(?P<m>\d+)')
+
+
+@nicedeco
+def _need_pyproj_geod(mtd):
+    """
+    Decorator for Geometry object: if the method needs a pyproj.Geod
+    object to be set.
+    """
+    def with_geod(self, *args, **kwargs):
+        if not hasattr(self, '_pyproj_geod'):
+            self._set_geoid()
+        return mtd(self, *args, **kwargs)
+    return with_geod
 
 
 class D3Geometry(RecursiveObject, FootprintBase):
@@ -203,6 +217,11 @@ class D3Geometry(RecursiveObject, FootprintBase):
                 'upper-center': (0., .5),
                 'center'      : (0., 0.)}[pos]
 
+    def _set_geoid(self):
+        import pyproj
+        self._pyproj_geod = pyproj.Geod(**self.geoid)
+
+    @_need_pyproj_geod
     def distance(self, end1, end2):
         """
         Computes the distance between two points along a Great Circle.
@@ -212,13 +231,10 @@ class D3Geometry(RecursiveObject, FootprintBase):
 
         Warning: requires the :mod:`pyproj` module.
         """
-        if not hasattr(self, '_pyproj_geod'):
-            import pyproj
-            self._pyproj_geod = pyproj.Geod(**self.geoid)
-        g = self._pyproj_geod
-        distance = g.inv(end1[0], end1[1], end2[0], end2[1])[2]
+        distance = self._pyproj_geod.inv(end1[0], end1[1], end2[0], end2[1])[2]
         return distance
 
+    @_need_pyproj_geod
     def linspace(self, end1, end2, num):
         """
         Returns evenly spaced points over the specified interval.
@@ -230,17 +246,16 @@ class D3Geometry(RecursiveObject, FootprintBase):
 
         Warning: requires the :mod:`pyproj` module.
         """
-        if not hasattr(self, '_pyproj_geod'):
-            import pyproj
-            self._pyproj_geod = pyproj.Geod(**self.geoid)
-        g = self._pyproj_geod
         if num < 2:
             raise epygramError("'num' must be at least 2.")
-        transect = g.npts(end1[0], end1[1], end2[0], end2[1], num - 2)
+        transect = self._pyproj_geod.npts(end1[0], end1[1],
+                                          end2[0], end2[1],
+                                          num - 2)
         transect.insert(0, end1)
         transect.append(end2)
         return transect
 
+    @_need_pyproj_geod
     def azimuth(self, end1, end2):
         """
         Initial bearing from *end1* to *end2* points following a Great Circle.
@@ -250,11 +265,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
 
         Warning: requires the :mod:`pyproj` module.
         """
-        if not hasattr(self, '_pyproj_geod'):
-            import pyproj
-            self._pyproj_geod = pyproj.Geod(**self.geoid)
-        g = self._pyproj_geod
-        return g.inv(end1[0], end1[1], end2[0], end2[1])[0]
+        return self._pyproj_geod.inv(end1[0], end1[1], end2[0], end2[1])[0]
 
     def make_point_geometry(self, lon, lat):
         """Returns a PointGeometry at coordinates *(lon,lat)* in degrees."""
@@ -2146,6 +2157,7 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
                                numpy.linspace(y1, y2, num=num)))
         return [self.xy2ll(*xy) for xy in xy_linspace]
 
+    @_need_pyproj_geod
     def distance(self, end1, end2):
         """
         Computes the distance between two points along a straight line in the
@@ -2156,14 +2168,10 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
 
         Warning: requires the :mod:`pyproj` module.
         """
-        if not hasattr(self, '_pyproj_geod'):
-            import pyproj
-            self._pyproj_geod = pyproj.Geod(**self.geoid)
-        g = self._pyproj_geod
         plast = end1
         distance = 0
         for p in self.linspace(end1, end2, 1000)[1:]:
-            distance += g.inv(plast[0], plast[1], *p)[2]
+            distance += self._pyproj_geod.inv(plast[0], plast[1], *p)[2]
             plast = p
         return distance
 
@@ -4112,12 +4120,18 @@ class D3GaussGeometry(D3Geometry):
         return self.distance(self.ij2ll(0, jint),
                              self.ij2ll(1, jint))
 
-    def stretching_resolution_field(self):
+    @_need_pyproj_geod
+    def resolution_field_from_stretching(self):
         """
-        Returns a field whose values are the local resolution computed as the
-        equatorial zonal resolution stretched locally by the map factor.
+        Returns a field which values are the local resolution computed as the
+        nominal resolution stretched locally by the map factor.
         """
-        zonal_equatorial_resolution = self.zonal_resolution_j() # TODO:
+        assert self._pyproj_geod.sphere, "Method is not available with a non-spheroid geoid."
+        zonal_equatorial_resolution = 2. * numpy.pi * self._pyproj_geod.a / self.dimensions['max_lon_number']
+        mf = self.map_factor_field()
+        mf.fid['geometry'] = 'resolution_from_stretching'
+        mf.setdata(zonal_equatorial_resolution / mf.data)
+        return mf
 
     def resolution_j(self, j):
         """
