@@ -18,7 +18,7 @@ arguments.
 from __future__ import print_function, absolute_import, unicode_literals, division
 
 from epygram import config
-from epygram.formats import grib_utilities
+import grib_utilities
 import multiprocessing
 
 

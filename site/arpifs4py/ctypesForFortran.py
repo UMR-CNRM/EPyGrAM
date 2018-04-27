@@ -422,7 +422,10 @@ def ctypesForFortranFactory(solib):
                     "second element of argument signature must be None or a tuple"
                 assert all([len(s[1]) > 0 for s in signature if isinstance(s[1], tuple)]), \
                     "if second element of argument is a tuple, it must not be empty"
-                assert all([all([(isinstance(item, int) and item >= 0) for item in s[1]])
+                assert all([all([((isinstance(item, int) or
+                                   isinstance(item, numpy.int) or
+                                   isinstance(item, numpy.int64)) and
+                                  item >= 0) for item in s[1]])
                             for s in signature if isinstance(s[1], tuple)]), \
                     "if second element of argument is a tuple, it must contain " + \
                     "only positive or null integer values"

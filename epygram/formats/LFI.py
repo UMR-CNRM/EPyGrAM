@@ -373,7 +373,7 @@ class LFI(FileResource):
             wlfi.wlfipos(self._unit)  # rewind
             self._listLFInamesCache = []
             for _ in range(records_number):
-                fname = wlfi.wlficas(self._unit, True)[0].decode().strip()
+                fname = wlfi.wlficas(self._unit, True)[0].strip()
                 self._listLFInamesCache.append(fname)
 
         return self._listLFInamesCache
@@ -480,7 +480,7 @@ class LFI(FileResource):
             raise epygramError("comment length is superior to the limit.")
         comment = ""
         for i in rawData[2:comment_length + 2]:
-            comment += unichr(i)
+            comment += six.unichr(i)
         comment = comment.encode(errors='replace')  # FIXME: later problems with footprints. Should be fixed in footprints
         data = rawData[comment_length + 2:]
         if getdata:
@@ -1080,7 +1080,7 @@ class LFI(FileResource):
     def what(self, out=sys.stdout,
              details=False,
              sortfields=False,
-             **kwargs):
+             **_):
         """
         Writes in file a summary of the contents of the LFI.
 

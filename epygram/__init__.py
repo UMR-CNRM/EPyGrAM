@@ -102,7 +102,7 @@ import footprints
 
 __all__ = []
 
-__version__ = '1.3.0'
+__version__ = '1.3.0+'
 
 __license__ = 'CeCILL-C'
 
@@ -121,7 +121,7 @@ epylog = footprints.loggers.getLogger(__name__)
 
 # Check that Python version is compatible
 if sys.version_info.major == 3:
-    epylog.warning('*epygram* supposed to be compatible with Python3, but ecCodes/grib_api is not !')
+    epylog.warning('*epygram* is now supposed to be compatible with Python3, but ecCodes/grib_api is not !')
 else:
     if sys.version_info.minor < 7:
         epylog.warning('*epygram* requires Python2.7 at least. ' +

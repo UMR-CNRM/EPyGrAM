@@ -820,7 +820,7 @@ class FieldValidity(RecursiveObject):
 
         If *asGRIB2code*, returned as a GRIB2 code (cf. GRIB2 table 4.10).
         """
-        from .formats import grib_utilities
+        import grib_utilities
 
         if not asGRIB2code and isinstance(self._statistical_process_on_duration, int):
             out = grib_utilities.statistical_processes.get(self._statistical_process_on_duration, None)

@@ -52,7 +52,7 @@ if not os.path.exists(vortex_cache):
 
 # Epyweb workdir for tmp files (basemap pickle, resources hardlinks and figures)
 epyweb_workdir = os.path.join(vortex_cache, 'epyweb', os.getlogin())
-basemap_pickle_path = os.path.join(epyweb_workdir, 'basemap.cPickle')
+basemap_pickle_path = os.path.join(epyweb_workdir, 'basemap.pickle')
 
 # Debug mode
 all_fatal_exceptions = False

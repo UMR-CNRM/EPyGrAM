@@ -51,6 +51,7 @@ def activate(*formats):
     return [f for f in formats if fmap.get(f, f) in config.implemented_formats]
 
 
+datadir = datadir = './data'
 suffixes = {'FA': 'fa',
             'GRIB1':'grb1',
             'GRIB2':'grb2',
@@ -58,3 +59,4 @@ suffixes = {'FA': 'fa',
             'LFI':'lfi'}
 
 delta_assertAlmostEqual = 1e-12
+delta_assertAlmostEqual4pyproj = 1e-8  # because pyproj not reproducible between python2 and python3

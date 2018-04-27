@@ -9,12 +9,11 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 from unittest import TestCase, skipIf
 import tempfile
 import os
-import cPickle
+from six.moves import cPickle as pickle  # @UnresolvedImport
 
 import epygram
 
-from . import datadir
-from .util import suffixes, delta_assertAlmostEqual
+from .util import datadir, suffixes, delta_assertAlmostEqual
 
 basemap_ok = True
 
@@ -43,7 +42,7 @@ class TestFMT(TestCase):
 
     def test_what(self):
         with epygram.formats.resource(self.filename, 'r', fmt=self.fmt) as r:
-            with open('/dev/null', 'ab') as out:
+            with open('/dev/null', 'a') as out:
                 r.what(out=out)
 
 
@@ -75,11 +74,11 @@ class Test_GeometryInterfaces(TestCase):
                 fld = fld[0]
             if not self.update_pickle:
                 with open(picklename, 'rb') as pckl:
-                    pt_pckld = cPickle.load(pckl)
+                    pt_pckld = pickle.load(pckl)
                 self.assertEqual(fld, pt_pckld)
             else:
                 with open(picklename, 'wb') as pckl:
-                    cPickle.dump(fld, pckl)
+                    pickle.dump(fld, pckl)
 
 
 class Test_H2DGeometry(Test_GeometryInterfaces):

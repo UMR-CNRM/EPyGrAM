@@ -140,17 +140,8 @@ class RecursiveObject(object):
         return not self == other
 
     def __hash__(self):
-        # known issue __eq__/must be defined both or none, else inheritance is broken
-        # return super().__hash__() # CLEANME:
+        # known issue __eq__/__hash__ must be defined both or none, else inheritance is broken
         return object.__hash__(self)
-        # return super(RecursiveObject, self).__hash__()
-        """_hash = 0
-        for k, v in self.__dict__.items():
-            if isinstance(v, dict) or isinstance(v, list):
-                _hash += hash(k) + sum([hash(i) for i in v])
-            else:
-                _hash += hash(k) + hash(v)
-        return _hash"""
 
     def copy(self):
         """Returns a copy of the object."""

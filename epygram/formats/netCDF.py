@@ -963,7 +963,7 @@ class netCDF(FileResource):
                 dims.append(tgrid)
             else:
                 _, _status = check_or_add_variable(tgrid, float)
-            datetime0 = field.validity[0].getbasis().isoformat(sep=b' ')
+            datetime0 = field.validity[0].getbasis().isoformat(sep=str(' '))
             datetimes = [int((dt.get() - field.validity[0].getbasis()).total_seconds()) for dt in field.validity]
             if _status == 'created':
                 self._variables[tgrid][:] = datetimes
@@ -1309,7 +1309,7 @@ class netCDF(FileResource):
                 outwrite("\t\tsize:", nc.variables[var].size)
                 print_ncattr(var)
             return nc_attrs, nc_dims, nc_vars
-
+        print(type(out))
         out.write("### FORMAT: " + self.format + "\n")
         out.write("\n")
         ncdump(self._nc, out)

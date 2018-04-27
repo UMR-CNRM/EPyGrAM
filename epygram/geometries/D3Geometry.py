@@ -88,8 +88,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
                 type=FPDict,
                 optional=True,
                 default=FPDict({}),
-                info="To specify geoid shape; actually used in projected" +
-                     " geometries only.")
+                info="To specify geoid shape.")
         )
     )
 

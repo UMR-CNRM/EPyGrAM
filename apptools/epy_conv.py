@@ -22,7 +22,7 @@ from epygram.args_catalog import (add_arg_to_parser,
                                   files_management, fields_management,
                                   misc_options, runtime_options,
                                   operational_options, output_options)
-from epygram.formats import grib_utilities
+import grib_utilities
 
 # taylorism.interrupt.logger.setLevel('WARNING')
 epylog = footprints.loggers.getLogger(__name__)

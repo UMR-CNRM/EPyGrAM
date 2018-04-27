@@ -8,7 +8,7 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 
 import os
 import json
-import cPickle
+from six.moves import cPickle as pickle  # @UnresolvedImport
 import uuid
 import copy
 
@@ -306,8 +306,8 @@ class MyPlot(object):
 
             current_basemap = None
             if os.path.exists(os.path.join(epyweb_workdir, basemap_pickle_name)):
-                _current_basemap = cPickle.load(open(os.path.join(epyweb_workdir,
-                                                                  basemap_pickle_name), 'r'))
+                _current_basemap = pickle.load(open(os.path.join(epyweb_workdir,
+                                                                 basemap_pickle_name), 'r'))
                 if isinstance(_current_basemap, Basemap):
                     current_basemap = _current_basemap
 
@@ -376,8 +376,8 @@ class MyPlot(object):
                                                                       subzone=myplot_args["subzone"],
                                                                       specificproj=myplot_args["specificproj"],
                                                                       zoom=monzoom)
-                        cPickle.dump(current_basemap, open(os.path.join(epyweb_workdir,
-                                                                        basemap_pickle_name), 'w'))
+                        pickle.dump(current_basemap, open(os.path.join(epyweb_workdir,
+                                                                       basemap_pickle_name), 'w'))
                         # On réutilise le cache
 
                     myplot = make_my_plot(resource, field, cle, champ, champ_v, FF, vecteurs,
@@ -477,8 +477,8 @@ class MyPlotOverlay(object):
 
             current_basemap = None
             if os.path.exists(os.path.join(epyweb_workdir, basemap_pickle_name)):
-                _current_basemap = cPickle.load(open(os.path.join(epyweb_workdir,
-                                                                  basemap_pickle_name), 'r'))
+                _current_basemap = pickle.load(open(os.path.join(epyweb_workdir,
+                                                                 basemap_pickle_name), 'r'))
                 if isinstance(_current_basemap, Basemap):
                     current_basemap = _current_basemap
 
@@ -502,7 +502,7 @@ class MyPlotOverlay(object):
                                                                   subzone=myplot_args["subzone"],
                                                                   specificproj=myplot_args["specificproj"],
                                                                   zoom=monzoom)
-                    cPickle.dump(current_basemap, open(basemap_pickle_path, 'w'))
+                    pickle.dump(current_basemap, open(basemap_pickle_path, 'w'))
                     # On ne le calcule que pour la 1ere itération de la boucle
 
                 myplot_1 = make_my_plot(resource, field, "A", champ, champ_v, FF, vecteurs,
@@ -600,8 +600,8 @@ class MyPlotDiff(object):
 
             current_basemap = None
             if os.path.exists(os.path.join(epyweb_workdir, basemap_pickle_name)):
-                _current_basemap = cPickle.load(open(os.path.join(epyweb_workdir,
-                                                                  basemap_pickle_name), 'r'))
+                _current_basemap = pickle.load(open(os.path.join(epyweb_workdir,
+                                                                 basemap_pickle_name), 'r'))
                 if isinstance(_current_basemap, Basemap):
                     current_basemap = _current_basemap
 
@@ -631,7 +631,7 @@ class MyPlotDiff(object):
                                                                   subzone=myplot_args["subzone"],
                                                                   specificproj=myplot_args["specificproj"],
                                                                   zoom=monzoom)
-                    cPickle.dump(current_basemap, open(basemap_pickle_path, 'w'))
+                    pickle.dump(current_basemap, open(basemap_pickle_path, 'w'))
                     # On ne le calcule que pour la 1ere itération de la boucle
 
                 if (FF["A"] and FF["B"]) or (vecteurs["A"] and vecteurs["B"]):

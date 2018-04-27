@@ -37,7 +37,7 @@ from epygram.geometries.VGeometry import pressure2altitude
 from epygram.geometries.SpectralGeometry import (SpectralGeometry,
                                                  gridpoint_dims_from_truncation,
                                                  nearest_greater_FFT992compliant_int)
-from . import grib_utilities
+import grib_utilities
 
 
 epylog = footprints.loggers.getLogger(__name__)
@@ -47,7 +47,7 @@ class LowLevelGRIB(object):
     def __init__(self, GRIB_lowlevel_api):
         self.api_name = GRIB_lowlevel_api.lower()
         if self.api_name in ('gribapi', 'grib_api'):
-            self.api_name = 'gribapi'
+            self.api_name = 'grib_api'
             import gribapi  # @UnresolvedImport
             self.api = gribapi
             self.count_in_file = gribapi.grib_count_in_file
@@ -75,6 +75,7 @@ class LowLevelGRIB(object):
             self.version = gribapi.__version__
         elif self.api_name == 'eccodes':
             import eccodes  # @UnresolvedImport
+            self.api = eccodes
             self.count_in_file = eccodes.codes_count_in_file
             self.any_new_from_file = eccodes.codes_any_new_from_file
             self.release = eccodes.codes_release
@@ -98,6 +99,14 @@ class LowLevelGRIB(object):
             self.index_release = eccodes.codes_index_release
             self.InternalError = eccodes.CodesInternalError
             self.version = eccodes.__version__
+        self._init_env()
+
+    def _init_env(self, reset=False):
+        # from path of low_level_api:
+        # remove /lib64/pythonX.Y/site-packages/eccodes/__init__.py
+        # or /lib64/pythonX.Y/site-packages/grib_api/gribapi.py
+        install_dir = os.path.sep.join(self.api.__file__.split(os.path.sep)[:-5])
+        grib_utilities.complete_grib_paths(install_dir, self.api_name, reset=reset)
 
 
 lowlevelgrib = LowLevelGRIB(config.GRIB_lowlevel_api)
@@ -1076,10 +1085,14 @@ class GRIBmessage(RecursiveObject, dict):
     def genfid(self):
         """Generates and returns a GRIB-type epygram fid from the message."""
         fid_keys = copy.copy(self.fid_keys[self.grib_edition])
-        if self['topLevel'] == self['bottomLevel']:
+        try:
+            onelevel = self['topLevel'] == self['bottomLevel']
+        except lowlevelgrib.InternalError:
+            onelevel = True
+        if onelevel:
             fid_keys.pop(fid_keys.index('topLevel'))
             fid_keys.pop(fid_keys.index('bottomLevel'))
-        fid = {'GRIB' + str(self.grib_edition):FPDict({k:self[k] for k in fid_keys})}
+        fid = {'GRIB' + str(self.grib_edition):FPDict({k:self[str(k)] for k in fid_keys})}
         if self.grib_edition == 1:
             # Here we should complete the generic part of fid
             pass
@@ -1572,7 +1585,7 @@ class GRIB(FileResource):
         if isinstance(handgrip, six.string_types):
             handgrip = parse_GRIBstr_todict(handgrip)
         matchingfields = FieldSet()
-        idx = lowlevelgrib.index_new_from_file(self._open_through,
+        idx = lowlevelgrib.index_new_from_file(str(self._open_through),  # gribapi str/unicode incompatibility
                                                [str(k) for k in handgrip.keys()])  # gribapi str/unicode incompatibility
         # filter
         for k, v in handgrip.items():

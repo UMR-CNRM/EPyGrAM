@@ -14,7 +14,6 @@ import epygram
 
 from . import abstract_testclasses as abtc
 from . import util
-from . import datadir
 
 epygram.init_env()
 

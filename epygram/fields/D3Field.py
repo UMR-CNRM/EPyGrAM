@@ -432,10 +432,6 @@ class D3CommonField(Field):
                        'position_on_horizontal_grid': 'center'}
         if geometry.projected_geometry or geometry.name == 'academic':
             kwargs_geom['projection'] = copy.copy(geometry.projection)
-        if geometry.projected_geometry:
-            if geometry.name != 'academic':
-                kwargs_geom['projtool'] = geometry.projtool
-            kwargs_geom['geoid'] = geometry.geoid
         if geometry.geoid:
             kwargs_geom['geoid'] = geometry.geoid
         if geometry.position_on_horizontal_grid not in [None, '__unknown__', kwargs_geom['position_on_horizontal_grid']]:
@@ -1814,8 +1810,7 @@ class D3Field(D3CommonField):
                        'position_on_horizontal_grid': self.geometry.position_on_horizontal_grid}
         if self.geometry.projected_geometry or self.geometry.name == 'academic':
             kwargs_geom['projection'] = copy.copy(self.geometry.projection)
-        if self.geometry.projected_geometry:
-            kwargs_geom['projtool'] = self.geometry.projtool
+        if self.geometry.geoid:
             kwargs_geom['geoid'] = self.geometry.geoid
         newgeometry = fpx.geometry(**kwargs_geom)
         generic_fid = self.fid.get('generic', {})
@@ -2021,8 +2016,7 @@ class D3VirtualField(D3CommonField):
                        }
         if self.geometry.projected_geometry or self.geometry.name == 'academic':
             kwargs_geom['projection'] = copy.copy(self.geometry.projection)
-        if self.geometry.projected_geometry:
-            kwargs_geom['projtool'] = self.geometry.projtool
+        if self.geometry.geoid:
             kwargs_geom['geoid'] = self.geometry.geoid
         self._geometry = fpx.geometry(**kwargs_geom)
         self._spgpOpList = []

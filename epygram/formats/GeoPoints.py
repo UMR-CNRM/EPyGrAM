@@ -125,9 +125,9 @@ class GeoPoints(FileResource):
             self.headerlength += 1
             for meta in header.keys():
                 if meta in ['PARAMETER', ]:
-                    self._attributes[meta.lower()] = header.pop(meta)
+                    self._attributes[meta.lower()] = header[meta]
                 else:
-                    self.other_attributes[meta] = header.pop(meta)
+                    self.other_attributes[meta] = header[meta]
             # initializations
             self.isopen = True
             self.empty = False

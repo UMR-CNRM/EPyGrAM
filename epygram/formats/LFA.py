@@ -116,7 +116,6 @@ class LFA(FileResource):
         field = MiscField(fid={'LFA':fieldname})
         if getdata:
             (fieldtype, fieldlength) = wlfa.wlfacas(self._unit, fieldname)
-            fieldtype = fieldtype.decode()
             if fieldtype[0] == 'R':
                 (data, fieldlength) = wlfa.wlfalecr(self._unit, fieldname,
                                                     fieldlength)
@@ -127,7 +126,7 @@ class LFA(FileResource):
                 (data, fieldlength) = wlfa.wlfalecc(self._unit, fieldname,
                                                     fieldlength,
                                                     config.LFA_maxstrlen)
-                data = [data[i].strip() for i in range(fieldlength)]
+                data = [data[i].strip().decode() for i in range(fieldlength)]
             field.setdata(numpy.array(data))
 
         return field
@@ -170,8 +169,7 @@ class LFA(FileResource):
         (list_length, fieldslist) = wlfa.wlfalaft(self._unit,
                                                   config.LFA_max_num_fields,
                                                   config.LFA_maxstrlen)
-        fieldslist = [fieldslist[i].strip() for i in range(list_length)]
-
+        fieldslist = [fieldslist[i].strip().decode() for i in range(list_length)]
         return fieldslist
 
     @FileResource._openbeforedelayed

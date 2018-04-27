@@ -103,16 +103,17 @@ def treatReturnCode_LFA(func):
 def complete_GRIB_samples_path_from_dynamic_gribapi(lib):
     import subprocess
     import re
+    import grib_utilities
     ldd_out = subprocess.check_output(['ldd', lib])
     libs_grib_api = {}
-    for line in ldd_out.splitlines():
-        match = re.match('\s*(libgrib_api.*) => (.*)(/lib/libgrib_api.*\.so.*)\s\(0x.*', str(line))
-        if match:
-            libs_grib_api[match.group(1)] = match.group(2)
-    gsp = os.getenv('GRIB_SAMPLES_PATH', '.')
+    for apilib in ('libgrib_api', 'libeccodes'):
+        for line in ldd_out.splitlines():
+            _re = '.*\s*({}.*) => (.*)(/lib/{}.*\.so.*)\s\(0x.*'.format(apilib, apilib)
+            match = re.match(_re, str(line))
+            if match:
+                libs_grib_api[match.group(1)] = match.group(2)
     for l in set(libs_grib_api.values()):
-        gsp = ':'.join([gsp, '/'.join([l, 'share/grib_api/samples'])])
-    os.environ['GRIB_SAMPLES_PATH'] = gsp  # FIXME: seems not to work on Bull: to be exported beforehand ?
+        grib_utilities.complete_grib_paths(l, 'grib_api', reset=False)
 
 
 # common parameters and objects
@@ -126,7 +127,6 @@ INOUT = ctypesForFortran.INOUT
 shared_objects_library = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                       _libs4py)
 complete_GRIB_samples_path_from_dynamic_gribapi(shared_objects_library)
-os.environ.pop('GRIB_DEFINITION_PATH', None)
 ctypesFF, handle = ctypesForFortran.ctypesForFortranFactory(shared_objects_library)
 
 

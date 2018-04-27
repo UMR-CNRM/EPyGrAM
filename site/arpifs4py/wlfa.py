@@ -182,7 +182,7 @@ def wlfalecc(kul, cdna, kdimb, klenc):
              (np.str, (len(cdna),), IN),
              (np.int64, None, IN),
              (np.int64, None, IN),
-             (np.str, (klenc, kdimb), OUT),  # TOBECHECKED:
+             (np.str, (klenc, kdimb), OUT),
              (np.int64, None, OUT)],
             None)
 
