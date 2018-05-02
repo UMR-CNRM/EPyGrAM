@@ -9,6 +9,7 @@ import six
 
 import argparse
 import sys
+import os
 
 from footprints import FPDict
 from bronx.syntax.pretty import smooth_string
@@ -90,10 +91,10 @@ def main(filename,
                 field.sp2gp()
             if operation is not None:
                 field.operation(**operation)
-            if pressure_unit_hpa and \
-               (field.fid['generic'].get('discipline') == 0 and
-                field.fid['generic'].get('parameterCategory') == 3 and
-                field.fid['generic'].get('parameterNumber') in (0, 1, 2, 8, 11, 25)):
+            if (pressure_unit_hpa and
+                (field.fid['generic'].get('discipline') == 0 and
+                 field.fid['generic'].get('parameterCategory') == 3 and
+                 field.fid['generic'].get('parameterNumber') in (0, 1, 2, 8, 11, 25))):
                 field.scalar_operation('/', 100.)
             if firstfield and interpolation == 'nearest':
                 (value, neighborinfo) = field.getvalue_ll(*coordinates,
@@ -129,10 +130,10 @@ def main(filename,
                     field.sp2gp()
                 if operation is not None:
                     field.operation(**operation)
-                if pressure_unit_hpa and \
-                   (field.fid['generic'].get('discipline') == 0 and
-                    field.fid['generic'].get('parameterCategory') == 3 and
-                    field.fid['generic'].get('parameterNumber') in (0, 1, 2, 8, 11, 25)):
+                if (pressure_unit_hpa and
+                    (field.fid['generic'].get('discipline') == 0 and
+                     field.fid['generic'].get('parameterCategory') == 3 and
+                     field.fid['generic'].get('parameterNumber') in (0, 1, 2, 8, 11, 25))):
                     field.scalar_operation('/', 100.)
                 if firstfield and interpolation == 'nearest':
                     (value, neighborinfo) = field.getvalue_ll(*coordinates,
@@ -153,10 +154,10 @@ def main(filename,
                     field.sp2gp()
                 if operation is not None:
                     field.operation(**operation)
-                if pressure_unit_hpa and \
-                   (field.fid['generic'].get('discipline') == 0 and
-                    field.fid['generic'].get('parameterCategory') == 3 and
-                    field.fid['generic'].get('parameterNumber') in (0, 1, 2, 8, 11, 25)):
+                if (pressure_unit_hpa and
+                    (field.fid['generic'].get('discipline') == 0 and
+                     field.fid['generic'].get('parameterCategory') == 3 and
+                     field.fid['generic'].get('parameterNumber') in (0, 1, 2, 8, 11, 25))):
                     field.scalar_operation('/', 100.)
                 if firstfield and interpolation == 'nearest':
                     (value, neighborinfo) = field.getvalue_ll(*coordinates,
@@ -213,19 +214,19 @@ def main(filename,
         else:
             if noutfields == 1:
                 parameter = smooth_string(unionfidlist[0])
-                filename = resource.container.absdir + \
-                           '.'.join(['diff',
-                                     resource.container.basename + '-' + reference.container.basename,
-                                     parameter,
-                                     str(coordinates[0]) + "E" + str(coordinates[1]) + "N",
-                                     suffix])
+                filename = resource.container.absdir + os.path.sep + \
+                    '.'.join(['diff',
+                              resource.container.basename + '-' + reference.container.basename,
+                              parameter,
+                              str(coordinates[0]) + "E" + str(coordinates[1]) + "N",
+                              suffix])
             else:
-                filename = resource.container.absdir + \
-                           '.'.join(['diff',
-                                     resource.container.basename + '-' + reference.container.basename,
-                                     str(noutfields) + "fields",
-                                     str(coordinates[0]) + "E" + str(coordinates[1]) + "N",
-                                     suffix])
+                filename = resource.container.absdir + os.path.sep + \
+                    '.'.join(['diff',
+                              resource.container.basename + '-' + reference.container.basename,
+                              str(noutfields) + "fields",
+                              str(coordinates[0]) + "E" + str(coordinates[1]) + "N",
+                              suffix])
         if diffonly:
             output = [['# field', resource.container.basename + '-' + reference.container.basename]]
         else:
@@ -329,8 +330,8 @@ if __name__ == '__main__':
         fieldseed = args.field
     elif args.listoffields is not None:
         listfile = epygram.containers.File(filename=args.listoffields)
-        with open(listfile.abspath, 'r') as l:
-            fieldseed = l.readlines()
+        with open(listfile.abspath, 'r') as lf:
+            fieldseed = lf.readlines()
         for n in range(len(fieldseed)):
             fieldseed[n] = fieldseed[n].replace('\n', '').strip()
     else:

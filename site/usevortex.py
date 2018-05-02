@@ -26,8 +26,8 @@ import taylorism
 
 import vortex
 from vortex import toolbox
-import common  # for footprints to load classes
-import olive  # for footprints to load classes
+import common  # @UnusedImport : for footprints to load classes
+import olive  # @UnusedImport : for footprints to load classes
 
 
 def set_defaults(**defaults):
@@ -136,7 +136,7 @@ def get_resources(getmode='epygram',
       + vconf='reunion',  # name of config in operation namespace
       + model='aladin',  # name of the model
     """
-    import common.util.usepygram  # to load Epygram FormatAdapters
+    import common.util.usepygram  # @UnusedImport : to load Epygram FormatAdapters
     t = vortex.ticket()
 
     if uselocalcache:
@@ -171,7 +171,7 @@ def get_resources(getmode='epygram',
     if getmode == 'check':
         # just check completion of the resource
         try:
-            t.context.record_off()
+            t.context.record_off()  # avoid overconsumption of memory
             toolbox.rload(**description)
             t.context.record_on()
             resources = True
@@ -179,7 +179,7 @@ def get_resources(getmode='epygram',
             resources = False
     else:
         # resolve resource description: raise an error if the description is not complete
-        t.context.record_off()
+        t.context.record_off()  # avoid overconsumption of memory
         resolved = toolbox.rload(**description)
         t.context.record_on()
         # and complete reaching resource according to getmode
@@ -188,16 +188,19 @@ def get_resources(getmode='epygram',
         elif getmode == 'locate':
             resources = [r.locate() for r in resolved]
         elif getmode == 'exist':
-            with t.sh.ftppool():
+            with t.sh.ftppool():  # unique ftp connection for the whole request
                 resources = [(r.locate(), bool(r.check())) for r in resolved]
         elif getmode == 'prestaging':
-            with t.sh.ftppool():
+            with t.sh.ftppool():  # unique ftp connection for the whole request
                 resources = [prestage([r.locate().split('hendrix.meteo.fr:')[1]
                                        for r in resolved],
                                       description.get('mail', None))]
         elif getmode in ('fetch', 'epygram'):
             ok = []
-            with t.sh.ftppool():
+            with t.sh.ftppool():  # unique ftp connection for the whole request
+                ok = [r.get() for r in resolved]
+                # CLEANME: below, now that vortex has a retry mechanism
+                """
                 for r in resolved:
                     ftp_count = 4
                     while ftp_count > 0:
@@ -213,6 +216,7 @@ def get_resources(getmode='epygram',
                         else:
                             ok.append(rgot)
                             ftp_count = 0
+                """
             if all(ok):
                 if getmode == 'fetch':
                     resources = [r.container.abspath for r in resolved]

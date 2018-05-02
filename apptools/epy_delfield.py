@@ -153,8 +153,8 @@ if __name__ == '__main__':
         fieldseed = args.field
     elif args.listoffields is not None:
         listfile = epygram.containers.File(filename=args.listoffields)
-        with open(listfile.abspath, 'r') as l:
-            fieldseed = l.readlines()
+        with open(listfile.abspath, 'r') as lf:
+            fieldseed = lf.readlines()
         for n in range(len(fieldseed)):
             fieldseed[n] = fieldseed[n].replace('\n', '').strip()
     else:

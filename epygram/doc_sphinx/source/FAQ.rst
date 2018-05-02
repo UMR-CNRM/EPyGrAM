@@ -22,24 +22,28 @@ Errors
 
 + My PC does not have enough memory to deal with these global spectral fields...
   
-  >>> Legendre spectral transforms need XX.XX MB
-  >>> memory, while only YY.YY MB is available:
-  >>> SWAPPING prevented !
+   >>> Legendre spectral transforms need XX.XX MB
+   >>> memory, while only YY.YY MB is available:
+   >>> SWAPPING prevented !
   
-  => either:
+   => either:
   
-  - run your script on beaufix/prolix usiang the alias
-    ``s1batch='sbatch -N 1 -p normal64 --mem 60000 -t 00:30:00'``
-    e.g.: ``s1batch myscript.py options -of -my --script``
-  - use the ``fa_sp2gp.py`` tool on Bull (using the above alias) to convert your
-    file to all-gridpoint then work in gridpoint space
+   - run your script on beaufix/prolix usiang the alias
+     ``s1batch='sbatch -N 1 -p normal64 --mem 60000 -t 00:30:00'``
+     e.g.: ``s1batch myscript.py options -of -my --script``
+   - use the ``fa_sp2gp.py`` tool on Bull (using the above alias) to convert your
+     file to all-gridpoint then work in gridpoint space
+
++ I have a brutal crash while working with some T1800-or-so global files on beaufix/prolix...
+   
+   => before running Python, you need to raise the stack size limit: ``ulimit -s unlimited``
 
 + How to hide LFI/FA messages ?
 
-  => either:
+   => either:
   
-  - ``export FA4PY_MUTE=1``
-  - edit ``$HOME/.epygram/userconfig.py`` and set ``FA_mute_FA4py = True``
+   - ``export FA4PY_MUTE=1``
+   - edit ``$HOME/.epygram/userconfig.py`` and set ``FA_mute_FA4py = True``
 
 -----------------------------------------------------------
 
@@ -72,17 +76,22 @@ How does it work ?
    >>> import epygram
    >>> epygram.init_env()
    >>> import usevortex
-   >>> r = usevortex.get_resource(getmode='epygram',   # for the function to return the resource as an epygram object
-                                  experiment='864G',                # XPID
-                                  block='forecast',                 # Olive 'forecast' block (directory in archive)
-                                  kind='gridpoint',                 # post-processed fields
-                                  nativefmt='grib',                 # GRIBbed files
-                                  date='2015041500',                # initial date and time
-                                  term=3,                           # forecast term
-                                  geometry='frangp0025',            # BDAP domain
-                                  local='fcst_[term].[nativefmt]')  # local filename, once fetched
+   >>> r = usevortex.get_resources(getmode='epygram',                # for the function to return the resource as an epygram object
+                                   experiment='864G',                # XPID
+                                   block='forecast',                 # Olive/Perl 'forecast' block (directory in archive)
+                                   kind='gridpoint',                 # post-processed fields
+                                   nativefmt='grib',                 # GRIBbed files
+                                   date='2015041500',                # initial date and time
+                                   cutoff='prod',                    # production cutoff
+                                   term=3,                           # forecast term
+                                   geometry='frangp0025',            # BDAP domain
+                                   origin='hst',                     # some obscure historical characteristic...
+                                   model='arome',                    # resource from the AROME model (to be distinguished from the SURFEX file for instance)
+                                   local='fcst_[term].[nativefmt]')  # local filename, once fetched
+   >>> r[0].listfields()
+   >>> ...
       
-   Other resource descriptors are available, cf. :func:`usevortex.get_resource` documentation.
+   Other resource descriptors are available, cf. :func:`usevortex.get_resources` documentation.
       
    ``vortex`` also is able to use ``epygram`` in order to handle a file's content, cf. Vortex doc.
 
