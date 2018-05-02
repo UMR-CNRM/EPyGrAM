@@ -119,6 +119,7 @@ class epygramError(Exception):
 # : Root log for epygram
 epylog = footprints.loggers.getLogger(__name__)
 
+
 # Check that Python version is compatible
 if sys.version_info.major == 3:
     epylog.warning('*epygram* is now supposed to be compatible with Python3, but ecCodes/grib_api is not !')
@@ -163,6 +164,10 @@ if len(config.usermodules) > 0:
         else:
             import imp
             imp.load_source(m['name'], m['abspath'])
+
+# Further initializations
+if config.hide_footprints_warnings:
+    footprints.logger.setLevel(footprints.loggers.logging.ERROR)
 
 
 # OTHERS #

@@ -48,6 +48,7 @@ class LowLevelGRIB(object):
         self.api_name = GRIB_lowlevel_api.lower()
         if self.api_name in ('gribapi', 'grib_api'):
             self.api_name = 'grib_api'
+            self.samples_path_var = 'GRIB_SAMPLES_PATH'
             import gribapi  # @UnresolvedImport
             self.api = gribapi
             self.count_in_file = gribapi.grib_count_in_file
@@ -74,6 +75,7 @@ class LowLevelGRIB(object):
             self.InternalError = gribapi.GribInternalError
             self.version = gribapi.__version__
         elif self.api_name == 'eccodes':
+            self.samples_path_var = 'ECCODES_SAMPLES_PATH'
             import eccodes  # @UnresolvedImport
             self.api = eccodes
             self.count_in_file = eccodes.codes_count_in_file
@@ -106,7 +108,8 @@ class LowLevelGRIB(object):
         # remove /lib64/pythonX.Y/site-packages/eccodes/__init__.py
         # or /lib64/pythonX.Y/site-packages/grib_api/gribapi.py
         install_dir = os.path.sep.join(self.api.__file__.split(os.path.sep)[:-5])
-        grib_utilities.complete_grib_paths(install_dir, self.api_name, reset=reset)
+        if len(grib_utilities.get_samples_paths() + grib_utilities.get_definition_paths()) > 0:
+            grib_utilities.complete_grib_paths(install_dir, self.api_name, reset=reset)
 
 
 lowlevelgrib = LowLevelGRIB(config.GRIB_lowlevel_api)
@@ -370,20 +373,27 @@ class GRIBmessage(RecursiveObject, dict):
                 # if 'gauss' in field.geometry.name:
                 #    sample = 'gg_sfc_grib' + str(grib_edition)
                 # else:
-                    sample = 'GRIB' + str(grib_edition) + required_packingType[4:]  # [4:] to remove leading 'grid_*'
-                    if sample + '.tmpl' not in os.listdir(config.GRIB_samples_path):
-                        sample = config.GRIB_default_sample[grib_edition]
+                sample = 'GRIB{}_{}'.format(str(grib_edition),required_packingType)  # an epygram sample with this packing
+                if sample + '.tmpl' not in os.listdir(config.GRIB_epygram_samples_path):  # sample not available with this packing
+                    sample = config.GRIB_default_sample[grib_edition]  # take the default one
         # reset packing "on the fly" if field is uniform
         if field.max() - field.min() < config.epsilon:
             packing = {'packingType':'grid_simple'}
             required_packingType = packing['packingType']
-            sample = 'GRIB' + str(grib_edition) + required_packingType[4:]
+            sample = 'GRIB{}_{}'.format(str(grib_edition),required_packingType)
         # clone from sample
         if sample.startswith('file:'):
-            sample = sample[5:]
-            self._gid = self._clone_from_file(sample)
+            self._gid = self._clone_from_file(sample.replace('file:', ''))
         else:
-            self._gid = self._clone_from_sample(sample)
+            if all([sample + '.tmpl' not in os.listdir(p) for p in grib_utilities.get_samples_paths()]):  # this sample is not found in samples path
+                if sample + '.tmpl' in os.listdir(config.GRIB_epygram_samples_path):  # but it is in epygram samples
+                    fsample = os.path.join(config.GRIB_epygram_samples_path, sample) + '.tmpl'
+                    self._gid = self._clone_from_file(fsample)  # clone it from file
+                else:
+                    raise epygramError('sample {} not found; check {} environment variable'.
+                                       format(sample, lowlevelgrib.samples_path_var))
+            else:
+                self._gid = self._clone_from_sample(sample)
 
         # part 2 --- parameter
         if grib_edition == 1:

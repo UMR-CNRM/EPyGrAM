@@ -2,7 +2,7 @@
 ==================================
 
 .. automodule:: epygram.formats
-   :synopsis: juggling with for
+   :synopsis: juggling with formats
 
 .. toctree::
    :maxdepth: 3
@@ -15,7 +15,6 @@
    TIFFMF
    netCDF
    GRIB
-   grib_utilities
 
 -----------------------------------------------------------
    

@@ -17,8 +17,6 @@ import os
 import sys
 import platform
 
-import footprints
-
 from . import __version__
 
 
@@ -30,12 +28,12 @@ home = os.getenv('HOME')
 #: User customization directory
 userlocaldir = os.path.join(home, '.epygram')
 #: epygram Colormaps
-epygram_colormaps = {'aspect':os.path.join(installdir, 'data', 'aspect.cmap'),
-                     'gaspect':os.path.join(installdir, 'data', 'gaspect.cmap'),
-                     'radar':os.path.join(installdir, 'data', 'radar.cmap'),
-                     'rr1h':os.path.join(installdir, 'data', 'rr1h.cmap'),
-                     'rr6h':os.path.join(installdir, 'data', 'rr24h.cmap'),
-                     'rr24h':os.path.join(installdir, 'data', 'rr24h.cmap'),
+epygram_colormaps = {'aspect':os.path.join(installdir, 'data', 'colormaps', 'aspect.cmap'),
+                     'gaspect':os.path.join(installdir, 'data', 'colormaps', 'gaspect.cmap'),
+                     'radar':os.path.join(installdir, 'data', 'colormaps', 'radar.cmap'),
+                     'rr1h':os.path.join(installdir, 'data', 'colormaps', 'rr1h.cmap'),
+                     'rr6h':os.path.join(installdir, 'data', 'colormaps', 'rr24h.cmap'),
+                     'rr24h':os.path.join(installdir, 'data', 'colormaps', 'rr24h.cmap'),
                      }
 #: epygram colormaps scalings
 epygram_colormaps_scaling = {'radar':[0., 0.1, 1., 3., 5., 7., 10., 15., 20., 30., 50., 70., 100., 150., 300.],
@@ -117,14 +115,14 @@ GeoPoints_precision = 6
 #: GeoPoints write width of columns
 GeoPoints_col_width = 12
 
-#: GRIB lowlevel API library to be used, among ('eccodes', 'gribapi')
+#: GRIB lowlevel API library to be used, among ('eccodes', 'grib_api', 'gribapi')
 GRIB_lowlevel_api = 'eccodes'
 #: GRIB default edition (1 or 2)
 GRIB_default_edition = 2
 #: GRIB_default tablesVersion
 GRIB_default_tablesVersion = 14  # Nov. 2014 // 15 = May 2015
 #: GRIB default sample (possibility to use others)
-GRIB_default_sample = {i:'GRIB' + str(i) + '_second_order' for i in (1, 2)}
+GRIB_default_sample = {i:'GRIB{}_grid_second_order'.format(i) for i in (1, 2)}
 # GRIB_default_sample = {i:'GRIB' + str(i) for i in (1, 2)}
 #: GRIB default production parameters -- write mode
 GRIB_default_production_parameters = {'centre':85,  # Météo-France
@@ -154,8 +152,8 @@ GRIB_default_packing = {1:{'packingType':'grid_second_order',
                            'bitsPerValue':12,
                            }
                         }
-#: GRIB samples from epygram
-GRIB_samples_path = installdir + '/data'
+#: GRIB samples from epygram (treated as clone from file)
+GRIB_epygram_samples_path = installdir + '/data/grib_samples'
 #: satellites local GRIB2 encoding
 satellites_local_GRIB2 = {'METEOSAT7':192,
                           'METEOSAT8':193,
@@ -294,7 +292,6 @@ usercolormaps_scaling = {}
 
 # OVERWRITE WITH USER CONFIG #
 ##############################
-
 if os.path.exists(os.path.join(userlocaldir, 'userconfig.py')):
     sys.path.insert(0, userlocaldir)
     from userconfig import *
@@ -307,14 +304,3 @@ colormaps.update(usercolormaps)
 colormaps_scaling = {}
 colormaps_scaling.update(epygram_colormaps_scaling)
 colormaps_scaling.update(usercolormaps_scaling)
-
-
-# FURTHER INITIALIZATIONS #
-###########################
-if hide_footprints_warnings:
-    footprints.logger.setLevel(footprints.loggers.logging.ERROR)
-
-# Update $GRIB_SAMPLES_PATH
-_gsp = ':'.join([os.getenv('GRIB_SAMPLES_PATH', '.'), GRIB_samples_path])
-os.environ['GRIB_SAMPLES_PATH'] = _gsp
-del _gsp
