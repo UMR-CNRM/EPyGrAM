@@ -75,16 +75,30 @@ class RecursiveObject(object):
 
     def __eq__(self, other):
         """Test of equality by recursion on the object's attributes."""
+        return self.tolerant_equal(other, tolerance=0.)
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        # known issue __eq__/__hash__ must be defined both or none, else inheritance is broken
+        return object.__hash__(self)
+
+    def tolerant_equal(self, other, tolerance=config.epsilon):
+        """
+        Test of equality by recursion on the object's attributes,
+        with a **tolerance**.
+        """
         def comp_float(float1, float2):
             # tolerance for floats
-            return abs(float1 - float2) <= config.epsilon
+            return nearlyEqual(float1, float2, tolerance)
 
         def comp_array(array1, array2):
             if (array1.dtype == array2.dtype and
                 array1.dtype in [numpy.dtype(d)
                                  for d in ['float16', 'float32', 'float64']]):
                 # tolerance for floats
-                return (abs(array1 - array2) <= config.epsilon).all()
+                return numpy.all(nearlyEqualArray(array1, array2, tolerance))
             else:
                 return numpy.all(array1 == array2)
 
@@ -129,19 +143,13 @@ class RecursiveObject(object):
                 if attr in ('_puredict', '_observer'):
                     pass
                 else:
+                    print(type(self.__dict__[attr]))
                     if not comp(self.__dict__[attr], other.__dict__[attr]):
                         ok = False
                         break
         else:
             ok = False
         return ok
-
-    def __ne__(self, other):
-        return not self == other
-
-    def __hash__(self):
-        # known issue __eq__/__hash__ must be defined both or none, else inheritance is broken
-        return object.__hash__(self)
 
     def copy(self):
         """Returns a copy of the object."""
