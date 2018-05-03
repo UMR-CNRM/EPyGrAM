@@ -87,6 +87,7 @@ def complete_grib_paths(rootdir, api_name, reset=False):
 
     :param rootdir: the directory in which is installed the API
     :param api_name: the name of the GRIB API, among ('eccodes', 'grib_api')
+    :param reset: ignore predefined values of the variables
 
     Reconstructed path are ``$rootdir$/share/$api_name$/samples``
     and ``$rootdir$/share/$api_name$/definitions``

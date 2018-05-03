@@ -25,6 +25,7 @@ import footprints
 from footprints import proxy as fpx, FPDict, FPList
 from bronx.meteo.conversion import q2R
 from bronx.syntax.parsing import str2dict
+import grib_utilities
 
 from epygram import config, epygramError, util
 from epygram.base import FieldSet, FieldValidity
@@ -37,8 +38,6 @@ from epygram.geometries.VGeometry import pressure2altitude
 from epygram.geometries.SpectralGeometry import (SpectralGeometry,
                                                  gridpoint_dims_from_truncation,
                                                  nearest_greater_FFT992compliant_int)
-import grib_utilities
-
 
 epylog = footprints.loggers.getLogger(__name__)
 
@@ -101,15 +100,16 @@ class LowLevelGRIB(object):
             self.index_release = eccodes.codes_index_release
             self.InternalError = eccodes.CodesInternalError
             self.version = eccodes.__version__
-        self._init_env()
 
-    def _init_env(self, reset=False):
+    def init_env(self, reset=False):
+        """Ensure grib_api/eccodes variables are consistent with inner library."""
+        install_dir = os.path.sep.join(self.api.__file__.split(os.path.sep)[:-5])
         # from path of low_level_api:
         # remove /lib64/pythonX.Y/site-packages/eccodes/__init__.py
         # or /lib64/pythonX.Y/site-packages/grib_api/gribapi.py
-        install_dir = os.path.sep.join(self.api.__file__.split(os.path.sep)[:-5])
         if len(grib_utilities.get_samples_paths() + grib_utilities.get_definition_paths()) > 0:
-            grib_utilities.complete_grib_paths(install_dir, self.api_name, reset=reset)
+            grib_utilities.complete_grib_paths(install_dir, self.api_name,
+                                               reset=reset)
 
 
 lowlevelgrib = LowLevelGRIB(config.GRIB_lowlevel_api)

@@ -1042,6 +1042,8 @@ class FA(FileResource):
             if field.spectral_geometry is not None and\
                field.spectral_geometry != self.spectral_geometry:
                 # compatibility check
+                print(field.spectral_geometry._transforms_lib)
+                print(self.spectral_geometry._transforms_lib)
                 raise epygramError("spectral geometry incompatibility:" +
                                    " a FA can hold only one geometry.")
             if self.validity.cumulativeduration() is None and field.validity.cumulativeduration() is not None:

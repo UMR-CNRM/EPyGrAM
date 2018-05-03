@@ -16,8 +16,12 @@ Contains the interface routines to arpifs code:
 from __future__ import print_function, absolute_import, unicode_literals, division
 
 import os
+import resource
 import numpy as np
 
+#from bronx.syntax.decorators import nicedeco
+
+import grib_utilities
 from . import ctypesForFortran
 
 _libs4py = "libs4py.so"  # local name in the directory
@@ -100,24 +104,6 @@ def treatReturnCode_LFA(func):
     return wrapper
 
 
-def complete_GRIB_samples_path_from_dynamic_gribapi(lib):
-    """If needed, set adequate path to the used low level library."""
-    import grib_utilities
-    if len(grib_utilities.get_samples_paths() + grib_utilities.get_definition_paths()) > 0:
-        import subprocess
-        import re
-        ldd_out = subprocess.check_output(['ldd', lib])
-        libs_grib_api = {}
-        for apilib in ('grib_api', 'eccodes'):
-            for line in ldd_out.splitlines():
-                _re = '.*\s*(lib{}.*) => (.*)(/lib/lib{}.*\.so.*)\s\(0x.*'.format(apilib, apilib)
-                match = re.match(_re, str(line))
-                if match:
-                    libs_grib_api[match.group(1)] = match.group(2)
-        for l in set(libs_grib_api.values()):
-            grib_utilities.complete_grib_paths(l, apilib, reset=False)
-
-
 # common parameters and objects
 ###############################
 IN = ctypesForFortran.IN
@@ -128,7 +114,6 @@ INOUT = ctypesForFortran.INOUT
 ########################
 shared_objects_library = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                       _libs4py)
-complete_GRIB_samples_path_from_dynamic_gribapi(shared_objects_library)
 ctypesFF, handle = ctypesForFortran.ctypesForFortranFactory(shared_objects_library)
 
 
@@ -138,3 +123,57 @@ from . import wfa
 from . import wlfi
 from . import wlfa
 from . import wtransforms
+
+
+# initialization
+################
+def init_env(omp_num_threads=1, no_mpi=True, unlimited_stack=True,
+             lfi_C=True, mute_FA4py=None, ignore_gribenv_paths=False):
+    """
+    Set adequate environment for the inner libraries.
+
+    :param omp_num_threads: sets OMP_NUM_THREADS
+    :param no_mpi: environment variable DR_HOOK_NOT_MPI set to 1
+    :param unlimited_stack: stack size unlimited on Bull supercomputers
+    :param lfi_C: if True, LFI_HNDL_SPEC set to ':1', to use the C version of LFI
+    :param mute_FA4py: mute messages from FAIPAR in FA4py library
+    :param ignore_gribenv_paths: ignore predefined values of the variables
+        GRIB_SAMPLES_PATH and GRIB_DEFINITION_PATH
+        (or equivalent ECCODES variables)
+    """
+    # because arpifs library is compiled with MPI & openMP
+    os.environ['OMP_NUM_THREADS'] = str(omp_num_threads)
+    if no_mpi:
+        os.environ['DR_HOOK_NOT_MPI'] = '1'
+    # because Legendre stuff may need large stack memory
+    if unlimited_stack and ('beaufix' in os.getenv('HOSTNAME', '') or
+                            'prolix' in os.getenv('HOSTNAME', '')):
+        # FIXME: seems to have no effect => pb with T1800 (need a proper ulimit -s unlimited)
+        resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY,
+                                                   resource.RLIM_INFINITY))
+    # use the C library for LFI
+    if lfi_C:
+        os.environ['LFI_HNDL_SPEC'] = ':1'
+    # option for FA
+    if mute_FA4py:
+        os.environ['FA4PY_MUTE'] = '1'
+    # ensure grib_api/eccodes variables are consistent with inner library
+    if len(grib_utilities.get_samples_paths() + grib_utilities.get_definition_paths()) > 0:
+        _GRIB_samples_path_from_dynamic_gribapi(shared_objects_library,
+                                                reset=ignore_gribenv_paths)
+
+
+def _GRIB_samples_path_from_dynamic_gribapi(lib, reset=False):
+    """If needed, set adequate path to the used low level library."""
+    import subprocess
+    import re
+    ldd_out = subprocess.check_output(['ldd', lib])
+    libs_grib_api = {}
+    for apilib in ('grib_api', 'eccodes'):
+        for line in ldd_out.splitlines():
+            _re = '.*\s*(lib{}.*) => (.*)(/lib/lib{}.*\.so.*)\s\(0x.*'.format(apilib, apilib)
+            match = re.match(_re, str(line))
+            if match:
+                libs_grib_api[match.group(1)] = match.group(2)
+    for l in set(libs_grib_api.values()):
+        grib_utilities.complete_grib_paths(l, apilib, reset=reset)
