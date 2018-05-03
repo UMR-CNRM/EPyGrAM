@@ -385,7 +385,9 @@ class GRIBmessage(RecursiveObject, dict):
         if sample.startswith('file:'):
             self._gid = self._clone_from_file(sample.replace('file:', ''))
         else:
-            if all([sample + '.tmpl' not in os.listdir(p) for p in grib_utilities.get_samples_paths()]):  # this sample is not found in samples path
+            if all([sample + '.tmpl' not in os.listdir(pth)
+                    for pth in [p for p in grib_utilities.get_samples_paths()
+                                if (os.path.exists(p) and os.path.isdir(p))]]):  # this sample is not found in samples path
                 if sample + '.tmpl' in os.listdir(config.GRIB_epygram_samples_path):  # but it is in epygram samples
                     fsample = os.path.join(config.GRIB_epygram_samples_path, sample) + '.tmpl'
                     self._gid = self._clone_from_file(fsample)  # clone it from file

@@ -123,4 +123,3 @@ def get_samples_paths():
 def get_definition_paths():
     """Get the environment-variable-set path to definitions"""
     return _get_paths('DEFINITION')
-    
