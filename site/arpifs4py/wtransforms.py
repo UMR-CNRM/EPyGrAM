@@ -9,6 +9,8 @@ Wrappers for trans/etrans library.
 
 from __future__ import print_function, absolute_import, unicode_literals, division
 
+import resource
+import os
 import numpy as np
 
 from . import ctypesFF, IN, OUT, treatReturnCode, addReturnCode
@@ -21,6 +23,19 @@ from . import ctypesFF, IN, OUT, treatReturnCode, addReturnCode
 #        [the python signature of all Fortran subroutine arguments]
 #    tup[2]:
 #        None in case of a Fortran subroutine, the output in case of a Fortran function)
+
+
+def init_env(unlimited_stack=True):
+    """
+    Set adequate environment for inner library.
+
+    :param unlimited_stack: stack size unlimited on Bull supercomputers
+    """
+    if unlimited_stack and ('beaufix' in os.getenv('HOSTNAME', '') or
+                            'prolix' in os.getenv('HOSTNAME', '')):
+        # FIXME: seems to have no effect => pb with T1800 (need a proper ulimit -s unlimited)
+        resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY,
+                                                   resource.RLIM_INFINITY))
 
 
 @treatReturnCode

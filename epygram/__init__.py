@@ -194,8 +194,8 @@ def showconfig():
         print('- ' + k + ' = ' + str(cfg[k]))
 
 
-def init_env(omp_num_threads=1, no_mpi=True, unlimited_stack=True, lfi_C=True,
-             mute_FA4py=None):
+def init_env(omp_num_threads=1, no_mpi=True, unlimited_stack=True,
+             lfi_C=True, mute_FA4py=None, ignore_gribenv_paths=False):
     """
     A function to modify execution environment (to be called early in
     execution).
@@ -205,25 +205,33 @@ def init_env(omp_num_threads=1, no_mpi=True, unlimited_stack=True, lfi_C=True,
     :param lfi_C: if True, LFI_HNDL_SPEC set to ':1', to use the C version of LFI
     :param unlimited_stack: stack size unlimited on Bull supercomputers
     :param mute_FA4py: mute messages from FAIPAR in FA4py library
+    :param ignore_gribenv_paths: ignore predefined values of the variables
+        GRIB_SAMPLES_PATH and GRIB_DEFINITION_PATH
+        (or equivalent ECCODES variables)
     """
-    import os
-    import resource
-
-    # because arpifs library is compiled with MPI & openMP
-    os.environ['OMP_NUM_THREADS'] = str(omp_num_threads)
-    if no_mpi:
-        os.environ['DR_HOOK_NOT_MPI'] = '1'
-    if lfi_C:
-        os.environ['LFI_HNDL_SPEC'] = ':1'
-    if unlimited_stack and ('beaufix' in os.getenv('HOSTNAME', '') or
-                            'prolix' in os.getenv('HOSTNAME', '')):
-        # FIXME: seems to have no effect => pb with T1800 (need a proper ulimit -s unlimited)
-        resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY,
-                                                   resource.RLIM_INFINITY))
-    if mute_FA4py is None:
-        mute_FA4py = config.FA_mute_FA4py
-    if mute_FA4py:
-        os.environ['FA4PY_MUTE'] = '1'
+    # 1. arpifs4py library
+    # FA & LFI need some special environment setting
+    if any([f in config.implemented_formats for f in ('FA', 'LFI')]):
+        import arpifs4py
+        if mute_FA4py is None:
+            mute_FA4py = config.FA_mute_FA4py
+        arpifs4py.init_env(omp_num_threads=omp_num_threads, no_mpi=no_mpi,  # common
+                           unlimited_stack=unlimited_stack,  # transforms
+                           lfi_C=lfi_C, mute_FA4py=mute_FA4py,  # LFI/FA
+                           ignore_gribenv_paths=ignore_gribenv_paths)
+    # 2. SpectralGeometry inner transformation lib may need some special
+    # environment setting, delayed to actual invocation:
+    # we simply pass kwargs, initialization is done at first call to the library
+    from .geometries.SpectralGeometry import transforms_lib_init_kwargs
+    transforms_lib_init_kwargs.update(omp_num_threads=omp_num_threads,
+                                      no_mpi=no_mpi,
+                                      unlimited_stack=unlimited_stack)
+    # 3. grib_api or eccodes
+    # need some special environment setting
+    # ensure grib_api/eccodes variables are consistent with inner library
+    if 'GRIB' in config.implemented_formats:
+        from .formats.GRIB import lowlevelgrib
+        lowlevelgrib.init_env(reset=ignore_gribenv_paths)
 
 
 if config.init_at_import:
