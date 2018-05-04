@@ -7,7 +7,7 @@
 Some useful utilities...
 """
 
-from __future__ import print_function, absolute_import, division  # , unicode_literals
+from __future__ import print_function, absolute_import, division , unicode_literals
 import six
 
 import math
@@ -94,13 +94,16 @@ class RecursiveObject(object):
             return nearlyEqual(float1, float2, tolerance)
 
         def comp_array(array1, array2):
-            if (array1.dtype == array2.dtype and
-                array1.dtype in [numpy.dtype(d)
-                                 for d in ['float16', 'float32', 'float64']]):
-                # tolerance for floats
-                return numpy.all(nearlyEqualArray(array1, array2, tolerance))
-            else:
+            if tolerance == 0.:
                 return numpy.all(array1 == array2)
+            else:
+                if (array1.dtype == array2.dtype and
+                    array1.dtype in [numpy.dtype(d)
+                                     for d in ['float16', 'float32', 'float64']]):
+                    # tolerance for floats
+                    return numpy.all(nearlyEqualArray(array1, array2, tolerance))
+                else:
+                    return numpy.all(array1 == array2)
 
         def comp_dict(dict1, dict2):
             if set(dict1.keys()) == set(dict2.keys()):
@@ -143,7 +146,6 @@ class RecursiveObject(object):
                 if attr in ('_puredict', '_observer'):
                     pass
                 else:
-                    print(type(self.__dict__[attr]))
                     if not comp(self.__dict__[attr], other.__dict__[attr]):
                         ok = False
                         break

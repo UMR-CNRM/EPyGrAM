@@ -9,6 +9,8 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 from unittest import TestCase, skipIf
 import tempfile
 import os
+import sys
+import time
 from six.moves import cPickle as pickle  # @UnresolvedImport
 
 import epygram
@@ -16,6 +18,7 @@ import epygram
 from .util import datadir, suffixes, delta_assertAlmostEqual
 
 basemap_ok = True
+timing = False
 
 
 # CLASSES
@@ -32,8 +35,14 @@ class TestFMT(TestCase):
 
     def setUp(self):
         self.filename = os.path.join(self.datadir, self.basename)
+        if timing:
+            self.startTime = time.time()
 
     def tearDown(self):
+        if timing:
+            t = time.time() - self.startTime
+            with open('timings.txt', 'a') as out:
+                out.write("%s: %.3f" % (self.id(), t) + '\n')
         del self.filename
 
     def test_listfields(self):
@@ -49,6 +58,16 @@ class TestFMT(TestCase):
 class Test_GeometryInterfaces(TestCase):
 
     datadir = os.path.join(datadir, 'geometries')
+
+    def setUp(self):
+        if timing:
+            self.startTime = time.time()
+
+    def tearDown(self):
+        if timing:
+            t = time.time() - self.startTime
+            with open('timings.txt', 'a') as out:
+                out.write("%s: %.3f" % (self.id(), t) + '\n')
 
     def _test_rwr(self, filename, fid):
         """Generic test Read/Write/Read and check identity."""
@@ -107,7 +126,8 @@ class Test_DDHLFA_Geometry(Test_GeometryInterfaces):
     def _test(self, domain):
         filename = os.path.join(self.datadir,
                                 '_'.join([self.geom, domain])) + '.ddhlfa'
-        picklename = '_'.join([filename, self.fid_to_test]) + '.cPickle'
+        picklename = ('_'.join([filename, self.fid_to_test]) +
+                      '.pickle_py{}'.format(sys.version_info.major))
         self._test_pickled(filename,
                            self.fid_to_test,
                            picklename)
@@ -118,6 +138,16 @@ class Test_GeoPoints_WR_fromFA(TestCase):
     fid = 'SURFGEOPOTENTIEL'
     datadir = os.path.join(datadir, 'geometries')
     llv = False
+
+    def setUp(self):
+        if timing:
+            self.startTime = time.time()
+
+    def tearDown(self):
+        if timing:
+            t = time.time() - self.startTime
+            with open('timings.txt', 'a') as out:
+                out.write("%s: %.3f" % (self.id(), t) + '\n')
 
     def _test(self, geom):
         filename = os.path.join(self.datadir,
