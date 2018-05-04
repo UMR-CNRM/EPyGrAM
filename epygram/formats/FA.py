@@ -715,6 +715,7 @@ class FA(FileResource):
         # sort 2D
         list2Dsp.sort()
         list2Dgp.sort()
+        listMisc.sort()
         # sort 3D
         for p in sorted(params3D.keys()):
             if self.fieldencoding(params3D[p][0])['spectral']:
