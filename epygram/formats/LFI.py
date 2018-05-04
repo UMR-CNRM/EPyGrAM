@@ -481,7 +481,7 @@ class LFI(FileResource):
         comment = ""
         for i in rawData[2:comment_length + 2]:
             comment += six.unichr(i)
-        comment = comment.encode(errors='replace')  # FIXME: later problems with footprints. Should be fixed in footprints
+        # comment = comment.encode(errors='replace')  # CLEANME: now fixed with footprints from Vortex > v1.2.3
         data = rawData[comment_length + 2:]
         if getdata:
             if self._compressed is None and fieldname != 'LFI_COMPRESSED':
@@ -746,7 +746,8 @@ class LFI(FileResource):
 
         # geometry, validity and compression
         for field in fieldsMTO:
-            for record, value in self._get_geometryValidity_from_field(field).items():
+            gvff = self._get_geometryValidity_from_field(field)
+            for record, value in gvff.items():
                 # Cache value for next field
                 if record not in specialValues:
                     if (record if self.true3d else (record, None)) in appendedfields:
@@ -784,7 +785,7 @@ class LFI(FileResource):
                         latin1_field = field.geometry.projection['secant_lat1'].get('degrees')
                         latin2_field = field.geometry.projection['secant_lat2'].get('degrees')
                         if 'latin1' not in specialValues:
-                            specialValues['latin1'], specialValues['latin2'] = self._get_latin1_latin2_lambert(specialValues['LAT0'], specialValues['RPK'])
+                            specialValues['latin1'], specialValues['latin2'] = self._get_latin1_latin2_lambert(gvff['LAT0'], specialValues['RPK'])
                         check = numpy.all(util.nearlyEqualArray([latin1_field, latin2_field],
                                                                 [specialValues['latin1'].get('degrees'), specialValues['latin2'].get('degrees')])) or \
                                 util.nearlyEqual(value, specialValues[record])
