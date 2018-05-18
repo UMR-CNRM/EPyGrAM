@@ -12,6 +12,7 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 import six
 
 from footprints import proxy as fpx
+from footprints import FPDict
 
 from epygram.base import Resource, FieldSet
 from epygram.util import fmtfid
@@ -172,6 +173,7 @@ class CombineLevelsResource(Resource):
         fieldset = FieldSet()
         cont = self._create_list()
         for fid in self.listfields(select=handgrip):
+            fid = FPDict(fid)  # footprints purpose
             found = None
             for k, v in cont.items():
                 if fid == v['generic']:

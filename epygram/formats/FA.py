@@ -999,12 +999,13 @@ class FA(FileResource):
 
         if isinstance(field, MiscField):
             data = field.getdata()
-            if field.shape in ((1,), ()):
+            if data.shape in ((1,), ()):
+                if data.shape == ():
+                    data = data.reshape((1,))
                 if 'int' in field.datatype.name:
                     dataReal = data.view('float64')
                 elif 'str' in field.datatype.name or 'unicode' in field.datatype.name:
-                    data = str(data)  # ndarray of str -> simple str
-                    dataReal = numpy.array([ord(d) for d in data]).view('float64')
+                    dataReal = numpy.array([ord(d) for d in data[0]]).view('float64')
                 elif 'bool' in field.datatype.name:
                     dataReal = numpy.array(1 if data else 0).view('float64')
                 elif 'float' in field.datatype.name:

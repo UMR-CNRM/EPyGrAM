@@ -535,7 +535,7 @@ def wfaisan(KNUMER, CDNOMA, KSIZE, PDONNE):
             [(np.int64, None, IN),
              (np.str, (16,), IN),
              (np.int64, None, IN),
-             (np.float64, (KSIZE,), OUT)],
+             (np.float64, (KSIZE,), IN)],
             None)
 
 

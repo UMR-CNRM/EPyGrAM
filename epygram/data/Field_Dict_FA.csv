@@ -409,8 +409,8 @@ name:SFX.NO,type:Misc,nature:float,dimension:0
 name:SFX.OM,type:Misc,nature:float,dimension:0
 name:SFX.CTI,type:Misc,nature:float,dimension:0
 name:SFX.TEB_PATCH,type:Misc,nature:float,dimension:0
-name:SFX.BEM,type:Misc,nature:float,dimension:0
-name:SFX.BLD_ATYPE,type:Misc,nature:float,dimension:0
+name:SFX.BEM,type:Misc,nature:str,dimension:0
+name:SFX.BLD_ATYPE,type:Misc,nature:str,dimension:0
 name:SFX.GLACIER,type:Misc,nature:float,dimension:0
 name:SFX.TEMPARP,type:Misc,nature:float,dimension:0
 name:SFX.ROAD_DIR,type:Misc,nature:float,dimension:0

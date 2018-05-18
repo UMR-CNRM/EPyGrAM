@@ -1309,7 +1309,7 @@ class netCDF(FileResource):
                 outwrite("\t\tsize:", nc.variables[var].size)
                 print_ncattr(var)
             return nc_attrs, nc_dims, nc_vars
-        print(type(out))
+
         out.write("### FORMAT: " + self.format + "\n")
         out.write("\n")
         ncdump(self._nc, out)
