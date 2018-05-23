@@ -22,7 +22,8 @@ from .build import compute_lonlat_included, build_CIE_field, build_lonlat_field
 
 def lam_geom2namelists(geometry,
                        truncation='linear',
-                       orography_subtruncation='quadratic'):
+                       orography_subtruncation='quadratic',
+                       Ezone_in_pgd=False):
     """
     From the geometry, build the namelist blocks for the necessary namelists.
 
@@ -54,6 +55,9 @@ def lam_geom2namelists(geometry,
     nam['NAM_CONF_PROJ_GRID']['NJMAX'] = geometry.dimensions['Y_CIzone']
     nam['NAM_CONF_PROJ_GRID']['XDX'] = geometry.grid['X_resolution']
     nam['NAM_CONF_PROJ_GRID']['XDY'] = geometry.grid['Y_resolution']
+    if Ezone_in_pgd:
+        nam['NAM_CONF_PROJ_GRID']['ILONE'] = geometry.dimensions['X'] - geometry.dimensions['X_CIzone']
+        nam['NAM_CONF_PROJ_GRID']['ILATE'] = geometry.dimensions['Y'] - geometry.dimensions['Y_CIzone']
 
     # c923 namelist
     nam = namelist.NamelistSet()

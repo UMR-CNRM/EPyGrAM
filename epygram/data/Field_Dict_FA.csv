@@ -247,6 +247,8 @@ name:C[0-9][0-9][0-9]_MTSAT_[0-9][0-9]_IM,type:H2D,typeOfFirstFixedSurface:8,dis
 
 # meta-data
 name:DATX-DES-DONNEES,type:Misc,nature:int,dimension:1
+
+# SURFEX meta-data
 name:SFX.MASDEV,type:Misc,nature:int,dimension:0
 name:SFX.BUGFIX,type:Misc,nature:int,dimension:0
 name:SFX.DIM_FULL,type:Misc,nature:int,dimension:0
@@ -265,11 +267,11 @@ name:SFX.ISBA_CAN_LVL,type:Misc,nature:int,dimension:0
 name:SFX.GROUND_LAYER,type:Misc,nature:int,dimension:0
 name:SFX.NBIOMASS,type:Misc,nature:int,dimension:0
 name:SFX.PATCH_NUMBER,type:Misc,nature:int,dimension:0
-name:SFX.SN_VEG,type:Misc,nature:int,dimension:0
+name:SFX.SN_VEG,type:Misc,nature:bool,dimension:0
 name:SFX.SN_VEG_N,type:Misc,nature:int,dimension:0
-name:SFX.SN_ROOF,type:Misc,nature:int,dimension:0
+name:SFX.SN_ROOF,type:Misc,nature:bool,dimension:0
 name:SFX.SN_ROOF_N,type:Misc,nature:int,dimension:0
-name:SFX.SN_ROAD,type:Misc,nature:int,dimension:0
+name:SFX.SN_ROAD,type:Misc,nature:bool,dimension:0
 name:SFX.SN_ROAD_N,type:Misc,nature:int,dimension:0
 name:SFX.ROOF_LAYER,type:Misc,nature:int,dimension:0
 name:SFX.ROAD_LAYER,type:Misc,nature:int,dimension:0
@@ -353,7 +355,8 @@ name:SFX.LATORI,type:Misc,nature:float,dimension:0
 name:SFX.LATOR,type:Misc,nature:float,dimension:0
 name:SFX.LONORI,type:Misc,nature:float,dimension:0
 name:SFX.LONOR,type:Misc,nature:float,dimension:0
-name:SFX.DTCUR,type:Misc,nature:float,dimension:1
+name:SFX.D_DTS,type:Misc,nature:float,dimension:1
+name:SFX.DTCUR,type:Misc,nature:int,dimension:0
 name:SFX.DTCUR%TIME,type:Misc,nature:float,dimension:0
 name:SFX.DTMOD%TIME,type:Misc,nature:float,dimension:0
 name:SFX.DTEXP%TIME,type:Misc,nature:float,dimension:0
@@ -400,30 +403,28 @@ name:SFX._FBUF_DIM2,type:Misc,nature:int,dimension:1
 name:SFX._FBUF_NAME,type:Misc,nature:int,dimension:1
 name:SFX._FBUF_TYPE,type:Misc,nature:int,dimension:1
 name:SFX._FBUF_MASK,type:Misc,nature:int,dimension:1
-name:SFX.TR_ML,type:Misc,nature:float,dimension:0
+name:SFX.TR_ML,type:Misc,nature:bool,dimension:0
 name:SFX.RM_PATCH,type:Misc,nature:float,dimension:0
-name:SFX.SOCP,type:Misc,nature:float,dimension:0
-name:SFX.PERMAFROST,type:Misc,nature:float,dimension:0
-name:SFX.NO,type:Misc,nature:float,dimension:0
-name:SFX.NO,type:Misc,nature:float,dimension:0
-name:SFX.OM,type:Misc,nature:float,dimension:0
-name:SFX.CTI,type:Misc,nature:float,dimension:0
-name:SFX.TEB_PATCH,type:Misc,nature:float,dimension:0
+name:SFX.SOCP,type:Misc,nature:bool,dimension:0
+name:SFX.PERMAFROST,type:Misc,nature:bool,dimension:0
+name:SFX.NO,type:Misc,nature:bool,dimension:0
+name:SFX.OM,type:Misc,nature:bool,dimension:0
+name:SFX.CTI,type:Misc,nature:bool,dimension:0
+name:SFX.TEB_PATCH,type:Misc,nature:int,dimension:0
 name:SFX.BEM,type:Misc,nature:str,dimension:0
 name:SFX.BLD_ATYPE,type:Misc,nature:str,dimension:0
-name:SFX.GLACIER,type:Misc,nature:float,dimension:0
-name:SFX.TEMPARP,type:Misc,nature:float,dimension:0
-name:SFX.ROAD_DIR,type:Misc,nature:float,dimension:0
-name:SFX.SN_RD,type:Misc,nature:float,dimension:0
-name:SFX.SN_RD_N,type:Misc,nature:float,dimension:0
+name:SFX.GLACIER,type:Misc,nature:bool,dimension:0
+name:SFX.TEMPARP,type:Misc,nature:bool,dimension:0
+name:SFX.ROAD_DIR,type:Misc,nature:str,dimension:0
+name:SFX.SN_RD,type:Misc,nature:bool,dimension:0
+name:SFX.SN_RD_N,type:Misc,nature:int,dimension:0
 name:SFX.SN_RD_TYP,type:Misc,nature:float,dimension:1
-name:SFX.SN_RF,type:Misc,nature:float,dimension:0
-name:SFX.SN_RF_N,type:Misc,nature:float,dimension:0
-name:SFX.SN_RF_TYP,type:Misc,nature:float,dimension:1
-name:SFX.SN_VEG_TYP,type:Misc,nature:float,dimension:1
-name:SFX.WALL_OPT,type:Misc,nature:float,dimension:1
+name:SFX.SN_RF,type:Misc,nature:bool,dimension:0
+name:SFX.SN_RF_N,type:Misc,nature:int,dimension:0
+name:SFX.SN_RF_TYP,type:Misc,nature:str,dimension:0
+name:SFX.SN_VEG_TYP,type:Misc,nature:str,dimension:0
+name:SFX.WALL_OPT,type:Misc,nature:str,dimension:0
 name:SFX.PAR_GARDEN,type:Misc,nature:float,dimension:0
-name:SFX.L_*,type:Misc,nature:float,dimension:0
 name:SFX.ASPSECTORS,type:Misc,nature:int,dimension:0
 name:SFX.TAU_REL_OC,type:Misc,nature:float,dimension:0
 name:SFX.LREL_CUR_OC,type:Misc,nature:bool,dimension:0
@@ -435,6 +436,9 @@ name:SFX.LDIAPYC_OC,type:Misc,nature:bool,dimension:0
 name:SFX.LAPO,type:Misc,nature:float,dimension:0
 name:SFX.LOPO,type:Misc,nature:float,dimension:0
 name:SFX.CODIL,type:Misc,nature:float,dimension:0
+name:SFX.NDATA_TIME,type:Misc,nature:int,dimension:0
+name:SFX.ND_TSZ0_TIME,type:Misc,nature:int,dimension:0
+name:SFX.NGPGLO,type:Misc,nature:int,dimension:0
 name:SFX.NLATI,type:Misc,nature:int,dimension:0
 name:SFX.NLOPA,type:Misc,nature:int,dimension:1
 name:SFX.LCPL_GCM,type:Misc,nature:bool,dimension:0
@@ -445,12 +449,14 @@ name:SFX.LONINF,type:Misc,nature:float,dimension:1
 name:SFX.LONSUP,type:Misc,nature:float,dimension:1
 name:SFX.LATINF,type:Misc,nature:float,dimension:1
 name:SFX.LATSUP,type:Misc,nature:float,dimension:1
-#TOBECHECKED:
+name:SFX.MEB_PATCH,type:Misc,nature:bool,dimension:1
 name:SFX.GWKEY,type:Misc,nature:int,dimension:0
-name:SFX.MEB_PATCH,type:Misc,nature:int,dimension:0
 name:SFX.SOLAR_PANEL,type:Misc,nature:int,dimension:0
+name:SFX.LEVL_OC[0-9][0-9],type:Misc,nature:int,dimension:1
+name:SFX.LEVL_OC[0-9],type:Misc,nature:int,dimension:1
+name:SFX.L_*,type:Misc,nature:bool,dimension:0
 
-# Surfex
+# Surfex 2D Fields
 name:X001*,type:H2D,typeOfFirstFixedSurface:1
 name:SFX.*,type:H2D,typeOfFirstFixedSurface:1
 name:S1D_*,type:H2D,typeOfFirstFixedSurface:1

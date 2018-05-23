@@ -195,7 +195,7 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
                            " instance.")
     if geometry.projected_geometry:
         assert geometry.projection['rotation'] == Angle(0., 'radians'), \
-               "the geometry's projection attribute 'rotation' must be 0. in FA."
+            "the geometry's projection attribute 'rotation' must be 0. in FA."
 
     headername = _gen_headername()
     CDNOMC = headername
@@ -1007,7 +1007,7 @@ class FA(FileResource):
                 elif 'str' in field.datatype.name or 'unicode' in field.datatype.name:
                     dataReal = numpy.array([ord(d) for d in data[0]]).view('float64')
                 elif 'bool' in field.datatype.name:
-                    dataReal = numpy.array(1 if data else 0).view('float64')
+                    dataReal = numpy.array([1] if data else [0]).view('float64')
                 elif 'float' in field.datatype.name:
                     dataReal = data
                 else:
@@ -1028,14 +1028,16 @@ class FA(FileResource):
         elif isinstance(field, H2DField):
             assert [self.geometry.name, self.geometry.dimensions] == \
                    [field.geometry.name, field.geometry.dimensions], \
-                   "gridpoint geometry incompatibility: a FA can hold only one geometry."
+                "gridpoint geometry incompatibility: a FA can hold only one geometry."
             if field.geometry.vcoordinate.grid and field.geometry.vcoordinate.typeoffirstfixedsurface == 119:
                 # tolerant check because of encoding differences in self
-                l = len(self.geometry.vcoordinate.grid['gridlevels'])
+                levels = len(self.geometry.vcoordinate.grid['gridlevels'])
                 s = self.geometry.vcoordinate.grid['gridlevels']
                 f = field.geometry.vcoordinate.grid['gridlevels']
-                diffmax = max(numpy.array([s[k][1]['Ai'] - f[k][1]['Ai'] for k in range(l)]).max(),
-                              numpy.array([s[k][1]['Bi'] - f[k][1]['Bi'] for k in range(l)]).max())
+                diffmax = max(numpy.array([s[k][1]['Ai'] - f[k][1]['Ai']
+                                           for k in range(levels)]).max(),
+                              numpy.array([s[k][1]['Bi'] - f[k][1]['Bi']
+                                           for k in range(levels)]).max())
             else:
                 diffmax = 0.
             assert diffmax < 1e-10 or not field.geometry.vcoordinate.grid, \
