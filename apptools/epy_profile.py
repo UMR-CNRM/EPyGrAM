@@ -182,14 +182,14 @@ def main(filename,
             else:
                 title = str(profile.fid.get(resource.format, profile.fid)) + '\n' + profile.comment
             if same_Z:
-                plot = plotprofiles(toplot,
-                                    labels=labels,
-                                    fidkey=resource.format,
-                                    unit=unit,
-                                    logscale=logscale,
-                                    title=title,
-                                    ema=emagramlike,
-                                    zoom=zoom)
+                plot, _ = plotprofiles(toplot,
+                                       labels=labels,
+                                       fidkey=resource.format,
+                                       unit=unit,
+                                       logscale=logscale,
+                                       title=title,
+                                       ema=emagramlike,
+                                       zoom=zoom)
             else:
                 plot, ax = plt.subplots()
                 for i in range(len(toplot)):

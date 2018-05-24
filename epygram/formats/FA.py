@@ -1582,6 +1582,10 @@ class FA(FileResource):
                                          self._FAsoftware_cst['JPXGEO'],
                                          self._FAsoftware_cst['JPXNIV'],
                                          self.headername)[:-1]))
+            for ab in [8, 9, 10]:  # 'KNLOPA', 'KNOZPA', 'PSINLA'
+                zvars[ab] = (zvars[ab][0], zvars[ab][1][:(zvars[6][1] + 1) / 2])  # 6 == KNLATI
+            for ab in [13, 14]:  # 'PAHYBR', 'PBHYBR'
+                zvars[ab] = (zvars[ab][0], zvars[ab][1][:zvars[11][1] + 1])  # 11 == KNIVER
             for v in zvars:
                 out.write(v[0] + '\n')
                 out.write(str(v[1]) + '\n')
@@ -1664,7 +1668,8 @@ class FA(FileResource):
                 else:
                     grid = {'X_resolution':PSINLA[14],
                             'Y_resolution':PSINLA[15]}
-                if KNLOPA[1] == 0:  # C+I
+                if KNLOPA[1] == 0 or (dimensions['X'] == dimensions['X_CIzone'] and
+                                      dimensions['Y'] == dimensions['Y_CIzone']):  # C+I
                     grid['LAMzone'] = 'CI'
                     dimensions['X'] = dimensions['X_CIzone']
                     dimensions['Y'] = dimensions['Y_CIzone']
