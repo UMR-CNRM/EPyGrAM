@@ -242,6 +242,7 @@ class H2DVectorField(Field):
         dd1 = loc_arccos(v_norm)
         dd2 = 2. * numpy.pi - dd1
         direction = numpy.degrees(numpy.where(u_norm >= 0., dd1, dd2))
+        direction = numpy.where(module < 1.E-15, 0., direction)
         f = fpx.field(geometry=self.geometry.copy(),
                       structure=self.structure,
                       fid={'op':'H2DVectorField.compute_direction()'},

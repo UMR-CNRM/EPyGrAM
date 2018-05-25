@@ -87,7 +87,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
             geoid=dict(
                 type=FPDict,
                 optional=True,
-                default=FPDict({}),
+                default=FPDict(config.default_geoid),
                 info="To specify geoid shape.")
         )
     )
@@ -1475,7 +1475,12 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
                 values=set(['academic'])),
             projection=dict(
                 type=FPDict,
-                info="Handles projection information.")
+                info="Handles projection information."),
+            geoid=dict(
+                type=FPDict,
+                optional=True,
+                default=FPDict({}),
+                info="Of no meaning in this geometry.")
         )
     )
 
@@ -1822,11 +1827,6 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
         attr=dict(
             name=dict(
                 values=set(['regular_lonlat'])),
-            geoid=dict(
-                type=FPDict,
-                optional=True,
-                default=FPDict(config.default_geoid),
-                info="Geoid definition for great circle computations.")
         )
     )
 
@@ -2682,11 +2682,6 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
             projection=dict(
                 type=FPDict,
                 info="Handles projection information."),
-            geoid=dict(
-                type=FPDict,
-                optional=True,
-                default=FPDict(config.default_geoid),
-                info="Geoid definition in projections.")
         )
     )
 
@@ -3686,11 +3681,6 @@ class D3GaussGeometry(D3Geometry):
         attr=dict(
             name=dict(
                 values=set(['rotated_reduced_gauss', 'reduced_gauss', 'regular_gauss'])),
-            geoid=dict(
-                type=FPDict,
-                optional=True,
-                default=FPDict(config.default_geoid),
-                info="Geoid definition for great circle computations.")
         )
     )
 
@@ -3931,7 +3921,6 @@ class D3GaussGeometry(D3Geometry):
                 buff = data[:, :, slice(ind_begin, ind_end)]
                 data4D[:, :, j, slice(0, self.dimensions['lon_number_by_lat'][j])] = buff
         if ind_end != data.shape[-1]:
-            print(ind_end, data.shape[-1])
             raise epygramError("data have a wrong length")
         if d4 or len(shp_in) == 3:
             data_out = data4D

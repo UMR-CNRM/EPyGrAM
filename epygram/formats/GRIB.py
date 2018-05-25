@@ -461,9 +461,9 @@ class GRIBmessage(RecursiveObject, dict):
                 epylog.warning("geometry has no geoid: assume 'shapeOfTheEarth' = 6.")
                 self['shapeOfTheEarth'] = 6
             else:
-                if (field.geometry.geoid.get('a') == grib_utilities.pyproj_geoid_shapes[6]['a'] and
-                    field.geometry.geoid.get('b') == grib_utilities.pyproj_geoid_shapes[6]['b']):
-                        self['shapeOfTheEarth'] = 6
+                if all([field.geometry.geoid.get(axis) == grib_utilities.pyproj_geoid_shapes[6][axis]
+                        for axis in ('a', 'b')]):
+                    self['shapeOfTheEarth'] = 6
                 else:
                     found = False
                     for s, g in grib_utilities.pyproj_geoid_shapes.items():
@@ -1062,14 +1062,20 @@ class GRIBmessage(RecursiveObject, dict):
         minutes = int(dataTime[2:4])
         basis = datetime.datetime(year, month, day, hour, minutes)
         cum = None
-        if self['stepUnits'] == 1:
-            timeunitfactor = 3600
+        units = {0:dict(seconds=60),  # minute
+                 1:dict(seconds=3600),  # hour
+                 2:dict(days=1),  # day
+                 13:dict(seconds=1 if self.grib_edition == 2 else 15 * 60),  # seconds in GRIB2, 1/4h in GRIB1
+                 }
+        unit = units[self['stepUnits']]
         if self['timeRangeIndicator'] in accepted_tRI:
             term = self['endStep']
-            term = datetime.timedelta(seconds=term * timeunitfactor)
+            termunit = {k:v * term for k,v in unit.items()}
+            term = datetime.timedelta(**termunit)
             if self['timeRangeIndicator'] in (2, 4) or self['productDefinitionTemplateNumber'] == 8:
                 cum = self['endStep'] - self['startStep']
-                cum = datetime.timedelta(seconds=cum * timeunitfactor)
+                cumunit = {k:v * cum for k,v in unit.items()}
+                cum = datetime.timedelta(**cumunit)
             elif self['timeRangeIndicator'] in (113, 123,):
                 epylog.warning('not able to interpret timeRangeIndicator={}'.format(self['timeRangeIndicator']))
         else:
@@ -1796,9 +1802,9 @@ class GRIB(FileResource):
     def extract_subdomain(self, handgrip, geometry,
                           vertical_coordinate=None,
                           interpolation='linear',
-                          cheap_height=True,
                           external_distance=None,
-                          field3d=None):
+                          field3d=None,
+                          **_):
         """
         Extracts a subdomain from the GRIB resource, given its handgrip
         and the geometry to use.
@@ -1815,11 +1821,6 @@ class GRIB(FileResource):
             computed with linear spline interpolation;
           - if 'cubic', each horizontal point of the section is
             computed with linear spline interpolation.
-        :param cheap_height: if True and *vertical_coordinate* among
-          ('altitude', 'height'), the computation of heights is done without
-          taking hydrometeors into account (in R computation) nor NH Pressure
-          departure (Non-Hydrostatic data). Computation therefore faster.
-          # TODO: not implemented yet
         """
         if field3d is None:
             field3d = fpx.field(fid={'GRIB':handgrip},
