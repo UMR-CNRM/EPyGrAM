@@ -18,7 +18,7 @@ from bronx.system import memory
 from epygram import config, epygramError, epylog
 from epygram.util import RecursiveObject
 
-transforms_lib_init_kwargs = dict()
+transforms_lib_init_env_kwargs = dict()
 
 
 def nearest_greater_FFT992compliant_int(guess):
@@ -140,7 +140,8 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
         if not hasattr(cls, '_transforms_lib'):
             from arpifs4py import wtransforms, init_env
             cls._transforms_lib = wtransforms
-            init_env(**transforms_lib_init_kwargs)
+            if transforms_lib_init_env_kwargs.pop('trigger', False):
+                init_env(**transforms_lib_init_env_kwargs)
         return cls._transforms_lib
 
     def _prevent_swapping(self):

@@ -194,17 +194,24 @@ def showconfig():
         print('- ' + k + ' = ' + str(cfg[k]))
 
 
-def init_env(omp_num_threads=1, no_mpi=True, unlimited_stack=True,
-             lfi_C=True, mute_FA4py=None, ignore_gribenv_paths=False):
+def init_env(omp_num_threads=1,
+             no_mpi=True,
+             unlimited_stack=True,
+             lfi_C=True,
+             mute_FA4py=None,
+             ensure_consistent_GRIB_paths=True,
+             ignore_gribenv_paths=False):
     """
     A function to modify execution environment (to be called early in
     execution).
 
-    :param no_mpi: environment variable DR_HOOK_NOT_MPI set to 1
     :param omp_num_threads: sets OMP_NUM_THREADS
-    :param lfi_C: if True, LFI_HNDL_SPEC set to ':1', to use the C version of LFI
+    :param no_mpi: environment variable DR_HOOK_NOT_MPI set to 1
     :param unlimited_stack: stack size unlimited on Bull supercomputers
+    :param lfi_C: if True, LFI_HNDL_SPEC set to ':1', to use the C version of LFI
     :param mute_FA4py: mute messages from FAIPAR in FA4py library
+    :param bool ensure_consistent_GRIB_paths: complete GRIB samples/definition
+        paths to be consistent with inner library
     :param ignore_gribenv_paths: ignore predefined values of the variables
         GRIB_SAMPLES_PATH and GRIB_DEFINITION_PATH
         (or equivalent ECCODES variables)
@@ -218,18 +225,20 @@ def init_env(omp_num_threads=1, no_mpi=True, unlimited_stack=True,
         arpifs4py.init_env(omp_num_threads=omp_num_threads, no_mpi=no_mpi,  # common
                            unlimited_stack=unlimited_stack,  # transforms
                            lfi_C=lfi_C, mute_FA4py=mute_FA4py,  # LFI/FA
+                           ensure_consistent_GRIB_paths=ensure_consistent_GRIB_paths,  # GRIB paths
                            ignore_gribenv_paths=ignore_gribenv_paths)
     # 2. SpectralGeometry inner transformation lib may need some special
     # environment setting, delayed to actual invocation:
     # we simply pass kwargs, initialization is done at first call to the library
-    from .geometries.SpectralGeometry import transforms_lib_init_kwargs
-    transforms_lib_init_kwargs.update(omp_num_threads=omp_num_threads,
-                                      no_mpi=no_mpi,
-                                      unlimited_stack=unlimited_stack)
+    from .geometries.SpectralGeometry import transforms_lib_init_env_kwargs
+    transforms_lib_init_env_kwargs.update(omp_num_threads=omp_num_threads,
+                                          no_mpi=no_mpi,
+                                          unlimited_stack=unlimited_stack,
+                                          trigger=True)
     # 3. grib_api or eccodes
     # need some special environment setting
     # ensure grib_api/eccodes variables are consistent with inner library
-    if 'GRIB' in config.implemented_formats:
+    if 'GRIB' in config.implemented_formats and ensure_consistent_GRIB_paths:
         from .formats.GRIB import lowlevelgrib
         lowlevelgrib.init_env(reset=ignore_gribenv_paths)
 

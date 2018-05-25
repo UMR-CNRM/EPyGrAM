@@ -30,11 +30,15 @@ __all__ = []
 
 # Formats loading used to have to follow an order,
 # for common dynamic libraries of different versions.
-# Not sure this is still necessary, especially as long as we use the same Gribapi
+# Still necessary WHEN we do not use the same gribapi/eccodes
 # in arpifs4py and GRIB interface
+# There is also known issues between netCDF and FA/GRIB on some platforms:
+# - GRIB and arpifs4py formats need to be loaded before netCDF/netCDF;
+# - netCDF crash later on if arpifs4py is loaded...
+
+# _loaded_first_formats = ['FA', 'LFI', 'DDHLFA', 'LFA', 'GRIB']
+_loaded_first_formats = ['GRIB', 'FA', 'LFI', 'DDHLFA', 'LFA']
 _formats_in_loading_order = copy.copy(config.implemented_formats)
-# _loaded_first_formats = ['GRIB', 'FA', 'LFI', 'DDHLFA', 'LFA']
-_loaded_first_formats = ['FA', 'LFI', 'DDHLFA', 'LFA']
 for lff in _loaded_first_formats[::-1]:
     if lff in _formats_in_loading_order:
         _formats_in_loading_order = [lff] + [f for f in _formats_in_loading_order if f != lff]

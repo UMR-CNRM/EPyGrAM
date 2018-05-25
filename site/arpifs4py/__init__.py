@@ -127,22 +127,30 @@ from . import wtransforms
 
 # initialization
 ################
-def init_env(omp_num_threads=1, no_mpi=True, unlimited_stack=True,
-             lfi_C=True, mute_FA4py=None, ignore_gribenv_paths=False):
+def init_env(omp_num_threads=None,
+             no_mpi=False,
+             unlimited_stack=False,
+             lfi_C=False,
+             mute_FA4py=False,
+             ensure_consistent_GRIB_paths=False,
+             ignore_gribenv_paths=False):
     """
     Set adequate environment for the inner libraries.
 
-    :param omp_num_threads: sets OMP_NUM_THREADS
-    :param no_mpi: environment variable DR_HOOK_NOT_MPI set to 1
-    :param unlimited_stack: stack size unlimited on Bull supercomputers
-    :param lfi_C: if True, LFI_HNDL_SPEC set to ':1', to use the C version of LFI
-    :param mute_FA4py: mute messages from FAIPAR in FA4py library
-    :param ignore_gribenv_paths: ignore predefined values of the variables
+    :param int omp_num_threads: sets OMP_NUM_THREADS
+    :param bool no_mpi: environment variable DR_HOOK_NOT_MPI set to 1
+    :param bool unlimited_stack: stack size unlimited on Bull supercomputers
+    :param bool lfi_C: if True, LFI_HNDL_SPEC set to ':1', to use the C version of LFI
+    :param bool mute_FA4py: mute messages from FAIPAR in FA4py library
+    :param bool ensure_consistent_GRIB_paths: complete GRIB samples/definition
+        paths to be consistent with inner library
+    :param bool ignore_gribenv_paths: ignore predefined values of the variables
         GRIB_SAMPLES_PATH and GRIB_DEFINITION_PATH
         (or equivalent ECCODES variables)
     """
     # because arpifs library is compiled with MPI & openMP
-    os.environ['OMP_NUM_THREADS'] = str(omp_num_threads)
+    if omp_num_threads is not None:
+        os.environ['OMP_NUM_THREADS'] = str(omp_num_threads)
     if no_mpi:
         os.environ['DR_HOOK_NOT_MPI'] = '1'
     # because Legendre stuff may need large stack memory
@@ -158,9 +166,10 @@ def init_env(omp_num_threads=1, no_mpi=True, unlimited_stack=True,
     if mute_FA4py:
         os.environ['FA4PY_MUTE'] = '1'
     # ensure grib_api/eccodes variables are consistent with inner library
-    if len(grib_utilities.get_samples_paths() + grib_utilities.get_definition_paths()) > 0:
-        _GRIB_samples_path_from_dynamic_gribapi(shared_objects_library,
-                                                reset=ignore_gribenv_paths)
+    if ensure_consistent_GRIB_paths:
+        if len(grib_utilities.get_samples_paths() + grib_utilities.get_definition_paths()) > 0:
+            _GRIB_samples_path_from_dynamic_gribapi(shared_objects_library,
+                                                    reset=ignore_gribenv_paths)
 
 
 def _GRIB_samples_path_from_dynamic_gribapi(lib, reset=False):
