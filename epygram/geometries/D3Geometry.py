@@ -2889,8 +2889,8 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         if set(self.dimensions.keys()) != set(dimensions_keys):
             raise epygramError("dimensions attribute must consist in keys: " +
                                str(dimensions_keys))
-        if self.projection['rotation'].get('degrees') != 0.0:
-            epylog.warning('*rotation* != 0. may not have been thoroughly tested...')  # TOBECHECKED: here and there, ...
+        #if self.projection['rotation'].get('degrees') != 0.0:
+        #    epylog.warning('*rotation* != 0. may not have been thoroughly tested...')  # TOBECHECKED: here and there, ...
 
     def select_subzone(self, subzone):
         """

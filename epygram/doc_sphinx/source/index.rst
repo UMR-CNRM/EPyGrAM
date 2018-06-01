@@ -12,7 +12,7 @@ Contents:
 ---------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    Introduction <introduction>
    Distribution <distribution>
@@ -22,6 +22,7 @@ Contents:
    External, side modules <site/index>
    FAQ
    AppTools <apptools>
+   Gallery (use-cases) <gallery/index>
 
 
 Indices and tables

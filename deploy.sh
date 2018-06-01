@@ -3,6 +3,7 @@
 # Script de deploiement d'EPyGrAM sur /home/common/epygram et BULL
 # Reste manuel: déploiement .tar sur redmine et hendrix (à automatiser)
 
+
 # Parse args
 if [ "$1" == "-h" ]; then
     echo "Usage: deploy.sh version [mkdoc]"
@@ -24,6 +25,17 @@ if [ "$mkdoc" == "mkdoc" ]; then
     cd ../..
 fi
 
+
+# Filter
+to_exclude=''
+for elem in playground tests versioning.txt deploy.sh apptools/*.pyc site/arpifs4py/libs4py_*.so epygram/doc_sphinx/source/gallery/inputs *__pycache__*
+do
+  to_exclude="$to_exclude --exclude $elem"
+done
+echo $to_exclude
+no_pyc='--exclude *.pyc'
+
+
 # Make temp dir, copy, go therein
 tmp=`mktemp`
 if [ "$tmp" == "" ]; then
@@ -31,37 +43,30 @@ if [ "$tmp" == "" ]; then
     exit
 fi
 rm -f $tmp; mkdir $tmp
-cp -rL * $tmp/.
+rsync -avL * $tmp/ $to_exclude
 here=`pwd`
 cd $tmp
 echo "Tempdir:" `pwd`
 
-# Filter
-rm -rf playground
-rm -rf tests
-rm -f versioning.txt
-rm -f deploy.sh
-rm -f apptools/*.pyc
-rm site/arpifs4py/libs4py_*.so
 
 # Rsync
 LOC_SXCOOPE="sxcoope1:~mary/sync_epygram/EPyGrAM$version/"
 rsync -av * $LOC_SXCOOPE
 
 #LOC_VXDEV64="vxdev64:~mary/EPyGrAM$version/" # vxdev64: development server @ CNRM (OS updates)
-#rsync -av * $LOC_VXDEV64
+#rsync -av * $LOC_VXDEV64 $no_pyc
 
 rm site/arpifs4py/libs4py.so
 
 LOC_PAGRE="pagre:~mary/public/EPyGrAM$version/"
-rsync -av * $LOC_PAGRE
+rsync -av * $LOC_PAGRE $no_pyc
 
 rm -rf site/epyweb
 
 LOC_BFX="beaufix:~mary/public/EPyGrAM$version/"
-rsync -av * $LOC_BFX
+rsync -av * $LOC_BFX $no_pyc
 LOC_PLX="prolix:~mary/public/EPyGrAM$version/"
-rsync -av * $LOC_PLX
+rsync -av * $LOC_PLX $no_pyc
 echo ""
 echo "==> deployment done on: $LOC_SXCOOPE $LOC_VXDEV64 $LOC_PAGRE $LOC_BFX $LOC_PLX"
 echo "libs4py.so to be linked on beaufix/prolix (~mary/deploy_epygram_finalize.sh) and pagre"

@@ -46,3 +46,6 @@ epygram/doc_sphinx/source/tutorial/notebooks/.ipynb_checkpoints
 site/arpifs4py/*.so
 playground
 versioning.txt
+epygram/doc_sphinx/source/gallery/inputs
+epygram/doc_sphinx/source/gallery/outputs
+epygram/doc_sphinx/source/gallery/notebooks/.ipynb_checkpoints

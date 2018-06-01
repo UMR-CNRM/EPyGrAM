@@ -187,7 +187,7 @@ def hybridH2pressure(hybridH_geometry, P, position):
 
 
 def hybridP2altitude(hybridP_geometry, R, T, Psurf, vertical_mean,
-                     Pdep=0., Phi_surf=None):
+                     Pdep=None, Phi_surf=None):
     """
     Converts a hybrid_pressure coordinate grid into altitude of mass levels.
 
