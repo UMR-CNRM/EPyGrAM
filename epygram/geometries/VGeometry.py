@@ -334,7 +334,7 @@ def hybridP_coord_and_surfpressure_to_3D_pressure_field(
     for each gridpoint.
 
     :param hybridP_geometry: the hybridP VGeometry
-    :param Psurf: the surface pressure field in Pa, needed for integration of
+    :param Psurf: the surface pressure H2DField in Pa, needed for integration of
                   Ai and Bi.
     :param vertical_mean: defines the kind of averaging done on the vertical
       to compute half-levels from full-levels, or inverse: 'geometric' or
@@ -342,6 +342,10 @@ def hybridP_coord_and_surfpressure_to_3D_pressure_field(
     :param gridposition: (= 'mass' or 'flux') is the target grid position. By
       default the data position in the origin geometry is taken.
     """
+    from epygram.fields import H2DField
+    assert isinstance(Psurf, H2DField)
+    if Psurf.spectral:
+        Psurf.sp2gp()
     pressures = hybridP2pressure(hybridP_geometry, Psurf.data, vertical_mean,
                                  gridposition=gridposition).levels
     vgeom = fpx.geometrys.almost_clone(hybridP_geometry,
@@ -355,3 +359,71 @@ def hybridP_coord_and_surfpressure_to_3D_pressure_field(
                            units='hPa')
     d3pressure.setdata(numpy.array(pressures))
     return d3pressure
+
+
+def hybridP_coord_to_3D_altitude_field(
+        hybridP_geometry, Psurf, vertical_mean,
+        t3D, q3D,
+        ql3D=None, qi3D=None, qr3D=None, qs3D=None, qg3D=None,
+        Pdep3D=None,
+        Phi_surf=None):
+    """
+    From a hybridP Vgeometry and a surface pressure (in Pa) H2D field,
+    compute a 3D field containing the pressure (in hPa) at each hybridP level
+    for each gridpoint.
+
+    :param hybridP_geometry: the hybridP VGeometry
+    :param Psurf: the surface pressure H2DField in Pa, needed for integration of
+                  Ai and Bi.
+    :param vertical_mean: defines the kind of averaging done on the vertical
+      to compute half-levels from full-levels, or inverse: 'geometric' or
+      'arithmetic'.
+    :param t3D: temperature D3Field
+    :param q3D: specific humidity D3Field
+    :param ql3D: liquid water content D3Field
+    :param qi3D: ice water content D3Field
+    :param qr3D: rain water content D3Field
+    :param qs3D: snow water content D3Field
+    :param qg3D: graupel water content D3Field
+    :param Pdep3D: non-hydrostatic pressure departure D3Field
+    :param Phi_surf: surface geopotential H2DField (for altitude vs. height)
+    """
+    from epygram.fields import D3Field, H2DField
+    from bronx.meteo.conversion import q2R
+    assert isinstance(t3D, D3Field)
+    assert isinstance(q3D, D3Field)
+    if Phi_surf is not None:
+        assert isinstance(Phi_surf, H2DField)
+    # preparations
+    if t3D.spectral:
+        t3D.sp2gp()
+    if Phi_surf is not None:
+        if Phi_surf.spectral:
+            Phi_surf.sp2gp()
+        Phi_surf = Phi_surf.data
+    hydrometeors = {}
+    for qk in ('ql', 'qi', 'qr', 'qs', 'qg'):
+        if locals()[qk + '3D'] is not None:
+            hydrometeors[qk] = locals()[qk + '3D'].data
+    if isinstance(Pdep3D, D3Field):
+        Pdep3D = Pdep3D.data
+    # computations
+    p3D = hybridP_coord_and_surfpressure_to_3D_pressure_field(
+        hybridP_geometry, Psurf, vertical_mean,
+        gridposition='mass')
+    p3D.operation('*', 100)
+    R3D = q2R(q3D.data, **hydrometeors)
+    alt3D = profiles.pressure2altitude(R3D, t3D.data,
+                                       vertical_mean='geometric',
+                                       pi=p3D.data,
+                                       Phi_surf=Phi_surf,
+                                       Pdep=Pdep3D)
+    # arrange output field
+    p3D.setdata(alt3D)
+    alt3D = p3D
+    if Phi_surf is None:
+        alt3D.fid['computed'] = 'height'
+    else:
+        alt3D.fid['computed'] = 'altitude'
+    alt3D.units = 'm'
+    return alt3D
