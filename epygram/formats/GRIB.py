@@ -241,7 +241,6 @@ class GRIBmessage(RecursiveObject, dict):
             self._readattribute(item)
             if item not in list(self.keys()):
                 raise KeyError(item + " not in GRIBmessage keys.")
-
         return super(GRIBmessage, self).__getitem__(item)
 
     def __setitem__(self, key, value):
@@ -255,7 +254,10 @@ class GRIBmessage(RecursiveObject, dict):
                 v = str(value)
             else:
                 v = value
-            lowlevelgrib.set(self._gid, str(key), v)  # gribapi str/unicode incompatibility
+            try:
+                lowlevelgrib.set(self._gid, str(key), v)  # gribapi str/unicode incompatibility
+            except lowlevelgrib.InternalError as e:
+                print(key)
         else:
             lowlevelgrib.set_missing(self._gid, str(key))  # gribapi str/unicode incompatibility
         super(GRIBmessage, self).__setitem__(key, value)
@@ -298,8 +300,10 @@ class GRIBmessage(RecursiveObject, dict):
                         attr = lowlevelgrib.get(self._gid, str(attribute), int)  # gribapi str/unicode incompatibility
                     else:
                         attr = lowlevelgrib.get(self._gid, str(attribute))  # gribapi str/unicode incompatibility
-                except lowlevelgrib.InternalError as e:
+                #except lowlevelgrib.InternalError as e:
+                except Exception as e:
                     # differenciation not well done... PB in gribapi
+                    print(attribute)
                     if str(e) == 'Passed array is too small':
                         attr = lowlevelgrib.get_double_array(self._gid, str(attribute))  # gribapi str/unicode incompatibility
                     else:
@@ -669,31 +673,31 @@ class GRIBmessage(RecursiveObject, dict):
                 if self['iScansNegatively'] == 0 and \
                    self['jScansPositively'] == 0:
                     self['longitudeOfFirstGridPointInDegrees'] = util.positive_longitude(corners['ul'][0])
-                    self['latitudeOfFirstGridPointInDegrees'] = util.positive_longitude(corners['ul'][1])
+                    self['latitudeOfFirstGridPointInDegrees'] = corners['ul'][1]
                     if self['gridType'] == 'regular_ll':
                         self['longitudeOfLastGridPointInDegrees'] = util.positive_longitude(corners['lr'][0])
-                        self['latitudeOfLastGridPointInDegrees'] = util.positive_longitude(corners['lr'][1])
+                        self['latitudeOfLastGridPointInDegrees'] = corners['lr'][1]
                 elif self['iScansNegatively'] == 0 and \
                      self['jScansPositively'] == 1:
                     self['longitudeOfFirstGridPointInDegrees'] = util.positive_longitude(corners['ll'][0])
-                    self['latitudeOfFirstGridPointInDegrees'] = util.positive_longitude(corners['ll'][1])
+                    self['latitudeOfFirstGridPointInDegrees'] = corners['ll'][1]
                     if self['gridType'] == 'regular_ll':
                         self['longitudeOfLastGridPointInDegrees'] = util.positive_longitude(corners['ur'][0])
-                        self['latitudeOfLastGridPointInDegrees'] = util.positive_longitude(corners['ur'][1])
+                        self['latitudeOfLastGridPointInDegrees'] = corners['ur'][1]
                 elif self['iScansNegatively'] == 1 and \
                      self['jScansPositively'] == 0:
                     self['longitudeOfFirstGridPointInDegrees'] = util.positive_longitude(corners['ur'][0])
-                    self['latitudeOfFirstGridPointInDegrees'] = util.positive_longitude(corners['ur'][1])
+                    self['latitudeOfFirstGridPointInDegrees'] = corners['ur'][1]
                     if self['gridType'] == 'regular_ll':
                         self['longitudeOfLastGridPointInDegrees'] = util.positive_longitude(corners['ll'][0])
-                        self['latitudeOfLastGridPointInDegrees'] = util.positive_longitude(corners['ll'][1])
+                        self['latitudeOfLastGridPointInDegrees'] = corners['ll'][1]
                 elif self['iScansNegatively'] == 1 and \
                      self['jScansPositively'] == 1:
                     self['longitudeOfFirstGridPointInDegrees'] = util.positive_longitude(corners['lr'][0])
-                    self['latitudeOfFirstGridPointInDegrees'] = util.positive_longitude(corners['lr'][1])
+                    self['latitudeOfFirstGridPointInDegrees'] = corners['lr'][1]
                     if self['gridType'] == 'regular_ll':
                         self['longitudeOfLastGridPointInDegrees'] = util.positive_longitude(corners['ul'][0])
-                        self['latitudeOfLastGridPointInDegrees'] = util.positive_longitude(corners['ul'][1])
+                        self['latitudeOfLastGridPointInDegrees'] = corners['ul'][1]
                 else:
                     raise NotImplementedError('this ordering: not yet.')
             else:
@@ -711,7 +715,9 @@ class GRIBmessage(RecursiveObject, dict):
                 values = field.geometry.fill_maskedvalues(values)
             else:
                 # bitmap in GRIB1 ?
-                raise NotImplementedError("didn't succeed to make this work")
+                self['bitmapPresent'] = 1
+                values = field.geometry.fill_maskedvalues(values)
+                # TODO: ok now ? raise NotImplementedError("didn't succeed to make this work")
         values = values.squeeze()
         if not field.spectral:
             # is it necessary to pre-write values ? (packingType != from sample)
