@@ -1,4 +1,3 @@
-module load python
 
 # Vortex & Footprints
 VORTEX_INSTALL_DIR=/home/mf/dp/marp/verolive/vortex/vortex-olive
@@ -7,16 +6,11 @@ export PYTHONPATH
 export PATH=PATH=$VORTEX_INSTALL_DIR/bin:$VORTEX_INSTALL_DIR/site/arpifs_listings/bin:$PATH
 
 # ecCodes
-ECCODES_PYTHON=/home/gmap/mrpe/mary/public/eccodes_python
-PYTHONPATH=$ECCODES_PYTHON:$PYTHONPATH
-# or grib_api (deprecated)
-#GRIBAPI_COMPATIBLE=/home/gmap/mrpe/mary/public/gribapi_python
-#PYTHONPATH=$GRIBAPI_COMPATIBLE:$PYTHONPATH
+PYTHONPATH=/home/gmap/mrpe/mary/public/eccodes_python:$PYTHONPATH
 export PYTHONPATH
 
 # EPyGrAM
-VERSION='' # or '-1.x.x', '-current', '-next'
-EPYGRAM_INSTALL_DIR=/home/gmap/mrpe/mary/public/EPyGrAM$VERSION
+EPYGRAM_INSTALL_DIR=$HOME/.epygram/src
 PYTHONPATH=$EPYGRAM_INSTALL_DIR:$EPYGRAM_INSTALL_DIR/site:$PYTHONPATH
 export PYTHONPATH
 export PATH=$PATH:$EPYGRAM_INSTALL_DIR/apptools

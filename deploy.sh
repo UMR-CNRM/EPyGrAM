@@ -1,13 +1,11 @@
 #!/bin/bash
 
 # Script de deploiement d'EPyGrAM sur /home/common/epygram et BULL
-# Reste manuel: déploiement .tar sur redmine et hendrix (à automatiser)
-
 
 # Parse args
 if [ "$1" == "-h" ]; then
     echo "Usage: deploy.sh version [mkdoc]"
-    echo "version being e.g. 'dev' or '1.1.8'"
+    echo "version being the distant label, e.g. 'dev' or '1.1.8'"
     echo "if mkdoc is present, build doc before deployment"
     exit
 fi
@@ -24,54 +22,68 @@ if [ "$mkdoc" == "mkdoc" ]; then
     ./mk_html_doc.sh
     cd ../..
 fi
+sxcoope1=0
+vxdev64=0
+pagre=1
+bullx=0
 
 
 # Filter
-to_exclude=''
-for elem in playground tests versioning.txt deploy.sh apptools/*.pyc site/arpifs4py/libs4py_*.so epygram/doc_sphinx/source/gallery/inputs *__pycache__*
+to_exclude4all=''
+for elem in playground tests versioning.txt deploy.sh mktar.sh apptools/*.pyc site/arpifs4py/libs4py_*.so epygram/doc_sphinx/source/gallery/inputs *.ipynb_checkpoints*
 do
-  to_exclude="$to_exclude --exclude $elem"
+  to_exclude4all="$to_exclude4all --exclude $elem"
 done
-echo $to_exclude
-no_pyc='--exclude *.pyc'
-
-
-# Make temp dir, copy, go therein
-tmp=`mktemp`
-if [ "$tmp" == "" ]; then
-    echo "Problem in tmp dir generation. Exit."
-    exit
-fi
-rm -f $tmp; mkdir $tmp
-rsync -avL * $tmp/ $to_exclude
-here=`pwd`
-cd $tmp
-echo "Tempdir:" `pwd`
+no_source_doc=''
+for elem in epygram/doc_sphinx/source/* epygram/doc_sphinx/build/* epygram/doc_sphinx/Makefile epygram/doc_sphinx/mk_html_doc.sh
+do
+  no_source_doc="$no_source_doc --exclude $elem"
+done
+no_pyc='--exclude *.pyc --exclude *__pycache__*'
+no_doc='--exclude epygram/doc_sphinx/*'
+no_libs4py='--exclude site/arpifs4py/libs4py.so'
+no_epyweb='--exclude site/epyweb'
 
 
 # Rsync
-LOC_SXCOOPE="sxcoope1:~mary/sync_epygram/EPyGrAM$version/"
-rsync -av * $LOC_SXCOOPE
+# sxcoope1
+if [ "$sxcoope1" == 1 ]; then
+  LOC_SXCOOPE="sxcoope1:~mary/sync_epygram/EPyGrAM$version/"  # from which are synchronised all CNRM workstations
+  rsync -avL * $LOC_SXCOOPE $to_exclude4all
+fi
+# vxdev64
+if [ "$vxdev64" == 1 ]; then
+  LOC_VXDEV64="vxdev64:~mary/EPyGrAM$version/"  # vxdev64: development server @ CNRM (OS updates)
+  rsync -avL * $LOC_VXDEV64 $to_exclude4all $no_pyc $no_source_doc
+fi
+# pagre
+if [ "$pagre" == 1 ]; then
+  LOC_PAGRE="pagre:~mary/public/EPyGrAM$version/"  # COMPAS server
+  rsync -avL * $LOC_PAGRE $to_exclude4all $no_pyc $no_libs4py
+fi
+# bullx
+if [ "$bullx" == 1 ]; then
+  bull_exclude="$to_exclude4all $no_pyc $no_source_doc $no_libs4py $no_epyweb"
+  bull_public="~mary/public/EPyGrAM$version/"
+  rsync -avL * "beaufix:$bull_public" $bull_exclude
+  rsync -avL * "prolix:$bull_public" $bull_exclude
+fi
 
-#LOC_VXDEV64="vxdev64:~mary/EPyGrAM$version/" # vxdev64: development server @ CNRM (OS updates)
-#rsync -av * $LOC_VXDEV64 $no_pyc
 
-rm site/arpifs4py/libs4py.so
-
-LOC_PAGRE="pagre:~mary/public/EPyGrAM$version/"
-rsync -av * $LOC_PAGRE $no_pyc
-
-rm -rf site/epyweb
-
-LOC_BFX="beaufix:~mary/public/EPyGrAM$version/"
-rsync -av * $LOC_BFX $no_pyc
-LOC_PLX="prolix:~mary/public/EPyGrAM$version/"
-rsync -av * $LOC_PLX $no_pyc
-echo ""
-echo "==> deployment done on: $LOC_SXCOOPE $LOC_VXDEV64 $LOC_PAGRE $LOC_BFX $LOC_PLX"
-echo "libs4py.so to be linked on beaufix/prolix (~mary/deploy_epygram_finalize.sh) and pagre"
-
-# Come back and clean
-cd $here
-rm -rf $tmp
+# Summary
+echo "------------------------------------------------------"
+if [ "$sxcoope1" == 1 ]; then
+  echo "=> deployed on sxcoope1"
+fi
+if [ "$vxdev64" == 1 ]; then
+  echo "=> deployed on vxdev64"
+fi
+if [ "$pagre" == 1 ]; then
+  echo "=> deployed on pagre"
+  echo "   libs4py.so to be linked there"
+fi
+if [ "$bullx" == 1 ]; then
+  echo "=> deployed on beaufix & prolix"
+  echo "   libs4py.so to be linked there (~mary/deploy_epygram_finalize.sh)"
+fi
 
