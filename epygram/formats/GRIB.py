@@ -254,10 +254,7 @@ class GRIBmessage(RecursiveObject, dict):
                 v = str(value)
             else:
                 v = value
-            try:
-                lowlevelgrib.set(self._gid, str(key), v)  # gribapi str/unicode incompatibility
-            except lowlevelgrib.InternalError as e:
-                print(key)
+            lowlevelgrib.set(self._gid, str(key), v)  # gribapi str/unicode incompatibility
         else:
             lowlevelgrib.set_missing(self._gid, str(key))  # gribapi str/unicode incompatibility
         super(GRIBmessage, self).__setitem__(key, value)
@@ -300,10 +297,8 @@ class GRIBmessage(RecursiveObject, dict):
                         attr = lowlevelgrib.get(self._gid, str(attribute), int)  # gribapi str/unicode incompatibility
                     else:
                         attr = lowlevelgrib.get(self._gid, str(attribute))  # gribapi str/unicode incompatibility
-                #except lowlevelgrib.InternalError as e:
-                except Exception as e:
+                except lowlevelgrib.InternalError as e:
                     # differenciation not well done... PB in gribapi
-                    print(attribute)
                     if str(e) == 'Passed array is too small':
                         attr = lowlevelgrib.get_double_array(self._gid, str(attribute))  # gribapi str/unicode incompatibility
                     else:
