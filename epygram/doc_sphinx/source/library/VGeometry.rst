@@ -22,3 +22,4 @@ Functions
 .. autofunction:: hybridH2altitude
 .. autofunction:: pressure2altitude
 .. autofunction:: hybridP_coord_and_surfpressure_to_3D_pressure_field
+.. autofunction:: hybridP_coord_to_3D_altitude_field
