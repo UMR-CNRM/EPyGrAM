@@ -14,9 +14,9 @@ linkname = 'src'
 epygram_home = os.path.join(os.environ['HOME'], '.epygram')
 profile = os.path.join(epygram_home, 'profile')
 
-if 'beaufix' in os.environ['HOSTNAME'] or 'prolix' in os.environ['HOSTNAME']:
+if 'beaufix' in os.environ.get('HOSTNAME', '') or 'prolix' in os.environ.get('HOSTNAME', ''):
     localhost = 'bullx'
-elif 'pagre' in os.environ['HOSTNAME']:
+elif 'pagre' in os.environ.get('HOSTNAME', ''):
     localhost = 'pagre'
 else:
     localhost = 'cnrm'

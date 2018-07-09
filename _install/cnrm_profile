@@ -3,7 +3,7 @@
 VORTEX_INSTALL_DIR=/home/common/sync/vortex/vortex-olive
 PYTHONPATH=$VORTEX_INSTALL_DIR:$VORTEX_INSTALL_DIR/src:$VORTEX_INSTALL_DIR/site:$PYTHONPATH
 export PYTHONPATH
-export PATH=PATH=$VORTEX_INSTALL_DIR/bin:$VORTEX_INSTALL_DIR/site/arpifs_listings/bin:$PATH
+export PATH=$VORTEX_INSTALL_DIR/bin:$VORTEX_INSTALL_DIR/site/arpifs_listings/bin:$PATH
 
 # ecCodes
 PYTHONPATH=/home/common/epygram/ext/eccodes/lib64/python2.7/site-packages:$PYTHONPATH

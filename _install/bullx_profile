@@ -1,9 +1,10 @@
+module load python
 
 # Vortex & Footprints
 VORTEX_INSTALL_DIR=/home/mf/dp/marp/verolive/vortex/vortex-olive
 PYTHONPATH=$VORTEX_INSTALL_DIR:$VORTEX_INSTALL_DIR/src:$VORTEX_INSTALL_DIR/site:$PYTHONPATH
 export PYTHONPATH
-export PATH=PATH=$VORTEX_INSTALL_DIR/bin:$VORTEX_INSTALL_DIR/site/arpifs_listings/bin:$PATH
+export PATH=$VORTEX_INSTALL_DIR/bin:$VORTEX_INSTALL_DIR/site/arpifs_listings/bin:$PATH
 
 # ecCodes
 PYTHONPATH=/home/gmap/mrpe/mary/public/eccodes_python:$PYTHONPATH
