@@ -19,10 +19,8 @@ import os
 import resource
 import numpy as np
 
-#from bronx.syntax.decorators import nicedeco
-
 import grib_utilities
-from . import ctypesForFortran
+import ctypesForFortran
 
 _libs4py = "libs4py.so"  # local name in the directory
 
