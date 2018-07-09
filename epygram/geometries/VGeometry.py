@@ -107,6 +107,19 @@ class VGeometry(RecursiveObject, FootprintBase):
         out.write(separation_line)
         out.write("\n")
 
+    def to_vgrid(self, **kwargs):
+        """
+        Convert the VGeometry object to a :mod:`vgrid` one.
+
+        Other kwargs passed to HybridPressureVGrid() constructor.
+        """
+        from vgrid import HybridPressureVGrid
+        if self.typeoffirstfixedsurface == 119:
+            vg = HybridPressureVGrid(self, **kwargs)
+        else:
+            raise NotImplementedError('to_vgrid(): self.typeoffirstfixedsurface==' + str(self.typeoffirstfixedsurface))
+        return vg
+
 
 ########################
 # CONVERSION FUNCTIONS #

@@ -142,7 +142,9 @@ def hybridH2massheight(A, B, Zsurf, conv2height=False):
     return H
 
 
-def flux2masspressures(pi_tilde, vertical_mean, Ptop=default_Ptop):
+def flux2masspressures(pi_tilde, vertical_mean, Ptop=default_Ptop,
+                       LAPRXPK=True,
+                       LAPRXPK_for_first_level=True):
     """Converts pressures at flux levels to mass levels."""
 
     if not numpy.all(pi_tilde[1:] >= pi_tilde[:-1]):
@@ -151,23 +153,48 @@ def flux2masspressures(pi_tilde, vertical_mean, Ptop=default_Ptop):
     L = len(pi_tilde)
     if not isinstance(pi_tilde, numpy.ndarray):
         pi_tilde = numpy.array(pi_tilde)
-
+    
+    if LAPRXPK:
+        LAPRXPK_for_first_level = LAPRXPK
     pi = numpy.zeros(pi_tilde.shape)
     for k in range(1, L + 1):
         ik = k - 1  # python arranging
         if vertical_mean == 'geometric':
             if k == 1:
-                pi[ik] = (pi_tilde[ik] - Ptop) / (1. + Cpd / Rd)
+                if LAPRXPK_for_first_level:
+                    pi[ik] = (pi_tilde[ik] - Ptop) / (1. + Cpd / Rd)
+                else:
+                    pi[ik] = pi_tilde[ik] / numpy.exp(1.)
             else:
-                pi[ik] = numpy.sqrt(pi_tilde[ik] * pi_tilde[ik - 1])
+                if LAPRXPK:
+                    pi[ik] = numpy.sqrt(pi_tilde[ik] * pi_tilde[ik - 1])
+                else:
+                    pi[ik] = numpy.exp((pi_tilde[ik] * numpy.log(pi_tilde[ik]) -
+                                        pi_tilde[ik - 1] * numpy.log(pi_tilde[ik - 1])) / 
+                                        (pi_tilde[ik] - pi_tilde[ik - 1]) - 1.)
         elif vertical_mean == 'arithmetic':
             if k == 1:
-                pi[ik] = (pi_tilde[ik] + Ptop) / 2.
+                if LAPRXPK_for_first_level:
+                    pi[ik] = (pi_tilde[ik] + Ptop) / 2.
+                else:
+                    pi[ik] = pi_tilde[ik] / numpy.exp(1.)
             else:
-                pi[ik] = (pi_tilde[ik] + pi_tilde[ik - 1]) / 2.
+                if LAPRXPK:
+                    pi[ik] = (pi_tilde[ik] + pi_tilde[ik - 1]) / 2.
+                else:
+                    pi[ik] = numpy.exp((pi_tilde[ik] * numpy.log(pi_tilde[ik]) -
+                                        pi_tilde[ik - 1] * numpy.log(pi_tilde[ik - 1])) / 
+                                        (pi_tilde[ik] - pi_tilde[ik - 1]) - 1.)
+        elif vertical_mean == 'LAPRXPK=False':
+            if k == 1:
+                pi[ik] = pi_tilde[ik] / numpy.exp(1.)
+            else:
+                pi[ik] = numpy.exp((pi_tilde[ik] * numpy.log(pi_tilde[ik]) -
+                                    pi_tilde[ik - 1] * numpy.log(pi_tilde[ik - 1])) / 
+                                   (pi_tilde[ik] - pi_tilde[ik - 1]) - 1.)
         else:
             raise NotImplementedError("vertical_mean not among" +
-                                      " ('geometric', 'arithmetic').")
+                                      " ('geometric', 'arithmetic', 'LAPRXPK=False').")
 
     return pi
 
