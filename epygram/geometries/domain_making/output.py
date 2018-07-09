@@ -96,8 +96,10 @@ def lam_geom2namelists(geometry,
     nam.add(namelist.NamelistBlock('NAMFPG'))
     nam['NAMFPD']['NLON'] = geometry.dimensions['X']
     nam['NAMFPD']['NFPLUX'] = geometry.dimensions['X_CIzone']
+    nam['NAMFPD']['NFPBZONL'] = geometry.dimensions['X_Iwidth']
     nam['NAMFPD']['NLAT'] = geometry.dimensions['Y']
     nam['NAMFPD']['NFPGUX'] = geometry.dimensions['Y_CIzone']
+    nam['NAMFPD']['NFPBZONG'] = geometry.dimensions['Y_Iwidth']
     nam['NAMFPD']['RLONC'] = geometry.getcenter()[0].get('degrees')
     nam['NAMFPD']['RLATC'] = geometry.getcenter()[1].get('degrees')
     nam['NAMFPD']['RDELX'] = geometry.grid['X_resolution']
