@@ -1418,6 +1418,7 @@ class D3Field(D3CommonField):
                 optional=True),
             processtype=dict(
                 optional=True,
+                access='rwx',
                 info="Generating process.")
         )
     )
@@ -1534,7 +1535,8 @@ class D3Field(D3CommonField):
             field_dY = copy.deepcopy(self)
             for field in (field_dX, field_dY):
                 field._attributes['spectral_geometry'] = None
-                field.fid = {'derivative':'x'}
+            field_dX.fid = {'derivative':'x'}
+            field_dY.fid = {'derivative':'y'}
             field_dX.setdata(gpderivX)
             field_dY.setdata(gpderivY)
         else:

@@ -60,6 +60,8 @@ def psikhi2uv(psi, khi):
     v = dkhidy + dpsidx
     u.fid = {'derivative':'u-wind'}
     v.fid = {'derivative':'v-wind'}
+    u.processtype = psi.processtype
+    u.processtype = psi.processtype
     u.validity = psi.validity
     v.validity = psi.validity
     return make_vector_field(u, v)
