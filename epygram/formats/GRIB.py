@@ -1295,8 +1295,10 @@ class GRIB(FileResource):
         if self.openmode != 'w' and config.GRIB_safe_indexes:
             # grib index bug workaround # FIXME: well not me, gribapi:
             # find an available AND unique filename
-            self._open_through = str(tempfile.mkstemp(dir=config.GRIB_safe_indexes,
-                                                      suffix=str(uuid.uuid4()))[1])
+            fd, fn = tempfile.mkstemp(dir=config.GRIB_safe_indexes,
+                                      suffix=str(uuid.uuid4()))
+            os.close(fd)
+            self._open_through = str(fn)
             os.remove(self._open_through)
             os.symlink(self.container.abspath, self._open_through)
         self._file = open(self._open_through, self.openmode)
