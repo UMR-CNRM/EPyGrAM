@@ -23,7 +23,8 @@ from .build import compute_lonlat_included, build_CIE_field, build_lonlat_field
 def lam_geom2namelists(geometry,
                        truncation='linear',
                        orography_subtruncation='quadratic',
-                       Ezone_in_pgd=False):
+                       Ezone_in_pgd=False,
+                       Iwidth_in_pgd=False):
     """
     From the geometry, build the namelist blocks for the necessary namelists.
 
@@ -55,6 +56,9 @@ def lam_geom2namelists(geometry,
     nam['NAM_CONF_PROJ_GRID']['NJMAX'] = geometry.dimensions['Y_CIzone']
     nam['NAM_CONF_PROJ_GRID']['XDX'] = geometry.grid['X_resolution']
     nam['NAM_CONF_PROJ_GRID']['XDY'] = geometry.grid['Y_resolution']
+    if Iwidth_in_pgd:
+        nam['NAM_CONF_PROJ_GRID']['IWIDTH_I_X'] = geometry.dimensions['X_Iwidth']
+        nam['NAM_CONF_PROJ_GRID']['IWIDTH_I_Y'] = geometry.dimensions['Y_Iwidth']
     if Ezone_in_pgd:
         nam['NAM_CONF_PROJ_GRID']['ILONE'] = geometry.dimensions['X'] - geometry.dimensions['X_CIzone']
         nam['NAM_CONF_PROJ_GRID']['ILATE'] = geometry.dimensions['Y'] - geometry.dimensions['Y_CIzone']
@@ -112,7 +116,7 @@ def lam_geom2namelists(geometry,
     return namelists
 
 
-def regll_geom2namelists(geometry):
+def regll_geom2namelists(geometry, domain_name='__YOUR_DOM_NAME__'):
     """
     From the regular LonLat geometry, build the namelist blocks for the
     necessary namelists.
@@ -158,7 +162,7 @@ def regll_geom2namelists(geometry):
     nam.add(namelist.NamelistBlock('NAMFPD'))
     nam.add(namelist.NamelistBlock('NAMFPF'))
     nam['NAMFPC']['CFPFMT'] = 'LALON'
-    nam['NAMFPC']['CFPDOM'] = '__YOUR_DOM_NAME__'
+    nam['NAMFPC']['CFPDOM'] = domain_name.upper()
     nam['NAMFPD']['NLON(1)'] = geometry.dimensions['X']
     nam['NAMFPD']['NLAT(1)'] = geometry.dimensions['Y']
     nam['NAMFPD']['RLONC(1)'] = geometry.getcenter()[0].get('degrees')
