@@ -56,13 +56,15 @@ class HybridPressureVGrid(object):
                  ptop=0.,
                  vgrid_name=None):
         """
-        :param source: may be:
-            - an infosup file from mkvgrid.x
+        Build the grid object from a **source**, which may be
+
+            - an infosup file from ``mkvgrid.x``
             - an epygram Hybrid-Pressure VGeometry; in which case the below
               arguments must/may be provided:
 
-        Case of an epygram Hybrid-Pressure VGeometry source:
-        :param vertical_mean: mandatory, among ('geometric', 'arithmetic')
+        Case of an epygram Hybrid-Pressure VGeometry **source**:
+
+        :param vertical_mean: mandatory, among ('geometric', 'arithmetic', 'LAPRXPK=False')
         :param reference_pressure: at the surface, for building a standard atmosphere
         :param ptop: pressure at the top of the model (upper boundary of the upper layer)
         :param vgrid_name: name of the grid, for plot/saving purpose
@@ -82,7 +84,7 @@ class HybridPressureVGrid(object):
             raise NotImplementedError('construction from else that source:' + str(type(source)))
 
     def _parse_infosup(self, infosup_file):
-        """Parse an infosup file from mkvgrid.x program."""
+        """Parse an infosup file from ``mkvgrid.x`` program."""
         # read
         with io.open(infosup_file, 'r') as f:
             lines = [line.strip('\n').strip() for line in f.readlines()]

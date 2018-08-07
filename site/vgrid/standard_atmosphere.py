@@ -5,7 +5,7 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 
 import os
 import numpy
-import ctypesForFortran  # TODO: to be moved to bronx.syntax
+import ctypesForFortran
 
 IN = ctypesForFortran.IN
 OUT = ctypesForFortran.OUT

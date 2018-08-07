@@ -23,37 +23,6 @@
 /
 ! Domains are counted from bottom to top.
 &NAM_DOM
-  ! * ZALT_DOM: altitude of top of vertical domains, in metres.
-  !   (ZALT_DOM(jpdom) is automatically computed).
-  ZALT_DOM(1)=532.39,
-  ZALT_DOM(2)=1527.68,
-  ZALT_DOM(3)=2168.50,
-  ZALT_DOM(4)=3202.08,
-  ZALT_DOM(5)=7061.76,
-  ZALT_DOM(6)=11133.48,
-  ZALT_DOM(7)=15124.00,
-  ZALT_DOM(8)=22000.00,
-  ! * ZDALT_DOM: altitude depth at top of vertical domains, in metres.
-  !   (ZDALT_DOM(jpdom) is z(jlevh=1)-z(jlevh=2)).
-  ZDALT_DOM(1)=62.87,
-  ZDALT_DOM(2)=135.75,
-  ZDALT_DOM(3)=175.42,
-  ZDALT_DOM(4)=227.34,
-  ZDALT_DOM(5)=290.60,
-  ZDALT_DOM(6)=290.68,
-  ZDALT_DOM(7)=322.00,
-  ZDALT_DOM(8)=900.00,
-  ZDALT_DOM(9)=3000.,
-  ! * IT_DOM: number of layers in each vertical domain.
-  IT_DOM(1)=14,
-  IT_DOM(2)=10,
-  IT_DOM(3)=4,
-  IT_DOM(4)=5,
-  IT_DOM(5)=14,
-  IT_DOM(6)=14,
-  IT_DOM(7)=13,
-  IT_DOM(8)=12,
-  IT_DOM(9)=19,
   ! * CLNAM_DOM: name of each vertical domain.
   CLNAM_DOM(1)='PBLS   ',
   CLNAM_DOM(2)='PBL    ',
@@ -64,6 +33,37 @@
   CLNAM_DOM(7)='TROPOMI',
   CLNAM_DOM(8)='TROPOTP',
   CLNAM_DOM(9)='STRATO ',
+  ! * IT_DOM: number of layers in each vertical domain.
+  IT_DOM(1)=14,
+  IT_DOM(2)=10,
+  IT_DOM(3)=4,
+  IT_DOM(4)=5,
+  IT_DOM(5)=14,
+  IT_DOM(6)=14,
+  IT_DOM(7)=13,
+  IT_DOM(8)=12,
+  IT_DOM(9)=19,
+  ! * ZALT_DOM: altitude of top of vertical domains, in metres.
+  !   (ZALT_DOM(JPDOM) is automatically computed).
+  ZALT_DOM(1)=532.39,
+  ZALT_DOM(2)=1527.68,
+  ZALT_DOM(3)=2168.50,
+  ZALT_DOM(4)=3202.08,
+  ZALT_DOM(5)=7061.76,
+  ZALT_DOM(6)=11133.48,
+  ZALT_DOM(7)=15124.00,
+  ZALT_DOM(8)=22000.00,
+  ! * ZDALT_DOM: altitude depth at top of vertical domains, in metres.
+  !   (ZDALT_DOM(JPDOM) is z(jlevh=1)-z(jlevh=2)).
+  ZDALT_DOM(1)=62.87,
+  ZDALT_DOM(2)=135.75,
+  ZDALT_DOM(3)=175.42,
+  ZDALT_DOM(4)=227.34,
+  ZDALT_DOM(5)=290.60,
+  ZDALT_DOM(6)=290.68,
+  ZDALT_DOM(7)=322.00,
+  ZDALT_DOM(8)=900.00,
+  ZDALT_DOM(9)=3000.,
 /
 &NAM_PARAM
   ! * LLAPRXPK:

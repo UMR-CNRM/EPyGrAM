@@ -1,0 +1,80 @@
+ &NAM_DIM
+   ! - JPN: Total number of layers.
+   JPN=90,
+   ! - JPNPRES: Total number of pure pressure layers (minimum 1 included).
+   JPNPRES=6,
+   ! - JPNSIGM: Total number of pure sigma layers (minimum 1 included).
+   JPNSIGM=1,
+   ! - JPDOM: Total number of vertical domains (minimum 3).
+   JPDOM=8,
+ /
+ &NAM_REF
+   ! * ZP1: pressure of the full layer l=1, in Pa:
+   ZP1=1000.,
+   ! * ZVP00: standard surface pressure (to compute A and B), in pascals:
+   ZVP00=101325.,
+   ! * ZVP00PR: standard surface pressure (to print pressures), in pascals:
+   ZVP00PR=101325.,
+   ! * ZVP200: standard pressure at 200m (mean orography on the Earth) in Pa.:
+   ZVP200=98945.37974,
+   ! * ZALT_BOT: altitude of the bottom full level, in metres.
+   ZALT_BOT=5.,
+ /
+! Domains are counted from bottom to top.
+ &NAM_DOM
+   ! * CLNAM_DOM: name of each vertical domain.
+   CLNAM_DOM(1)='PBLS',
+   CLNAM_DOM(2)='PBL',
+   CLNAM_DOM(3)='ZON8570',
+   CLNAM_DOM(4)='ZON7050',
+   CLNAM_DOM(5)='ZON5035',
+   CLNAM_DOM(6)='ZON3520',
+   CLNAM_DOM(7)='TROPOBT',
+   CLNAM_DOM(8)='TROPOTP',
+   ! * IT_DOM: number of layers in each vertical domain.
+   IT_DOM(1)=15,
+   IT_DOM(2)=13,
+   IT_DOM(3)=13,
+   IT_DOM(4)=14,
+   IT_DOM(5)=11,
+   IT_DOM(6)=8,
+   IT_DOM(7)=8,
+   IT_DOM(8)=8,
+   ! * ZALT_DOM: altitude of top of vertical domains, in metres.
+   !   (ZALT_DOM(JPDOM) is automatically computed).
+   ZALT_DOM(1)=488.,
+   ZALT_DOM(2)=1457.,
+   ZALT_DOM(3)=3028.,
+   ZALT_DOM(4)=5456.,
+   ZALT_DOM(5)=8117.,
+   ZALT_DOM(6)=10874.,
+   ZALT_DOM(7)=15226.,
+   ! * ZDALT_DOM: altitude depth at top of vertical domains, in metres.
+   !   (ZDALT_DOM(JPDOM) is z(jlevh=1)-z(jlevh=2)).
+   ZDALT_DOM(1)=53.,
+   ZDALT_DOM(2)=94.,
+   ZDALT_DOM(3)=145.,
+   ZDALT_DOM(4)=200.,
+   ZDALT_DOM(5)=290.,
+   ZDALT_DOM(6)=395.,
+   ZDALT_DOM(7)=719.,
+   ZDALT_DOM(8)=2068.,
+ /
+ &NAM_PARAM
+   ! * LLAPRXPK:
+   !   Full layers are assumed to be computed as for the options
+   !   LVERTFE=F, NDLNPR=0 of ARPEGE/ALADIN.
+   !   LLAPRXPK=T => pressure(l)=0.5(pressure(lbar-1)+pressure(lbar))
+   !    ("l" stands for full levels, "lbar" for half levels).
+   !   LLAPRXPK=F => a more tricky way to compute pressure(l).
+   !   When using the vertical layers for LVERTFE=F, NDLNPR=0, LAPRXPK=F
+   !    in the model, it is recommended to use LLAPRXPK=F.
+   !   When using the vertical layers for LVERTFE=F, NDLNPR=1,
+   !    in the model, it is recommended to use LLAPRXPK=F.
+   !   When using the vertical layers for LVERTFE=F, NDLNPR=0, LAPRXPK=T
+   !    of for LVERTFE=T, it is recommended to use LLAPRXPK=T.
+   LLAPRXPK=.FALSE.,
+   ! * Controls the hybridicity (recommended values between -3 and -1,
+   !   ZALPH must never be > -1).
+   ZALPH=-1.6,
+ /
