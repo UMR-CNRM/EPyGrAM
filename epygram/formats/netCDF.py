@@ -73,7 +73,7 @@ class netCDF(FileResource):
         if self.openmode in ('r', 'a'):
             try:
                 guess = netCDF4.Dataset(self.container.abspath, self.openmode)
-            except RuntimeError:
+            except (RuntimeError, UnicodeEncodeError):
                 raise IOError("this resource is not a netCDF one.")
             else:
                 guess.close()

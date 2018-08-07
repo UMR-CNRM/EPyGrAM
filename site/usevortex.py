@@ -199,24 +199,6 @@ def get_resources(getmode='epygram',
             ok = []
             with t.sh.ftppool():  # unique ftp connection for the whole request
                 ok = [r.get() for r in resolved]
-                # CLEANME: below, now that vortex has a retry mechanism
-                """
-                for r in resolved:
-                    ftp_count = 4
-                    while ftp_count > 0:
-                        try:
-                            rgot = r.get()
-                        except (ftplib.error_proto, ftplib.error_temp):
-                            if ftp_count > 1:
-                                footprints.logger.warning('unexpected FTP error: will try again after 20s.')
-                                time.sleep(20.)
-                            else:
-                                ok.append(False)
-                            ftp_count -= 1
-                        else:
-                            ok.append(rgot)
-                            ftp_count = 0
-                """
             if all(ok):
                 if getmode == 'fetch':
                     resources = [r.container.abspath for r in resolved]

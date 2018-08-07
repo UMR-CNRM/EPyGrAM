@@ -1,0 +1,203 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[table]{xcolor}
+
+\textheight28.5cm
+\textwidth20cm
+\topmargin-2.cm
+\oddsidemargin -2.5cm
+\evensidemargin 2.5cm
+\headheight0.cm
+\headsep0.cm
+\footskip0.cm
+%\footheight2.5cm
+\marginparwidth1.2cm
+\marginparsep0.3cm
+\pagenumbering{gobble}
+
+%opening
+\title{\texttt{epygram-1.3.3} \textit{cheatsheet}}
+\date{\vspace{-1.5cm}}
+\begin{document}
+
+\maketitle
+Please refer to the complete HTML documention for description of the arguments and options of each method.\\
+
+\rowcolors{2}{gray!25}{white}
+\begin{tabular}{|p{9.5cm}|p{9.5cm}|}
+\rowcolor{gray!50}
+\multicolumn{2}{|c|}{\textbf{Miscellaneous}}\\
+\hline
+\texttt{epygram.init\_env()} & initialize environment for inner libraries\\
+\texttt{epygram.showconfig()} & show config variables, tunable in \texttt{\$HOME/.epygram/userconfig.py}\\
+\texttt{\% epy\_doc.py -o} & open the \texttt{epygram} documentation in a web browser\\
+\hline
+\end{tabular}\\
+\\
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\rowcolors{2}{gray!25}{white}
+\begin{tabular}{|p{9.5cm}|p{9.5cm}|}
+\hline
+\rowcolor{gray!50}
+\multicolumn{2}{|c|}{\textbf{Resources}}\\
+\hline
+\texttt{r = epygram.formats.resource("path/to/file", "r")} & open an existing file with "r" = read mode (or "a" = append)\\
+\texttt{r = epygram.formats.resource("path/to/file", "w",
+$~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~$fmt="FA"} & open a new file with "w" = write mode; required format to be specified\\
+\texttt{r.format, epygram.formats.guess("path/to/file")} & get the format of a resource, a file\\
+\texttt{r.what()} & comprehensive description of the resource contents\\
+\texttt{r.listfields()} & list the fields contained in the resource\\
+\texttt{r.find\_fields\_in\_resource(dict(level=850))} & filter the fields list within resource (GRIB)\\
+\texttt{r.find\_fields\_in\_resource("S001*")} & filter the fields list within resource (FA)\\
+\texttt{f = r.readfield(dict(shortName="2t"))} & read the field uniquely identified by fid\\
+\texttt{r.extract\_profile("S*TEMPERATURE", lon, lat)} & extract a vertical profile from the series of horizontal fields in resource (not all formats)\\
+\texttt{r.extract\_section("S*HUMI.SPECIFI",
+$~~~~~~~~~~~~~~~~~~~$(lon1, lat1), (lon2, lat2))} & extract a vertical section ...\\
+\texttt{r.writefield(f)} & write an \texttt{epygram} field \texttt{f} in resource\\
+\hline
+
+\rowcolor{gray!50}
+\multicolumn{2}{|c|}{\textbf{Meta-Resources}}\\
+\hline
+\texttt{r = epygram.resources.meta\_resource("a\_file", "r",
+$~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~$"CL")} & a \textit{meta} "\textbf{C}ombine\textbf{L}evels" resource (takes resource or filename)\\
+\texttt{r = epygram.resources.meta\_resource([r1, r2,], "r",
+$~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~$"MV")}& a \textit{meta} "\textbf{M}ulti\textbf{V}alidities" resource (id.)\\
+\hline
+\end{tabular}\\
+\\
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\rowcolors{2}{gray!25}{white}
+\begin{tabular}{|p{9.5cm}|p{9.5cm}|}
+\hline
+\rowcolor{gray!50}
+\multicolumn{2}{|c|}{\textbf{Fields}}\\
+\hline
+\texttt{f.fid, f.validity, f.geometry, f.spectral\_geometry} & access to inner metadata objects\\
+\texttt{f.copy(), f.deepcopy()} & get a shallow (all inner data/metadata remain common) or deep copy of the field\\
+\texttt{f.what()} & comprehensive description of the field metadata\\
+\texttt{f.data} & r/w access to the field data array\\
+\texttt{f.getvalue\_ll(lon, lat, interpolation=...)} & get value of field at \textit{lon/lat} point (nearest point by default)\\
+\texttt{f.min(), f.std(), ..., f.stats()} & get basic statistics about the field\\
+\texttt{h = f + g} & do an operation, losing fid and validity metadata\\
+\texttt{f.operation("+", other\_field\_or\_scalar)} & do an operation, without losing metadata (in place)\\
+\texttt{f.sp2gp()} & convert a spectral field to gridpoint (in place)\\
+\texttt{f.gp2sp(a\_spectral\_geometry)} & convert a gridpoint field to the spectral space defined by \texttt{a\_spectral\_geometry}\\
+\texttt{f.shave(minval=0.)} & cut values lower than \texttt{minval}, resp. $\geq$ \texttt{maxval} (in place)\\
+\texttt{f.resample(target\_geometry)} & resample field onto \texttt{target\_geometry}\\
+\texttt{f.resample\_on\_regularll(borders, resolution)} & resample field onto regular lon/lat grid\\
+\texttt{f.global\_shift\_center(180.)} & for global lon/lat regular grids, do a zonal \textit{modulo} rotation of the grid (in place)\\
+\texttt{f.extract\_zoom(dict(lonmin=-2.5, ...))} & extract a zoom given lon/lat borders\\
+\texttt{f.extract\_point(lon, lat)} & extract a PointField (from a H2DField only)\\
+\texttt{f.extract\_subdomain(subdomain\_geometry)} & provided that \texttt{subdomain\_geometry} is contained within \texttt{f.geometry} (e.g. a profile from a 3D Field, cf. \texttt{g.make\_profile\_geometry})\\
+\texttt{f.dump\_to\_nc("newoutfile.nc", variablename="t2m")} & dump any field to netCDF file, using specified variable name\\
+\hline
+\rowcolor{gray!50}
+\multicolumn{2}{|c|}{\textbf{Fields data representation}}\\
+\hline
+\texttt{fig, ax = f.plotfield()} & plot the field and get back the underlying \texttt{matplotlib} figure and axis\\
+\texttt{fig, ax = f.histogram()} & compute and plot a data histogram\\
+\texttt{spectrum = f.dctspectrum()} & compute a DCT spectrum of data\\
+\texttt{fig, ax = spectrum.plotspectrum()} & and plot it\\
+\hline
+\end{tabular}\\
+\\
+
+\rowcolors{2}{gray!25}{white}
+\begin{tabular}{|p{9.5cm}|p{9.5cm}|}
+\hline
+\rowcolor{gray!50}
+\multicolumn{2}{|c|}{\textbf{n-D Fields}}\\
+\hline
+\texttt{f.extend(g)} & extend field \texttt{f} along time dimension with field \texttt{g} (in place)\\
+\texttt{f.time\_reduce("mean")} & do a reduction along time dimension (in place)\\
+\texttt{f.time\_smooth(3)} & do a smoothing along time dimension (in place)\\
+\texttt{f.decumulate()} & do a decumulation operation along time dimension (in place)\\
+\texttt{f.getvalidity(index\_or\_validity)} & extract a sub-field at requested validity\\
+\texttt{f.getlevel(level)} & extract a sub-field at requested level\\
+\hline
+\rowcolor{gray!50}
+\multicolumn{2}{|c|}{\textbf{Vector Fields}}\\
+\hline
+\texttt{wind = epygram.fields.make\_vector\_field(fx, fy)} & make a vector field from two vectorial components Fields (typically u/v for wind)\\
+\texttt{wind = epygram.fields.psikhi2uv(psi, khi)} & make a u/v vector field from stream-function/velocity-potential components \footnotemark[1]\\
+\texttt{wind.reproject\_wind\_on\_lonlat()} & reproject x/y coordinates of vector onto lon/lat (in place)\\
+\texttt{ff = wind.to\_module()} & compute the module of the vector field\\
+\texttt{d = wind.compute\_direction()} & compute the direction of vector
+ field\\
+\texttt{wind.map\_factorize(reverse=False)} & multiply/divide by the map factor (in place)\\
+\texttt{vor, div = wind.compute\_vordiv()} & compute vorticity and divergence from u/v components \footnotemark[1]\\
+\hline
+\end{tabular}\\
+\\
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\rowcolors{2}{gray!25}{white}
+\begin{tabular}{|p{9.5cm}|p{9.5cm}|}
+\hline
+\rowcolor{gray!50}
+\multicolumn{2}{|c|}{\textbf{Geometries}}\\
+\hline
+\texttt{g.name, g.structure, g.grid, g.dimensions, [g.projection]} & what defines a geometry\\
+\texttt{g.what()} & comprehensive description of the geometry\\
+\texttt{lons, lats = g.get\_lonlat\_grid()} & get the longitudes and latitudes arrays of all gridpoints of the geometry\\
+\texttt{g.make\_point\_geometry(lon, lat)} & extract a point geometry from the geometry, keeping as much properties as possible\\
+\texttt{g.make\_profile\_geometry(lon, lat)} & extract a profile geometry from the geometry, keeping as much properties as possible\\
+\texttt{g.make\_section\_geometry((lon1, lat1), (lon2, lat2))} & extract a section geometry from the geometry, keeping as much properties as possible\\
+\texttt{g.gimme\_corners\_ll()} & get the lon/lat position of the grid's corners\\
+\texttt{g.point\_is\_inside\_domain(lon, lat)} & check that a point is  inside the domain\\
+\texttt{g.plotgeometry()} & plot the borders of the domain\\
+\texttt{g.distance((lon1, lat1), (lon2, lat2))} & compute the distance between two points\\
+\texttt{g.linspace((lon1, lat1), (lon2, lat2), N)} & compute a series of N linearly spaced points between two ends\\
+\texttt{g.azimuth((lon1, lat1), (lon2, lat2))} & compute an azimuth from one point to another\\
+\texttt{g.make\_basemap()} & compute a \texttt{Basemap} object used to map geographical coordinates to a \texttt{Matplotlib} axis plotting coordinates\\
+\texttt{g.nearest\_points(lon, lat, request=dict(n="2*2"))} & get the points of the grid nearest to (lon, lat)\\
+\texttt{g.ij2ll(), g.ll2ij()} & conversion methods between (i, j) indexes of the grid and (lon, lat) coordinates\\
+\texttt{g.map\_factor(*position)} & get the map factor at given position (depend on the geometry)\\
+\texttt{g.map\_factor\_field()} & get the map factor over the whole grid as a Field\\
+\hline
+\rowcolor{gray!50}
+\multicolumn{2}{|c|}{\textbf{Gauss grids}}\\
+\hline
+\texttt{g.*resolution*(...)} & various local resolution computation methods\\
+\hline
+\rowcolor{gray!50}
+\multicolumn{2}{|c|}{\textbf{Vertical Geometry}}\\
+\hline
+\texttt{g.vcoordinate} & the vertical coordinate within a Geometry\\
+\texttt{from epygram.geometries.VGeometry import <function>}& \\
+\texttt{hybridP2pressure(...), hybridP2altitude(...)} & vertical coordinate type conversion functions\\
+\texttt{hybridH2pressure(...), hybridH2altitude(...)} & vertical coordinate type conversion functions\\
+\texttt{hybridP\_coord\_and\_surfpressure\_to\_3D\_pressure\_field(
+$~~~~~$hybridP\_geometry, Psurf, vertical\_mean)} & compute a 3D pressure field from a hybrid-pressure coordinate and a surface pressure field\\
+\texttt{hybridP\_coord\_to\_3D\_altitude\_field(
+$~~~~~$hybridP\_geometry, Psurf, vertical\_mean,
+$~~~~~$t3D, q3D)} & compute a 3D altitude field from a hybrid-pressure coordinate, a surface pressure field and 3D temperature and specific humidity fields\\
+\hline
+\end{tabular}\\
+\\
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\rowcolors{2}{gray!25}{white}
+\begin{tabular}{|p{9.5cm}|p{9.5cm}|}
+\rowcolor{gray!50}
+\multicolumn{2}{|c|}{\textbf{Validities}}\\
+\hline
+\texttt{f.validity.get()} & instantaneous validity (\texttt{datetime.datetime})\\
+\texttt{f.validity.getbasis()} & initial (basis) validity (\texttt{datetime.datetime})\\
+\texttt{f.validity.term()} & term (\texttt{datetime.timedelta})\\
+\texttt{f.validity.cumulativeduration()} & cumulative duration (\texttt{datetime.timedelta})\\
+\texttt{f.validity.set(...)} & modify any of the validity attributes (with \texttt{datetime} objects)\\
+\hline
+\end{tabular}\\
+\\
+
+\footnotetext[1]{uses spectral derivative operators, $\Rightarrow$ components must be spectral}
+
+\end{document}

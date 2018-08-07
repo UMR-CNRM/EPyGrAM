@@ -102,28 +102,32 @@ def inquire_field_dict(fieldname, defaults_to_Misc=True):
 def _complete_generic_fid_from_name(generic_fid, fieldname):
     """Complete a **generic_fid** with information of **fieldname**."""
     # 'level'
-    if 'level' not in generic_fid:
-        if generic_fid['typeOfFirstFixedSurface'] == 119:  # hybrid-pressure
-            generic_fid['level'] = int(fieldname[1:4])
-        elif generic_fid['typeOfFirstFixedSurface'] == 100:  # isobaric (P)
-            level = int(fieldname[1:6])
-            if level == 0:  # problem linked to number of digits
-                level = 100000
-            generic_fid['level'] = level / 100.  # hPa
-        elif generic_fid['typeOfFirstFixedSurface'] == 103:  # height
-            try:
-                generic_fid['level'] = int(fieldname[1:6])
-            except ValueError:
-                generic_fid['level'] = 255
-        elif generic_fid['typeOfFirstFixedSurface'] == 109:  # PV
-            generic_fid['level'] = float(fieldname[1:4]) / 10.  # to handle PVU
-        elif generic_fid['typeOfFirstFixedSurface'] == 20:  # T
-            if fieldname[0:2] == 'KT':
-                generic_fid['level'] = int(fieldname[2:5])
-            elif fieldname[0:2] == 'T':
+    if generic_fid.get('typeOfFirstFixedSurface', False):
+        if 'level' not in generic_fid:
+            if generic_fid['typeOfFirstFixedSurface'] == 119:  # hybrid-pressure
                 generic_fid['level'] = int(fieldname[1:4])
-        else:
-            generic_fid['level'] = 0
+            elif generic_fid['typeOfFirstFixedSurface'] == 100:  # isobaric (P)
+                level = int(fieldname[1:6])
+                if level == 0:  # problem linked to number of digits
+                    level = 100000
+                generic_fid['level'] = level / 100.  # hPa
+            elif generic_fid['typeOfFirstFixedSurface'] == 103:  # height
+                try:
+                    generic_fid['level'] = int(fieldname[1:6])
+                except ValueError:
+                    generic_fid['level'] = 255
+            elif generic_fid['typeOfFirstFixedSurface'] == 109:  # PV
+                generic_fid['level'] = float(fieldname[1:4]) / 10.  # to handle PVU
+            elif generic_fid['typeOfFirstFixedSurface'] == 20:  # T
+                if fieldname[0:2] == 'KT':
+                    generic_fid['level'] = int(fieldname[2:5])
+                elif fieldname[0:2] == 'T':
+                    generic_fid['level'] = int(fieldname[1:4])
+            else:
+                generic_fid['level'] = 0
+    else:
+        generic_fid['typeOfFirstFixedSurface'] = 255
+        generic_fid['level'] = 0
     # ISP
     if fieldname[0] == 'C':
         if any([sat in fieldname for sat in ['METEOSAT', 'GOES', 'MTSAT']]):
@@ -1026,8 +1030,9 @@ class FA(FileResource):
                         dataReal)
 
         elif isinstance(field, H2DField):
-            assert [self.geometry.name, self.geometry.dimensions] == \
-                   [field.geometry.name, field.geometry.dimensions], \
+            assert (self.geometry.name == field.geometry.name and
+                    self.geometry.get_datashape(d4=True, force_dimZ=1, dimT=1) ==
+                    field.geometry.get_datashape(d4=True, force_dimZ=1, dimT=1)), \
                 "gridpoint geometry incompatibility: a FA can hold only one geometry."
             if field.geometry.vcoordinate.grid and field.geometry.vcoordinate.typeoffirstfixedsurface == 119:
                 # tolerant check because of encoding differences in self
@@ -1140,6 +1145,15 @@ class FA(FileResource):
     def delfield(self, fieldname):
         """Deletes a field from file "in place"."""
         wlfi.wlfisup(self._unit, fieldname)
+
+    def modify_validity(self, **kwargs):
+        """
+        Modify the validity of the resource in place.
+
+        All **kwargs to be passed to self.validity.set(**kwargs)
+        """
+        self.validity.set(**kwargs)
+        self._set_validity()
 
     @FileResource._openbeforedelayed
     def extractprofile(self, pseudoname, lon=None, lat=None,

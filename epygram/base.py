@@ -13,6 +13,7 @@ import numpy
 import datetime
 import copy
 import sys
+import hashlib
 import six
 
 import footprints
@@ -158,6 +159,14 @@ class Field(RecursiveObject, FootprintBase):
                                        - config.mask_outside,
                                        config.mask_outside)
         return int(numpy.count_nonzero(abs(data) > config.epsilon))
+
+    def sha256_checksum(self, **kwargs):
+        """
+        Return a SHA256 checksum of the field data.
+        """
+        s256 = hashlib.sha256()
+        s256.update(self.getdata(**kwargs).tobytes())
+        return s256.hexdigest()
 
 #############
 # OPERATORS #

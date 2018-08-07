@@ -8,6 +8,11 @@ export PATH=$VORTEX_INSTALL_DIR/bin:$VORTEX_INSTALL_DIR/site/arpifs_listings/bin
 # ecCodes
 PYTHONPATH=/home/common/epygram/ext/eccodes/lib64/python2.7/site-packages:$PYTHONPATH
 export PYTHONPATH
+# and unless you have a good reason for it, let the library manage on her own:
+unset GRIB_SAMPLES_PATH
+unset GRIB_DEFINITION_PATH
+unset ECCODES_SAMPLES_PATH
+unset ECCODES_DEFINITION_PATH
 
 # EPyGrAM
 EPYGRAM_INSTALL_DIR=$HOME/.epygram/src

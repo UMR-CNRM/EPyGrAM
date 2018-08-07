@@ -127,7 +127,7 @@ def main(open_browser=False,
         t = threading.Thread(target=util.func_open_browser,
                              args=[epyweb_url],
                              kwargs={'delay':1.})
-        t.start()
+        t.start()  # FIXME: no join ?!!
     app = util.PortApplication(shared_urls, globals())
     try:
         app.run(port)

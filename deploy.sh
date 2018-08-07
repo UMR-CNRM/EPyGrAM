@@ -22,10 +22,10 @@ if [ "$mkdoc" == "mkdoc" ]; then
     ./mk_html_doc.sh
     cd ../..
 fi
-sxcoope1=0
+sxcoope1=1
 vxdev64=0
 pagre=1
-bullx=0
+bullx=1
 
 
 # Filter
@@ -48,21 +48,29 @@ no_epyweb='--exclude site/epyweb'
 # Rsync
 # sxcoope1
 if [ "$sxcoope1" == 1 ]; then
+  echo "------------------------------------------------------"
+  echo "...sxcoope1..."
   LOC_SXCOOPE="sxcoope1:~mary/sync_epygram/EPyGrAM$version/"  # from which are synchronised all CNRM workstations
   rsync -avL * $LOC_SXCOOPE $to_exclude4all
 fi
 # vxdev64
 if [ "$vxdev64" == 1 ]; then
+  echo "------------------------------------------------------"
+  echo "...vxdev64..."
   LOC_VXDEV64="vxdev64:~mary/EPyGrAM$version/"  # vxdev64: development server @ CNRM (OS updates)
   rsync -avL * $LOC_VXDEV64 $to_exclude4all $no_pyc $no_source_doc
 fi
 # pagre
 if [ "$pagre" == 1 ]; then
+  echo "------------------------------------------------------"
+  echo "...pagre..."
   LOC_PAGRE="pagre:~mary/public/EPyGrAM$version/"  # COMPAS server
   rsync -avL * $LOC_PAGRE $to_exclude4all $no_pyc $no_libs4py
 fi
 # bullx
 if [ "$bullx" == 1 ]; then
+  echo "------------------------------------------------------"
+  echo "...bullx..."
   bull_exclude="$to_exclude4all $no_pyc $no_source_doc $no_libs4py $no_epyweb"
   bull_public="~mary/public/EPyGrAM$version/"
   rsync -avL * "beaufix:$bull_public" $bull_exclude
