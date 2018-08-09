@@ -126,9 +126,9 @@ User modules
 Colormaps
 ---------
 
-.. autodata:: usercolormaps
-.. autodata:: usercolormaps_scaling
+See :ref:`Colormaps <epy-colormaps>` for illustration of the EPyGrAM colormaps.
+
 .. autodata:: colormaps
 .. autodata:: colormaps_scaling
-
-
+.. autodata:: usercolormaps
+.. autodata:: usercolormaps_scaling
