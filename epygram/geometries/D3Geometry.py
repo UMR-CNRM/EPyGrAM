@@ -2245,11 +2245,13 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
         if arpifs_var_names:
             varname = ' (ELX)'
         write_formatted(out, "Domain width in X, in deg" + varname,
-                        grid['X_resolution'].get('degrees') * dimensions['X'])
+                        grid['X_resolution'].get('degrees') *
+                        (dimensions['X'] - 1))
         if arpifs_var_names:
             varname = ' (ELY)'
         write_formatted(out, "Domain width in Y, in deg" + varname,
-                        grid['Y_resolution'].get('degrees') * dimensions['Y'])
+                        grid['Y_resolution'].get('degrees') *
+                        (dimensions['Y'] - 1))
         write_formatted(out, "Max Longitude in deg", lons.max())
         write_formatted(out, "Min Longitude in deg", lons.min())
         write_formatted(out, "Max Latitude in deg", lats.max())
@@ -2643,9 +2645,11 @@ class D3RotLLGeometry(D3RegLLGeometry):
         write_formatted(out, "Resolution in Y, in deg",
                         grid['Y_resolution'].get('degrees'))
         write_formatted(out, "Domain width in X, in deg",
-                        grid['X_resolution'].get('degrees') * dimensions['X'])
+                        grid['X_resolution'].get('degrees') *
+                        (dimensions['X'] - 1))
         write_formatted(out, "Domain width in Y, in deg",
-                        grid['Y_resolution'].get('degrees') * dimensions['Y'])
+                        grid['Y_resolution'].get('degrees') *
+                        (dimensions['Y'] - 1))
         write_formatted(out, "Max Longitude in deg", lons.max())
         write_formatted(out, "Min Longitude in deg", lons.min())
         write_formatted(out, "Max Latitude in deg", lats.max())
@@ -3607,12 +3611,12 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
             varname = ' (ELX)'
         write_formatted(out,
                         "Domain width (of C+I) in X, in metres" + varname,
-                        grid['X_resolution'] * dimX)
+                        grid['X_resolution'] * (dimX - 1))
         if arpifs_var_names:
             varname = ' (ELY)'
         write_formatted(out,
                         "Domain width (of C+I) in Y, in metres" + varname,
-                        grid['Y_resolution'] * dimY)
+                        grid['Y_resolution'] * (dimY - 1))
         write_formatted(out, "Max Longitude (of C+I) in deg", lons.max())
         write_formatted(out, "Min Longitude (of C+I) in deg", lons.min())
         write_formatted(out, "Max Latitude (of C+I) in deg", lats.max())

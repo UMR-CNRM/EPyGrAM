@@ -10,7 +10,6 @@ import os
 import json
 from six.moves import cPickle as pickle  # @UnresolvedImport
 import uuid
-import copy
 
 import matplotlib
 matplotlib.use("Agg")
@@ -45,7 +44,7 @@ class GetCacheSize(object):
         try:
             cacheSize = os.popen("du -kshx " + vortex_cache).read()
             return json.dumps(cacheSize)
-        except:
+        except Exception:
             if all_fatal_exceptions:
                 raise
             return "Error in cache size retrieval"
@@ -54,12 +53,12 @@ class GetCacheSize(object):
 class GetGeometries(object):
     """Return the list of existing geometries"""
     def POST(self):
-        import vortex
+        import usevortex
         toremove_geoms = ['assmp1', 'assmp1sp',
                           'assmp2', 'assmp2sp',
                           'assms1', 'assms1sp',
                           'assms2', 'assms2sp']
-        geoms = copy.copy(vortex.data.geometries.keys())
+        geoms = usevortex.list_vortex_geometries()
         for g in toremove_geoms:
             geoms.remove(g)
         return json.dumps(geoms)
@@ -188,7 +187,7 @@ class GetMinMax(object):
                 champ = {str(k):champ[k] for k in champ.keys()}
                 champ_v['typeOfLevel'] = champ['typeOfLevel'].encode()
                 champ_v = {str(k):champ[k] for k in champ_v.keys()}
-            except:
+            except Exception:
                 print("Erreur unicode")
 
             resource = epygram.formats.resource(fichier, 'r')
@@ -345,7 +344,7 @@ class MyPlot(object):
                             field.sp2gp()
                         if cle in operation:
                             field = check_for_operation(operation[cle], field)
-                        if decumul[cle] == True:
+                        if decumul[cle] is True:
                             if indiceDecumul == 0:
                                 fieldDecumul = field
                                 indiceDecumul = +1
@@ -360,7 +359,7 @@ class MyPlot(object):
                             try:  # Cas des RR @0h : param n'existe pas
                                 validity = field.validity
                                 fid = field.fid
-                                if Lexception == False:  # cas normal
+                                if Lexception is False:  # cas normal
                                     field = field - fieldDecumul
                                 else:  # cas juste après un champ inexistant : field=field et fin de l'exception
                                     Lexception = False
@@ -451,14 +450,14 @@ class MyPlotOverlay(object):
                 try:
                     champ[cle]['typeOfLevel'] = val['typeOfLevel'].encode()
                     champ[cle] = {str(k):champ[cle][k] for k in val.keys()}
-                except:
+                except Exception:
                     print("Warning unicode")
 
             for cle, val in champ_v.items():
                 try:
                     champ_v[cle]['typeOfLevel'] = val['typeOfLevel'].encode()
                     champ_v[cle] = {str(k):champ_v[cle][k] for k in val.keys()}
-                except:
+                except Exception:
                     print("Warning unicode")
 
             figax = (None, None)
@@ -705,7 +704,7 @@ class MyPlotDiff(object):
             del current_basemap
 
             return json.dumps(out2)
-        except:
+        except Exception:
             raise
             print("Erreur 3615 diff")
 

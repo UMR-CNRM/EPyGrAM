@@ -140,5 +140,5 @@ if __name__ == '__main__':
          xaxis=args.xaxis,
          yaxis=args.yaxis,
          outputfilename=args.output,
-         to_clean=args.no_clean,
+         to_clean=args.to_clean,
          fig_kwargs=fig_kwargs)

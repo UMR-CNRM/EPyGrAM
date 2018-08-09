@@ -12,11 +12,9 @@ Of course, this module need to have a proper Vortex installation !
 from __future__ import print_function, absolute_import, unicode_literals, division
 
 import uuid
-import ftplib
 import os
 import datetime
 import copy
-import time
 from contextlib import contextmanager
 
 import footprints
@@ -28,6 +26,11 @@ import vortex
 from vortex import toolbox
 import common  # @UnusedImport : for footprints to load classes
 import olive  # @UnusedImport : for footprints to load classes
+
+
+def list_vortex_geometries():
+    """Proxy for epyweb not to be vortex directly dependant."""
+    return list(vortex.data.geometries.keys())
 
 
 def set_defaults(**defaults):

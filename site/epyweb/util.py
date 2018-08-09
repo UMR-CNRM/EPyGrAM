@@ -12,7 +12,6 @@ import copy
 import six
 
 import matplotlib
-from numpy.core.defchararray import startswith
 matplotlib.use("Agg")
 
 from . import web

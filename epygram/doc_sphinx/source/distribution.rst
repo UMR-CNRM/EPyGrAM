@@ -25,6 +25,11 @@ Distribution/Installation is available:
   - on the MF archive machine **hendrix**, under /home/mary/public/
   - (soon, to be confirmed: on https://hirlam.org/trac/browser/)
   
+Dependancies
+------------
+
+:ref:`See here <dependancies>`
+  
 License
 -------
 

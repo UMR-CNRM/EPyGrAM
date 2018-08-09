@@ -129,12 +129,15 @@ def hybridP2pressure(hybridP_geometry, Psurf, vertical_mean,
     """
     Converts a 'hybrid_pressure' VGeometry to a 'pressure' (in hPa) VGeometry.
 
-    :param Psurf: the surface pressure in Pa, needed for integration of Ai and Bi.
-    :param gridposition: (= 'mass' or 'flux') is the target grid position. By
-      default the data position in the origin geometry is taken.
-    :param vertical_mean: defines the kind of averaging done on the vertical
+    :param VGeometry hybridP_geometry: the initial vertical coordinate
+    :param float Psurf: the surface pressure in Pa, needed for integration of Ai and Bi.
+    :param str vertical_mean: defines the kind of averaging done on the vertical
       to compute half-levels from full-levels, or inverse: 'geometric' or
       'arithmetic'.
+    :param str gridposition: (= 'mass' or 'flux') is the target grid position. By
+      default the data position in the origin geometry is taken.
+
+    :rtype: VGeometry
     """
     assert isinstance(hybridP_geometry, VGeometry), "*hybridP_geometry* must be of type VGeometry."
     if hybridP_geometry.typeoffirstfixedsurface != 119:
@@ -169,6 +172,8 @@ def hybridH2pressure(hybridH_geometry, P, position):
 
     :param P: the vertical profile of pressure to use
     :param position: the position of P values on the grid ('mass' or 'flux')
+
+    :rtype: VGeometry
     """
     assert isinstance(hybridH_geometry, VGeometry), "*hybridH_geometry* must be of type VGeometry."
     if hybridH_geometry.typeoffirstfixedsurface != 118:
@@ -204,16 +209,19 @@ def hybridP2altitude(hybridP_geometry, R, T, Psurf, vertical_mean,
     """
     Converts a hybrid_pressure coordinate grid into altitude of mass levels.
 
-    :param R: the profile of specific gas constant (J/kg/K).
-    :param T: the profile of temperature (K).
-    :param Psurf: the surface pressure, needed for integration of Ai and Bi.
-    :param Pdep: the optional profile of NH pressure departures.
-    :param Phi_surf: the optional surface geopotential.
-      If given, the final coordinate is altitude above sea level,
-      else height above ground surface.
-    :param vertical_mean: defines the kind of averaging done on the vertical
+    :param VGeometry hybridP_geometry: the initial vertical coordinate
+    :param list,numpy.ndarray R: the profile of specific gas constant (J/kg/K).
+    :param list,numpy.ndarray T: the profile of temperature (K).
+    :param float Psurf: the surface pressure, needed for integration of Ai and Bi.
+    :param str vertical_mean: defines the kind of averaging done on the vertical
       to compute half-levels from full-levels, or inverse: 'geometric' or
       'arithmetic'.
+    :param list,numpy.ndarray Pdep: the optional profile of NH pressure departures.
+    :param float Phi_surf: the optional surface geopotential.
+      If given, the final coordinate is altitude above sea level,
+      else height above ground surface.
+
+    :rtype: VGeometry
     """
     assert isinstance(hybridP_geometry, VGeometry), "*hybridP_geometry* must be of type VGeometry."
     if hybridP_geometry.typeoffirstfixedsurface != 119:
@@ -257,6 +265,8 @@ def hybridH2altitude(hybridH_geometry, Zsurf,
       By default the data position in the origin geometry is taken.
     :param conv2height: if True, conversion into height is performed instead of
       altitude.
+
+    :rtype: VGeometry
     """
     assert isinstance(hybridH_geometry, VGeometry), "*hybridH_geometry* must be of type VGeometry."
     if hybridH_geometry.typeoffirstfixedsurface != 118:
@@ -346,14 +356,16 @@ def hybridP_coord_and_surfpressure_to_3D_pressure_field(
     compute a 3D field containing the pressure (in hPa) at each hybridP level
     for each gridpoint.
 
-    :param hybridP_geometry: the hybridP VGeometry
-    :param Psurf: the surface pressure H2DField in Pa, needed for integration of
-                  Ai and Bi.
-    :param vertical_mean: defines the kind of averaging done on the vertical
+    :param VGeometry hybridP_geometry: the hybridP VGeometry
+    :param H2DField Psurf: the surface pressure H2DField in Pa, needed for
+        integration of Ai and Bi.
+    :param str vertical_mean: defines the kind of averaging done on the vertical
       to compute half-levels from full-levels, or inverse: 'geometric' or
       'arithmetic'.
-    :param gridposition: (= 'mass' or 'flux') is the target grid position. By
+    :param str gridposition: (= 'mass' or 'flux') is the target grid position. By
       default the data position in the origin geometry is taken.
+
+    :rtype: D3Field
     """
     from epygram.fields import H2DField
     assert isinstance(Psurf, H2DField)
@@ -381,25 +393,30 @@ def hybridP_coord_to_3D_altitude_field(
         Pdep3D=None,
         Phi_surf=None):
     """
-    From a hybridP Vgeometry and a surface pressure (in Pa) H2D field,
-    compute a 3D field containing the pressure (in hPa) at each hybridP level
+    From a hybridP Vgeometry, a surface pressure (in Pa) H2D field,
+    and temperature and specific humidity 3D fields,
+    compute a 3D field containing the altitude (in m) at each hybridP level
     for each gridpoint.
 
-    :param hybridP_geometry: the hybridP VGeometry
-    :param Psurf: the surface pressure H2DField in Pa, needed for integration of
-                  Ai and Bi.
-    :param vertical_mean: defines the kind of averaging done on the vertical
+    Hydrometeors 3D fields can be provided for more accurate R computation.
+
+    :param VGeometry hybridP_geometry: the hybridP VGeometry
+    :param H2DField Psurf: the surface pressure H2DField in Pa, needed for
+        integration of Ai and Bi.
+    :param str vertical_mean: defines the kind of averaging done on the vertical
       to compute half-levels from full-levels, or inverse: 'geometric' or
       'arithmetic'.
-    :param t3D: temperature D3Field
-    :param q3D: specific humidity D3Field
-    :param ql3D: liquid water content D3Field
-    :param qi3D: ice water content D3Field
-    :param qr3D: rain water content D3Field
-    :param qs3D: snow water content D3Field
-    :param qg3D: graupel water content D3Field
-    :param Pdep3D: non-hydrostatic pressure departure D3Field
-    :param Phi_surf: surface geopotential H2DField (for altitude vs. height)
+    :param D3Field t3D: temperature D3Field
+    :param D3Field q3D: specific humidity D3Field
+    :param D3Field ql3D: liquid water content D3Field
+    :param D3Field qi3D: ice water content D3Field
+    :param D3Field qr3D: rain water content D3Field
+    :param D3Field qs3D: snow water content D3Field
+    :param D3Field qg3D: graupel water content D3Field
+    :param D3Field Pdep3D: non-hydrostatic pressure departure D3Field
+    :param H2DField Phi_surf: surface geopotential H2DField (for altitude vs. height)
+
+    :rtype: D3Field
     """
     from epygram.fields import D3Field, H2DField
     from bronx.meteo.conversion import q2R

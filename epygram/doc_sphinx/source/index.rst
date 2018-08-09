@@ -23,7 +23,9 @@ Contents:
    FAQ
    AppTools <apptools>
    Gallery (use-cases) <gallery/index>
+   Colormaps <cmaps>
 
+:download:`The epygram cheatsheet <_static/cheatsheet.pdf>`
 
 Indices and tables
 ==================

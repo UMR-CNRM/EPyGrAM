@@ -153,7 +153,7 @@ def flux2masspressures(pi_tilde, vertical_mean, Ptop=default_Ptop,
     L = len(pi_tilde)
     if not isinstance(pi_tilde, numpy.ndarray):
         pi_tilde = numpy.array(pi_tilde)
-    
+
     if LAPRXPK:
         LAPRXPK_for_first_level = LAPRXPK
     pi = numpy.zeros(pi_tilde.shape)
@@ -170,7 +170,7 @@ def flux2masspressures(pi_tilde, vertical_mean, Ptop=default_Ptop,
                     pi[ik] = numpy.sqrt(pi_tilde[ik] * pi_tilde[ik - 1])
                 else:
                     pi[ik] = numpy.exp((pi_tilde[ik] * numpy.log(pi_tilde[ik]) -
-                                        pi_tilde[ik - 1] * numpy.log(pi_tilde[ik - 1])) / 
+                                        pi_tilde[ik - 1] * numpy.log(pi_tilde[ik - 1])) /
                                         (pi_tilde[ik] - pi_tilde[ik - 1]) - 1.)
         elif vertical_mean == 'arithmetic':
             if k == 1:
@@ -183,14 +183,14 @@ def flux2masspressures(pi_tilde, vertical_mean, Ptop=default_Ptop,
                     pi[ik] = (pi_tilde[ik] + pi_tilde[ik - 1]) / 2.
                 else:
                     pi[ik] = numpy.exp((pi_tilde[ik] * numpy.log(pi_tilde[ik]) -
-                                        pi_tilde[ik - 1] * numpy.log(pi_tilde[ik - 1])) / 
+                                        pi_tilde[ik - 1] * numpy.log(pi_tilde[ik - 1])) /
                                         (pi_tilde[ik] - pi_tilde[ik - 1]) - 1.)
         elif vertical_mean == 'LAPRXPK=False':
             if k == 1:
                 pi[ik] = pi_tilde[ik] / numpy.exp(1.)
             else:
                 pi[ik] = numpy.exp((pi_tilde[ik] * numpy.log(pi_tilde[ik]) -
-                                    pi_tilde[ik - 1] * numpy.log(pi_tilde[ik - 1])) / 
+                                    pi_tilde[ik - 1] * numpy.log(pi_tilde[ik - 1])) /
                                    (pi_tilde[ik] - pi_tilde[ik - 1]) - 1.)
         else:
             raise NotImplementedError("vertical_mean not among" +
@@ -247,24 +247,20 @@ def flux2massheights(H_tilde):
 
 def mass2fluxheights(H):
     """Converts altitudes at mass levels to flux levels."""
-
-    if not numpy.all(H[1:] >= H[:-1]):
-        raise ValueError('H array must be in ascending order.')
-
-    # L = len(H)
-    if not isinstance(H, numpy.ndarray):
-        H = numpy.array(H)
-
-    H_tilde = numpy.zeros(H.shape)
     raise NotImplementedError('mass2fluxheights is not yet implemented.')
+#    if not numpy.all(H[1:] >= H[:-1]):
+#        raise ValueError('H array must be in ascending order.')
+    # L = len(H)
+#    if not isinstance(H, numpy.ndarray):
+#        H = numpy.array(H)
+#    H_tilde = numpy.zeros(H.shape)
 #    for k in range(1, L+1):
 #        ik = k-1 # python arranging
 #        if k == 1:
 #            pi_tilde[ik] = (pi[ik] + Ptop) * (1. + Cpd/Rd)
 #        else:
 #            pi_tilde[ik] = pi[ik]**2 / pi_tilde[ik-1]
-
-    return H_tilde
+#    return H_tilde
 
 
 def pressure2altitude(R, T, vertical_mean,

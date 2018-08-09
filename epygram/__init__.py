@@ -29,38 +29,17 @@ stuff for recompiling it on other platforms. Be aware to be recompiled, this
 library needs an *arpifs* pack pre-compiled with *gmkpack*, and *gribex*
 library.
 
-Other dependencies,
+Complete dependencies to be found in :ref:`Dependancies <dependancies>`.
 
-Mandatory:
-
-- :mod:`numpy`
-- :mod:`pyproj`
-
-Functional (needed for specific, more or less usual functionalities):
-
-- :mod:`matplotlib`
-- :mod:`mpl_toolkits.basemap`
-- :mod:`scipy`
-- :mod:`pyresample`
-- :mod:`nbsphinx`
-
-it is recalled that packages available on Pypi can be installed locally using:
-pip install --user <packagename>
-
-and (if according formats are activated):
-
-- :mod:`dateutil` (only for :class:`epygram.formats.netCDF`)
-- :mod:`gribapi` (only for :mod:`epygram.formats.GRIB`)
-- :mod:`netCDF4` (only for :class:`epygram.formats.netCDF`)
-- :mod:`PIL` (only for :class:`epygram.formats.TIFFMF`)
-
+It is recalled that packages available on Pypi.org can be installed locally
+using: ``pip install --user <packagename>``
 
 
 .. _license:
 
 ********************************************************************************
 
-Copyright Météo France (2014 - 2016),
+Copyright Météo France (2014 - 2018),
 contributors :
 A. Mary <Météo France, CNRM/GMAP/COOPE, alexandre.mary@meteo.fr> ||
 S. Riette
@@ -122,7 +101,8 @@ epylog = footprints.loggers.getLogger(__name__)
 
 # Check that Python version is compatible
 if sys.version_info.major == 3:
-    epylog.warning('*epygram* is now supposed to be compatible with Python3, but ecCodes/grib_api is not !')
+    epylog.warning('*epygram* is now supposed to be compatible with Python3, ' +
+                   'but ecCodes/grib_api is not !')
 else:
     if sys.version_info.minor < 7:
         epylog.warning('*epygram* requires Python2.7 at least. ' +

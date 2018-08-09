@@ -13,7 +13,6 @@ This module uses code from pylibtiff (https://pypi.python.org/pypi/libtiff, http
 from __future__ import print_function, absolute_import, division  # , unicode_literals
 
 import os
-import StringIO
 import numpy
 import mmap
 import PIL.Image
@@ -215,7 +214,7 @@ class TiffFile(object):
         """
         Returns the stringio representeing the buffer.
         """
-        return StringIO.StringIO(self.get_buffer())
+        return six.StringIO(self.get_buffer())
 
     def get_PILImage(self):
         """
