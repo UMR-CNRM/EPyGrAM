@@ -752,7 +752,7 @@ class LFI(FileResource):
                 if record not in specialValues:
                     if (record if self.true3d else (record, None)) in appendedfields:
                         for f in myFieldset:
-                            if (f.fid if self.true3d else f.fid[0]) == record:
+                            if (f.fid[self.format] if self.true3d else f.fid[self.format][0]) == record:
                                 specialValues[record] = f.getdata()
                     elif (record if self.true3d else (record, None)) in writtenfields:
                         specialValues[record] = self.readfield(record if self.true3d else (record, None)).getdata()
@@ -842,7 +842,7 @@ class LFI(FileResource):
                         data = field.getdata()
                         if 'int' in field.datatype.name:
                             dataInt = data.flatten()
-                        elif 'str' in field.datatype.name:
+                        elif 'str' in field.datatype.name or 'unicode' in field.datatype.name:
                             if field.shape in ((1,), ()):
                                 dataInt = numpy.array([ord(d) for d in str(data)])
                             else:
