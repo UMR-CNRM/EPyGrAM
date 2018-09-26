@@ -114,7 +114,7 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
         attr=dict(
             space=dict(
                 access='rxx',
-                values=['legendre', 'bi-fourier'],
+                values=['legendre', 'bi-fourier', 'fourier'],
                 info='Name of spectral space.'),
             truncation=dict(
                 type=FPDict,
