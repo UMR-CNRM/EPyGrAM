@@ -270,14 +270,14 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
         PSINLA[0] = -1
         if geometry.name == 'regular_lonlat':
             PSINLA[1] = -9
-            PSINLA[2] = geometry.getcenter()[0].get('radians')
-            PSINLA[3] = geometry.getcenter()[1].get('radians')
+            PSINLA[2] = 0.  # geometry.getcenter()[0].get('radians')  # TOBECHECKED:
+            PSINLA[3] = 0.  # geometry.getcenter()[1].get('radians')  # TOBECHECKED:
             PSINLA[4] = geometry.getcenter()[0].get('radians')
             PSINLA[5] = geometry.getcenter()[1].get('radians')
             PSINLA[6] = geometry.grid['X_resolution'].get('radians')
             PSINLA[7] = geometry.grid['Y_resolution'].get('radians')
-            PSINLA[8] = geometry.grid['X_resolution'].get('radians') * geometry.dimensions['X']
-            PSINLA[9] = geometry.grid['Y_resolution'].get('radians') * geometry.dimensions['Y']
+            PSINLA[8] = geometry.grid['X_resolution'].get('radians') * (geometry.dimensions['X'] - 1)
+            PSINLA[9] = geometry.grid['Y_resolution'].get('radians') * (geometry.dimensions['Y'] - 1)
             PSINLA[10] = 0.0
             PSINLA[11] = 0.0
         elif geometry.projected_geometry:
@@ -287,8 +287,8 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
             PSINLA[1] = geometry.projection['reference_lat'].get('cos_sin')[1]
             PSINLA[6] = geometry.grid['X_resolution']
             PSINLA[7] = geometry.grid['Y_resolution']
-            PSINLA[8] = geometry.grid['X_resolution'] * geometry.dimensions['X']
-            PSINLA[9] = geometry.grid['Y_resolution'] * geometry.dimensions['Y']
+            PSINLA[8] = geometry.grid['X_resolution'] * (geometry.dimensions['X'] - 1)
+            PSINLA[9] = geometry.grid['Y_resolution'] * (geometry.dimensions['Y'] - 1)
             PSINLA[10] = 2. * math.pi / PSINLA[8]
             PSINLA[11] = 2. * math.pi / PSINLA[9]
             PSINLA[2] = geometry.projection['reference_lon'].get('radians')
@@ -303,8 +303,8 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
         else:
             PSINLA[6] = geometry.grid['X_resolution']
             PSINLA[7] = geometry.grid['Y_resolution']
-            PSINLA[8] = geometry.grid['X_resolution'] * geometry.dimensions['X']
-            PSINLA[9] = geometry.grid['Y_resolution'] * geometry.dimensions['Y']
+            PSINLA[8] = geometry.grid['X_resolution'] * (geometry.dimensions['X'] - 1)
+            PSINLA[9] = geometry.grid['Y_resolution'] * (geometry.dimensions['Y'] - 1)
             PSINLA[10] = 2. * math.pi / PSINLA[8]
             PSINLA[11] = 2. * math.pi / PSINLA[9]
 

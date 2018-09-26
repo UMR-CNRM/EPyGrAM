@@ -130,12 +130,15 @@ def regll_geom2namelists(geometry, domain_name='__YOUR_DOM_NAME__'):
     nam.add(namelist.NamelistBlock('NAM_LONLAT_REG'))
     corners = geometry.gimme_corners_ll()
     nam['NAM_PGD_GRID']['CGRID'] = 'LONLAT REG'
-    nam['NAM_LONLAT_REG']['XLONMIN'] = corners['ul'][0]
-    nam['NAM_LONLAT_REG']['XLONMAX'] = corners['lr'][0]
-    nam['NAM_LONLAT_REG']['XLATMIN'] = corners['lr'][1]
-    nam['NAM_LONLAT_REG']['XLATMAX'] = corners['ul'][1]
+    nam['NAM_LONLAT_REG']['XLONMIN'] = corners['ul'][0] - geometry.grid['X_resolution'].get('degrees') / 2.
+    nam['NAM_LONLAT_REG']['XLONMAX'] = corners['lr'][0] + geometry.grid['X_resolution'].get('degrees') / 2.
+    nam['NAM_LONLAT_REG']['XLATMIN'] = corners['lr'][1] - geometry.grid['Y_resolution'].get('degrees') / 2.
+    nam['NAM_LONLAT_REG']['XLATMAX'] = corners['ul'][1] + geometry.grid['Y_resolution'].get('degrees') / 2.
     nam['NAM_LONLAT_REG']['NLON'] = geometry.dimensions['X']
     nam['NAM_LONLAT_REG']['NLAT'] = geometry.dimensions['Y']
+    assert all([nam['NAM_LONLAT_REG']['XLATMIN'] >= -90.,
+                nam['NAM_LONLAT_REG']['XLATMAX'] <= 90.]), \
+        'latitude borders too close to poles (less than half a resolution)'
 
     # c923
     nam = namelist.NamelistSet()

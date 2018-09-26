@@ -210,7 +210,9 @@ class Angle(RecursiveObject):
         """
         if not isinstance(other, Angle):
             raise ValueError("cannot compare instances of different classes.")
-        if abs(self.get('radians') - other.get('radians')) <= config.epsilon:
+        if abs(self.get('degrees') -
+               degrees_nearest_mod(other.get('degrees'),
+                                   self.get('degrees'))) <= config.epsilon:
             ok = True
         else:
             ok = False
