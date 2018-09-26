@@ -141,29 +141,29 @@ class GRIBmessage(RecursiveObject, dict):
     Class implementing a GRIB message as an object.
     """
 
-    fid_keys = {1:['name',
-                   'shortName',
-                   'indicatorOfParameter',
-                   'paramId',
-                   'indicatorOfTypeOfLevel',
-                   'typeOfLevel',
-                   'level',
-                   'topLevel',
-                   'bottomLevel',
-                   'editionNumber',
-                   'table2Version'],
-                2:['name',
-                   'shortName',
-                   'discipline',
-                   'parameterCategory',
-                   'parameterNumber',
-                   'editionNumber',
-                   'typeOfFirstFixedSurface',
-                   'level',
-                   'topLevel',
-                   'typeOfSecondFixedSurface',
-                   'bottomLevel',
-                   'tablesVersion']}
+    _fid_keys = {1:['name',
+                    'shortName',
+                    'indicatorOfParameter',
+                    'paramId',
+                    'indicatorOfTypeOfLevel',
+                    'typeOfLevel',
+                    'level',
+                    'topLevel',
+                    'bottomLevel',
+                    'editionNumber',
+                    'table2Version'],
+                 2:['name',
+                    'shortName',
+                    'discipline',
+                    'parameterCategory',
+                    'parameterNumber',
+                    'editionNumber',
+                    'typeOfFirstFixedSurface',
+                    'level',
+                    'topLevel',
+                    'typeOfSecondFixedSurface',
+                    'bottomLevel',
+                    'tablesVersion']}
 
     def __init__(self, source,
                  ordering=config.GRIB_default_ordering,
@@ -1085,6 +1085,40 @@ class GRIBmessage(RecursiveObject, dict):
 
         return validity
 
+    @classmethod
+    def fid_keys_for(cls, editionNumber, productDefinitionTemplateNumber=0):
+        """
+        Get fid keys according to
+        **editionNumber** and **productDefinitionTemplateNumber**.
+        """
+        fid_keys = copy.copy(cls._fid_keys[editionNumber])
+        add_keys = []
+        remove_keys = []
+        if productDefinitionTemplateNumber == 32:
+            remove_keys = ['typeOfFirstFixedSurface',
+                           'level',
+                           'topLevel',
+                           'typeOfSecondFixedSurface',
+                           'bottomLevel']
+            add_keys = ['satelliteSeries',
+                        'satelliteNumber',
+                        'instrumentType',
+                        'scaleFactorOfCentralWaveNumber',
+                        'scaledValueOfCentralWaveNumber']
+        for k in remove_keys:
+            fid_keys.remove(k)
+        fid_keys.extend(add_keys)
+        return fid_keys
+
+    def actual_fid_keys(self):
+        """Adjust fid keys to specific grib edition and templates."""
+        if self.grib_edition == 2:
+            template = self['productDefinitionTemplateNumber']
+        else:
+            template = None
+        return self.fid_keys_for(self.grib_edition,
+                                 template)
+
     def update(self, E, **F):
         """
         M.update([E, ]**F) -> None. Update D from dict/iterable E and F.
@@ -1103,14 +1137,16 @@ class GRIBmessage(RecursiveObject, dict):
 
     def genfid(self):
         """Generates and returns a GRIB-type epygram fid from the message."""
-        fid_keys = copy.copy(self.fid_keys[self.grib_edition])
+        fid_keys = copy.copy(self.actual_fid_keys())
         try:
             onelevel = self['topLevel'] == self['bottomLevel']
         except lowlevelgrib.InternalError:
             onelevel = True
         if onelevel:
-            fid_keys.pop(fid_keys.index('topLevel'))
-            fid_keys.pop(fid_keys.index('bottomLevel'))
+            if 'topLevel' in fid_keys:
+                fid_keys.remove('topLevel')
+            if 'bottomLevel' in fid_keys:
+                fid_keys.remove('bottomLevel')
         fid = {'GRIB' + str(self.grib_edition):FPDict({k:self[str(k)] for k in fid_keys})}
         if self.grib_edition == 1:
             # Here we should complete the generic part of fid
@@ -1341,7 +1377,8 @@ class GRIB(FileResource):
         """
         if select is not None:
             additional_keys = [k for k in select.keys() if k not in
-                               GRIBmessage.fid_keys[1] + GRIBmessage.fid_keys[2]]
+                               self._fid_keys_for_product_template()]
+                               #GRIBmessage.fid_keys[1] + GRIBmessage.fid_keys[2]]
         else:
             additional_keys = []
         fidlist = super(GRIB, self).listfields(additional_keys=additional_keys)
@@ -1371,7 +1408,11 @@ class GRIB(FileResource):
             if gid is None:
                 break
             n = lowlevelgrib.get(gid, b'editionNumber')  # gribapi str/unicode incompatibility
-            for k in GRIBmessage.fid_keys[n] + additional_keys:
+            if n == 2:
+                t = lowlevelgrib.get(gid, b'productDefinitionTemplateNumber')  # gribapi str/unicode incompatibility
+            else:
+                t = None
+            for k in GRIBmessage.fid_keys_for(n, t) + additional_keys:
                 # bug in GRIB_API ? 1, 103 & 105 => 'sfc'
                 if k in ('typeOfFirstFixedSurface',
                          'indicatorOfTypeOfLevel',
