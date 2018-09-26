@@ -371,10 +371,17 @@ class MyPlot(object):
 
                     if current_basemap is None:
                         print('Actually niou pickle !')
+                        if monzoom is not None:
+                            field = field.extract_zoom(monzoom)
+                        current_basemap = field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
+                                                                          subzone=myplot_args["subzone"],
+                                                                          specificproj=myplot_args["specificproj"])
+                        """
                         current_basemap = field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
                                                                       subzone=myplot_args["subzone"],
                                                                       specificproj=myplot_args["specificproj"],
                                                                       zoom=monzoom)
+                        """
                         pickle.dump(current_basemap, open(os.path.join(epyweb_workdir,
                                                                        basemap_pickle_name), 'w'))
                         # On réutilise le cache
