@@ -32,11 +32,13 @@ def build_geometry(center_lon, center_lat,
                    resolution,
                    Iwidth=None,
                    tilting=0.,
+                   reference_lat=None,
                    force_projection=None,
                    maximize_CI_in_E=False,
                    interactive=False):
     """
     Build an *ad hoc* geometry from the input given parameters.
+    Beware only secant projection are available here.
 
     :param center_lon: longitude of the domain center
     :param center_lat: latitude of the domain center
@@ -46,6 +48,8 @@ def build_geometry(center_lon, center_lat,
     :param Iwidth: width of the I-zone
     :param tilting: optional inclination of the grid, in degrees
                     (only for 'polar_stereographic' and 'lambert' projections)
+    :param reference_lat: (disadvised use) reference latitude of the projection;
+                          beware of consistency with *force_projection*
     :param force_projection: force projection among ('polar_stereographic',
                              'lambert', 'mercator')
     :param maximize_CI_in_E: extend the C+I zone inside the C+I+E zone, in order
@@ -77,8 +81,16 @@ def build_geometry(center_lon, center_lat,
                   'Y_Iwidth':Iwidth
                   }
     # coordinates
+    if reference_lat in (90., -90.):
+        assert force_projection in (None, 'polar_stereographic')
+    elif reference_lat == 0.:
+        assert force_projection in (None, 'mercator')
+    elif reference_lat is not None:
+        assert force_projection in (None, 'lambert')
+    elif reference_lat is None:
+        reference_lat = center_lat
     projection = {'reference_lon':Angle(center_lon + tilting, 'degrees'),
-                  'reference_lat':Angle(center_lat, 'degrees'),
+                  'reference_lat':Angle(reference_lat, 'degrees'),
                   'rotation':Angle(0.0, 'degrees'),
                   }
     # grid
@@ -139,12 +151,13 @@ def build_geometry(center_lon, center_lat,
         if tilting != 0.0:
             epylog.warning("! Tilting ignored: not available for Mercator projection.")
     elif projname == 'lambert':
-        reference_lat = center_lat
         if interactive:
             print("Advised reference latitude for Lambert domain is center latitude:")
             accepted_lat = raw_input("Reference latitude [" + str(center_lat) + "]: ")
             if accepted_lat != '':
                 reference_lat = float(accepted_lat)
+            else:
+                reference_lat = float(center_lat)
     projection['reference_lat'] = Angle(reference_lat, 'degrees')
     geometry = fpx.geometry(structure='H2D',
                             name=projname,
@@ -241,6 +254,7 @@ def build_geometry_fromlonlat(lonmin, lonmax,
                               interactive=False):
     """
     Build an *ad hoc* geometry from the input given parameters.
+    Beware only secant projection are available here.
 
     :param lonmin: minimum longitude of the domain
     :param lonmax: maximum longitude of the domain
