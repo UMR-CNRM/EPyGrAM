@@ -283,8 +283,14 @@ class GRIBmessage(RecursiveObject, dict):
             lowlevelgrib.release(original_gid)
         return gid
 
-    def _readattribute(self, attribute, array=False):
-        """Actual access to the attributes."""
+    def _readattribute(self, attribute, array=False, fatal=True):
+        """
+        Actual access to the attributes.
+        :param attribute: key to read
+        :param array: attribute is an array
+        :param fatal: raise errors or ignore failed keys
+        """
+        attr = None
         if attribute != 'values':
             if not array:
                 try:
@@ -301,14 +307,33 @@ class GRIBmessage(RecursiveObject, dict):
                 except lowlevelgrib.InternalError as e:
                     # differenciation not well done... PB in gribapi
                     if str(e) == 'Passed array is too small':
-                        attr = lowlevelgrib.get_double_array(self._gid, str(attribute))  # gribapi str/unicode incompatibility
-                    else:
+                        try:
+                            attr = lowlevelgrib.get_double_array(self._gid, str(attribute))  # gribapi str/unicode incompatibility
+                        except lowlevelgrib.InternalError as e:
+                            if fatal:
+                                raise e
+                            else:
+                                epylog.warning('GRIB error ignored:' + str(e))
+                    elif fatal:
                         raise type(e)(str(e) + ' : "' + attribute + '"')
             else:
-                attr = lowlevelgrib.get_double_array(self._gid, str(attribute))  # gribapi str/unicode incompatibility
+                try:
+                    attr = lowlevelgrib.get_double_array(self._gid, str(attribute))  # gribapi str/unicode incompatibility
+                except lowlevelgrib.InternalError as e:
+                    if fatal:
+                        raise e
+                    else:
+                        epylog.warning('GRIB error ignored:' + str(e))
         else:
-            attr = lowlevelgrib.get_values(self._gid)
-        super(GRIBmessage, self).__setitem__(attribute, attr)
+            try:
+                attr = lowlevelgrib.get_values(self._gid)
+            except lowlevelgrib.InternalError as e:
+                if fatal:
+                    raise e
+                else:
+                    epylog.warning('GRIB error ignored:' + str(e))
+        if attr is not None:
+            super(GRIBmessage, self).__setitem__(attribute, attr)
 
     def _set_array_attribute(self, attribute, value):
         """Setter for array attributes."""
@@ -1209,10 +1234,9 @@ class GRIBmessage(RecursiveObject, dict):
         while lowlevelgrib.keys_iterator_next(key_iter):
             namespace.append(lowlevelgrib.keys_iterator_get_name(key_iter))
         lowlevelgrib.keys_iterator_delete(key_iter)
-
         return namespace
 
-    def readmessage(self, namespace=None):
+    def readmessage(self, namespace=None, fatal=True):
         """
         Reads the meta-data of the message.
 
@@ -1221,12 +1245,13 @@ class GRIBmessage(RecursiveObject, dict):
           - ['myKey1', 'myKey2', ...] for any custom namespace,
           - 'ls': to get the same default keys as the grib_ls,
           - 'mars': to get the keys used by MARS.
+        :param fatal: raise errors or ignore failed keys
         """
         self.clear()
         if namespace in (None, 'ls', 'mars'):
             namespace = self.readkeys(namespace=namespace)
         for k in namespace:
-            self._readattribute(k)
+            self._readattribute(k, fatal=fatal)
 
     def asfield(self,
                 getdata=True,
@@ -1996,8 +2021,23 @@ class GRIB(FileResource):
         :param details: if 'compression', gives the 'packingType' and 'bitsPerValue'
           parameters of field packing. Only with 'what' mode.
         """
+        args = locals().copy()
+        args.pop('self')
+        try:
+            self._what(**args)
+        except Exception as e:
+            print('!!! Exploration of the resource failed: use "grib_dump -O" for a raw decoding of a GRIB file !!!')
+            raise e
+
+    def _what(self, out=sys.stdout,
+              mode='one+list',
+              sortfields=None,
+              details=None,
+              **_):
+        """Actual what method."""
         out.write("### FORMAT: " + self.format + "\n")
-        out.write("(For a more thorough insight into GRIB files, use 'grib_dump')")
+        out.write("(For a more thorough insight into GRIB files, " +
+                  "use 'grib_dump' or (even better) 'grib_dump -O')")
         out.write("\n")
 
         if mode == 'one+list':
@@ -2042,7 +2082,7 @@ class GRIB(FileResource):
                         m._readattribute('packingType')
                         m._readattribute('bitsPerValue')
                 elif mode in ('ls', 'mars'):
-                    m.readmessage(mode)
+                    m.readmessage(mode, fatal=False)
                     m._readattribute('name')
                 m_dict = dict(m)
                 write_formatted_dict(out, m_dict)
