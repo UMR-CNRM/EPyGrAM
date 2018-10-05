@@ -163,7 +163,8 @@ class GRIBmessage(RecursiveObject, dict):
                     'topLevel',
                     'typeOfSecondFixedSurface',
                     'bottomLevel',
-                    'tablesVersion']}
+                    'tablesVersion',
+                    'productDefinitionTemplateNumber']}
 
     def __init__(self, source,
                  ordering=config.GRIB_default_ordering,
@@ -398,20 +399,19 @@ class GRIBmessage(RecursiveObject, dict):
 
         # part 2 --- parameter
         if grib_edition == 1:
+            fid = field.fid.get('GRIB1')
             param_list = ['table2Version', 'indicatorOfParameter']
             for k in param_list:
                 self[k] = field.fid['GRIB1'][k]
         else:
-            if 'GRIB2' in field.fid:
-                self['tablesVersion'] = field.fid['GRIB2'].get('tablesVersion', config.GRIB_default_tablesVersion)
-            else:
-                self['tablesVersion'] = field.fid['generic'].get('tablesVersion', config.GRIB_default_tablesVersion)
+            fid = field.fid.get('GRIB2', field.fid.get('generic', None))
+            assert fid is not None, "No adequate fid (GRIB2, generic) found to write in GRIB."
+            self['tablesVersion'] = fid.get('tablesVersion', config.GRIB_default_tablesVersion)
             param_list = ['discipline', 'parameterCategory', 'parameterNumber']
+            template = fid.get('productDefinitionTemplateNumber', 0)
+            param_list.extend(self.specific_fid_keys_for(template))
             for k in param_list:
-                if 'GRIB2' in field.fid:
-                    self[k] = field.fid['GRIB2'][k]
-                else:
-                    self[k] = field.fid['generic'][k]
+                self[k] = fid[k]
 
         # part 3 --- context
         if grib_edition == 2:
@@ -615,36 +615,37 @@ class GRIBmessage(RecursiveObject, dict):
                 # !!! this should be done but it changes gridType !!!
                 # self['numberOfVerticalCoordinateValues'] = 0
         elif grib_edition == 2:
-            if len(field.geometry.vcoordinate.levels) > 1:
-                raise epygramError("field has more than one level")
-            self['scaleFactorOfFirstFixedSurface'] = 0
-            self['scaleFactorOfSecondFixedSurface'] = 0
-            self['level'] = field.geometry.vcoordinate.levels[0]
-            self['typeOfFirstFixedSurface'] = field.geometry.vcoordinate.typeoffirstfixedsurface
-            self['level'] = field.geometry.vcoordinate.levels[0]
-            if self['typeOfFirstFixedSurface'] == 119:
-                self['numberOfVerticalCoordinateValues'] = len(field.geometry.vcoordinate.grid['gridlevels'])
-                ab = [ab[1]['Ai'] for ab in field.geometry.vcoordinate.grid['gridlevels']] + \
-                     [ab[1]['Bi'] for ab in field.geometry.vcoordinate.grid['gridlevels']]
-                self._set_array_attribute('pv', ab)
-            if hasattr(field.geometry.vcoordinate, 'typeofsecondfixedsurface'):
-                self['typeOfSecondFixedSurface'] = field.geometry.vcoordinate.typeofsecondfixedsurface
-            else:
-                self['typeOfSecondFixedSurface'] = 255
-            if hasattr(field.geometry.vcoordinate, 'toplevel'):
-                self['topLevel'] = field.geometry.vcoordinate.toplevel
-            else:
-                if 'GRIB2' in field.fid:
-                    self['topLevel'] = field.fid['GRIB2'].get('topLevel', field.geometry.vcoordinate.levels[0])
+            if template != 32:
+                if len(field.geometry.vcoordinate.levels) > 1:
+                    raise epygramError("field has more than one level")
+                self['scaleFactorOfFirstFixedSurface'] = 0
+                self['scaleFactorOfSecondFixedSurface'] = 0
+                self['level'] = field.geometry.vcoordinate.levels[0]
+                self['typeOfFirstFixedSurface'] = field.geometry.vcoordinate.typeoffirstfixedsurface
+                self['level'] = field.geometry.vcoordinate.levels[0]
+                if self['typeOfFirstFixedSurface'] == 119:
+                    self['numberOfVerticalCoordinateValues'] = len(field.geometry.vcoordinate.grid['gridlevels'])
+                    ab = [ab[1]['Ai'] for ab in field.geometry.vcoordinate.grid['gridlevels']] + \
+                         [ab[1]['Bi'] for ab in field.geometry.vcoordinate.grid['gridlevels']]
+                    self._set_array_attribute('pv', ab)
+                if hasattr(field.geometry.vcoordinate, 'typeofsecondfixedsurface'):
+                    self['typeOfSecondFixedSurface'] = field.geometry.vcoordinate.typeofsecondfixedsurface
                 else:
-                    self['topLevel'] = field.fid['generic'].get('topLevel', field.geometry.vcoordinate.levels[0])
-            if hasattr(field.geometry.vcoordinate, 'bottomlevel'):
-                self['bottomLevel'] = field.geometry.vcoordinate.bottomlevel
-            else:
-                if 'GRIB2' in field.fid:
-                    self['bottomLevel'] = field.fid['GRIB2'].get('bottomLevel', field.geometry.vcoordinate.levels[0])
+                    self['typeOfSecondFixedSurface'] = 255
+                if hasattr(field.geometry.vcoordinate, 'toplevel'):
+                    self['topLevel'] = field.geometry.vcoordinate.toplevel
                 else:
-                    self['bottomLevel'] = field.fid['generic'].get('bottomLevel', field.geometry.vcoordinate.levels[0])
+                    if 'GRIB2' in field.fid:
+                        self['topLevel'] = field.fid['GRIB2'].get('topLevel', field.geometry.vcoordinate.levels[0])
+                    else:
+                        self['topLevel'] = field.fid['generic'].get('topLevel', field.geometry.vcoordinate.levels[0])
+                if hasattr(field.geometry.vcoordinate, 'bottomlevel'):
+                    self['bottomLevel'] = field.geometry.vcoordinate.bottomlevel
+                else:
+                    if 'GRIB2' in field.fid:
+                        self['bottomLevel'] = field.fid['GRIB2'].get('bottomLevel', field.geometry.vcoordinate.levels[0])
+                    else:
+                        self['bottomLevel'] = field.fid['generic'].get('bottomLevel', field.geometry.vcoordinate.levels[0])
 
         # part 6 --- ordering
         if not field.spectral:
@@ -763,6 +764,10 @@ class GRIBmessage(RecursiveObject, dict):
     def grib_edition(self):
         return self['editionNumber']
 
+    @property
+    def fmt(self):
+        return 'GRIB' + str(self.grib_edition)
+
     def set_values(self, values):
         """
         Wrapper to set **values** as a 2D array if gridpoint or 1D if spectral.
@@ -859,9 +864,9 @@ class GRIBmessage(RecursiveObject, dict):
                 kwargs_vcoord['toplevel'] = self['topLevel']
                 kwargs_vcoord['bottomlevel'] = self['bottomLevel']
         elif self.grib_edition == 2:
-            kwargs_vcoord['typeoffirstfixedsurface'] = self['typeOfFirstFixedSurface']
-            kwargs_vcoord['levels'] = [self['level']]
-            if self['typeOfSecondFixedSurface'] != 255:
+            kwargs_vcoord['typeoffirstfixedsurface'] = self.get('typeOfFirstFixedSurface', 255)
+            kwargs_vcoord['levels'] = [self.get('level', 255)]
+            if self.get('typeOfSecondFixedSurface', 255) != 255:
                 kwargs_vcoord['typeofsecondfixedsurface'] = self['typeOfSecondFixedSurface']
                 kwargs_vcoord['toplevel'] = self['topLevel']
                 kwargs_vcoord['bottomlevel'] = self['bottomLevel']
@@ -1055,35 +1060,69 @@ class GRIBmessage(RecursiveObject, dict):
         validity of the GRIB message.
         """
         accepted_tRI = (0, 1, 2, 4, 10, 113, 123)
-        year = int(str(self['dataDate'])[0:4])
-        month = int(str(self['dataDate'])[4:6])
-        day = int(str(self['dataDate'])[6:8])
-        dataTime = '{:0>{width}}'.format(self['dataTime'], width=4)
-        hour = int(dataTime[0:2])
-        minutes = int(dataTime[2:4])
-        basis = datetime.datetime(year, month, day, hour, minutes)
+        basis = datetime.datetime(
+            self['year'], self['month'], self['day'],
+            self['hour'], self['minute'], self['second'])
         cum = None
         units = {0:dict(seconds=60),  # minute
                  1:dict(seconds=3600),  # hour
                  2:dict(days=1),  # day
                  13:dict(seconds=1 if self.grib_edition == 2 else 15 * 60),  # seconds in GRIB2, 1/4h in GRIB1
                  }
-        unit = units[self['stepUnits']]
-        if self['timeRangeIndicator'] in accepted_tRI:
-            term = self['endStep']
-            termunit = {k:v * term for k,v in unit.items()}
-            term = datetime.timedelta(**termunit)
-            if self['timeRangeIndicator'] in (2, 4) or self['productDefinitionTemplateNumber'] == 8:
-                cum = self['endStep'] - self['startStep']
-                cumunit = {k:v * cum for k,v in unit.items()}
-                cum = datetime.timedelta(**cumunit)
-            elif self['timeRangeIndicator'] in (113, 123,):
-                epylog.warning('not able to interpret timeRangeIndicator={}'.format(self['timeRangeIndicator']))
+        if self.grib_edition == 2:
+            unit = units[self['indicatorOfUnitOfTimeRange']]
+            forecastTime_unit = {k:v * self['forecastTime'] for k,v in unit.items()}
+            forecastTime = datetime.timedelta(**forecastTime_unit)
+            if self['productDefinitionTemplateNumber'] == 8:
+                term = datetime.datetime(
+                    self['yearOfEndOfOverallTimeInterval'],
+                    self['monthOfEndOfOverallTimeInterval'],
+                    self['dayOfEndOfOverallTimeInterval'],
+                    self['hourOfEndOfOverallTimeInterval'],
+                    self['minuteOfEndOfOverallTimeInterval'],
+                    self['secondOfEndOfOverallTimeInterval'])
+                beginning = basis + forecastTime
+                cum = term - beginning
+                term = term - basis
+            else:
+                term = forecastTime
         else:
-            raise NotImplementedError("'timeRangeIndicator' not in {}.".format(accepted_tRI))
+            unit = units[self['stepUnits']]
+            if self['timeRangeIndicator'] in accepted_tRI:
+                term = self['endStep']
+                termunit = {k:v * term for k,v in unit.items()}
+                term = datetime.timedelta(**termunit)
+                if self['timeRangeIndicator'] in (2, 4) or self['productDefinitionTemplateNumber'] == 8:
+                    cum = self['endStep'] - self['startStep']
+                    cumunit = {k:v * cum for k,v in unit.items()}
+                    cum = datetime.timedelta(**cumunit)
+                elif self['timeRangeIndicator'] in (113, 123,):
+                    epylog.warning('not able to interpret timeRangeIndicator={}'.format(self['timeRangeIndicator']))
+            else:
+                raise NotImplementedError("'timeRangeIndicator' not in {}.".format(accepted_tRI))
         validity = FieldValidity(basis=basis, term=term, cumulativeduration=cum)
-
         return validity
+
+    @classmethod
+    def specific_fid_keys_for(cls, productDefinitionTemplateNumber=0):
+        """
+        Get specific fid keys according to **productDefinitionTemplateNumber**
+        (GRIB2 only).
+        """
+        if productDefinitionTemplateNumber == 32:
+            specific_keys = ['satelliteSeries',
+                             'satelliteNumber',
+                             'instrumentType',
+                             'scaleFactorOfCentralWaveNumber',
+                             'scaledValueOfCentralWaveNumber']
+        elif productDefinitionTemplateNumber == 8:
+            specific_keys = ['lengthOfTimeRange',
+                             # 'indicatorOfUnitForTimeRange',  # FIXME: pb with eccodes index
+                             # 'typeOfStatisticalProcessing',  # FIXME: pb with eccodes index
+                             ]
+        else:
+            specific_keys = []
+        return specific_keys
 
     @classmethod
     def fid_keys_for(cls, editionNumber, productDefinitionTemplateNumber=0):
@@ -1100,11 +1139,9 @@ class GRIBmessage(RecursiveObject, dict):
                            'topLevel',
                            'typeOfSecondFixedSurface',
                            'bottomLevel']
-            add_keys = ['satelliteSeries',
-                        'satelliteNumber',
-                        'instrumentType',
-                        'scaleFactorOfCentralWaveNumber',
-                        'scaledValueOfCentralWaveNumber']
+            add_keys = cls.specific_fid_keys_for(productDefinitionTemplateNumber)
+        elif productDefinitionTemplateNumber == 8:
+            add_keys = cls.specific_fid_keys_for(productDefinitionTemplateNumber)
         for k in remove_keys:
             fid_keys.remove(k)
         fid_keys.extend(add_keys)
@@ -1121,7 +1158,7 @@ class GRIBmessage(RecursiveObject, dict):
 
     def update(self, E, **F):
         """
-        M.update([E, ]**F) -> None. Update D from dict/iterable E and F.
+        D.update([E, ]**F) -> None. Update D from dict/iterable E and F.
         If E present and has a .keys() method, does: for k in E: D[k] = E[k]
         If E present and lacks .keys() method, does: for (k, v) in E: D[k] = v
         In either case, this is followed by: for k in F: D[k] = F[k]
@@ -1147,7 +1184,7 @@ class GRIBmessage(RecursiveObject, dict):
                 fid_keys.remove('topLevel')
             if 'bottomLevel' in fid_keys:
                 fid_keys.remove('bottomLevel')
-        fid = {'GRIB' + str(self.grib_edition):FPDict({k:self[str(k)] for k in fid_keys})}
+        fid = {self.fmt:FPDict({k:self[str(k)] for k in fid_keys})}
         if self.grib_edition == 1:
             # Here we should complete the generic part of fid
             pass
@@ -1378,7 +1415,6 @@ class GRIB(FileResource):
         if select is not None:
             additional_keys = [k for k in select.keys() if k not in
                                self._fid_keys_for_product_template()]
-                               #GRIBmessage.fid_keys[1] + GRIBmessage.fid_keys[2]]
         else:
             additional_keys = []
         fidlist = super(GRIB, self).listfields(additional_keys=additional_keys)
@@ -1603,7 +1639,7 @@ class GRIB(FileResource):
                 filtered_matchingfields.append(field)
         if len(filtered_matchingfields) > 1:
             raise epygramError("several fields found for that *handgrip*;" +
-                               " please refine.")
+                               " please refine:" + str(handgrip))
         elif len(filtered_matchingfields) == 0:
             raise epygramError("inconsistency in *handgrip*; check again" +
                                " values and types of values")
@@ -1672,10 +1708,12 @@ class GRIB(FileResource):
             elif k == 'typeOfFirstFixedSurface' and isinstance(v, int):  # GRIB2
                 type_conv_GRIB2 = {1:'sfc',
                                    100:'pl',
+                                   101:'sfc',
                                    102:'sfc',
                                    103:'sfc',
                                    109:'pv',
-                                   119:'hpl', }
+                                   119:'hpl',
+                                   }
                 v = type_conv_GRIB2.get(v, str(v))
             if isinstance(v, six.string_types):  # gribapi str/unicode incompatibility
                 v = str(v)
@@ -1692,7 +1730,8 @@ class GRIB(FileResource):
             del msg
         lowlevelgrib.index_release(idx)
         if len(matchingfields) == 0:
-            raise epygramError("no field matching *handgrip* was found.")
+            raise epygramError("no field matching *handgrip* was found ({}).".
+                               format(handgrip))
         return matchingfields
 
     @FileResource._openbeforedelayed
