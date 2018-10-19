@@ -10,6 +10,7 @@ This resource exposes 3D fields when the low level resource only expose horizont
 
 from __future__ import print_function, absolute_import, unicode_literals, division
 import six
+import copy
 
 from footprints import proxy as fpx
 from footprints import FPDict
@@ -99,7 +100,7 @@ class CombineLevelsResource(Resource):
             assert 'generic' in fid, \
                    "Not able to combine levels if fields do not have 'generic' fids"
             original_fid = fid[fmtfid(self.resource.format, fid)]
-            generic_fid = fid['generic']
+            generic_fid = copy.deepcopy(fid['generic'])
             level = generic_fid.pop('level', None)  # we suppress level from generic_fid
             hashable_generic_fid = tuple([(k, generic_fid[k]) for k in sorted(generic_fid.keys())])
             if hashable_generic_fid not in result:
@@ -210,7 +211,7 @@ class CombineLevelsResource(Resource):
                     if self.virtual:
                         fieldset.append(virtualField)
                     else:
-                        fieldset.append(virtualField.as_real_field())
+                        fieldset.append(virtualField.as_real_field(getdata=getdata))
         return fieldset
 
     def writefield(self, *args, **kwargs):

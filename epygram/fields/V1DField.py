@@ -494,8 +494,8 @@ def plotanimation(profile,
     fig, ax = plotprofiles(profile0,
                            title=title,
                            **kwargs)
-    if kwargs.get('colorbar_over') is None:
-            kwargs['colorbar_over'] = fig.axes[-1]  # the last being created, in plotfield()
+    #if kwargs.get('colorbar_over') is None:
+    #        kwargs['colorbar_over'] = fig.axes[-1]  # the last being created, in plotfield()
     kwargs['over'] = (fig, ax)
 
     def update(i, ax, myself, profilei, title_prefix, kwargs):

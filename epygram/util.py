@@ -15,6 +15,14 @@ import copy
 import numpy
 import sys
 import datetime
+import hashlib
+import os
+try:
+    #python3
+    import urllib.request as urllib
+except:
+    #python2
+    import urllib2 as urllib
 
 from footprints import FootprintBase
 from bronx.graphics.colormapping import add_cmap, get_norm4colorscale
@@ -61,7 +69,7 @@ class RecursiveObject(object):
                 itemstring += "\n" + offset + attr + ": " + self._strItem(item.__dict__[attr], reclevel + 1)
         elif isinstance(item, dict):
             for key in sorted(item.keys()):
-                itemstring += "\n" + offset + key + ": " + self._strItem(item[key], reclevel + 1)
+                itemstring += "\n" + offset + str(key) + ": " + self._strItem(item[key], reclevel + 1)
         else:
             itemstring = str(item)
         return itemstring
@@ -322,6 +330,13 @@ class Angle(RecursiveObject):
 
 # FUNCTIONS #
 #############
+
+def as_numpy_array(x):
+    """
+    Returns a numpy array
+    """
+    return numpy.array(x, copy=False, ndmin=1, subok=True)
+    
 def find_re_in_list(regexp, a_list):
     """
     Finds all elements from a list that match a regular expression.
@@ -376,25 +391,22 @@ def find_re_in_list(regexp, a_list):
 def degrees_nearest_mod(d, ref):
     """Returns the angle(s) **d** in the modulo nearest to **ref**."""
     try:
-        n = len(d)
+        _ = len(d)
         scalar = False
     except Exception:
-        n = 1
         d = [d]
         scalar = True
     d = numpy.array(d)
     d_inf = d - 360.
     d_sup = d + 360.
-    result = numpy.zeros(n)
-    for i in range(n):
-        if abs(d[i] - ref) <= abs(d_sup[i] - ref) and \
-           abs(d[i] - ref) <= abs(d_inf[i] - ref):
-            result[i] = d[i]
-        elif abs(d_inf[i] - ref) <= abs(d_sup[i] - ref) and \
-             abs(d_inf[i] - ref) <= abs(d[i] - ref):
-            result[i] = d_inf[i]
-        else:
-            result[i] = d_sup[i]
+    result = d_sup
+    mask = numpy.logical_and(numpy.abs(d - ref) <= numpy.abs(d_sup - ref),
+                             numpy.abs(d - ref) <= numpy.abs(d_inf - ref))
+    result[mask] = d[mask]
+    mask = numpy.logical_and(numpy.abs(d_inf - ref) <= numpy.abs(d_sup - ref),
+                             numpy.abs(d_inf - ref) <= numpy.abs(d - ref))
+    result[mask] = d_inf[mask]
+    
     if scalar:
         result = result[0]
     return result
@@ -411,6 +423,64 @@ def positive_longitude(lon, unit='degrees'):
             raise NotImplementedError()
     return lon
 
+
+def get_file(url, filename, authorize_cache=True, subst=None):
+    """
+    Get file from url into filename.
+    If authorize_cache is True and a directory is set for caching
+    in user preferences, file is first searched in cache directory,
+    downloaded in the cache directory if missing, then filename is
+    built as a symlink to the file in cache directory.
+    This way, filename must be always deleted by the caller.
+    
+    :param url: url to get
+    :param filename: filename in which to put the result
+    :param authorize_cache: authorize to use cache (if possible)
+                            for this request
+    :param subst: dictionary whose keys are searched in url to
+                  be replaced by corresponding key
+                  
+    example: url='https://a.tile.openstreetmap.org/${z}/${x}/${y}.png'
+             subst={'${z}': 4, '${x}': 8, '${y}': 5}
+             will get the file https://a.tile.openstreetmap.org/4/8/5.png
+    """
+    def md5(s):
+        h = hashlib.md5()
+        h.update(s)
+        return h.hexdigest()
+
+    #Substitution
+    actual_url = url
+    if subst is not None:
+        for k, v in subst.items():
+            actual_url = actual_url.replace(str(k), str(v))
+        
+    if authorize_cache and config.internet_cache_dir is not None:
+        #Corresponding file name in cache
+        url_hash = md5(url)
+        actual_url_hash = md5(actual_url)
+        if url_hash != actual_url_hash:
+            directory = os.path.join(config.internet_cache_dir,
+                                     url_hash)
+            if not os.path.exists(directory):
+                os.mkdir(directory)
+            cache_filename = os.path.join(directory, actual_url_hash)
+        else:
+            cache_filename = os.path.join(config.internet_cache_dir,
+                                          url_hash)
+        
+        #Cache filling
+        if not os.path.exists(cache_filename):
+            get_file(actual_url, cache_filename, authorize_cache=False, subst=None)
+        
+        #Symlink
+        if os.path.exists(filename):
+            os.remove(filename)
+        os.symlink(cache_filename, filename)
+
+    else:
+        with open(filename, 'wb') as f:
+            f.write(urllib.urlopen(actual_url).read())
 
 def load_cmap(cmap):
     """
@@ -856,6 +926,192 @@ def set_map_up(bm, ax,
                                    drawequator_kwargs=drawequator_kwargs,
                                    drawgreenwich_kwargs=drawgreenwich_kwargs)
 
+def vtk_modify_grid(grid, grid_type, datamin=None):
+    """
+    Modifies the kind of grid
+    Input grid must be an sgrid_point
+    :param grid_type: can be:
+        - sgrid_point: structured grid filled with points
+        - sgrid_cell: structured grid filled with hexahedron
+                      If the field is 2D, a zero thickness is used.
+                      If the field is 3D, thickness are approximately computed
+        - ugrid_point: unstructured grid filled with points
+        - ugrid_cell: unstructured grid build filled with cells
+                      If the field is 2D, a zero thickness is used.
+                      If the field is 3D, thickness are approximately computed
+    :param datamin: for an unknown reason, we need the minimum of the data
+                    to transform grid into an unstructured one
+    
+    If grid_type is 'sgrid_point', the result is the grid; otherwise
+    the result is the function is the last filter used.
+    """
+    import vtk
+    
+    if grid_type not in ('sgrid_point', 'sgrid_cell', 'ugrid_point', 'ugrid_cell'):
+        raise ValueError("Unknown grid type: " + grid_type)
+
+    if grid_type in ('sgrid_cell', 'ugrid_cell'):
+        interp = vtk.vtkPointDataToCellData()
+        interp.SetInputData(grid)
+        interp.Update()
+        grid = interp
+        #Values are now associated to cells
+    
+    if grid_type in ('ugrid_point', 'ugrid_cell'):
+        fil = vtk.vtkThreshold()
+        if grid_type in ('sgrid_cell', 'ugrid_cell'):
+            fil.SetInputConnection(grid.GetOutputPort())
+        else:
+            fil.SetInputData(grid)
+        #minScalar = grid.GetPointData().GetScalars().GetRange()[0] does not work every time
+        if datamin is None:
+            raise epygramError("datamin must be provided for unstructured grid types")
+        minScalar = datamin
+        fil.ThresholdByUpper(minScalar - 1.)
+        grid = fil
+        #Grid is now unstructured
+
+    return grid
+
+def vtk_write_png(rendering, filename, resolution_increase=1, enable_alpha=True):
+    """
+    Writes a png file with the present vien on vtk window
+    :param rendering:  a dictionary containing, at least, the window key
+    :param filename: name of the file to produce
+    :param resolution_increase: vtk window resolution is multiplied
+                                by this factor to get the png resolution 
+    """
+    import vtk
+    windowToImageFilter = vtk.vtkWindowToImageFilter()
+    windowToImageFilter.SetInput(rendering['window'])
+    windowToImageFilter.SetMagnification(resolution_increase)
+    if enable_alpha:
+        windowToImageFilter.SetInputBufferTypeToRGBA() #also record the alpha (transparency) channel
+    #windowToImageFilter.ReadFrontBufferOff() #Do not know what this means but we get bad images when uncomented
+    PNGWriter = vtk.vtkPNGWriter()
+    PNGWriter.SetFileName(filename)
+    windowToImageFilter.Update()
+    PNGWriter.SetInputConnection(windowToImageFilter.GetOutputPort())
+    PNGWriter.Write()
+
+def vtk_set_window(background_color, window_size, hide_axes=False, offscreen=False):
+    """
+    This function creates a simple vtk environment and returns
+    a dictionary holding the different objects created
+    :param background_color: must be a color name or a 3-tuple
+    :param window_size: must be a 2-tuple
+    :param hide_axes: True to hide the axes representation
+    :param offscreen: True to hide window (useful when we only
+                      want to produce png file instead of
+                      interactively viewing the window)
+    """
+    import vtk
+    
+    renderer = vtk.vtkRenderer()
+    renderWin = vtk.vtkRenderWindow()
+    renderWin.AddRenderer(renderer)
+    result = dict(renderer=renderer, window=renderWin)
+    if offscreen:
+        renderWin.SetOffScreenRendering(True)
+    else:
+        renderInteractor = vtk.vtkRenderWindowInteractor()
+        renderInteractor.SetRenderWindow(renderWin)
+        style = vtk.vtkInteractorStyleTrackballCamera()
+        renderInteractor.SetInteractorStyle(style)
+        def exitCheck(obj, event):
+            if obj.GetEventPending() != 0:
+                obj.SetAbortRender(1)
+        renderWin.AddObserver("AbortCheckEvent", exitCheck)
+        renderInteractor.Initialize()
+        result['interactor'] = renderInteractor
+
+    if isinstance(background_color, tuple):
+        renderer.SetBackground(*background_color)
+    else:
+        renderer.SetBackground(vtk.vtkNamedColors().GetColor3d(background_color))
+    renderWin.SetSize(*window_size)
+    
+    axes = vtk.vtkAxesActor()
+    axes.SetTotalLength([30., 30., 30.])
+    #axes.GetXAxisCaptionActor2D().GetCaptionTextProperty().SetColor(colors.GetColor3d("Red"));
+    #axes.SetXAxisLabelText("test");
+    #axes.GetYAxisShaftProperty().SetColor(vtk.vtkNamedColors().GetColor3d("Yellow"))
+    #axes.GetYAxisTipProperty().SetColor(vtk.vtkNamedColors().GetColor3d("Orange"))
+    if hide_axes:
+        axes.VisibilityOff()
+    renderer.AddActor(axes)
+
+    return result
+
+def vtk_print_text_in_window(rendering, text, pos, fontsize=20, color='Black'):
+    """
+    This function write text in a vtk window
+    :param rendering:  a dictionary containing, at least, the renderer key
+    :param text: the text to render
+    :param pos: tuple (x, y) of the position of the text (pixel unit)
+    :param fontsize: fontsize to use for the text
+    :param color: color of the text
+    """
+    import vtk
+    textActor = vtk.vtkTextActor()
+    textActor.SetInput(text)
+    textActor.SetDisplayPosition(*pos) #SetPosition2(pos)
+    textActor.GetTextProperty().SetFontSize(fontsize)
+    textActor.GetTextProperty().SetColor(vtk.vtkNamedColors().GetColor3d(color))
+    rendering['renderer'].AddActor2D(textActor)
+    
+def vtk_check_transform(rendering, current_typeoffirstfixedsurface, hCoord, z_factor, offset):
+    """
+    :param rendering:  a dictionary containing, at least, the renderer key
+    :param current_typeoffirstfixedsurface: typeoffirstfixedsurface associated to the object to plot
+    :param hCoord: 'll': horizontal coordinates are the lon/lat values
+                   a basemap: horizontal coordinates are set according to this basemap
+    :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
+    :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
+    """
+    
+    if not hasattr(rendering['renderer'], 'epygram'):
+        rendering['renderer'].epygram = dict()
+    conf = rendering['renderer'].epygram
+
+    if not 'Z_axis_type' in conf:
+        conf['Z_axis_type'] = current_typeoffirstfixedsurface
+    assert conf['Z_axis_type'] == current_typeoffirstfixedsurface, \
+           "type of first fixed surface must be the same for all plotted objects"
+
+    if not 'hCoord' in conf:
+        conf['hCoord'] = hCoord if hCoord is not None else 'll'
+    assert hCoord is None or conf['hCoord'] == hCoord, \
+           "horizontal transformation of coordinate (hCoord option) must be the same for all plotted objects"
+
+    if not 'z_factor' in conf:
+        conf['z_factor'] = z_factor if z_factor is not None else 1.
+    assert z_factor is None or conf['z_factor'] == z_factor, \
+           "factor applied on z axis must be the same for all plotted objects"
+           
+    if not 'offset' in conf:
+        conf['offset'] = offset if offset is not None else (0., 0.)
+    assert offset is None or conf['offset'] == offset, \
+           "offset applied on x/y axis must be the same for all plotted objects"
+
+    return conf['hCoord'], conf['z_factor'], conf['offset']
+
+def vtk_write_grid(grid, filename):
+    """
+    Writes a grid into a file
+    :param grid: a vtk grid
+    :param filename: filename to save in
+    """
+    import vtk
+    if isinstance(grid, vtk.vtkUnstructuredGrid):
+        writer = vtk.vtkUnstructuredGridWriter()
+    elif isinstance(grid, vtk.vtkStructuredGrid):
+        writer = vtk.vtkStructuredGridWriter()
+    else:
+        epygramError('Unknown grid type')
+    writer.SetFileName(filename)
+    writer.SetInputData(grid)
+    writer.Write()
 
 def datetimerange(*_, **__):
     """

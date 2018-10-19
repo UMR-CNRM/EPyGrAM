@@ -488,6 +488,19 @@ class netCDF(FileResource):
                      len(self._variables[var_corresponding_to_Y_grid].dimensions) == 2:
                     Xgrid = self._variables[var_corresponding_to_X_grid][:, :]
                     Ygrid = self._variables[var_corresponding_to_Y_grid][:, :]
+                elif len(self._variables[var_corresponding_to_X_grid].dimensions) == 3 and \
+                     len(self._variables[var_corresponding_to_Y_grid].dimensions) == 3:
+                    #In this case, we check that X and Y are constant on Z axis
+                    Xgrid = self._variables[var_corresponding_to_X_grid][:, :, :]
+                    Ygrid = self._variables[var_corresponding_to_Y_grid][:, :, :]
+                    if not all([numpy.all(Xgrid[0] == Xgrid[i] for i in range(len(Xgrid)))]):
+                        raise epygramError('X coordinate must be constant on the vertical')
+                    if not all([numpy.all(Ygrid[0] == Ygrid[i] for i in range(len(Ygrid)))]):
+                        raise epygramError('Y coordinate must be constant on the vertical')
+                    Xgrid = Xgrid[0]
+                    Ygrid = Ygrid[0]
+                else:
+                    raise epygramError('Unknown case for X and Y dimensions')
                 if Ygrid[0, 0] > Ygrid[-1, 0] and not behaviour.get('reverse_Yaxis'):
                     epylog.warning("Ygrid seems to be reversed; shouldn't behaviour['reverse_Yaxis'] be True ?")
                 elif behaviour.get('reverse_Yaxis'):
@@ -760,6 +773,8 @@ class netCDF(FileResource):
             if a != 'validity':
                 if isinstance(variable.getncattr(a), numpy.float32):  # pb with json and float32
                     comment.update({a:numpy.float64(variable.getncattr(a))})
+                elif isinstance(variable.getncattr(a), numpy.int32):  # pb with json and int32
+                    comment.update({a:numpy.int64(variable.getncattr(a))})
                 elif isinstance(variable.getncattr(a), numpy.ndarray):  # pb with json and numpy arrays
                     comment.update({a:numpy.float64(variable.getncattr(a)).tolist()})
                 else:

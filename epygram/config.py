@@ -64,7 +64,8 @@ if os.getenv('DISPLAY', '') == '' or \
    'prolix' in platform.node():
     noninteractive_backend = 'Agg'
     default_graphical_output = 'png'
-
+#: Cache directory for internet requests
+internet_cache_dir = None
 
 # FORMATS #
 ###########

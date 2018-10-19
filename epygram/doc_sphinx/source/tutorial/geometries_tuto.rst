@@ -126,4 +126,40 @@ These V1D fields are also *plottable*, by the way:
 
 >>> p.plotfield(title='A simple profile') 
 
+-----------------------------------------------------------
+
+3D plot
+-------
+We can plot, whis a 3D rendering, a lat/lon image on a surface.
+The surface is described by the vertical coordinate of the geometry.
+Two methods are available to plot the NOAA's bluemarble image or
+tiles from a map tiles server.
+
+>>> import vtk #We need to import vtk before epygram even if do not use it directly in the script
+>>> import epygram
+Vortex 1.4.0 loaded ( Friday 19. October 2018, at 14:40:31 )
+>>> epygram.init_env() #initialisation of environment, for FA/LFI and spectrals transforms sub-libraries
+>>> r = epygram.formats.resource(filename, 'r')
+>>> 
+>>> #We need a geometry containing the altitude of the ground
+... zs = r.readfield('SPECSURFGEOPOTEN') #surface geopotential
+>>> zs.sp2gp() #convert spectral data into grid points
+>>> zs.setdata(zs.getdata() / 9.8) #Convert geopotential height into height
+>>> zs.use_field_as_vcoord(zs, 103) #We replace the vertical coordinate of the field by the height values
+>>> 
+>>> #Set-up of the view
+... offset = zs.geometry.gimme_corners_ll()['ll'] #We translate the domain
+>>> hCoord = 'll' #We use lat/lon on the horizontal
+>>> z_factor = 0.0005 #0.0005 horizontal degree of lat/lon is represented by the same length as one meter on the vertical
+>>> ren = epygram.util.vtk_set_window((0.5, 0.5, 0.5), (800, 800))
+>>> 
+>>> zs.geometry.plot3DMaptiles(ren,                                                   #window to plot on
+...                            "https://a.tile.openstreetmap.org/${z}/${x}/${y}.png", #url of the map tiles server
+...                            2,                                                     #ratio between field and tiles resolutions
+...                            interpolation='linear',                                #interpolation method
+...                            hCoord=hCoord, z_factor=z_factor, offset=offset)       #helpful only on the first 3D plot
+>>> 
+>>> ren['interactor'].Start()
+
+
 

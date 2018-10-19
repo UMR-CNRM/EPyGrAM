@@ -68,26 +68,32 @@ def parse_LFIstr_totuple(strfid):
     return tuple(fid)
 
 
+cache_inquire = {}
+cache_inquire_re = {}
 def inquire_field_dict(fieldname):
     """
     Returns the info contained in the LFI _field_dict for the requested field.
     """
-    matching_field = None
-    for fd in LFI._field_dict:
-        dictitem = fd['name']
-        pattern = re.subn('\.', r'\.', dictitem)[0]  # protect '.'
-        pattern = pattern.replace('?', '.')  # change unix '?' to python '.' (any char)
-        pattern = pattern.replace('*', '.*')  # change unix '*' to python '.*' (several any char)
-        pattern += '(?!.)'
-        if re.match(pattern, fieldname):
-            matching_field = fd
-            break
+    if fieldname not in cache_inquire:
+        matching_field = None
+        for fd in LFI._field_dict:
+            if fd['name'] not in cache_inquire_re:
+                dictitem = fd['name']
+                pattern = re.subn('\.', r'\.', dictitem)[0]  # protect '.'
+                pattern = pattern.replace('?', '.')  # change unix '?' to python '.' (any char)
+                pattern = pattern.replace('*', '.*')  # change unix '*' to python '.*' (several any char)
+                pattern += '(?!.)'
+                cache_inquire_re[fd['name']] = re.compile(pattern)
+            if cache_inquire_re[fd['name']].match(fieldname):
+                matching_field = fd
+                break
+        if matching_field is None:
+            epylog.info("field '" + fieldname + "' is not referenced in Field_Dict_LFI. Assume its type being a MiscField.")
+            matching_field = {'name':fieldname, 'type':'Misc', 'nature':'float', 'dimension':'1'}
 
-    if matching_field is None:
-        epylog.info("field '" + fieldname + "' is not referenced in Field_Dict_LFI. Assume its type being a MiscField.")
-        matching_field = {'name':fieldname, 'type':'Misc', 'nature':'float', 'dimension':'1'}
+        cache_inquire[fieldname] = fd
 
-    return copy.deepcopy(matching_field)
+    return dict(cache_inquire[fieldname])
 
 
 def _complete_generic_fid_from_fid(generic_fid, fieldidentifier):
@@ -108,9 +114,12 @@ def _complete_generic_fid_from_fid(generic_fid, fieldidentifier):
             generic_fid['level'] = level
         elif field_info['type'] == '3D':
             pass  # multilevel in true3d
+        elif field_info['type'] == 'Misc':
+            pass #No level to add to the generic_fid
         else:
             raise epygramError("Must not happen...")
-
+    if 'productDefinitionTemplateNumber' not in generic_fid:
+        generic_fid['productDefinitionTemplateNumber'] = 0
     return generic_fid
 
 
@@ -131,7 +140,12 @@ class LFI(FileResource):
                 access='rwx',
                 info="Compression flag."),
             true3d=dict(
-                info="",  # TODO: Seb
+                info="If False, 3D fields are seen as a collection of H2D fields",
+                optional=True,
+                default=False,
+                type=bool),
+            moveOnMass=dict(
+                info="If True, 3d fields are put on mass levels",
                 optional=True,
                 default=False,
                 type=bool)
@@ -536,6 +550,17 @@ class LFI(FileResource):
                     raise NotImplementedError("reading of datatype " + field_info['nature'] + " field.")
             elif field_info['type'] == '3D':
                 kmax = len(self.geometry.vcoordinate.grid['gridlevels']) + 1
+
+                if gridIndicator['vertical'] == 'flux' and self.moveOnMass:
+                    offset = 0
+                    data3d = numpy.array(data.view('float64')[offset:offset +
+                                                              self.geometry.dimensions['X'] *
+                                                              self.geometry.dimensions['Y'] *
+                                                              kmax])
+                    data3d = data3d.reshape((kmax, self.geometry.dimensions['X'] * self.geometry.dimensions['Y']))
+                    data3d[:-1, :] = 0.5 * (data3d[:-1, :] + data3d[1:, :]) #last level kept untouched
+                    data = data3d.flatten()
+                    
                 if self.true3d:
                     offset = 0
                     data = numpy.array(data.view('float64')[offset:offset +
@@ -549,6 +574,9 @@ class LFI(FileResource):
                     data = numpy.array(data.view('float64')[offset:offset +
                                                             self.geometry.dimensions['X'] *
                                                             self.geometry.dimensions['Y']])
+
+        if field_info['type'] == '3D' and gridIndicator['vertical'] == 'flux' and self.moveOnMass:
+            gridIndicator['vertical'] = 'mass'
 
         # Create field
         if field_info['type'] in ['H2D', '3D']:
@@ -585,7 +613,7 @@ class LFI(FileResource):
                 # 3D data
                 data = data.reshape((len(self.geometry.vcoordinate.grid['gridlevels']) + 1,
                                      self.geometry.dimensions['X'] * self.geometry.dimensions['Y']))
-                data = geometry.reshape_data(data, 'Z')
+                data = geometry.reshape_data(data, 'Z') 
             field.setdata(data)
             if fieldname == 'LFI_COMPRESSED':
                 self._compressed = data
@@ -1023,6 +1051,7 @@ class LFI(FileResource):
             computed with linear spline interpolation;
           - if 'cubic', each horizontal point of the section is
             computed with linear spline interpolation.
+        :param exclude_extralevels: if True, not physical levels are removed
         :param cheap_height: has no effect (compatibity with FA format)
         """
         if self.true3d:
@@ -1034,7 +1063,7 @@ class LFI(FileResource):
 
         subdomain = field3d.extract_subdomain(geometry,
                                               interpolation=interpolation,
-                                              exclude_extralevels=True)
+                                              exclude_extralevels=exclude_extralevels)
 
         # vertical coords conversion
         if vertical_coordinate not in (None, subdomain.geometry.vcoordinate.typeoffirstfixedsurface):
@@ -1065,7 +1094,7 @@ class LFI(FileResource):
                                         resource=self, resource_fids=[('PABST', '*')])
                 P = P3d.extract_subdomain(geometry,
                                           interpolation=interpolation,
-                                          exclude_extralevels=True)
+                                          exclude_extralevels=exclude_extralevels)
                 subdomain.geometry.vcoordinate = hybridH2pressure(subdomain.geometry.vcoordinate,
                                                                   P.getdata(),
                                                                   P.geometry.vcoordinate.position_on_grid)

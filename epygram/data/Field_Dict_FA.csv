@@ -3,14 +3,14 @@ main
 
 # upper-air fields
 name:S[0-9][0-9][0-9]CLOUD_FRACTI,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:6,parameterNumber:7
-name:S[0-9][0-9][0-9]CLOUD_WATER,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:6,parameterNumber:6
+name:S[0-9][0-9][0-9]CLOUD_WATER,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:83
 name:S[0-9][0-9][0-9]EDR,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:19,parameterNumber:28
 name:S[0-9][0-9][0-9]FONC.COURANT,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:2,parameterNumber:4
 name:S[0-9][0-9][0-9]GEOPOTENTIEL,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:3,parameterNumber:4
 name:S[0-9][0-9][0-9]GRAUPEL,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:32
 name:S[0-9][0-9][0-9]HUMI_RELATIV,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:1
 name:S[0-9][0-9][0-9]HUMI.SPECIFI,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:0
-name:S[0-9][0-9][0-9]ICE_CRYSTAL,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:82
+name:S[0-9][0-9][0-9]ICE_CRYSTAL,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:84
 name:S[0-9][0-9][0-9]INPRRTOT3D,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:255
 name:S[0-9][0-9][0-9]LIQUID_WATER,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:1,parameterNumber:83
 name:S[0-9][0-9][0-9]POT.VITESSE,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:2,parameterNumber:5
@@ -42,11 +42,11 @@ name:S[0-9][0-9][0-9]WIND.U.PHYS,type:H2D,typeOfFirstFixedSurface:119,discipline
 name:S[0-9][0-9][0-9]WIND.V.PHYS,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:2,parameterNumber:3
 name:H[0-9][0-9][0-9][0-9][0-9]ABS_VORTIC,type:H2D,typeOfFirstFixedSurface:103,discipline:0,parameterCategory:2,parameterNumber:10
 name:H[0-9][0-9][0-9][0-9][0-9]CLOUD_FRAC,type:H2D,typeOfFirstFixedSurface:103,discipline:0,parameterCategory:6,parameterNumber:7
-name:H[0-9][0-9][0-9][0-9][0-9]CLOUD_WATE,type:H2D,typeOfFirstFixedSurface:103,discipline:0,parameterCategory:6,parameterNumber:6
-name:H[0-9][0-9][0-9][0-9][0-9]GEOPOTENTI,type:H2D,typeOfFirstFixedSurface:103,discipline:0,parameterCategory:3,parameterNumber:5
+name:H[0-9][0-9][0-9][0-9][0-9]CLOUD_WATE,type:H2D,typeOfFirstFixedSurface:103,discipline:0,parameterCategory:1,parameterNumber:83
+name:H[0-9][0-9][0-9][0-9][0-9]GEOPOTENTI,type:H2D,typeOfFirstFixedSurface:103,discipline:0,parameterCategory:3,parameterNumber:255
 name:H[0-9][0-9][0-9][0-9][0-9]GRAUPEL,type:H2D,typeOfFirstFixedSurface:103,discipline:0,parameterCategory:1,parameterNumber:32
 name:H[0-9][0-9][0-9][0-9][0-9]HUMI_RELAT,type:H2D,typeOfFirstFixedSurface:103,discipline:0,parameterCategory:1,parameterNumber:1
-name:H[0-9][0-9][0-9][0-9][0-9]ICE_CRYSTA,type:H2D,typeOfFirstFixedSurface:103,discipline:0,parameterCategory:1,parameterNumber:82
+name:H[0-9][0-9][0-9][0-9][0-9]ICE_CRYSTA,type:H2D,typeOfFirstFixedSurface:103,discipline:0,parameterCategory:1,parameterNumber:84
 name:H[0-9][0-9][0-9][0-9][0-9]PRESSURE,type:H2D,typeOfFirstFixedSurface:103,discipline:0,parameterCategory:3,parameterNumber:0
 name:H[0-9][0-9][0-9][0-9][0-9]POT_VORTIC,type:H2D,typeOfFirstFixedSurface:103,discipline:0,parameterCategory:2,parameterNumber:14
 name:H[0-9][0-9][0-9][0-9][0-9]RAD_LIQUID,type:H2D,typeOfFirstFixedSurface:103,discipline:0,parameterCategory:1,parameterNumber:69
@@ -62,13 +62,13 @@ name:H[0-9][0-9][0-9][0-9][0-9]VENT_MERID,type:H2D,typeOfFirstFixedSurface:103,d
 name:H[0-9][0-9][0-9][0-9][0-9]VENT_ZONAL,type:H2D,typeOfFirstFixedSurface:103,discipline:0,parameterCategory:2,parameterNumber:2
 name:P[0-9][0-9][0-9][0-9][0-9]ABS_VORTIC,type:H2D,typeOfFirstFixedSurface:100,discipline:0,parameterCategory:2,parameterNumber:10
 name:P[0-9][0-9][0-9][0-9][0-9]CLOUD_FRAC,type:H2D,typeOfFirstFixedSurface:100,discipline:0,parameterCategory:6,parameterNumber:7
-name:P[0-9][0-9][0-9][0-9][0-9]CLOUD_WATE,type:H2D,typeOfFirstFixedSurface:100,discipline:0,parameterCategory:6,parameterNumber:6
+name:P[0-9][0-9][0-9][0-9][0-9]CLOUD_WATE,type:H2D,typeOfFirstFixedSurface:100,discipline:0,parameterCategory:1,parameterNumber:83
 name:P[0-9][0-9][0-9][0-9][0-9]DIVERGENCE,type:H2D,typeOfFirstFixedSurface:100,discipline:0,parameterCategory:2,parameterNumber:11
 name:P[0-9][0-9][0-9][0-9][0-9]EDR,type:H2D,typeOfFirstFixedSurface:100,discipline:0,parameterCategory:19,parameterNumber:28
-name:P[0-9][0-9][0-9][0-9][0-9]GEOPOTENTI,type:H2D,typeOfFirstFixedSurface:100,discipline:0,parameterCategory:3,parameterNumber:5
+name:P[0-9][0-9][0-9][0-9][0-9]GEOPOTENTI,type:H2D,typeOfFirstFixedSurface:100,discipline:0,parameterCategory:3,parameterNumber:4
 name:P[0-9][0-9][0-9][0-9][0-9]GRAUPEL,type:H2D,typeOfFirstFixedSurface:100,discipline:0,parameterCategory:1,parameterNumber:32
 name:P[0-9][0-9][0-9][0-9][0-9]HUMI_RELAT,type:H2D,typeOfFirstFixedSurface:100,discipline:0,parameterCategory:1,parameterNumber:1
-name:P[0-9][0-9][0-9][0-9][0-9]ICE_CRYSTA,type:H2D,typeOfFirstFixedSurface:100,discipline:0,parameterCategory:1,parameterNumber:82
+name:P[0-9][0-9][0-9][0-9][0-9]ICE_CRYSTA,type:H2D,typeOfFirstFixedSurface:100,discipline:0,parameterCategory:1,parameterNumber:84
 name:P[0-9][0-9][0-9][0-9][0-9]POT_VORTIC,type:H2D,typeOfFirstFixedSurface:100,discipline:0,parameterCategory:2,parameterNumber:14
 name:P[0-9][0-9][0-9][0-9][0-9]RAD_LIQUID,type:H2D,typeOfFirstFixedSurface:100,discipline:0,parameterCategory:1,parameterNumber:69
 name:P[0-9][0-9][0-9][0-9][0-9]RAD_SOLID_,type:H2D,typeOfFirstFixedSurface:100,discipline:0,parameterCategory:1,parameterNumber:70
@@ -98,7 +98,7 @@ name:DV[0-9][0-9]*,type:H2D,typeOfFirstFixedSurface:1
 name:SF[0-9][0-9]*,type:H2D,typeOfFirstFixedSurface:1
 
 # SURF*
-name:SPECSURFGEOPOTEN,type:H2D,typeOfFirstFixedSurface:1,discipline:0,parameterCategory:3,parameterNumber:5
+name:SPECSURFGEOPOTEN,type:H2D,typeOfFirstFixedSurface:1,discipline:0,parameterCategory:3,parameterNumber:4
 name:SURFACCGRAUPEL,type:H2D,typeOfFirstFixedSurface:1,discipline:0,parameterCategory:1,parameterNumber:32,productDefinitionTemplateNumber:8,typeOfStatisticalProcessing:1
 name:SURFACCGRELE,type:H2D,typeOfFirstFixedSurface:1,discipline:0,parameterCategory:1,parameterNumber:31,productDefinitionTemplateNumber:8,typeOfStatisticalProcessing:1
 name:SURFACCNEIGE,type:H2D,typeOfFirstFixedSurface:1,discipline:0,parameterCategory:1,parameterNumber:50,productDefinitionTemplateNumber:8,typeOfStatisticalProcessing:1

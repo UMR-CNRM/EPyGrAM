@@ -25,7 +25,14 @@ class SubdomainResource(Resource):
                 info="Low level resource"),
             geometry=dict(
                 type=D3Geometry,
+                optional=True,
+                default=None,
                 info="Geometry on which extract fields"),
+            subarray=dict(
+                type=FPDict,
+                optional=True,
+                default=FPDict(),
+                info="Dict containing the imin, imax, jmin and jmax keys delimiting the domain to extract"),
             options=dict(
                 type=FPDict,
                 optional=True,
@@ -43,6 +50,13 @@ class SubdomainResource(Resource):
 
         self.format = "Subdomain"
         self.lowLevelFormat = self.resource.format
+        if (self.geometry is None and len(self.subarray) == 0) or \
+           (self.geometry is not None and len(self.subarray) > 0):
+            raise epygramError("one and only one of geometry and subarray must be set")
+        self._mode = 'subarray' if self.geometry is None else 'geometry'
+        if self._mode == 'subarray':
+            if set(self.subarray.keys()) != set(['imin', 'imax', 'jmin', 'jmax']):
+                raise epygramError("subarray must contain exactly the imin, imax, jmin and jmax keys")
 
     def open(self):
         """Opens the low level resource"""
@@ -89,11 +103,22 @@ class SubdomainResource(Resource):
         getdata = kwargs.get('getdata', True)
         fieldset = FieldSet()
         for field in self.resource.readfields(*args, **kwargs):
-            if field.spectral and getdata:
-                field.sp2gp()
-            field_on_subzone = field.extract_subdomain(self.geometry,
-                                                       getdata=getdata,
-                                                       **self.options)
+            if field.spectral:
+                if getdata:
+                    field.sp2gp()
+                else:
+                    field._attributes['spectral_geometry'] = None
+            if self._mode == 'geometry':
+                field_on_subzone = field.extract_subdomain(self.geometry,
+                                                           getdata=getdata,
+                                                           **self.options)
+            else:
+                field_on_subzone = field.extract_subarray(self.subarray['imin'],
+                                                          self.subarray['imax'],
+                                                          self.subarray['jmin'],
+                                                          self.subarray['jmax'],
+                                                          getdata=getdata,
+                                                          deepcopy=False)
             field_on_subzone.fid[self.format] = field_on_subzone.fid[self.lowLevelFormat]
             fieldset.append(field_on_subzone)
 
@@ -106,19 +131,21 @@ class SubdomainResource(Resource):
     def extractprofile(self, *args, **kwargs):
         """Extracts profiles."""
         profile = self.resource.extractprofile(*args, **kwargs)
-        lons, lats = profile.geometry.get_lonlat_grid()
-        for (lon, lat) in zip(lons.flatten(), lats.flatten()):
-            if not self.geometry.point_is_inside_domain_ll(lon, lat):
-                raise epygramError("Profile is not in the subdomain geometry.")
+        if self._mode == 'geometry':
+            lons, lats = profile.geometry.get_lonlat_grid()
+            for (lon, lat) in zip(lons.flatten(), lats.flatten()):
+                if not self.geometry.point_is_inside_domain_ll(lon, lat):
+                    raise epygramError("Profile is not in the subdomain geometry.")
         return profile
 
     def extractsection(self, *args, **kwargs):
         """Extracts sections."""
         section = self.resource.extractsection(*args, **kwargs)
-        lons, lats = section.geometry.get_lonlat_grid()
-        for (lon, lat) in zip(lons.flatten(), lats.flatten()):
-            if not self.geometry.point_is_inside_domain_ll(lon, lat):
-                raise epygramError("Section is not in the subdomain geometry.")
+        if self._mode == 'geometry':
+            lons, lats = section.geometry.get_lonlat_grid()
+            for (lon, lat) in zip(lons.flatten(), lats.flatten()):
+                if not self.geometry.point_is_inside_domain_ll(lon, lat):
+                    raise epygramError("Section is not in the subdomain geometry.")
         return section
 
     @property

@@ -57,6 +57,7 @@ class VGeometry(RecursiveObject, FootprintBase):
                 info="Handles description of the vertical grid."),
             position_on_grid=dict(
                 optional=True,
+                access='rwx',
                 info="Position of points w/r to the vertical grid.",
                 values=set(['mass', 'flux', '__unknown__']),
                 default='__unknown__')
@@ -289,7 +290,7 @@ def hybridH2altitude(hybridH_geometry, Zsurf,
                                              conv2height=conv2height)
     else:
         raise epygramError("gridposition != 'mass' or 'flux'.")
-    levels = levels[numpy.array(hybridH_geometry.levels) - 1]
+    levels = levels[numpy.array(hybridH_geometry.levels)]
     kwargs_vcoord = {'structure':'V',
                      'typeoffirstfixedsurface': 103 if conv2height else 102,
                      'position_on_grid': hybridH_geometry.position_on_grid,
