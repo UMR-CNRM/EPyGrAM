@@ -5,23 +5,31 @@ import os
 import shutil
 import io
 import argparse
+from collections import defaultdict
 
 epygram_repositories = {
     'cnrm':'/home/common/epygram',
     'bullx':'/home/gmap/mrpe/mary/public',
-    'pagre':'/home/mrpe/mary/public'}
+    'dsidev':'/soprano/home/marp999/epygram'}
+userconfigs = defaultdict(lambda:'userconfig_no_arpifs4py.py',  # default
+                          cnrm='userconfig_empty.py',
+                          bullx='userconfig_empty.py')
 linkname = 'src'
 epygram_home = os.path.join(os.environ['HOME'], '.epygram')
 profile = os.path.join(epygram_home, 'profile')
 
-if 'beaufix' in os.environ.get('HOSTNAME', '') or 'prolix' in os.environ.get('HOSTNAME', ''):
+if any([h in os.environ.get('HOSTNAME', '') for h in
+        ['beaufix', 'prolix']]):
     localhost = 'bullx'
-elif 'pagre' in os.environ.get('HOSTNAME', ''):
-    localhost = 'pagre'
+elif any([h in os.environ.get('HOSTNAME', '') for h in
+          ['alose', 'pagre', 'orphie', 'rason', 'guppy']]):
+    localhost = 'dsidev'
 else:
     localhost = 'cnrm'
 epygram_repo = epygram_repositories.get(localhost,
                                         epygram_repositories['cnrm'])
+userconfig = userconfigs[localhost]
+_install_profile = localhost + '_profile'
 
 
 def main(version='',
@@ -45,11 +53,11 @@ def main(version='',
     os.symlink(os.path.join(fromdir, 'EPyGrAM' + version),
                linkname)
     if update_epygram_profile or not os.path.exists(profile):
-        shutil.copy(os.path.join(linkname, '_install', localhost + '_profile'),
+        shutil.copy(os.path.join(linkname, '_install', _install_profile),
                     profile)
-    uc = 'userconfig.py'
-    if not os.path.exists(uc):
-        shutil.copy(os.path.join(linkname, '_install', uc), uc)
+    if not os.path.exists('userconfig.py'):
+        shutil.copy(os.path.join(linkname, '_install', userconfig),
+                    'userconfig.py')
     ufdf = 'user_Field_Dict_FA.csv'
     if not os.path.exists(ufdf):
         shutil.copy(os.path.join(linkname, '_install', ufdf), ufdf)
