@@ -188,6 +188,12 @@ class D3CommonField(Field):
             all_lonslats = (list(all_lonslats[0]), list(all_lonslats[1]))
             # repack and interpolate
             for n in range(maxsize):
+                if maxsize > 1:
+                    lonn = lon[n]
+                    latn = lat[n]
+                else:
+                    lonn = my_lon.item()
+                    latn = my_lat.item()
                 loc_values = [flat_values_at_interp_points.pop(0) for _ in range(len(interp_points[n]))]
                 loc_lons = [all_lonslats[0].pop(0) for _ in range(len(interp_points[n]))]
                 loc_lats = [all_lonslats[1].pop(0) for _ in range(len(interp_points[n]))]

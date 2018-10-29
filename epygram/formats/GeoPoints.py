@@ -149,9 +149,9 @@ class GeoPoints(FileResource):
                     else:
                         raise NotImplementedError("Not yet. Cf. https://software.ecmwf.int/wiki/display/METV/Geopoints for implementing.")
 
-            if not self.no_header:
-                # header initializations
-                if self.parameter is not None and self.columns is not None:
+            if self.parameter is not None and self.columns is not None:
+                if not self.no_header:
+                    # header initializations
                     self._file = open(self.container.abspath, self.openmode)
                     self._file.write('#GEO\n')
                     for k, v in self.other_attributes.items():
@@ -164,12 +164,12 @@ class GeoPoints(FileResource):
                     self._file.write('#DATA\n')
                     self.isopen = True
                 else:
-                    epylog.debug("cannot open GeoPoints in 'w' mode without" +
-                                 " attributes *parameter* and *columns* set." +
-                                 " Not open yet.")
+                    self._file = open(self.container.abspath, self.openmode)
+                    self.isopen = True
             else:
-                self._file = open(self.container.abspath, self.openmode)
-                self.isopen = True
+                epylog.debug("cannot open GeoPoints in 'w' mode without" +
+                             " attributes *parameter* and *columns* set." +
+                             " Not open yet.")
 
     def close(self):
         """
@@ -390,7 +390,7 @@ class GeoPoints(FileResource):
         """
         if self.openmode == 'r':
             raise IOError("cannot write field in a GeoPoints with openmode 'r'.")
-
+        
         if not self.isopen:
             open_kwargs = {}
             if self.columns:

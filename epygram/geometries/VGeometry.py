@@ -374,7 +374,7 @@ def hybridP_coord_and_surfpressure_to_3D_pressure_field(
     pressures = hybridP2pressure(hybridP_geometry, Psurf.data, vertical_mean,
                                  gridposition=gridposition).levels
     vgeom = fpx.geometrys.almost_clone(hybridP_geometry,
-                                       levels=range(1, len(pressures) + 1))
+                                       levels=list(range(1, len(pressures) + 1)))
     geom = fpx.geometrys.almost_clone(Psurf.geometry,
                                       structure='3D',
                                       vcoordinate=vgeom)
@@ -382,7 +382,11 @@ def hybridP_coord_and_surfpressure_to_3D_pressure_field(
                            structure='3D',
                            geometry=geom,
                            units='hPa')
-    d3pressure.setdata(numpy.array(pressures))
+    if isinstance(pressures[0], numpy.ma.masked_array):
+        pressures = numpy.ma.array(pressures)
+    else:
+        pressures = numpy.array(pressures)
+    d3pressure.setdata(pressures)
     return d3pressure
 
 

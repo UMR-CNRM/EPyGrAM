@@ -150,9 +150,9 @@ def convert(filename,
                                                                      output_format_suffix]),
                                                            openmode='w',
                                                            fmt=fmt_dict[output_format_suffix],
-                                                           other_attributes=({'FORMAT':'XYV'} if kwargs.pop('llv') else None),
-                                                           columns=kwargs.pop('columns'),
-                                                           no_header=kwargs.pop('no_header', False)
+                                                           other_attributes=({'FORMAT':'XYV'} if kwargs.get('llv') else None),
+                                                           columns=kwargs.get('columns'),
+                                                           no_header=kwargs.get('no_header', False)
                                                            )
             else:
                 output_resource = epygram.formats.resource('.'.join([filename,

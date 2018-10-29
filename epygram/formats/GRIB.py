@@ -432,7 +432,8 @@ class GRIBmessage(RecursiveObject, dict):
             fid = field.fid.get('GRIB2', field.fid.get('generic', None))
             assert fid is not None, "No adequate fid (GRIB2, generic) found to write in GRIB."
             self['tablesVersion'] = fid.get('tablesVersion', config.GRIB_default_tablesVersion)
-            param_list = ['discipline', 'parameterCategory', 'parameterNumber']
+            param_list = ['discipline', 'parameterCategory', 'parameterNumber',
+                          'productDefinitionTemplateNumber']
             template = fid.get('productDefinitionTemplateNumber', 0)
             param_list.extend(self.specific_fid_keys_for(template))
             for k in param_list:
@@ -1438,8 +1439,7 @@ class GRIB(FileResource):
         :param complete: list fields with their natural fid + generic one.
         """
         if select is not None:
-            additional_keys = [k for k in select.keys() if k not in
-                               self._fid_keys_for_product_template()]
+            additional_keys = list(select.keys())
         else:
             additional_keys = []
         fidlist = super(GRIB, self).listfields(additional_keys=additional_keys)
@@ -1473,7 +1473,7 @@ class GRIB(FileResource):
                 t = lowlevelgrib.get(gid, b'productDefinitionTemplateNumber')  # gribapi str/unicode incompatibility
             else:
                 t = None
-            for k in GRIBmessage.fid_keys_for(n, t) + additional_keys:
+            for k in set(GRIBmessage.fid_keys_for(n, t) + additional_keys):
                 # bug in GRIB_API ? 1, 103 & 105 => 'sfc'
                 if k in ('typeOfFirstFixedSurface',
                          'indicatorOfTypeOfLevel',
@@ -1710,6 +1710,7 @@ class GRIB(FileResource):
         matchingfields = FieldSet()
         idx = lowlevelgrib.index_new_from_file(str(self._open_through),  # gribapi str/unicode incompatibility
                                                [str(k) for k in handgrip.keys()])  # gribapi str/unicode incompatibility
+                                               # TODO: implement fix from Daniel
         # filter
         for k, v in handgrip.items():
             # BUG in gribapi ? type conversion seems not to work for index

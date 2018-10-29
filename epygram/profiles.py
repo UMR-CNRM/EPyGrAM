@@ -40,7 +40,6 @@ def hybridP2fluxpressure(A, B, Psurf):
 
     A and B must not contain the first coefficient (A=B=0.)
     """
-
     if not len(A) == len(B):
         raise ValueError("A, B must have the same size.")
     if not isinstance(Psurf, numpy.ndarray):
@@ -49,7 +48,11 @@ def hybridP2fluxpressure(A, B, Psurf):
         else:
             Psurf = numpy.array(Psurf)
 
-    pi_tilde = numpy.zeros([len(A)] + list(Psurf.shape))
+    if isinstance(Psurf, numpy.ma.masked_array):
+        pi_tilde = numpy.ma.masked_all([len(A)] + list(Psurf.shape))
+        pi_tilde.mask[:, ...] = Psurf.mask[...]
+    else:
+        pi_tilde = numpy.zeros([len(A)] + list(Psurf.shape))
     # computation
     for k in range(len(A)):
         pi_tilde[k] = A[k] + B[k] * Psurf
@@ -156,7 +159,11 @@ def flux2masspressures(pi_tilde, vertical_mean, Ptop=default_Ptop,
 
     if LAPRXPK:
         LAPRXPK_for_first_level = LAPRXPK
-    pi = numpy.zeros(pi_tilde.shape)
+    if isinstance(pi_tilde, numpy.ma.masked_array):
+        pi = numpy.ma.masked_all(pi_tilde.shape)
+        pi.mask = pi_tilde.mask
+    else:
+        pi = numpy.zeros(pi_tilde.shape)
     for k in range(1, L + 1):
         ik = k - 1  # python arranging
         if vertical_mean == 'geometric':
