@@ -42,6 +42,7 @@ done
 no_pyc='--exclude *.pyc --exclude *__pycache__*'
 no_doc='--exclude epygram/doc_sphinx/*'
 no_libs4py='--exclude site/arpifs4py/libs4py.so'
+no_arpifs4py='--exclude site/arpifs4py'
 no_epyweb='--exclude site/epyweb'
 
 
@@ -65,7 +66,7 @@ if [ "$pagre" == 1 ]; then
   echo "------------------------------------------------------"
   echo "...pagre..."
   LOC_PAGRE="pagre:~mary/public/EPyGrAM$version/"  # COMPAS server
-  rsync -avL * $LOC_PAGRE $to_exclude4all $no_pyc $no_libs4py
+  rsync -avL * $LOC_PAGRE $to_exclude4all $no_pyc $no_arpifs4py
 fi
 # bullx
 if [ "$bullx" == 1 ]; then
@@ -88,7 +89,7 @@ if [ "$vxdev64" == 1 ]; then
 fi
 if [ "$pagre" == 1 ]; then
   echo "=> deployed on pagre"
-  echo "   libs4py.so to be linked there"
+  echo "!!! Deactivate arpifs4py formats there !!!"
 fi
 if [ "$bullx" == 1 ]; then
   echo "=> deployed on beaufix & prolix"
