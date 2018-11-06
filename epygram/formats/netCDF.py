@@ -762,6 +762,8 @@ class netCDF(FileResource):
                     comment.update({a:numpy.float64(variable.getncattr(a))})
                 elif isinstance(variable.getncattr(a), numpy.ndarray):  # pb with json and numpy arrays
                     comment.update({a:numpy.float64(variable.getncattr(a)).tolist()})
+                elif isinstance(variable.getncattr(a), numpy.int16):  # pb with json and int16
+                    comment.update({a:numpy.int64(variable.getncattr(a))})
                 else:
                     comment.update({a:variable.getncattr(a)})
         comment = json.dumps(comment)

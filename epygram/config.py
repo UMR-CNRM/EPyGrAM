@@ -206,7 +206,7 @@ netCDF_usualnames_for_standard_dimensions = {'N_dimension':('N', 'n', 'transect'
                                              'Z_dimension':('Z', 'z', 'zz', 'nz',
                                                             'level', 'nlev', 'nlevp1',
                                                             'pressure', 'hybrid-pressure',
-                                                            'height', 'altitude')}
+                                                            'height', 'altitude', 'depth')}
 #: netCDF usual names for storing lon, lat grids
 netCDF_usualnames_for_lonlat_grids = {'X':['LON', 'lon', 'lons', 'longitude', 'longitudes'],
                                       'Y':['LAT', 'lat', 'lats', 'latitude', 'latitudes']}
