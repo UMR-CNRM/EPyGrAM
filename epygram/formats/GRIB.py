@@ -114,7 +114,7 @@ class LowLevelGRIB(object):
 
 lowlevelgrib = LowLevelGRIB(config.GRIB_lowlevel_api)
 
-# FIXME: temporary conversion of surface types
+# conversion of surface types for geometry purposes only
 onetotwo = {1:1,  # ground or water surface
             20:20,  # isothermal level
             100:100,  # isobaric surface
@@ -215,7 +215,7 @@ class GRIBmessage(RecursiveObject, dict):
                     lowlevelgrib.release(gid)
             # load message in memory and save gribid
             self._gid = lowlevelgrib.any_new_from_file(self._file)
-            self._file.close()  # TOBECHECKED: not too early ?
+            self._file.close()
         elif self.built_from == 'field':
             self._build_msg_from_field(source[1],
                                        ordering=ordering,
@@ -1670,6 +1670,7 @@ class GRIB(FileResource):
                                " values and types of values")
         return filtered_matchingfields[0]
 
+    @FileResource._openbeforedelayed
     def readfields(self, handgrip,
                    getdata=True,
                    footprints_proxy_as_builder=config.footprints_proxy_as_builder,
@@ -1691,56 +1692,17 @@ class GRIB(FileResource):
           *get_info_as_json* as json in field.comment.
         *handgrip* is a dict where you can store all requested GRIB keys...
         """
-        # TODO: since the moving of GRIB_safe_indexes workaround,
-        # we can merge again readfields and _readfields
-        matchingfields = self._readfields(handgrip,
-                                          getdata=getdata,
-                                          footprints_proxy_as_builder=footprints_proxy_as_builder,
-                                          get_info_as_json=get_info_as_json)
-        return matchingfields
-
-    @FileResource._openbeforedelayed
-    def _readfields(self, handgrip,
-                    getdata=True,
-                    footprints_proxy_as_builder=config.footprints_proxy_as_builder,
-                    get_info_as_json=None):
-        """Actual method."""
         if isinstance(handgrip, six.string_types):
             handgrip = parse_GRIBstr_todict(handgrip)
         matchingfields = FieldSet()
+        filtering_keys = [str(k) for k in handgrip.keys()]  # gribapi str/unicode incompatibility
+        for i, k in enumerate(filtering_keys):
+            if isinstance(handgrip[k], int):
+                filtering_keys[i] = str(k + ':l')  # force key to be selected as int
         idx = lowlevelgrib.index_new_from_file(str(self._open_through),  # gribapi str/unicode incompatibility
-                                               [str(k) for k in handgrip.keys()])  # gribapi str/unicode incompatibility
-                                               # TODO: implement fix from Daniel
+                                               filtering_keys)
         # filter
         for k, v in handgrip.items():
-            # BUG in gribapi ? type conversion seems not to work for index
-            if k == 'indicatorOfTypeOfLevel' and isinstance(v, int):  # GRIB1
-                type_conv_GRIB1 = {1:'sfc',
-                                   8:'sfc',
-                                   # 20:'20',
-                                   100:'pl',
-                                   102:'sfc',
-                                   103:'sfc',
-                                   105:'sfc',
-                                   109:'ml',
-                                   111:'sfc',
-                                   112:'sfc',
-                                   # 113:'sfc',
-                                   # 115:'115',
-                                   117:'pv',
-                                   200:'sfc',
-                                   }
-                v = type_conv_GRIB1.get(v, str(v))
-            elif k == 'typeOfFirstFixedSurface' and isinstance(v, int):  # GRIB2
-                type_conv_GRIB2 = {1:'sfc',
-                                   100:'pl',
-                                   101:'sfc',
-                                   102:'sfc',
-                                   103:'sfc',
-                                   109:'pv',
-                                   119:'hpl',
-                                   }
-                v = type_conv_GRIB2.get(v, str(v))
             if isinstance(v, six.string_types):  # gribapi str/unicode incompatibility
                 v = str(v)
             lowlevelgrib.index_select(idx, str(k), v)  # gribapi str/unicode incompatibility
