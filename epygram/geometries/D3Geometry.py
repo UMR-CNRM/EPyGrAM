@@ -1878,6 +1878,15 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
             raise NotImplementedError("this 'input_position': " +
                                       str(self.grid['input_position']))
 
+        # earth-round grids: wrap TODO:
+        corners = self.gimme_corners_ll()
+        if abs(abs(degrees_nearest_mod(corners['ul'][0], corners['ur'][0]) -
+                   corners['ur'][0]) -
+               self.grid['X_resolution'].get('degrees')) <= config.epsilon:
+            self._earthround = True
+        else:
+            self._earthround = False
+
     def getcenter(self):
         """
         Returns the coordinate of the grid center as a tuple of Angles
@@ -1965,6 +1974,13 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
         j0 = float(Ypoints - 1) / 2.
         i = i0 + (x - Xorigin) / Xresolution - oi
         j = j0 + (y - Yorigin) / Yresolution - oj
+        if self._earthround and isinstance(i, numpy.ndarray):
+            for idx, ii in enumerate(i):
+                if ii < -0.5:
+                    ii = self.dimensions['X'] - 1 + (1 - ii)
+                elif ii > (self.dimensions['X'] - 1) + 0.5:
+                    ii = ii - (self.dimensions['X'] - 1) - 1
+                i[idx] = ii
         return (i, j)
 
     def ij2ll(self, i, j, position=None):
@@ -3579,7 +3595,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
             write_formatted(out, "Reference Longitude in deg" + varname,
                             projection['reference_lon'].get('degrees'))
         write_formatted(out, "Angle of rotation in deg", projection['rotation'].get('degrees'))
-        if self.grid.get('LAMzone', False):
+        if self.grid.get('LAMzone', False) in ('C', False):
             (lons, lats) = self.get_lonlat_grid()
             corners = self.gimme_corners_ll()
         else:
