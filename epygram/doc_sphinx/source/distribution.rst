@@ -24,7 +24,19 @@ Distribution/Installation is available:
   - on https://opensource.umr-cnrm.fr/projects/epygram/files
   - on the MF archive machine **hendrix**, under /home/mary/public/
   - (soon, to be confirmed: on https://hirlam.org/trac/browser/)
-  
+
+- Elsewhere:
+
+  - You won't be able to support (and you certainly don't need) the FA and LFA
+    formats; you must exclude them from the list of implemented formats:
+    
+      - create a $HOME/.epygram directory
+      - copy the samples userconfig.py and user_Field_Dict_FA.csv, provided in _install directory, to it
+      - copy the 'implemented_formats' from epygram/config.py into userconfig.py and remove FA and LFA from the list
+      
+  - If you don't want to support the LFI format, you can suppress it along with the FA and LFA formats.
+    Otherwise, you need to compile a shared library (.so) containing the LFI fortran subroutines
+ 
 Dependancies
 ------------
 
