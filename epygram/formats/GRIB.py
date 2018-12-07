@@ -1461,9 +1461,24 @@ class GRIB(FileResource):
     @FileResource._openbeforedelayed
     def _listfields(self, additional_keys=[]):
         """Returns a list of GRIB-type fid of the fields inside the resource."""
+        def gid_key_to_fid(gid, k, fid):
+            # bug in GRIB_API ? 1, 103 & 105 => 'sfc'
+            if k in ('typeOfFirstFixedSurface',
+                     'indicatorOfTypeOfLevel',
+                     'typeOfSecondFixedSurface',
+                     # type error when setting key 'centre' if str
+                     'centre', 'originatingCentre'):
+                fid[k] = lowlevelgrib.get(gid, str(k), int)  # gribapi str/unicode incompatibility
+            elif k in ('topLevel', 'bottomLevel'):
+                if lowlevelgrib.get(gid, b'topLevel') != lowlevelgrib.get(gid, b'bottomLevel'):  # gribapi str/unicode incompatibility
+                    fid[k] = lowlevelgrib.get(gid, str(k))  # gribapi str/unicode incompatibility
+            else:
+                fid[k] = lowlevelgrib.get(gid, str(k))  # gribapi str/unicode incompatibility
+
         fidlist = []
         _file = open(self._open_through, 'r')
         while True:
+            filter_out = False
             fid = {}
             gid = lowlevelgrib.any_new_from_file(_file, headers_only=True)
             if gid is None:
@@ -1473,21 +1488,17 @@ class GRIB(FileResource):
                 t = lowlevelgrib.get(gid, b'productDefinitionTemplateNumber')  # gribapi str/unicode incompatibility
             else:
                 t = None
-            for k in set(GRIBmessage.fid_keys_for(n, t) + additional_keys):
-                # bug in GRIB_API ? 1, 103 & 105 => 'sfc'
-                if k in ('typeOfFirstFixedSurface',
-                         'indicatorOfTypeOfLevel',
-                         'typeOfSecondFixedSurface',
-                         # type error when setting key 'centre' if str
-                         'centre', 'originatingCentre'):
-                    fid[k] = lowlevelgrib.get(gid, str(k), int)  # gribapi str/unicode incompatibility
-                elif k in ('topLevel', 'bottomLevel'):
-                    if lowlevelgrib.get(gid, b'topLevel') != lowlevelgrib.get(gid, b'bottomLevel'):  # gribapi str/unicode incompatibility
-                        fid[k] = lowlevelgrib.get(gid, str(k))  # gribapi str/unicode incompatibility
-                else:
-                    fid[k] = lowlevelgrib.get(gid, str(k))  # gribapi str/unicode incompatibility
+            for k in GRIBmessage.fid_keys_for(n, t):
+                gid_key_to_fid(gid, k, fid)
+            for k in additional_keys:
+                try:
+                    gid_key_to_fid(gid, k, fid)
+                except lowlevelgrib.InternalError:
+                    filter_out = True
+                    break
             lowlevelgrib.release(gid)
-            fidlist.append(fid)
+            if not filter_out:
+                fidlist.append(fid)
         _file.close()
 
         return fidlist

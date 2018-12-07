@@ -492,16 +492,18 @@ class netCDF(FileResource):
                     epylog.warning("Ygrid seems to be reversed; shouldn't behaviour['reverse_Yaxis'] be True ?")
                 elif behaviour.get('reverse_Yaxis'):
                     Ygrid = Ygrid[::-1, :]
+                    Xgrid = Xgrid[::-1, :]
 
                 return Xgrid, Ygrid
 
             # projection or grid
             if hasattr(variable, 'grid_mapping') and \
-               (self._variables[variable.grid_mapping].grid_mapping_name in ('lambert_conformal_conic',
-                                                                             'mercator',
-                                                                             'polar_stereographic',
-                                                                             'latitude_longitude') or
-                'gauss' in self._variables[variable.grid_mapping].grid_mapping_name.lower()):
+               (hasattr(self._variables[variable.grid_mapping], 'grid_mapping_name') and
+                (self._variables[variable.grid_mapping].grid_mapping_name in ('lambert_conformal_conic',
+                                                                              'mercator',
+                                                                              'polar_stereographic',
+                                                                              'latitude_longitude') or
+                 'gauss' in self._variables[variable.grid_mapping].grid_mapping_name.lower())):
                 # geometry described as "grid_mapping" meta-data
                 gm = variable.grid_mapping
                 grid_mapping = self._variables[gm]
@@ -762,7 +764,10 @@ class netCDF(FileResource):
                     comment.update({a:numpy.float64(variable.getncattr(a))})
                 elif isinstance(variable.getncattr(a), numpy.ndarray):  # pb with json and numpy arrays
                     comment.update({a:numpy.float64(variable.getncattr(a)).tolist()})
-                elif isinstance(variable.getncattr(a), numpy.int16):  # pb with json and int16
+                elif (isinstance(variable.getncattr(a), numpy.int16) or
+                      isinstance(variable.getncattr(a), numpy.uint16)):  # pb with json and int16
+                    comment.update({a:numpy.int64(variable.getncattr(a))})
+                elif isinstance(variable.getncattr(a), numpy.int8):  # pb with json and int8
                     comment.update({a:numpy.int64(variable.getncattr(a))})
                 else:
                     comment.update({a:variable.getncattr(a)})

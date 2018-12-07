@@ -1169,8 +1169,12 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
         """
         if self._getoffset(position) != (0., 0.):
             raise epygramError('We can only retrieve latitude and longitude of mass point on an unstructured grid')
-        lons = numpy.array(self.grid['longitudes'])
-        lats = numpy.array(self.grid['latitudes'])
+        lons = self.grid['longitudes']
+        if not isinstance(lons, numpy.ndarray):
+            lons = numpy.array(lons)
+        lats = self.grid['latitudes']
+        if not isinstance(self.grid['latitudes'], numpy.ndarray):
+            lats = numpy.array(lats)
         if len(lons.shape) == 1:
             lons = self.reshape_data(lons)
             lats = self.reshape_data(lats)

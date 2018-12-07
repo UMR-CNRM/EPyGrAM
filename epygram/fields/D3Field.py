@@ -736,20 +736,24 @@ class D3CommonField(Field):
                                  'pip install --user pyresample'""")
         # PART 0: computation of parameters for PARTS 1 & 2
         target_geo = GridDefinition(*target_geometry.get_lonlat_grid())
-        if 'gauss' in self.geometry.name:
-            # gauss grid case
-            resolution = self.geometry.resolution_j(self.geometry.dimensions['lat_number'] - 1)
-        elif self.geometry.name == 'regular_lonlat':
-            resolution = self.geometry.resolution_ij(self.geometry.dimensions['X'] / 2,
-                                                     self.geometry.dimensions['Y'] / 2)
-        else:
-            resolution = (self.geometry.grid.get('X_resolution') +
-                          self.geometry.grid.get('Y_resolution')) / 2.
+
+        def _resolution():
+            if 'gauss' in self.geometry.name:
+                # gauss grid case
+                resolution = self.geometry.resolution_j(self.geometry.dimensions['lat_number'] - 1)
+            elif self.geometry.name == 'regular_lonlat':
+                resolution = self.geometry.resolution_ij(self.geometry.dimensions['X'] / 2,
+                                                         self.geometry.dimensions['Y'] / 2)
+            else:
+                resolution = (self.geometry.grid.get('X_resolution') +
+                              self.geometry.grid.get('Y_resolution')) / 2.
+            return resolution
+
         # PART 1: computation of neighbours
         if neighbour_info in (True, None, False):
             source_geo = GridDefinition(*self.geometry.get_lonlat_grid(subzone=subzone))
             if radius_of_influence is None:
-                radius_of_influence = 4. * resolution
+                radius_of_influence = 4. * _resolution()
             if weighting == 'nearest':
                 neighbours = 1
             (valid_input_index,
@@ -800,7 +804,7 @@ class D3CommonField(Field):
                 return lambda r: numpy.exp(-r ** 2 / s ** 2)
             weighting = 'custom'
             if sigma is None:
-                sigma = 2. * resolution
+                sigma = 2. * _resolution()
             else:
                 sigma = float(sigma)
             weight_funcs = gauss(sigma)

@@ -735,10 +735,12 @@ class FA(FileResource):
         return outlists
 
     @FileResource._openbeforedelayed
-    def fieldencoding(self, fieldname):
+    def fieldencoding(self, fieldname, update_fieldscompression=False):
         """
         Returns a dict containing info about how the field **fieldname**
         is encoded: spectralness and compression. Interface to ifsaux' FANION.
+        If **update_fieldscompression**, store compression info in attribute
+        fieldscompression.
         """
         try:
             (LDCOSP,
@@ -756,6 +758,14 @@ class FA(FileResource):
                 raise e
         encoding = {'spectral':LDCOSP, 'KNGRIB':KNGRIB, 'KNBITS':KNBITS,
                     'KSTRON':KSTRON, 'KPUILA':KPUILA}
+        if update_fieldscompression:
+            # Save compression in FA
+            compression = {'KNGRIB':encoding['KNGRIB'],
+                           'KNBPDG':encoding['KNBITS'],
+                           'KNBCSP':encoding['KNBITS'],
+                           'KSTRON':encoding['KSTRON'],
+                           'KPUILA':encoding['KPUILA']}
+            self.fieldscompression[fieldname] = compression
 
         return encoding
 
@@ -790,15 +800,7 @@ class FA(FileResource):
             elif ftype == 'Misc':
                 builder = MiscField
         if ftype == 'H2D':
-            encoding = self.fieldencoding(fieldname)
-            # Save compression in FA
-            compression = {'KNGRIB':encoding['KNGRIB'],
-                           'KNBPDG':encoding['KNBITS'],
-                           'KNBCSP':encoding['KNBITS'],
-                           'KSTRON':encoding['KSTRON'],
-                           'KPUILA':encoding['KPUILA']}
-            self.fieldscompression[fieldname] = compression
-
+            encoding = self.fieldencoding(fieldname, update_fieldscompression=True)
             # vertical geometry
             kwargs_vcoord = {'structure': 'V',
                              'typeoffirstfixedsurface': self.geometry.vcoordinate.typeoffirstfixedsurface,
