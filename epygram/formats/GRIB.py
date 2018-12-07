@@ -20,6 +20,7 @@ import sys
 import six
 import tempfile
 import uuid
+import io
 
 import footprints
 from footprints import proxy as fpx, FPDict, FPList
@@ -53,22 +54,22 @@ class LowLevelGRIB(object):
             self.count_in_file = gribapi.grib_count_in_file
             self.any_new_from_file = gribapi.grib_new_from_file
             self.release = gribapi.grib_release
-            self.set = gribapi.grib_set
-            self.set_missing = gribapi.grib_set_missing
-            self.new_from_samples = gribapi.grib_new_from_samples
+            self._set = gribapi.grib_set
+            self._set_missing = gribapi.grib_set_missing
+            self._new_from_samples = gribapi.grib_new_from_samples
             self.clone = gribapi.grib_clone
-            self.get = gribapi.grib_get
-            self.get_double_array = gribapi.grib_get_double_array
+            self._get = gribapi.grib_get
+            self._get_double_array = gribapi.grib_get_double_array
             self.get_values = gribapi.grib_get_values
-            self.set_array = gribapi.grib_set_array
+            self._set_array = gribapi.grib_set_array
             self.set_values = gribapi.grib_set_values
             self.keys_iterator_new = gribapi.grib_keys_iterator_new
             self.keys_iterator_next = gribapi.grib_keys_iterator_next
             self.keys_iterator_get_name = gribapi.grib_keys_iterator_get_name
             self.keys_iterator_delete = gribapi.grib_keys_iterator_delete
             self.write = gribapi.grib_write
-            self.index_new_from_file = gribapi.grib_index_new_from_file
-            self.index_select = gribapi.grib_index_select
+            self._index_new_from_file = gribapi.grib_index_new_from_file
+            self._index_select = gribapi.grib_index_select
             self.new_from_index = gribapi.grib_new_from_index
             self.index_release = gribapi.grib_index_release
             self.InternalError = gribapi.GribInternalError
@@ -80,22 +81,22 @@ class LowLevelGRIB(object):
             self.count_in_file = eccodes.codes_count_in_file
             self.any_new_from_file = eccodes.codes_any_new_from_file
             self.release = eccodes.codes_release
-            self.set = eccodes.codes_set
-            self.set_missing = eccodes.codes_set_missing
-            self.new_from_samples = eccodes.codes_grib_new_from_samples
+            self._set = eccodes.codes_set
+            self._set_missing = eccodes.codes_set_missing
+            self._new_from_samples = eccodes.codes_grib_new_from_samples
             self.clone = eccodes.codes_clone
-            self.get = eccodes.codes_get
-            self.get_double_array = eccodes.codes_get_double_array
+            self._get = eccodes.codes_get
+            self._get_double_array = eccodes.codes_get_double_array
             self.get_values = eccodes.codes_get_values
-            self.set_array = eccodes.codes_set_array
+            self._set_array = eccodes.codes_set_array
             self.set_values = eccodes.codes_set_values
             self.keys_iterator_new = eccodes.codes_keys_iterator_new
             self.keys_iterator_next = eccodes.codes_keys_iterator_next
             self.keys_iterator_get_name = eccodes.codes_keys_iterator_get_name
             self.keys_iterator_delete = eccodes.codes_keys_iterator_delete
             self.write = eccodes.codes_write
-            self.index_new_from_file = eccodes.codes_index_new_from_file
-            self.index_select = eccodes.codes_index_select
+            self._index_new_from_file = eccodes.codes_index_new_from_file
+            self._index_select = eccodes.codes_index_select
             self.new_from_index = eccodes.codes_new_from_index
             self.index_release = eccodes.codes_index_release
             self.InternalError = eccodes.CodesInternalError
@@ -110,6 +111,31 @@ class LowLevelGRIB(object):
         if len(grib_utilities.get_samples_paths() + grib_utilities.get_definition_paths()) > 0:
             grib_utilities.complete_grib_paths(install_dir, self.api_name,
                                                reset=reset)
+
+    #  BELOW: gribapi str/unicode incompatibility
+    def set(self, gid, key, value):
+        return self._set(gid, str(key), value)
+
+    def set_missing(self, gid, key):
+        return self._set_missing(gid, str(key))
+
+    def get(self, gid, key, *args):
+        return self._get(gid, str(key), *args)
+
+    def get_double_array(self, gid, key):
+        return self._get_double_array(gid, str(key))
+
+    def set_array(self, gid, key, *args):
+        return self._set_array(gid, str(key), *args)
+
+    def index_new_from_file(self, filename, *args):
+        return self._index_new_from_file(str(filename), *args)
+
+    def index_select(self, idx, key, value):
+        return self._index_select(idx, str(key), value)
+
+    def new_from_samples(self, sample):
+        return self._new_from_samples(str(sample))
 
 
 lowlevelgrib = LowLevelGRIB(config.GRIB_lowlevel_api)
@@ -202,7 +228,7 @@ class GRIBmessage(RecursiveObject, dict):
         super(GRIBmessage, self).__init__()
         self.built_from = source[0]
         if self.built_from == 'file':
-            self._file = open(source[1], 'r')
+            self._file = open(source[1], 'rb')
             # if position specified, go to position of message
             if len(source) == 3:
                 n = source[2]
@@ -255,9 +281,9 @@ class GRIBmessage(RecursiveObject, dict):
                 v = str(value)
             else:
                 v = value
-            lowlevelgrib.set(self._gid, str(key), v)  # gribapi str/unicode incompatibility
+            lowlevelgrib.set(self._gid, key, v)
         else:
-            lowlevelgrib.set_missing(self._gid, str(key))  # gribapi str/unicode incompatibility
+            lowlevelgrib.set_missing(self._gid, key)
         super(GRIBmessage, self).__setitem__(key, value)
 
     def get(self, key, default=None):
@@ -270,14 +296,14 @@ class GRIBmessage(RecursiveObject, dict):
 
     def _clone_from_sample(self, sample):
         """Clone a sample GRIB message."""
-        sample_gid = lowlevelgrib.new_from_samples(str(sample))  # gribapi str/unicode incompatibility
+        sample_gid = lowlevelgrib.new_from_samples(sample)
         gid = lowlevelgrib.clone(sample_gid)
         lowlevelgrib.release(sample_gid)
         return gid
 
     def _clone_from_file(self, filename):
         """Clone first GRIB message from file."""
-        with open(filename, 'r') as f:
+        with open(filename, 'rb') as f:
             original_gid = lowlevelgrib.any_new_from_file(f)
             gid = lowlevelgrib.clone(original_gid)
             lowlevelgrib.release(original_gid)
@@ -301,14 +327,14 @@ class GRIBmessage(RecursiveObject, dict):
                                      'typeOfSecondFixedSurface',
                                      # type error when setting key 'centre' if str
                                      'centre', 'originatingCentre'):
-                        attr = lowlevelgrib.get(self._gid, str(attribute), int)  # gribapi str/unicode incompatibility
+                        attr = lowlevelgrib.get(self._gid, attribute, int)
                     else:
-                        attr = lowlevelgrib.get(self._gid, str(attribute))  # gribapi str/unicode incompatibility
+                        attr = lowlevelgrib.get(self._gid, attribute)
                 except lowlevelgrib.InternalError as e:
                     # differenciation not well done... PB in gribapi
                     if str(e) == 'Passed array is too small':
                         try:
-                            attr = lowlevelgrib.get_double_array(self._gid, str(attribute))  # gribapi str/unicode incompatibility
+                            attr = lowlevelgrib.get_double_array(self._gid, attribute)
                         except lowlevelgrib.InternalError as e:
                             if fatal:
                                 raise e
@@ -318,7 +344,7 @@ class GRIBmessage(RecursiveObject, dict):
                         raise type(e)(str(e) + ' : "' + attribute + '"')
             else:
                 try:
-                    attr = lowlevelgrib.get_double_array(self._gid, str(attribute))  # gribapi str/unicode incompatibility
+                    attr = lowlevelgrib.get_double_array(self._gid, attribute)
                 except lowlevelgrib.InternalError as e:
                     if fatal:
                         raise e
@@ -337,7 +363,7 @@ class GRIBmessage(RecursiveObject, dict):
 
     def _set_array_attribute(self, attribute, value):
         """Setter for array attributes."""
-        lowlevelgrib.set_array(self._gid, str(attribute), value)  # gribapi str/unicode incompatibility
+        lowlevelgrib.set_array(self._gid, attribute, value)
 
     def _build_msg_from_field(self, field,
                               ordering=config.GRIB_default_ordering,
@@ -743,7 +769,7 @@ class GRIBmessage(RecursiveObject, dict):
         values = values.squeeze()
         if not field.spectral:
             # is it necessary to pre-write values ? (packingType != from sample)
-            # Yes it is (don't really know why...)
+            # Yes it is (don't really know why...) # FIXME:
             """if required_packingType is None:  # unable to guess
                 pre_write = True
             else:
@@ -1373,12 +1399,13 @@ class GRIB(FileResource):
     def __init__(self, *args, **kwargs):
         self.isopen = False
         super(GRIB, self).__init__(*args, **kwargs)
-        self._open_through = self.container.abspath
+        self._open_through = str(self.container.abspath)  # gribapi str/unicode incompatibility
         if self.openmode in ('r', 'a'):
-            _file = open(self.container.abspath, 'r')
-            isgrib = _file.readline()
+            _file = io.open(self.container.abspath, 'rb')
+            isgrib = _file.readline()[:4]
+            isgrib = isgrib.decode('utf-8')
             _file.close()
-            if isgrib[0:4] != 'GRIB':
+            if isgrib != 'GRIB':
                 raise IOError("this resource is not a GRIB one.")
         if not self.fmtdelayedopen:
             self.open()
@@ -1400,7 +1427,7 @@ class GRIB(FileResource):
             self._open_through = str(fn)
             os.remove(self._open_through)
             os.symlink(self.container.abspath, self._open_through)
-        self._file = open(self._open_through, self.openmode)
+        self._file = open(self._open_through, self.openmode + 'b')
         self.isopen = True
 
     def close(self):
@@ -1414,7 +1441,7 @@ class GRIB(FileResource):
            os.path.exists(self._open_through) and \
            self._open_through != self.container.abspath:  # ceinture et bretelles
                 os.unlink(self._open_through)
-                self._open_through = self.container.abspath  # keep a valid filename
+                self._open_through = str(self.container.abspath)  # keep a valid filename
         if hasattr(self, '_sequential_file'):
             if hasattr(self._sequential_file, 'closed') and \
                not self._sequential_file.closed:
@@ -1468,24 +1495,24 @@ class GRIB(FileResource):
                      'typeOfSecondFixedSurface',
                      # type error when setting key 'centre' if str
                      'centre', 'originatingCentre'):
-                fid[k] = lowlevelgrib.get(gid, str(k), int)  # gribapi str/unicode incompatibility
+                fid[k] = lowlevelgrib.get(gid, k, int)
             elif k in ('topLevel', 'bottomLevel'):
-                if lowlevelgrib.get(gid, b'topLevel') != lowlevelgrib.get(gid, b'bottomLevel'):  # gribapi str/unicode incompatibility
-                    fid[k] = lowlevelgrib.get(gid, str(k))  # gribapi str/unicode incompatibility
+                if lowlevelgrib.get(gid, 'topLevel') != lowlevelgrib.get(gid, 'bottomLevel'):
+                    fid[k] = lowlevelgrib.get(gid, k)
             else:
-                fid[k] = lowlevelgrib.get(gid, str(k))  # gribapi str/unicode incompatibility
+                fid[k] = lowlevelgrib.get(gid, k)
 
         fidlist = []
-        _file = open(self._open_through, 'r')
+        _file = open(self._open_through, 'rb')
         while True:
             filter_out = False
             fid = {}
             gid = lowlevelgrib.any_new_from_file(_file, headers_only=True)
             if gid is None:
                 break
-            n = lowlevelgrib.get(gid, b'editionNumber')  # gribapi str/unicode incompatibility
+            n = lowlevelgrib.get(gid, 'editionNumber')
             if n == 2:
-                t = lowlevelgrib.get(gid, b'productDefinitionTemplateNumber')  # gribapi str/unicode incompatibility
+                t = lowlevelgrib.get(gid, 'productDefinitionTemplateNumber')
             else:
                 t = None
             for k in GRIBmessage.fid_keys_for(n, t):
@@ -1549,7 +1576,7 @@ class GRIB(FileResource):
             if not ok:
                 self._sequential_file.open()
         except AttributeError:
-            self._sequential_file = open(self._open_through, 'r')
+            self._sequential_file = open(self._open_through, 'rb')
 
         gid = lowlevelgrib.any_new_from_file(self._sequential_file,
                                              headers_only=headers_only)
@@ -1710,13 +1737,13 @@ class GRIB(FileResource):
         for i, k in enumerate(filtering_keys):
             if isinstance(handgrip[k], int):
                 filtering_keys[i] = str(k + ':l')  # force key to be selected as int
-        idx = lowlevelgrib.index_new_from_file(str(self._open_through),  # gribapi str/unicode incompatibility
+        idx = lowlevelgrib.index_new_from_file(self._open_through,
                                                filtering_keys)
         # filter
         for k, v in handgrip.items():
             if isinstance(v, six.string_types):  # gribapi str/unicode incompatibility
                 v = str(v)
-            lowlevelgrib.index_select(idx, str(k), v)  # gribapi str/unicode incompatibility
+            lowlevelgrib.index_select(idx, k, v)
         # load messages
         while True:
             gid = lowlevelgrib.new_from_index(idx)
