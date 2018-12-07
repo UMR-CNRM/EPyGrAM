@@ -35,7 +35,9 @@ Distribution/Installation is available:
       - copy the 'implemented_formats' from epygram/config.py into userconfig.py and remove FA and LFA from the list
       
   - If you don't want to support the LFI format, you can suppress it along with the FA and LFA formats.
-    Otherwise, you need to compile a shared library (.so) containing the LFI fortran subroutines
+    Otherwise, you need to compile a shared library containing the LFI fortran subroutines. A way
+    of doing this is through the compilation of the Meso-NH model. Then the libs4py.so file must be put
+    in the EPyGrAM/site/arpifs4py directory.
  
 Dependancies
 ------------

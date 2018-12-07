@@ -7,15 +7,6 @@
 Contains the class to handle the Meso-NH netCDF format.
 """
 
-
-#TODO
-#reprendre le moveonmass de LFI dans l'autre branche
-#pb: pas de difference sur les profils en 102 et 103:
-#python -c "import epygram; r = epygram.formats.resource('16J36.1.SEG01.001.nc', 'r'); f=r.extractprofile('UT', 0., 42.68, vertical_coordinate=102); print f; f.plotfield(); import matplotlib.pyplot as plt; plt.show()"
-#méthode _get_special_value
-#methode _set_special_value: si existe déjà, compare les valeurs, sinon écrit
-
-
 from __future__ import print_function, absolute_import, unicode_literals, division
 
 import datetime
@@ -32,12 +23,13 @@ from footprints import FPDict, proxy as fpx
 from bronx.datagrip.misc import read_dict_in_CSV
 
 import netCDF4
+import json
 
 from epygram import config, epygramError, util
-from epygram.util import Angle
-from epygram.base import FieldSet, FieldValidity, Field
+from epygram.util import Angle, RecursiveObject
+from epygram.base import FieldValidity, Field, FieldValidityList
 from epygram.resources import FileResource
-from epygram.fields import H2DField, MiscField, D3Field
+from epygram.fields import MiscField
 from epygram.geometries.VGeometry import hybridH2altitude, hybridH2pressure
 
 __all__ = ['netCDFMNH']
@@ -70,10 +62,20 @@ def inquire_field_dict(fieldname):
             break
 
     if matching_field is None:
-        epylog.info("field '" + fieldname + "' is not referenced in Field_Dict_netCDFMNH. Assume its type being a MiscField.")
-        matching_field = {'name':fieldname, 'type':'Misc'}
+        epylog.info("field '" + fieldname + "' is not referenced in Field_Dict_netCDFMNH.")
+        matching_field = {'name':fieldname}
 
     return copy.deepcopy(matching_field)
+
+class empty(RecursiveObject):
+    """
+    Class to hold some attributes contained in attributes
+    normally missing for a Misc field. For example, the
+    position on grid can be set in NetCDFMNH Misc field
+    whereas this has no meaning (because Misc fields are
+    not on a grid).
+    """
+    pass
 
 class netCDFMNH(FileResource):
     """
@@ -84,7 +86,12 @@ class netCDFMNH(FileResource):
         attr=dict(
             format=dict(
                 values=set(['netCDFMNH']),
-                default='netCDFMNH')
+                default='netCDFMNH'),
+            moveOnMass=dict(
+                info="If True, 3d fields are put on mass levels",
+                optional=True,
+                default=False,
+                type=bool)
         )
     )
 
@@ -92,6 +99,94 @@ class netCDFMNH(FileResource):
     CSV_field_dictionaries = config.netCDFMNH_field_dictionaries_csv
     # syntax: _field_dict = [{'name':'fieldname1', 'type':'...', ...}, {'name':'fieldname2', 'type':'...', ...}, ...]
     _field_dict = []
+
+    _specialFieldComments = {'CARTESIAN':dict(long_name='CARTESIAN', comment='Logical for cartesian geometry'),
+                             'LAT0':dict(long_name='LAT0', comment='Reference latitude for conformal projection', units='degree'),
+                             'LON0':dict(long_name='LON0', comment='Reference longitude for conformal projection', units='degree'),
+                             'LATORI':dict(long_name='LATORI', units='degree',
+                                           comment='Latitude of the point of coordinates x=0, y=0 for conformal projection'),
+                             'LATOR':dict(long_name='LATOR', comment='Latitude of 1st mass point', units='degree'),
+                             'LONORI':dict(long_name='LONORI', units='degree',
+                                           comment='Longitude of the point of coordinates x=0, y=0 for conformal projection'),
+                             'LONOR':dict(long_name='LONOR', comment='Longitude of 1st mass point', units='degree'),
+                             'RPK':dict(long_name='RPK', comment='Projection parameter for conformal projection'),
+                             'BETA':dict(long_name='BETA', comment='Rotation angle for conformal projection', units='degree'),
+                             'IMAX':dict(long_name='IMAX', comment='x-dimension of the physical domain'),
+                             'JMAX':dict(long_name='JMAX', comment='y-dimension of the physical domain'),
+                             'KMAX':dict(long_name='KMAX', comment='z-dimension of the physical domain'),
+                             'SLEVE':dict(long_name='SLEVE', comment="Logical for SLEVE coordinate", grid=numpy.int32(4)),
+                             'XHAT':dict(standard_name='projection_x_coordinate', long_name='XHAT', units='m',
+                                         comment='Position x in the conformal or cartesian plane', _FillValue=9.96920996838687e+36,
+                                         valid_min=-1.e+36, valid_max=1.e+36, grid=numpy.int32(2)),
+                             'YHAT':dict(standard_name='projection_y_coordinate', long_name='YHAT', units='m',
+                                         comment='Position y in the conformal or cartesian plane', _FillValue=9.96920996838687e+36,
+                                         valid_min=-1.e+36 , valid_max=1.e+36, grid=numpy.int32(3)),
+                             'ZHAT':dict(long_name='ZHAT', units='m', comment='Height level without orography',
+                                         _FillValue=9.96920996838687e+36, valid_min=-1.e+36, valid_max=1.e+36, grid=numpy.int32(4)),
+                             'level':dict(long_name='position z in the transformed space', standard_name='', units='m',
+                                          axis='Z', positive='up', c_grid_axis_shift=0.,
+                                          formula_terms='s: level height: ZTOP orog: ZS',
+                                          formula_definition='z(n,k,j,i)=s(k)*(height-orog(j,i))/height+orog(j,i)',
+                                          computed_standard_name='altitude'),
+                             'level_w':dict(long_name='position z in the transformed space at w location', standard_name='',
+                                            units='m', axis='Z', positive='up', c_grid_axis_shift=-0.5,
+                                            formula_terms='s: level_w height: ZTOP orog: ZS',
+                                            formula_definition='z(n,k,j,i)=s(k)*(height-orog(j,i))/height+orog(j,i)',
+                                            computed_standard_name='altitude_at_w_location'),
+                             'ZTOP':dict(standard_name='altitude_at_top_of_atmosphere_model', long_name='ZTOP',
+                                         units='m', comment='Height of top level', grid=numpy.int32(4)),
+                             'ni':dict(long_name='x-dimension of the grid', standard_name='projection_x_coordinate',
+                                       units='m', axis='X', c_grid_axis_shift=0.),        
+                             'nj':dict(long_name='y-dimension of the grid', standard_name='projection_y_coordinate',
+                                       units='m', axis='Y', c_grid_axis_shift=0.),
+                             'ni_u':dict(long_name='x-dimension of the grid at u location',
+                                         standard_name='projection_x_coordinate_at_u_location',
+                                         units='m', axis='X', c_grid_axis_shift=-0.5),
+                             'nj_u':dict(long_name='y-dimension of the grid at u location',
+                                         standard_name='projection_y_coordinate_at_u_location',
+                                         units='m', axis='Y', c_grid_axis_shift=0.),
+                             'ni_v':dict(long_name='x-dimension of the grid at v location',
+                                         standard_name='projection_x_coordinate_at_v_location',
+                                         units='m', axis='X', c_grid_axis_shift=0.),
+                             'nj_v':dict(long_name='y-dimension of the grid at v location',
+                                         standard_name='projection_y_coordinate_at_v_location',
+                                         units='m', axis='Y', c_grid_axis_shift=-0.5),
+                             'LAT':dict(long_name='LAT', units='degrees_north', comment='X_Y_latitude',
+                                        coordinates='latitude longitude', _FillValue=9.96920996838687e+36,
+                                        valid_min=-1.e+36, valid_max=1.e+36, grid=numpy.int32(1)),
+                             'LON':dict(long_name='LON', units='degrees_east', comment='X_Y_longitude',
+                                        coordinates='latitude longitude', _FillValue=9.96920996838687e+36,
+                                        valid_min=-1.e+36, valid_max=1.e+36, grid=numpy.int32(1)),
+                             'latitude':dict(standard_name='latitude', long_name='latitude',
+                                             units='degrees_north', comment='X_Y_latitude at mass point',
+                                             _FillValue=9.96920996838687e+36, valid_min=-1.e+36, valid_max=1.e+36, grid=numpy.int32(1)),
+                             'longitude':dict(standard_name='longitude', long_name='longitude',
+                                              units='degrees_east', comment='X_Y_longitude at mass point',
+                                              _FillValue=9.96920996838687e+36, valid_min=-1.e+36, valid_max=1.e+36, grid=numpy.int32(1)),
+                             'latitude_u':dict(standard_name='latitude_at_u_location', long_name='latitude at u location',
+                                               units='degrees_north', comment='X_Y_latitude at u point',
+                                               _FillValue=9.96920996838687e+36, valid_min=-1.e+36, valid_max=1.e+36, grid=numpy.int32(2)),
+                             'longitude_u':dict(standard_name='longitude_at_u_location', long_name='longitude at u location',
+                                                units='degrees_east', comment='X_Y_longitude at u point',
+                                                _FillValue=9.96920996838687e+36, valid_min=-1.e+36, valid_max=1.e+36, grid=numpy.int32(2)),
+                             'latitude_v':dict(standard_name='latitude_at_v_location', long_name='latitude at v location',
+                                               units='degrees_north', comment='X_Y_latitude at v point',
+                                               _FillValue=9.96920996838687e+36, valid_min=-1.e+36, valid_max=1.e+36, grid=numpy.int32(3)),
+                             'longitude_v':dict(standard_name='longitude_at_v_location', long_name='longitude at v location',
+                                                units='degrees_east', comment='X_Y_longitude at v point',
+                                                _FillValue=9.96920996838687e+36, valid_min=-1.e+36, valid_max=1.e+36, grid=numpy.int32(3)),
+                             'latitude_f':dict(standard_name='latitude_at_f_location', long_name='latitude at f location',
+                                               units='degrees_north', comment='X_Y_latitude at f point',
+                                               _FillValue=9.96920996838687e+36, valid_min=-1.e+36, valid_max=1.e+36, grid=numpy.int32(5)),
+                             'longitude_f':dict(standard_name='longitude_at_f_location', long_name='longitude at f location',
+                                                units='degrees_east', comment='X_Y_longitude at f point',
+                                                _FillValue=9.96920996838687e+36, valid_min=-1.e+36, valid_max=1.e+36, grid=numpy.int32(5)),
+                             #'DTMOD':dict(long_name='DTMOD', comment='Time and date of model beginning', calendar='standard'),
+                             'DTCUR':dict(standard_name='time', long_name='DTCUR', comment='Current time and date', calendar='standard'),
+                             'DTEXP':dict(long_name='DTEXP', comment='Time and date of experiment beginning', calendar='standard'),
+                             #'DTSEG':dict(long_name='DTSEG', comment='Time and date of segment beginning', calendar='standard'),
+                             'time':dict(long_name='time axis', standard_name='time', axis='T', calendar='standard'),
+                            }
 
     @classmethod
     def _read_field_dict(cls, fd_abspath):
@@ -134,7 +229,7 @@ class netCDFMNH(FileResource):
         if self.openmode in ('r', 'a'):
             try:
                 guess = netCDF4.Dataset(self.container.abspath, self.openmode)
-                if 'MASDEV' not in guess.variables:
+                if not all([v in guess.variables for v in ['IMAX', 'JMAX', 'CARTESIAN']]):
                     raise IOError("this resource is not a netCDFMNH one.")
             except (RuntimeError, UnicodeEncodeError):
                 raise IOError("this resource is not a netCDF one.")
@@ -166,21 +261,31 @@ class netCDFMNH(FileResource):
 ################
 # ABOUT FIELDS #
 ################
+    def _get_type(self, fieldname):
+        """Returns the type of field from the dimensions"""
+        dimensions = self._nc[fieldname].dimensions
+        if len(dimensions) > 0 and dimensions[0] == 'time':
+            dimensions = dimensions[1:]
+        if len(dimensions) > 0 and dimensions[0] in ['level', 'level_w']:
+            has_level = True
+            dimensions = dimensions[1:]
+        else:
+            has_level = False
+        if dimensions in [('nj', 'ni'), ('nj_u', 'ni_u'),
+                          ('nj_v', 'ni_v'), ('nj_v', 'ni_u')]:
+            return '3D' if has_level else 'H2D'
+        elif dimensions in [('nj',), ('ni'), ('nj_u',), ('ni_u'), ('nj_v',), ('ni_v')]:
+            return 'V2D' if has_level else 'H1D'
+        else:
+            return 'Misc'
+
     def _get_generic_fid(self, fieldname):
         """Return a generic fid from fieldname (via Field Dict)."""
-        if fieldname in self._nc.variables and not True in [dim.startswith(dname)
-                                                            for dim in self._nc.variables[fieldname].dimensions
-                                                            for dname in ['ni', 'nj', 'level', 'time']]:
-            #This is a Misc field (no physical dimensions
-            #No need to call inquire_field_dict
-            fid = {'name':fieldname, 'type':'Misc'}
-        else:
-            fid = inquire_field_dict(fieldname)
-        if fid['type'] == '3D':
+        fid = inquire_field_dict(fieldname)
+        if self._get_type(fieldname) in ['3D', 'V2D', 'V1D']:
             if self.geometry is None:
                 self._read_geometry()
             fid['typeOfFirstFixedSurface'] = self.geometry.vcoordinate.typeoffirstfixedsurface
-        fid.pop('type')
         fid.pop('name')
 
         return fid
@@ -205,7 +310,7 @@ class netCDFMNH(FileResource):
         fieldslist = []
         def fill_fieldslist(tmplist):
             for f in tmplist:
-                if fieldtypeslist == [] or inquire_field_dict(f)['type'] in fieldtypeslist:
+                if fieldtypeslist == [] or self._get_type(f) in fieldtypeslist:
                     fieldslist.append(f)
         if seed is None:
             tmplist = self.listfields()
@@ -244,7 +349,7 @@ class netCDFMNH(FileResource):
                            'generic':generic_fid}
                          - if False method return a list of fid
         """
-        fieldslist = self._nc.variables.keys()
+        fieldslist = [f for f in self._nc.variables.keys() if f not in self._specialFieldComments]
 
         if complete:
             return [{'netCDFMNH':f, 'generic':self._get_generic_fid(f)} for f in fieldslist]
@@ -261,10 +366,10 @@ class netCDFMNH(FileResource):
         list2D = []
 
         for field in self.listfields():
-            info = inquire_field_dict(field)
-            if info['type'] == 'H2D':
+            info = self._get_type(field)
+            if info in ['V2D', 'H2D']:
                 list2D.append(field)
-            elif info['type'] == '3D':
+            elif info == '3D':
                 list3D.append(field)
             else:
                 listMisc.append(field)
@@ -291,10 +396,14 @@ class netCDFMNH(FileResource):
         """
         if not isinstance(fieldidentifier, six.string_types):
             raise epygramError("fieldidentifier of a netCDFMNH file is a string.")
+        if fieldidentifier in self._specialFieldComments:
+            raise epygramError("This is a special field that is not allowed do be read as field")
 
         # Get field info
+        var = self._nc.variables[fieldidentifier]
         field_info = inquire_field_dict(fieldidentifier)
-        if field_info['type'] in ['H2D', '3D']:
+        field_info['type'] = self._get_type(fieldidentifier)
+        if field_info['type'] in ['V1D', 'H2D', '3D']:
             if self.geometry is None:
                 self._read_geometry()
             if self.validity is None:
@@ -303,11 +412,11 @@ class netCDFMNH(FileResource):
             # Make geometry object
             kwargs_geom = dict(structure=field_info['type'],
                                name=self.geometry.name,
-                               grid=self.geometry.grid,
-                               dimensions=self.geometry.dimensions,
+                               grid=copy.deepcopy(self.geometry.grid),
+                               dimensions=copy.deepcopy(self.geometry.dimensions),
                                geoid=config.netCDFMNH_default_geoid,
                                position_on_grid=None,
-                               projection=self.geometry.projection  # Also used for academic geometries
+                               projection=copy.deepcopy(self.geometry.projection)  # Also used for academic geometries
                                )
 
             if self.geometry.vcoordinate is not None:
@@ -328,46 +437,74 @@ class netCDFMNH(FileResource):
                     kwargs_vcoord.pop('grid', None)
 
         # Get field metadata
-        var = self._nc.variables[fieldidentifier]
-        (h, v) = gridIndicatorDict[var.grid]
+        if 'grid' in var.ncattrs():
+            (h, v) = gridIndicatorDict[var.grid]
+        else:
+            h = v = None
         gridIndicator = {'vertical':v, 'horizontal':h}
-        comment = var.comment
+        comment = {}
+        for a in var.ncattrs():
+            if a not in ['grid', 'c_grid_dynamic_range']:
+                if isinstance(var.getncattr(a), numpy.float32):  # pb with json and float32
+                    comment.update({a:numpy.float64(var.getncattr(a))})
+                elif isinstance(var.getncattr(a), numpy.int32):  # pb with json and int32
+                    comment.update({a:numpy.int64(var.getncattr(a))})
+                elif isinstance(var.getncattr(a), numpy.ndarray):  # pb with json and numpy arrays
+                    comment.update({a:numpy.float64(var.getncattr(a)).tolist()})
+                else:
+                    comment.update({a:var.getncattr(a)})
+        comment = json.dumps(comment)
+        if comment == '{}':
+            comment = None
 
         # Create field
-        if field_info['type'] in ['H2D', '3D']:
+        if field_info['type'] in ['V1D', 'H2D', '3D']:
             # Create H2D field
             fid = {self.format: fieldidentifier,
                    'generic':FPDict(self._get_generic_fid(fieldidentifier))
                    }
             kwargs_geom['position_on_horizontal_grid'] = gridIndicator['horizontal']
-            kwargs_vcoord['position_on_grid'] = gridIndicator['vertical']
+            if field_info['type'] in ['H1D', '3D'] and gridIndicator['vertical'] == 'flux' and self.moveOnMass:
+                kwargs_vcoord['position_on_grid'] = 'mass'
+            else:
+                kwargs_vcoord['position_on_grid'] = gridIndicator['vertical']
             kwargs_geom['vcoordinate'] = fpx.geometry(**kwargs_vcoord)
             geometry = fpx.geometry(**kwargs_geom)
+            if 'time' in var.dimensions:
+                validity = self.validity.deepcopy()
+            else:
+                validity = FieldValidity()
             field = fpx.field(fid=fid,
                               structure=geometry.structure,
-                              geometry=geometry, validity=self.validity.deepcopy(),
+                              geometry=geometry, validity=validity,
                               processtype='forecast', comment=comment)
         elif field_info['type'] == 'Misc':
             # Create Misc field
             fid = {self.format: fieldidentifier,
                    'generic': FPDict()
                    }
-            class empty(object): pass
             geometry = empty()
             geometry.position_on_horizontal_grid = gridIndicator['horizontal']
             geometry.vcoordinate = empty()
             geometry.vcoordinate.position_on_grid = gridIndicator['vertical']
             field = MiscField(fid=fid, comment=comment)
+            if 'time' in var.dimensions:
+                if self.validity is None:
+                    self._read_validity()
+                field.validity = FieldValidityList(self.validity.deepcopy())
             field.geometry = geometry
         if getdata:
+            data = var[...]
             if field_info['type'] == 'H2D':
                 # Only one horizontal level
-                data = geometry.reshape_data(var[...].flatten())
+                data = geometry.reshape_data(data.flatten())
             elif field_info['type'] == '3D':
                 # 3D data
-                data = var[...].reshape((len(self.geometry.vcoordinate.grid['gridlevels']) + 1,
-                                        self.geometry.dimensions['X'] * self.geometry.dimensions['Y']))
+                data = data.reshape((len(self.geometry.vcoordinate.grid['gridlevels']) + 1,
+                                    self.geometry.dimensions['X'] * self.geometry.dimensions['Y']))
                 data = geometry.reshape_data(data, 'Z')
+                if gridIndicator['vertical'] == 'flux' and self.moveOnMass:
+                    data[:-1, :] = 0.5 * (data[:-1, :] + data[1:, :]) #last level kept untouched
             field.setdata(data)
 
         return field
@@ -390,264 +527,75 @@ class netCDFMNH(FileResource):
 
         return super(netCDFMNH, self).readfields(requestedfields, getdata)
 
-    def writefield(self, field):
+    @FileResource._openbeforedelayed
+    def writefield(self, field, miscdims=None):
         """
         Write a field in the resource.
 
         :param field: the field to write to the resource.
+        :param miscdims: to force dimensions (useful only for misc fields)
         """
         if not isinstance(field, Field):
             raise epygramError("*field* must be a Field instance.")
-
-        fieldset = FieldSet()
-        fieldset.append(field)
-        self.writefields(fieldset)
-
-#    def writefields(self, fieldset):
-#        """
-#        Write the fields of the *fieldset* in the resource.
-#
-#        :param fieldset: must be a :class:`epygram.base.FieldSet` instance.
-#        """
-#
-#        if not isinstance(fieldset, FieldSet):
-#            raise epygramError("'fieldset' argument must be of kind FieldSet.")
-#        if self.openmode == 'r':
-#            raise IOError("cannot write field in a LFI with openmode 'r'.")
-#
-#        specialValues = dict()
-#        specialNames = ['LFI_COMPRESSED', 'CARTESIAN',
-#                        'LAT0', 'LON0',
-#                        'LATORI', 'LATOR', 'LONORI', 'LONOR',
-#                        'RPK', 'BETA',
-#                        'IMAX', 'JMAX', 'KMAX',
-#                        'XHAT', 'YHAT', 'ZHAT',
-#                        'DTEXP%TDATE', 'DTEXP%TIME',
-#                        'DTCUR%TDATE', 'DTCUR%TIME',
-#                        'SLEVE']
-#        if self.true3d:
-#            specialFields = specialNames
-#        else:
-#            specialFields = [(name, None) for name in specialNames]
-#        specialFieldsComments = {'LFI_COMPRESSED':'Compressed articles',
-#                                 'CARTESIAN':'Logical for cartesian geometry'.ljust(100),
-#                                 'LAT0':'reference latitude for conformal projection (DEGREES)'.ljust(100),
-#                                 'LON0':'reference longitude for conformal projection (DEGREES)'.ljust(100),
-#                                 'LATORI':'DEGREES'.ljust(100),
-#                                 'LATOR':'DEGREES'.ljust(100),
-#                                 'LONORI':'DEGREES'.ljust(100),
-#                                 'LONOR':'DEGREES'.ljust(100),
-#                                 'RPK':''.ljust(100),
-#                                 'BETA':'rotation angle (DEGREES)'.ljust(100),
-#                                 'IMAX':''.ljust(100),
-#                                 'JMAX':''.ljust(100),
-#                                 'KMAX':''.ljust(100),
-#                                 'XHAT':'Position x in the conformal or cartesian plane (METERS)'.ljust(100),
-#                                 'YHAT':'Position y in the conformal or cartesian plane (METERS)'.ljust(100),
-#                                 'ZHAT':'height level without orography (METERS)'.ljust(100),
-#                                 'DTEXP%TDATE':'YYYYMMDD',
-#                                 'DTEXP%TIME':'SECONDS',
-#                                 'DTCUR%TDATE':'YYYYMMDD',
-#                                 'DTCUR%TIME':'SECONDS',
-#                                 'SLEVE':''.ljust(100)}
-#        specialFieldsGridIndicator = {'LFI_COMPRESSED':0,
-#                                      'CARTESIAN':0,
-#                                      'LAT0':0,
-#                                      'LON0':0,
-#                                      'LATORI':0,
-#                                      'LATOR':0,
-#                                      'LONORI':0,
-#                                      'LONOR':0,
-#                                      'RPK':0,
-#                                      'BETA':0,
-#                                      'IMAX':0,
-#                                      'JMAX':0,
-#                                      'KMAX':0,
-#                                      'XHAT':2,
-#                                      'YHAT':3,
-#                                      'ZHAT':4,
-#                                      'DTEXP%TDATE':4,
-#                                      'DTEXP%TIME':4,
-#                                      'DTCUR%TDATE':4,
-#                                      'DTCUR%TIME':4,
-#                                      'SLEVE':4}
-#        writtenfields = self.listfields()
-#        has2D = False
-#        has3D = False
-#        for fid in writtenfields:
-#            name = fid if self.true3d else fid[0]
-#            field_info = inquire_field_dict(name)
-#            if field_info['type'] == '3D':
-#                has3D = True
-#            if field_info['type'] == 'H2D' and name != 'ZS' and '.DATIM' not in name:
-#                has2D = True
-#        if has2D or has3D:
-#            if self._compressed is None:
-#                self._read_compression()
-#            specialValues['LFI_COMPRESSED'] = self._compressed
-#        if has3D:
-#            if ('SLEVE', None) in writtenfields:
-#                specialValues['SLEVE'] = self.readfield(('SLEVE', None))
-#            else:
-#                specialValues['SLEVE'] = False
-#
-#        myFieldset = FieldSet()
-#        fieldsMTO = []
-#        appendedfields = []
-#        for field in fieldset:
-#            keep = True
-#            fid = field.fid[self.format]
-#            # This field must not be already written, except if this is a special record
-#            # because special records can be written to file automaticaly when the first H2DField is encountered
-#            if fid in writtenfields and fid not in specialFields:
-#                raise epygramError("there already is a field with the same name in this LFI.")
-#            elif fid in writtenfields:
-#                keep = False
-#                # In case of a special record already written in file, value must be the same
-#                if self.readfield(fid).getdata() != field.getdata():
-#                    raise epygramError("there already is a field with the same name in this LFI with a different value.")
-#            # check for level validity
-#            if isinstance(field, H2DField) or isinstance(field, D3Field):
-#                if (not self.true3d) and (not isinstance(fid[1], int)):
-#                    raise epygramError("the level of a 2D field must be an integer")
-#                fieldsMTO.append(field)
-#            else:
-#                if (not self.true3d) and fid[1] is not None:
-#                    raise epygramError("the level of a non 2D field must be None")
-#            if fid in appendedfields:
-#                raise epygramError("a same field cannot be written twice in a LFI.")
-#            appendedfields.append(fid)
-#            if keep:
-#                myFieldset.append(field)
-#
-#        if not self.isopen:
-#            self.open()
-#
-#        # geometry, validity and compression
-#        for field in fieldsMTO:
-#            gvff = self._get_geometryValidity_from_field(field)
-#            for record, value in gvff.items():
-#                # Cache value for next field
-#                if record not in specialValues:
-#                    if (record if self.true3d else (record, None)) in appendedfields:
-#                        for f in myFieldset:
-#                            if (f.fid if self.true3d else f.fid[0]) == record:
-#                                specialValues[record] = f.getdata()
-#                    elif (record if self.true3d else (record, None)) in writtenfields:
-#                        specialValues[record] = self.readfield(record if self.true3d else (record, None)).getdata()
-#                    else:
-#                        specialValues[record] = value
-#                        if record == 'LFI_COMPRESSED':
-#                            keep = value  # we keep it only if its value is True
-#                        else:
-#                            keep = True
-#                        if keep:
-#                            comment = specialFieldsComments[record]
-#                            (h, v) = gridIndicatorDict[specialFieldsGridIndicator[record]]
-#                            class empty(object): pass
-#                            geometry = empty()
-#                            geometry.position_on_horizontal_grid = h
-#                            geometry.vcoordinate = empty()
-#                            geometry.vcoordinate.position_on_grid = v
-#                            f = MiscField(fid={self.format:record if self.true3d else (record, None)}, comment=comment)
-#                            f.setdata(value)
-#                            f.geometry = geometry
-#                            myFieldset.append(f)
-#                if record in ['LAT0', 'LON0', 'LATOR', 'LATORI', 'LONOR', 'LONORI', 'RPK', 'BETA', 'ZHAT']:
-#                    # Float comparisons
-#                    special_rpk = (record == 'RPK' and
-#                                   field.geometry.secant_projection and
-#                                   field.geometry.name not in ['mercator', 'polar_stereographic'])
-#                    if special_rpk:
-#                        # In geometries, when seant, we store latin1 and latin2 which are computed from RPK
-#                        # Computation is not exact computing back RPK from latin1 and latin2 does not give exactly the same result
-#                        latin1_field = field.geometry.projection['secant_lat1'].get('degrees')
-#                        latin2_field = field.geometry.projection['secant_lat2'].get('degrees')
-#                        if 'latin1' not in specialValues:
-#                            specialValues['latin1'], specialValues['latin2'] = self._get_latin1_latin2_lambert(gvff['LAT0'], specialValues['RPK'])
-#                        check = numpy.all(util.nearlyEqualArray([latin1_field, latin2_field],
-#                                                                [specialValues['latin1'].get('degrees'), specialValues['latin2'].get('degrees')])) or \
-#                                util.nearlyEqual(value, specialValues[record])
-#                    else:
-#                        check = numpy.all(util.nearlyEqualArray(value, specialValues[record]))
-#                elif record in ['XHAT', 'YHAT']:
-#                    # We check deltaX and deltaY because XHAT and YHAT can be computed in two different ways (prep_ideal or prep_pgd)
-#                    check = util.nearlyEqualArray(value[1] - value[0],
-#                                                  specialValues[record][1] - specialValues[record][0])
-#                else:
-#                    check = numpy.all(value == specialValues[record])
-#                if not check:
-#                    raise epygramError("this field is not compatible with the fields already written to the file: " + record)
-#        # writing
-#        done = []
-#        for iField in range(len(myFieldset)):
-#            if iField not in done:
-#                field = myFieldset[iField]
-#                field_info = inquire_field_dict(field.fid[self.format] if self.true3d else field.fid[self.format][0])
-#                if field_info['type'] == '3D' and not self.true3d:
-#                    comment = None
-#                    gridIndicator = None
-#                    dataInt = None
-#                    for level in range(len(field.geometry.vcoordinate.grid['gridlevels']) + 1):
-#                        f = None
-#                        for i in range(len(myFieldset)):
-#                            if myFieldset[i].fid[self.format] == (field.fid[self.format][0], level):
-#                                f = myFieldset[i]
-#                                num = i
-#                        if f is None:
-#                            raise epygramError("All levels of a 3D field must be written at once.")
-#                        if not isinstance(f, H2DField):
-#                            raise epygramError("All fields composing a 3D field must be H2DField")
-#                        if comment is None:
-#                            comment = f.comment
-#                        elif comment != f.comment:
-#                            raise epygramError("All fields composing a same 3D field must have the same comment.")
-#                        (h, v) = f.geometry.position_on_horizontal_grid, f.geometry.vcoordinate.position_on_grid
-#                        for key, value in gridIndicatorDict.items():
-#                            if value == (h, v):
-#                                mygridIndicator = key
-#                        if gridIndicator is None:
-#                            gridIndicator = mygridIndicator
-#                        elif gridIndicator != mygridIndicator:
-#                            raise epygramError("All fields composing a same 3D field must have the same position on grid.")
-#                        done.append(num)
-#                        if dataInt is None:
-#                            dataInt = numpy.ndarray(field.getdata().size * (len(field.geometry.vcoordinate.grid['gridlevels']) + 1), dtype='int64')
-#                        dataInt[level * field.getdata().size:(level + 1) * field.getdata().size] = numpy.ma.copy(f.getdata()).view('int64').flatten()
-#                else:
-#                    if (isinstance(field, H2DField) and not self.true3d) or (isinstance(field, D3Field) and self.true3d):
-#                        dataInt = numpy.ma.copy(field.getdata()).view('int64').flatten()
-#                    else:  # Misc type
-#                        data = field.getdata()
-#                        if 'int' in field.datatype.name:
-#                            dataInt = data.flatten()
-#                        elif 'str' in field.datatype.name:
-#                            if field.shape in ((1,), ()):
-#                                dataInt = numpy.array([ord(d) for d in str(data)])
-#                            else:
-#                                raise NotImplementedError('writing string arrays is not implemented.')
-#                        elif 'float' in field.datatype.name:
-#                            dataInt = data.view('int64').flatten()
-#                        elif 'bool' in field.datatype.name:
-#                            dataInt = numpy.array(data, dtype=numpy.int64).flatten()
-#                        else:
-#                            raise NotImplementedError("writing of datatype " + field.datatype.name + " is not implemented.")
-#                    comment = field.comment
-#                    (h, v) = field.geometry.position_on_horizontal_grid, field.geometry.vcoordinate.position_on_grid
-#                    for key, value in gridIndicatorDict.items():
-#                        if value == (h, v):
-#                            gridIndicator = key
-#                header = numpy.ndarray(2 + len(comment), dtype=numpy.int64)
-#                header[0] = gridIndicator
-#                header[1] = len(comment)
-#                for i in range(len(comment)):
-#                    header[2 + i] = ord(comment[i])
-#                name = field.fid[self.format] if self.true3d else field.fid[self.format][0]
-#                dataToWrite = numpy.concatenate((header, dataInt))
-#                wlfi.wlfiecr(self._unit, name, len(dataToWrite), dataToWrite)
-#
-#                if self.empty:
-#                    self.empty = False
+        if not self.format in field.fid:
+            raise epygramError("field fid must contain the " + self.format + " key")
+        varname = field.fid[self.format]
+        if not isinstance(varname, six.string_types):
+            raise epygramError("field fid of a netCDFMNH file is a string.")
+        if varname in self._specialFieldComments:
+            raise epygramError("This fid (" + varname + \
+                               ") is reserved for special fields holding geometry or validity")
+        if varname in self.listfields():
+            raise epygramError("there already is a field with the same name in this file")
+        if hasattr(field, 'spectral') and field.spectral:
+            raise epygramError("Spectral fields cannot be written on this file")
+        
+        dims = []
+        time_dim = self._write_validity_from_field(field)
+        if time_dim is not None:
+            dims.append(time_dim)
+        geom_dims = self._write_geometry_from_field(field)
+        if geom_dims is not None:
+            dims.extend(geom_dims)
+        if isinstance(field, MiscField):
+            if miscdims is not None:
+                dims = miscdims
+            elif len(dims) != len(field.getdata().shape):
+                #Guessed dimensions do not fit
+                kind = 'char' if numpy.array(field.getdata()).dtype.kind in {'U', 'S'} else 'size'
+                dims = [kind + str(d) for d in field.getdata().shape]
+            for d in dims:
+                if d not in self._nc.dimensions:
+                    try:
+                        self._nc.createDimension(d, int(d[4:]))
+                    except ValueError:
+                        epylog.error("This dimension is unknown (if it is a valid standard dimension, " +
+                                     "please write first a known field using this dimension)")
+                        raise
+        comment = {}
+        if field.comment not in (None, ''):
+            try:
+                d = json.loads(field.comment)
+                if not isinstance(d, dict):
+                    raise ValueError("We only deal with dict")
+                comment = d
+            except ValueError:
+                comment['comment'] = field.comment
+        data = field.getdata().squeeze()
+        self._nc.createVariable(varname, data.dtype, dimensions=dims,
+                                fill_value=comment.get('_FillValue'))
+        for k, v in comment.items():
+            if not isinstance(k, six.string_types):
+                raise ValueError("Key must be a string")
+            if k != '_FillValue':
+                self._nc.variables[varname].setncattr(k, v)
+        self._nc.variables[varname][...] = data
+        if field.units not in (None, ''):
+            self._nc.variables[varname].units = field.units
+        (h, v) = field.geometry.position_on_horizontal_grid, field.geometry.vcoordinate.position_on_grid
+        if h is not None and v is not None:
+            gridIndicator = [key for key, value in gridIndicatorDict.items() if value == (h, v)][0]
+            self._nc.variables[varname].grid = numpy.int32(gridIndicator)
 
 #    def rename_field(self, fid, new_fid):
 #        """Renames a field "in place"."""
@@ -845,7 +793,7 @@ class netCDFMNH(FileResource):
         secondcolumn_width = 16
         sepline = '{:-^{width}}'.format('', width=firstcolumn_width + secondcolumn_width + 1) + '\n'
 
-        first_H2DField = [f for f in self.listfields() if inquire_field_dict(f)['type'] in ['H2D', '3D']][0]
+        first_H2DField = [f for f in self.listfields() if self._get_type(f) in ['H2D', '3D']][0]
         firstfield = self.readfield(first_H2DField, getdata=False)
 
         listfields = self.listfields()
@@ -927,6 +875,14 @@ class netCDFMNH(FileResource):
 
 # the netCDFMNH WAY #
 ###############
+    def get_dimensions(self, fid):
+        """
+        Returns the dimensions associated with this field identifier
+        as a tuple of strings.
+        :param fid: field identifier
+        """
+        return self._nc[fid].dimensions
+
     @staticmethod
     def _get_latin1_latin2_lambert(lat0, rpk):
         def k(latin2):
@@ -961,7 +917,6 @@ class netCDFMNH(FileResource):
     def _read_geometry(self):
         """
         Reads the geometry in the netCDFMNH articles.
-        Interface to Fortran routines from 'ifsaux'.
         """
         def v(name): return self._nc.variables[name][...]
         listnames = self._nc.variables.keys()
@@ -1112,65 +1067,220 @@ class netCDFMNH(FileResource):
         kwargs['cumulativeduration'] = datetime.timedelta(seconds=0)
         self.validity = FieldValidity(**kwargs)
 
-    def _get_geometryValidity_from_field(self, field):
+    def _write_special_records(self, records, field):
         """
-        Returns special record needed to represent the geometry
-        and the validty of this field.
+        Write special records that control geometry and validity
         """
-        specialFields = dict()
+        for name, value in records.items():
+            meta = self._specialFieldComments[name]
+            if name in ['DTEXP', 'DTCUR', 'time']:
+                assert isinstance(value, tuple)
+                assert len(value) == 2
+                assert isinstance(value[0], datetime.datetime) and isinstance(value[1], datetime.timedelta)
+                units = value[0].strftime("seconds since %Y-%m-%d %H:%M:%S +0:00")
+                if name in self._nc.variables:
+                    if self._nc.variables[name].units != units:
+                        raise epygramError(name + " already exists in file with different value")
+                meta['units'] = units
+                value = value[1].total_seconds()
+            elif name in ['level']:
+                meta['c_grid_dynamic_range'] = '2:' + str(len(value) - 1)
+            elif name in ['level_w']:
+                meta['c_grid_dynamic_range'] = '2:' + str(len(value))
+            elif name in ['ni', 'ni_v']:
+                meta['c_grid_dynamic_range'] = '2:' + str(len(value) - 1)
+            elif name in ['ni_u']:
+                meta['c_grid_dynamic_range'] = '2:' + str(len(value))
+            elif name in ['nj', 'nj_u']:
+                meta['c_grid_dynamic_range'] = '2:' + str(len(value) - 1)
+            elif name in ['nj_v']:
+                meta['c_grid_dynamic_range'] = '2:' + str(len(value))
+            if numpy.array(value).dtype == numpy.bool:
+                value = numpy.where(numpy.array(value), numpy.array(1, dtype=numpy.int8),
+                                                        numpy.array(0, dtype=numpy.int8))
+            if name in self._nc.variables:
+                #Variable already stored in file, we check equality
+                recordedValue = self._nc.variables[name][...]
+                if name in ['CARTESIAN', 'SLEVE'] + ['IMAX', 'JMAX', 'KMAX']:
+                    #boolean or integer
+                    check = self._nc.variables[name][...] == value
+                elif name in ['LAT0', 'LON0', 'LATOR', 'LATORI', 'LONOR', 'LONORI',
+                              'RPK', 'BETA', 'ZHAT', 'DTMOD', 'DTCUR']:
+                    # Float comparisons
+                    special_rpk = (name == 'RPK' and
+                                   field.geometry.secant_projection and
+                                   field.geometry.name not in ['mercator', 'polar_stereographic'])
+                    if special_rpk:
+                        # In geometries, when seant, we store latin1 and latin2 which are computed from RPK
+                        # Computation is not exact, computing back RPK from latin1 and latin2 does not give exactly the same result
+                        latin1_field = field.geometry.projection['secant_lat1'].get('degrees')
+                        latin2_field = field.geometry.projection['secant_lat2'].get('degrees')
+                        latin1, latin2 = self._get_latin1_latin2_lambert(self._nc.variables['LAT0'][...], self._nc.variables['RPK'][...])
+                        check = numpy.all(util.nearlyEqualArray([latin1_field, latin2_field],
+                                                                [latin1.get('degrees'), latin2.get('degrees')])) or \
+                                util.nearlyEqual(value, recordedValue)
+                    else:
+                        check = numpy.all(util.nearlyEqualArray(value, self._nc.variables[name][...]))
+                elif name in ['XHAT', 'YHAT']:
+                    # We check deltaX and deltaY because XHAT and YHAT can be computed in two different ways (prep_ideal or prep_pgd)
+                    check = util.nearlyEqualArray(value[1] - value[0],
+                                                  recordedValue[1] - recordedValue[0])
+                else:
+                    check = numpy.all(value == recordedValue)
+                if not check:
+                    raise epygramError(name + " already exists in file with different value")
+            else:
+                #Variable not in file, we write it
+                dimensions = dict(time=('time', ),
+                                  XHAT=('ni_u', ), YHAT=('nj_v', ),
+                                  ZHAT=('level_w', ), level=('level',), level_w=('level_w',),
+                                  LAT=('nj', 'ni'), LON=('nj', 'ni'),
+                                  ni=('ni',), nj=('nj',), ni_u=('ni_u',), nj_u=('nj_u',),
+                                  ni_v=('ni_v',), nj_v=('nj_v',),
+                                  latitude=('nj', 'ni'), longitude=('nj', 'ni'),
+                                  latitude_u=('nj_u', 'ni_u'), longitude_u=('nj_u', 'ni_u'),
+                                  latitude_v=('nj_v', 'ni_v'), longitude_v=('nj_v', 'ni_v'),
+                                  latitude_f=('nj_v', 'ni_u'), longitude_f=('nj_v', 'ni_u')).get(name, tuple())
+                self._nc.createVariable(name, numpy.array(value).dtype,
+                                        dimensions=dimensions, fill_value=meta.get('_FillValue'))
+                self._nc[name][...] = value
+                for k, v in meta.items():
+                    if k != '_FillValue':
+                        self._nc[name].setncattr(k, v)
+
+    def _write_validity_from_field(self, field):
+        """
+        Write special records needed to represent the validity
+        returns the dimension to use to represent the field
+        """
+        specialFieldValues = dict()
+        dim = None
+        if hasattr(field, 'validity') and field.validity is not None:
+            if len(field.validity) != 1:
+                raise epygramError("netCDFMNH can hold only one validity.")
+            basis = field.validity.getbasis()
+            if basis is not None:
+                dim = 'time'
+                reference = datetime.datetime(basis.year, basis.month, basis.day)
+                specialFieldValues['DTEXP'] = (reference, basis - reference)
+                validity = field.validity.get()
+                if validity is not None:
+                    specialFieldValues['DTCUR'] = (reference, validity - reference)
+                    specialFieldValues['time'] = (reference, validity - reference)
+                else:
+                    specialFieldValues['time'] = (reference, basis - reference)
+                if not dim in self._nc.dimensions:
+                    self._nc.createDimension(dim, 1)
+        self._write_special_records(specialFieldValues, field)
+        return dim
+    
+    def _write_geometry_from_field(self, field):
+        """
+        Write special records needed to represent the geometry
+        returns the dimension to use for writing the field
+        """
+        def f2m(f):
+            m = numpy.empty_like(f)
+            m[:-1] = 0.5 * (f[:-1] + f[1:])
+            m[-1] = f[-1] + 0.5 * (f[-1] - f[-2])
+            return m
+        specialFieldValues = dict()
         g = field.geometry
-        field_info = inquire_field_dict(field.fid[self.format])
-        specialFields['IMAX'] = g.dimensions['X'] - 2
-        specialFields['JMAX'] = 1 if g.dimensions['Y'] == 1 else g.dimensions['Y'] - 2
-        dimX = g.dimensions['X']
-        if dimX == 1:
-            dimX += 2
-        specialFields['XHAT'] = numpy.arange(-g.grid['X_resolution'] / 2.,
-                                             g.grid['X_resolution'] * (dimX - 1),
-                                             g.grid['X_resolution'])
-        dimY = g.dimensions['Y']
-        if dimY == 1:
-            dimY += 2
-        specialFields['YHAT'] = numpy.arange(-g.grid['Y_resolution'] / 2.,
-                                             g.grid['Y_resolution'] * (dimY - 1),
-                                             g.grid['Y_resolution'])
-        if g.vcoordinate is not None:
-            if field_info['type'] == '3D':
-                specialFields['SLEVE'] = g.vcoordinate.typeoffirstfixedsurface != 118
-                kmax = len(g.vcoordinate.grid['gridlevels']) + 1
-                if kmax > 1:
-                    kmax -= 2
-                specialFields['KMAX'] = kmax
-                Ai = [level[1]['Ai'] for level in g.vcoordinate.grid['gridlevels']]
-                Ai = [-Ai[1]] + Ai
-                specialFields['ZHAT'] = Ai
-                if g.vcoordinate.grid['ABgrid_position'] != 'flux':
-                    raise epygramError("Don't jnow how to deal with ABgrid_position!='flux'")
-        if g.name == 'academic':
-            specialFields['BETA'] = 0.
-            specialFields['CARTESIAN'] = True
+        dim = []
+        
+        #Vertical grid
+        if g.vcoordinate is not None and \
+            hasattr(g.vcoordinate, 'grid') and \
+           'gridlevels' in g.vcoordinate.grid and \
+           g.structure in ['3D', 'H2D', 'V1D']:
+            specialFieldValues['SLEVE'] = g.vcoordinate.typeoffirstfixedsurface != 118
+            kmax = len(g.vcoordinate.grid['gridlevels']) + 1
+            if kmax > 1:
+                kmax -= 2
+            specialFieldValues['KMAX'] = numpy.int32(kmax)
+            Ai = [level[1]['Ai'] for level in g.vcoordinate.grid['gridlevels']]
+            Ai = [-Ai[1]] + Ai
+            specialFieldValues['ZHAT'] = numpy.array(Ai)
+            if not 'level' in self._nc.dimensions:
+                self._nc.createDimension('level', kmax + 2)
+            if not 'level_w' in self._nc.dimensions:
+                self._nc.createDimension('level_w', kmax + 2)
+            specialFieldValues['level_w'] = specialFieldValues['ZHAT']
+            specialFieldValues['level'] = f2m(specialFieldValues['level_w'])
+            specialFieldValues['ZTOP'] = specialFieldValues['ZHAT'][-1]
+            if g.vcoordinate.grid['ABgrid_position'] != 'flux':
+                raise epygramError("Don't know how to deal with ABgrid_position!='flux'")
+            if field.geometry.vcoordinate.position_on_grid == 'flux':
+                dim.append('level_w')
+            else:
+                dim.append('level')
+        
+        #Horizontal grid
+        if hasattr(g, 'dimensions') and hasattr(g, 'grid'):
+            specialFieldValues['IMAX'] = numpy.int32(g.dimensions['X'] - 2)
+            specialFieldValues['JMAX'] = numpy.int32(1 if g.dimensions['Y'] == 1 else g.dimensions['Y'] - 2)
+            dimX = g.dimensions['X']
+            if dimX == 1:
+                dimX += 2
+            specialFieldValues['XHAT'] = numpy.arange(-g.grid['X_resolution'] / 2.,
+                                                 g.grid['X_resolution'] * (dimX - 1),
+                                                 g.grid['X_resolution'])
+            for d in ['ni', 'ni_u', 'ni_v']:
+                if d not in self._nc.dimensions:
+                    self._nc.createDimension(d, g.dimensions['X'])    
+            specialFieldValues['ni_u'] = specialFieldValues['XHAT']
+            specialFieldValues['ni'] = f2m(specialFieldValues['ni_u'])
+            specialFieldValues['ni_v'] = specialFieldValues['ni']
+            dimY = g.dimensions['Y']
+            if dimY == 1:
+                dimY += 2
+            specialFieldValues['YHAT'] = numpy.arange(-g.grid['Y_resolution'] / 2.,
+                                                 g.grid['Y_resolution'] * (dimY - 1),
+                                                 g.grid['Y_resolution'])
+            for d in ['nj', 'nj_u', 'nj_v']:
+                if d not in self._nc.dimensions:
+                    self._nc.createDimension(d, g.dimensions['Y'])    
+            specialFieldValues['nj_v'] = specialFieldValues['YHAT']
+            specialFieldValues['nj'] = f2m(specialFieldValues['nj_v'])
+            specialFieldValues['nj_u'] = specialFieldValues['nj']
+            dim.extend({'center':('nj', 'ni'), #1, 4
+                        'center-left':('nj_u', 'ni_u'), #2, 6
+                        'lower-center':('nj_v', 'ni_v'), #3, 7
+                        'lower-left':('nj_v', 'ni_u'), #5, 8
+                       }[field.geometry.position_on_horizontal_grid])
+            specialFieldValues['LON'],  specialFieldValues['LAT'] = g.get_lonlat_grid(position='center')
+            specialFieldValues['longitude'] = specialFieldValues['LON']
+            specialFieldValues['latitude'] = specialFieldValues['LAT']
+            specialFieldValues['longitude_u'], specialFieldValues['latitude_u'] = g.get_lonlat_grid(position='center-left')
+            specialFieldValues['longitude_v'], specialFieldValues['latitude_v'] = g.get_lonlat_grid(position='lower-center')
+            specialFieldValues['longitude_f'], specialFieldValues['latitude_f'] = g.get_lonlat_grid(position='lower-left')
+
+        #Projection
+        if hasattr(g, 'name') and g.name == 'academic' and hasattr(g, 'grid'):
+            specialFieldValues['BETA'] = 0.
+            specialFieldValues['CARTESIAN'] = True
             if 'latitude' in g.grid:
-                specialFields['LAT0'] = g.grid['latitude'].get('degrees')
+                specialFieldValues['LAT0'] = g.grid['latitude'].get('degrees')
             else:
-                specialFields['LAT0'] = 0.
+                specialFieldValues['LAT0'] = 0.
             if 'longitude' in g.grid:
-                specialFields['LON0'] = g.grid['longitude'].get('degrees')
+                specialFieldValues['LON0'] = g.grid['longitude'].get('degrees')
             else:
-                specialFields['LON0'] = 0.
-        else:
-            specialFields['BETA'] = g.projection['rotation'].get('degrees')
-            specialFields['CARTESIAN'] = False
-            specialFields['LON0'] = g.projection['reference_lon'].get('degrees')
+                specialFieldValues['LON0'] = 0.
+        elif hasattr(g, 'name') and g.name != 'academic' and hasattr(g, 'projection') and hasattr(g, 'grid'):
+            specialFieldValues['BETA'] = g.projection['rotation'].get('degrees')
+            specialFieldValues['CARTESIAN'] = False
+            specialFieldValues['LON0'] = g.projection['reference_lon'].get('degrees')
             if not g.secant_projection:
-                specialFields['LAT0'] = g.projection['reference_lat'].get('degrees')
-                specialFields['RPK'] = math.sin(g.projection['reference_lat'].get('radians'))
+                specialFieldValues['LAT0'] = g.projection['reference_lat'].get('degrees')
+                specialFieldValues['RPK'] = math.sin(g.projection['reference_lat'].get('radians'))
             else:
                 if g.name in ['mercator', 'polar_stereographic']:
-                    specialFields['LAT0'] = g.projection['secant_lat'].get('degrees')
+                    specialFieldValues['LAT0'] = g.projection['secant_lat'].get('degrees')
                     if g.name == 'mercator':
-                        specialFields['RPK'] = 0.
+                        specialFieldValues['RPK'] = 0.
                     else:
-                        specialFields['RPK'] = numpy.copysign(1, specialFields['LAT0'])
+                        specialFieldValues['RPK'] = numpy.copysign(1, specialFieldValues['LAT0'])
                 else:
                     latin1 = g.projection['secant_lat1'].get('degrees')
                     latin2 = g.projection['secant_lat2'].get('degrees')
@@ -1178,27 +1288,20 @@ class netCDFMNH(FileResource):
                     m2 = math.cos(math.radians(latin2))
                     t1 = math.tan(math.pi / 4. - math.radians(latin1) / 2.)
                     t2 = math.tan(math.pi / 4. - math.radians(latin2) / 2.)
-                    specialFields['LAT0'] = latin1
-                    specialFields['RPK'] = (math.log(m1) - math.log(m2)) / (math.log(t1) - math.log(t2))
+                    specialFieldValues['LAT0'] = latin1
+                    specialFieldValues['RPK'] = (math.log(m1) - math.log(m2)) / (math.log(t1) - math.log(t2))
             if g.grid['input_position'] == (0, 0):
-                specialFields['LONOR'] = g.grid['input_lon'].get('degrees')
-                specialFields['LATOR'] = g.grid['input_lat'].get('degrees')
+                specialFieldValues['LONOR'] = g.grid['input_lon'].get('degrees')
+                specialFieldValues['LATOR'] = g.grid['input_lat'].get('degrees')
             else:
                 originPoint = g.gimme_corners_ll(subzone='CIE', position='center')['ll']
-                specialFields['LONOR'] = originPoint[0]
-                specialFields['LATOR'] = originPoint[1]
-            specialFields['LONORI'] = specialFields['LONOR']
-            specialFields['LATORI'] = specialFields['LATOR']
+                specialFieldValues['LONOR'] = originPoint[0]
+                specialFieldValues['LATOR'] = originPoint[1]
+            specialFieldValues['LONORI'] = specialFieldValues['LONOR']
+            specialFieldValues['LATORI'] = specialFieldValues['LATOR']
 
-        if field.validity is not None:
-            if len(field.validity) != 1:
-                raise epygramError("netCDFMNH can hold only one validity.")
-            basis = field.validity.getbasis()
-            if basis is not None:
-                specialFields['DTEXP%TDATE'] = numpy.array([basis.year, basis.month, basis.day], dtype=numpy.int64)
-                specialFields['DTEXP%TIME'] = float(basis.hour * 3600 + basis.minute * 60 + basis.second)
-                validity = field.validity.get()
-                if validity is not None:
-                    specialFields['DTCUR%TDATE'] = numpy.array([validity.year, validity.month, validity.day], dtype=numpy.int64)
-                    specialFields['DTCUR%TIME'] = float(validity.hour * 3600 + validity.minute * 60 + validity.second)
-        return specialFields
+        self._write_special_records(specialFieldValues, field)
+        return dim
+
+
+
