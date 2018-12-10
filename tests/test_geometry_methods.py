@@ -89,8 +89,8 @@ class Test_gauss(abtc.Test_GeometryMethods):
                                                 (198, 322), (199, 322)])
 
     def test_nearest_points3(self):
-        self._test_nearest_points({'radius':85000}, [(186, 323), (187, 323),
-                                                     (198, 322), (199, 322)])
+        self._test_nearest_points({'radius':120000}, [(186, 323), (187, 323),
+                                                      (198, 322), (199, 322)])
 
     def test_point_is_inside_domain_ij(self):
         self.assertFalse(self.geo.point_is_inside_domain_ij(100, 0))

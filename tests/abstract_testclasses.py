@@ -12,6 +12,7 @@ import os
 import sys
 import time
 from six.moves import cPickle as pickle  # @UnresolvedImport
+import numpy
 
 import epygram
 
@@ -188,6 +189,9 @@ class Test_GeometryMethods(TestCase):
         for i in range(len(first)):
             self.assertAlmostEqual(first[i], second[i], delta=delta)
 
+    def assertEqualArray(self, first, second):
+        assert numpy.all(first == second)
+
     def _test_mtd(self, mtd, args, kwargs, assertion, expected):
         out = getattr(self.geo, mtd)(*args, **kwargs)
         if assertion == 'Equal':
@@ -236,8 +240,9 @@ class Test_GeometryMethods(TestCase):
                               epygram.geometries.V2DGeometry)
 
     def _test_nearest_points(self, request, expected):
-        self.assertEqual(self.geo.nearest_points(*self.point, request=request),
-                         expected)
+        self.assertEqualArray(self.geo.nearest_points(*self.point,
+                                                      request=request),
+                              expected)
 
 
 class Test_RectGeometryMethods(Test_GeometryMethods):

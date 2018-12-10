@@ -46,6 +46,7 @@ def _need_pyproj_geod(mtd):
         return mtd(self, *args, **kwargs)
     return with_geod
 
+
 class D3Geometry(RecursiveObject, FootprintBase):
     """
     Handles the geometry for a 3-Dimensions Field.
@@ -212,7 +213,6 @@ class D3Geometry(RecursiveObject, FootprintBase):
         vgeom_kwargs['typeOfFirstFixedSurface'] = surface_type
         vgeom_kwargs['levels'] = range(len(self.vcoordinate.levels)) if levels is None else levels
         geometry.vcoordinate = fpx.geometry(**vgeom_kwargs)
-        
         field_kwargs = dict(fid=dict(temp='temp'),
                             structure=geometry.structure,
                             geometry=geometry)
@@ -220,7 +220,6 @@ class D3Geometry(RecursiveObject, FootprintBase):
             field_kwargs['validity'] = validity
         field = fpx.field(**field_kwargs)
         field.setdata(self.get_levels(d4=True, nb_validities=1 if validity is None else len(validity)))
-        
         return field
 
     def _getoffset(self, position=None):
@@ -254,7 +253,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
 
         :param end1: first point, must be a tuple (lon, lat) in degrees.
         :param end2: second point, must be a tuple (lon, lat) in degrees.
-        
+
         One of end1, end2 can be a (<array of lon>, <array of lat>)
 
         Warning: requires the :mod:`pyproj` module.
@@ -393,10 +392,10 @@ class D3Geometry(RecursiveObject, FootprintBase):
 
         """
         from mpl_toolkits.basemap import Basemap
-        import vtk
-        from vtk.numpy_interface import dataset_adapter as dsa
-        from vtk.numpy_interface import algorithms as algs
-        
+        import vtk  # @UnresolvedImport
+        from vtk.numpy_interface import dataset_adapter as dsa  # @UnresolvedImport
+        from vtk.numpy_interface import algorithms as algs  # @UnresolvedImport
+
         if self.vcoordinate.typeoffirstfixedsurface in (119, 100):
             reverseZ = True
         else:
@@ -412,13 +411,13 @@ class D3Geometry(RecursiveObject, FootprintBase):
         (x_offset, y_offset) = offset
         x -= x_offset
         y -= y_offset
-        
+
         z = self.get_levels(d4=True, nb_validities=1)
         z = z[0, ...] * z_factor
         if reverseZ:
             z = -z
-        
-        #sgrid_point
+
+        # sgrid_point
         grid = vtk.vtkStructuredGrid()
         grid.SetDimensions(*(z.shape[::-1]))
         points = vtk.vtkPoints()
@@ -427,9 +426,8 @@ class D3Geometry(RecursiveObject, FootprintBase):
                                        z.astype(numpy.float32).flatten())
         points.SetData(dsa.numpyTovtkDataArray(coordinates, None))
         grid.SetPoints(points)
-        
         return grid
-    
+
     def _reshape_lonlat_4d(self, lons, lats, nb_validities):
         """Make lons, lats grids 4D."""
         if nb_validities < 1:
@@ -451,22 +449,19 @@ class D3Geometry(RecursiveObject, FootprintBase):
         shape_range = list(range(len(shape)))
         lons = lons.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
         lats = lats.transpose(tuple([shape_range[-1]] + list(shape_range[0:-1])))  # last axis in first
-
         return lons, lats
-    
+
     def eq_Hgeom(self, other):
         """
         Tests if the horizontal part of the geometry is equal to
         the horizontal part of another geometry.
         :param: other: other geometry to use in the comparison
         """
-        
         assert isinstance(other, D3Geometry), "Other must be a geometry object"
         vc_self = self.vcoordinate
         self.vcoordinate = other.vcoordinate
         result = self == other
         self.vcoordinate = vc_self
-        
         return result
 
 ###################
@@ -544,11 +539,10 @@ class D3Geometry(RecursiveObject, FootprintBase):
         :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
         :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
         """
-        
         return vtk_check_transform(rendering,
                                    self.vcoordinate.typeoffirstfixedsurface,
                                    hCoord, z_factor, offset)
-        
+
     def plot3DLLImage(self, rendering,
                       filename, first_corner, last_corner,
                       interpolation='nearest',
@@ -568,51 +562,52 @@ class D3Geometry(RecursiveObject, FootprintBase):
         :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
         """
         from mpl_toolkits.basemap import Basemap
-        import vtk
-        from vtk.numpy_interface import dataset_adapter as dsa
-        from vtk.numpy_interface import algorithms as algs
+        import vtk  # @UnresolvedImport
+        from vtk.numpy_interface import dataset_adapter as dsa  # @UnresolvedImport
+        from vtk.numpy_interface import algorithms as algs  # @UnresolvedImport
         from PIL import Image
-        
+
         hCoord, z_factor, offset = self._vtk_check_transform(rendering, hCoord, z_factor, offset)
 
         if self.vcoordinate.typeoffirstfixedsurface in (119, 100):
             reverseZ = True
         else:
             reverseZ = False
-        
-        #Image reading
+
+        # Image reading
         with Image.open(filename) as image:
             rgb_image = image.convert('RGB')
         size = rgb_image.size
         rgb = numpy.fromstring(rgb_image.tobytes(), dtype=numpy.uint8)
         del rgb_image
         rgb = rgb.reshape((size[1], size[0], 3))
-        alpha = numpy.zeros_like(rgb[:,:,0]).reshape((size[1], size[0], 1)) #not visible by default
-        
+        alpha = numpy.zeros_like(rgb[:,:,0]).reshape((size[1], size[0], 1))  # not visible by default
+
         lons = numpy.linspace(first_corner[0], last_corner[0], size[0])
         lats = numpy.linspace(first_corner[1], last_corner[1], size[1])
         lons, lats = numpy.meshgrid(lons, lats)
-      
-        #We hide non-visible parts
+
+        # We hide non-visible parts
         m = 1 if interpolation == 'linear' else 0
         inside = numpy.array(self.point_is_inside_domain_ll(lons.flatten(),
                                                             lats.flatten(),
                                                             margin=m)).reshape((size[1],
                                                                                 size[0]))
-        if numpy.count_nonzero(inside) == 0: return #image is completely out of the domain
-        alpha[inside] = 255 #Points inside domain are set visible
-        
-        #Projection of levels on the image geometry
+        if numpy.count_nonzero(inside) == 0:
+            return  # image is completely out of the domain
+        alpha[inside] = 255  # Points inside domain are set visible
+
+        # Projection of levels on the image geometry
         level_field = self.vcoord_as_field(2)
         z = numpy.zeros((size[1], size[0]))
         z[inside] = level_field.getvalue_ll(lons[inside], lats[inside],
                                             k=0, interpolation=interpolation)
 
-        #Extrapolation to suppress vtk artifacts due to interpolation between
-        #invisible and visible parts of the domain
+        # Extrapolation to suppress vtk artifacts due to interpolation between
+        # invisible and visible parts of the domain
         inside_extrapolation = inside.copy()
-        for _ in range(1): #currently only one point but code is ready to extrapolate on more points
-            #TODO it lacks min/max to protect indexes
+        for _ in range(1):  # currently only one point but code is ready to extrapolate on more points
+            # TODO: it lacks min/max to protect indexes
             mask = numpy.logical_and(inside_extrapolation[1:, :], numpy.logical_not(inside_extrapolation[:-1, :]))
             j, i = numpy.where(mask)
             z[j, i] = z[j + 1, i]
@@ -631,7 +626,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
             inside_extrapolation[j, i + 1] = inside_extrapolation[j, i]
         del inside_extrapolation
 
-        #We cut the useless part to reduce the grid size to render
+        # We cut the useless part to reduce the grid size to render
         i, j = numpy.where(inside)
         imin, imax, jmin, jmax = i.min(), i.max(), j.min(), j.max()
         lons = lons[imin:imax + 1, jmin:jmax + 1]
@@ -641,12 +636,12 @@ class D3Geometry(RecursiveObject, FootprintBase):
         z = z[imin:imax + 1, jmin:jmax + 1]
         size = (jmax - jmin + 1, imax - imin + 1)
 
-        #Z axis transformation
+        # Z axis transformation
         z = z * z_factor
         if reverseZ:
             z = -z
 
-        #Horizontal projection
+        # Horizontal projection
         if hCoord == 'll':
             x, y = lons.flatten(), lats.flatten()
         elif isinstance(hCoord, Basemap):
@@ -657,7 +652,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
         x -= x_offset
         y -= y_offset
 
-        #VTK grid
+        # VTK grid
         shape = [1] + list(size[::-1])
         grid = vtk.vtkStructuredGrid()
         grid.SetDimensions(*(shape[::-1]))
@@ -669,8 +664,8 @@ class D3Geometry(RecursiveObject, FootprintBase):
         arr = dsa.numpyTovtkDataArray(data, "CellID")
         arr.SetNumberOfComponents(4)
         grid.GetPointData().SetScalars(arr)
-        
-        #Render image
+
+        # Render image
         sgridGeom = vtk.vtkStructuredGridGeometryFilter()
         sgridGeom.SetInputData(grid)
         sgridGeomMap = vtk.vtkPolyDataMapper()
@@ -678,11 +673,11 @@ class D3Geometry(RecursiveObject, FootprintBase):
         sgridGeomMapActor = vtk.vtkActor()
         sgridGeomMapActor.SetMapper(sgridGeomMap)
         rendering['renderer'].AddActor(sgridGeomMapActor)
-        #sgridGeomMapActor.GetProperty().SetAmbient(1);
-        #sgridGeomMapActor.GetProperty().SetDiffuse(0);
-        #sgridGeomMapActor.GetProperty().SetSpecular(0)
+        # sgridGeomMapActor.GetProperty().SetAmbient(1);
+        # sgridGeomMapActor.GetProperty().SetDiffuse(0);
+        # sgridGeomMapActor.GetProperty().SetSpecular(0)
         return (sgridGeomMapActor, sgridGeomMap)
-        
+
     def plot3DBluemarble(self, rendering, interpolation='nearest',
                          hCoord=None, z_factor=None, offset=None):
         """
@@ -694,7 +689,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
                        a basemap: horizontal coordinates are set according to this basemap
         :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
         :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
-        
+
         Image can be found here:
             https://sos.noaa.gov/datasets/blue-marble-without-clouds/
             ftp://public.sos.noaa.gov/land/blue_marble/earth_vegetation/4096.jpg
@@ -729,9 +724,9 @@ class D3Geometry(RecursiveObject, FootprintBase):
                        a basemap: horizontal coordinates are set according to this basemap
         :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
         :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates):
-        
+
         Zoom computation is done supposing that each tile is made of 256 * 256 pixels.
-        
+
         URL examples (these URLs have been found on internet but some are protected with
         copyrights and must not be used with this tool or kept in cache; please check
         before use):
@@ -749,6 +744,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
             xtile = int((lon + 180.0) / 360.0 * n)
             ytile = int((1.0 - math.log(math.tan(lat_rad) + (1 / math.cos(lat_rad))) / math.pi) / 2.0 * n)
             return (xtile, ytile)
+
         def num2deg(xtile, ytile, zoom):
             """
             Returns the upper left corner coordinates (in degrees)
@@ -761,10 +757,10 @@ class D3Geometry(RecursiveObject, FootprintBase):
             return (lon_deg, lat_deg)
         lons, lats = self.get_lonlat_grid()
         lonmin, lonmax, latmin, latmax = lons.min(), lons.max(), lats.min(), lats.max()
-        surface = (latmax - latmin) * (lonmax - lonmin) / lons.size #mean pixel surface in geometry
-        surface = surface / resol_factor ** 2 #mean pixel surface wanted for the tile
-        surface = surface * 256 * 256 #mean tile surface wanted
-        zoom = max(minzoom, min(maxzoom, int(math.log(360 * 180 / surface) / (2 * math.log(2))))) #zoom level
+        surface = (latmax - latmin) * (lonmax - lonmin) / lons.size  # mean pixel surface in geometry
+        surface = surface / resol_factor ** 2  # mean pixel surface wanted for the tile
+        surface = surface * 256 * 256  # mean tile surface wanted
+        zoom = max(minzoom, min(maxzoom, int(math.log(360 * 180 / surface) / (2 * math.log(2)))))  # zoom level
         del lons, lats
         xmin, ymin = deg2num(lonmin, latmax, zoom)
         xmax, ymax = deg2num(lonmax, latmin, zoom)
@@ -780,7 +776,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
                                                  hCoord, z_factor, offset))
         os.remove(path)
         return result
-    
+
     def what(self, out=sys.stdout,
              vertical_geometry=True,
              arpifs_var_names=False,
@@ -916,7 +912,6 @@ class D3RectangularGridGeometry(D3Geometry):
         else:
             lons = lons.squeeze()
             lats = lats.squeeze()
-
         return (lons, lats)
 
     def extract_subzone(self, data, subzone):
@@ -964,7 +959,6 @@ class D3RectangularGridGeometry(D3Geometry):
         if subzone == 'C':
             # remove I-zone
             edata = edata[tuple(selectionI)]
-
         return edata
 
     def make_subarray_geometry(self,
@@ -985,16 +979,15 @@ class D3RectangularGridGeometry(D3Geometry):
             geom_kwargs['grid']['input_lat'] = Angle(coords_00[1], 'degrees')
         geom_kwargs['dimensions'] = {'X':last_i - first_i, 'Y':last_j - first_j}
         newgeom = fpx.geometry(**geom_kwargs)  # create new geometry object
-
         return newgeom
-    
+
     def make_subsample_geometry(self, sample_x, sample_y, sample_z):
         """
         Make a sample geometry by decreasing resolution.
         :param sample_x: take one over <sample_x> points in the x direction
         :param sample_y: same for the y direction
         :param sample_z: same for the z direction
-        
+
         CAUTION: if your grid contains non physical point, these points can be
         retain in subsample. Use select_zone beforehand to suppress these points.
         """
@@ -1016,9 +1009,7 @@ class D3RectangularGridGeometry(D3Geometry):
         levels = geom_kwargs['vcoordinate'].levels[::sample_z]
         del geom_kwargs['vcoordinate'].levels[:]
         geom_kwargs['vcoordinate'].levels.extend(levels)
-        
         newgeom = fpx.geometry(**geom_kwargs)  # create new geometry object
-
         return newgeom
 
     def get_datashape(self,
@@ -1072,7 +1063,6 @@ class D3RectangularGridGeometry(D3Geometry):
                 shape.append(dimY)
             if self.datashape['i']:
                 shape.append(dimX)
-
         return tuple(shape)
 
     def reshape_data(self, data,
@@ -1131,7 +1121,6 @@ class D3RectangularGridGeometry(D3Geometry):
         for t in range(data.shape[0]):
             for k in range(data.shape[1]):
                 data3D[t, k, :] = data[t, k, :, :].flatten()
-
         return data3D
 
     def fill_maskedvalues(self, data, fill_value=None):
@@ -1195,7 +1184,6 @@ class D3RectangularGridGeometry(D3Geometry):
                       self.dimensions['Y_Iwidth'] + self.dimensions['Y_Czone'] - 1)
                 ur = (self.dimensions['X_Iwidth'] + self.dimensions['X_Czone'] - 1,
                       self.dimensions['Y_Iwidth'] + self.dimensions['Y_Czone'] - 1)
-
         return {'ll':ll, 'lr':lr, 'ul':ul, 'ur':ur}
 
     def gimme_corners_ll(self, subzone=None, position=None):
@@ -1213,7 +1201,6 @@ class D3RectangularGridGeometry(D3Geometry):
             i = corners[c][0]
             j = corners[c][1]
             corners[c] = self.ij2ll(i, j, position)
-
         return corners
 
     def point_is_inside_domain_ll(self, lon, lat,
@@ -1264,10 +1251,10 @@ class D3RectangularGridGeometry(D3Geometry):
 
         (Xmin, Ymin) = self.gimme_corners_ij(subzone)['ll']
         (Xmax, Ymax) = self.gimme_corners_ij(subzone)['ur']
-        
+
         i = None if i is None else as_numpy_array(i)
         j = None if j is None else as_numpy_array(j)
-        
+
         if i is not None:
             inside_i = numpy.logical_and(Xmin + margin <= i,
                                          i <= Xmax - margin)
@@ -1282,7 +1269,6 @@ class D3RectangularGridGeometry(D3Geometry):
             inside = inside_i
         else:
             inside = numpy.logical_and(inside_i, inside_j)
-
         return inside
 
     def nearest_points(self, lon, lat, request,
@@ -1321,7 +1307,7 @@ class D3RectangularGridGeometry(D3Geometry):
                 represents one of the nearest points associated with one
                 value taken from lon/lat. Each tuple as the form
                 (i, j).
-                
+
                 Dimensions with a length of one are removed except if
                 squeeze is False. If squeeze is True and if request
                 implies only one nearest point, the list item of the general
@@ -1330,18 +1316,17 @@ class D3RectangularGridGeometry(D3Geometry):
                 the general output form. Hence, if length of lon/lat is
                 one and the request implies only one point, the output is
                 a tuple.
-                
+
                 In case of a simple square request, output is actually
                 an array. Otherwise, the output is as described (it cannot
                 be an array because the number of nearest points can vary
                 with the entry point).
-        
+
         In case of a {'n':'2*2'} request, order of points obtained on a rectangular grid is
         (and must be) such that first and second point share the i position (hence
         third and forth point also share the i position) and first and third share the j
         position (hence the second and forth also share the j position).
         """
-
         if not numpy.all(self.point_is_inside_domain_ll(lon, lat, position=position)):
             raise ValueError("point (" + str(lon) + ", " + str(lat) +
                              ") is out of field domain.")
@@ -1394,10 +1379,10 @@ class D3RectangularGridGeometry(D3Geometry):
             jj = [j_int + dj for dj in jj]
             result = [(i, j) for i in ii for j in jj]
             result = numpy.moveaxis(numpy.array(result), -1, 0)
-            
+
             # filter: if external distance
             if external_distance:
-                result = list(result) #We transform into list to be able to modify the length
+                result = list(result)  # We transform into list to be able to modify the length
                 for ipt, points in enumerate(result):
                     mindistance = None
                     for p in points:
@@ -1405,11 +1390,11 @@ class D3RectangularGridGeometry(D3Geometry):
                         if mindistance is None or dist < mindistance:
                             result[ipt] = [p]
                             mindistance = dist
-                result = as_numpy_array(result) #all item must now have the same length
-                
+                result = as_numpy_array(result)  # all item must now have the same length
+
         # filter: if radius
         if request.get('radius'):
-            result = list(result) #We transform into list to be able to modify the length
+            result = list(result)  # We transform into list to be able to modify the length
             for ipt, points in enumerate(result):
                 if request.get('shape', 'circle') == 'circle':
                     result[ipt] = [(i, j)
@@ -1423,6 +1408,8 @@ class D3RectangularGridGeometry(D3Geometry):
                 if not numpy.all(self.point_is_inside_domain_ij(*zip(*result[ipt]))):
                     raise epygramError("one point (" + str(lon) + ", " + str(lat) +
                                        ") too close to field domain borders.")
+            if squeeze and len(result) == 1:
+                result = result[0]
         else:
             # check all points in domain
             for point in numpy.moveaxis(numpy.array(result), 0, -1):
@@ -1632,11 +1619,11 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
         Caution: the returned (*i,j*) are float.
         """
         lon, lat = as_numpy_array(lon).flatten(), as_numpy_array(lat).flatten()
-        
+
         i = numpy.zeros(len(lon))
         j = numpy.zeros(len(lon))
         (lons, lats) = self.get_lonlat_grid(position=position)
-        
+
         for n in range(len(lon)):
             where = (numpy.abs(lons - lon[n]) + numpy.abs(lats - lat[n]) == 0).nonzero()
             if len(where[0]) == 0:
@@ -1678,7 +1665,7 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
                 represents one of the nearest points associated with one
                 value taken from lon/lat. Each tuple as the form
                 (i, j).
-                
+
                 Dimensions with a length of one are removed except if
                 squeeze is False. If squeeze is True and if request
                 implies only one nearest point, the list item of the general
@@ -1687,7 +1674,7 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
                 the general output form. Hence, if length of lon/lat is
                 one and the request implies only one point, the output is
                 a tuple.
-                
+
                 In case of a simple square request, output is actually
                 an array. Otherwise, the output is as described (it cannot
                 be an array because the number of nearest points can vary
@@ -1712,8 +1699,7 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
                 result.append((i, 0))
         result = numpy.array(result)
         if squeeze:
-            result =result.squeeze()
-        
+            result = result.squeeze()
         return result
 
     def resolution_ll(self, lon, lat):
@@ -1737,7 +1723,6 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
         (lons, lats) = self.get_lonlat_grid(position=position)
         i, j = as_numpy_array(i), as_numpy_array(j)
         assert len(i) == len(j), "Both coordinates must have the same length"
-        
         result = numpy.zeros(len(i))
         for k in range(len(i)):
             dist = self.distance((lons[j[k], i[k]], lats[j[k], i[k]]), (lons.flatten(), lats.flatten()))
@@ -3355,7 +3340,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         if set(self.dimensions.keys()) != set(dimensions_keys):
             raise epygramError("dimensions attribute must consist in keys: " +
                                str(dimensions_keys))
-        #if self.projection['rotation'].get('degrees') != 0.0:
+        # if self.projection['rotation'].get('degrees') != 0.0:
         #    epylog.warning('*rotation* != 0. may not have been thoroughly tested...')  # TOBECHECKED: here and there, ...
 
     def select_subzone(self, subzone):
@@ -4211,7 +4196,8 @@ class D3GaussGeometry(D3Geometry):
           Defaults to self.position_on_horizontal_grid.
         """
         lon, lat = as_numpy_array(lon), as_numpy_array(lat)
-        return numpy.moveaxis(self.nearest_points(lon, lat, {'n': '1'}, position), 0, -1).squeeze()
+        ij = numpy.moveaxis(self.nearest_points(lon, lat, {'n': '1'}, position), 0, -1).squeeze()
+        return (ij[0], ij[1])
 
     def _allocate_colocation_grid(self, compressed=False, as_float=False):
         """
@@ -4940,7 +4926,7 @@ class D3GaussGeometry(D3Geometry):
                 represents one of the nearest points associated with one
                 value taken from lon/lat. Each tuple as the form
                 (i, j).
-                
+
                 Dimensions with a length of one are removed except if
                 squeeze is False. If squeeze is True and if request
                 implies only one nearest point, the list item of the general
@@ -4949,7 +4935,7 @@ class D3GaussGeometry(D3Geometry):
                 the general output form. Hence, if length of lon/lat is
                 one and the request implies only one point, the output is
                 a tuple.
-                
+
                 In case of a simple square request, output is actually
                 an array. Otherwise, the output is as described (it cannot
                 be an array because the number of nearest points can vary
@@ -5120,7 +5106,7 @@ class D3GaussGeometry(D3Geometry):
             if external_distance:
                 n = 1
             elif request.get('radius'):
-                if isinstance(lat, numpy.ndarray):
+                if isinstance(lat, numpy.ndarray) and len(lat) > 1:
                     raise NotImplementedError("request:{'radius':..., 'shape':'radius'} with several points.")
                 resolution = self.resolution_ll(lon, lat)
                 n = max(numpy.around(float(request['radius']) / float(resolution)).astype('int') * 2,
@@ -5136,7 +5122,7 @@ class D3GaussGeometry(D3Geometry):
 
             # 2.3: only select the nearest with regards to external_distance
             if external_distance:
-                result = list(result) #We transform into list to be able to modify the length
+                result = list(result)  # We transform into list to be able to modify the length
                 for ipt, points in enumerate(result):
                     mindistance = None
                     for p in points:
@@ -5144,12 +5130,14 @@ class D3GaussGeometry(D3Geometry):
                         if mindistance is None or dist < mindistance:
                             result[ipt] = [p]
                             mindistance = dist
-                result = as_numpy_array(result) #all item must now have the same length
+                result = as_numpy_array(result)  # all item must now have the same length
 
         if request.get('radius'):
-            result = list(result) #We transform into list to be able to modify the length
+            result = list(result)  # We transform into list to be able to modify the length
             for ipt, points in enumerate(result):
                 if request.get('shape', 'circle') == 'circle':
+                    for i,j in points:
+                        print(i,j,self.distance((lon[ipt], lat[ipt]), self.ij2ll(i, j)))
                     result[ipt] = [(i, j)
                                    for (i, j) in points
                                    if self.distance((lon[ipt], lat[ipt]), self.ij2ll(i, j)) <= request['radius']]
@@ -5158,6 +5146,8 @@ class D3GaussGeometry(D3Geometry):
                                    for (i, j) in points
                                    if all(abs(numpy.array(self.ll2xy(lon[ipt], lat[ipt])) - numpy.array(self.ij2xy(i, j))) <= request['radius'])]
                 assert len(result[ipt]) > 0, "no points found: radius may be too small."
+            if squeeze and len(result) == 1:
+                result = result[0]
         else:
             if squeeze:
                 result = result.squeeze()
