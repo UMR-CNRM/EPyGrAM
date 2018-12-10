@@ -14,6 +14,7 @@
    PointField
    MiscField
    H2DVectorField
+   D3VectorField
 
 -----------------------------------------------------------
 

@@ -249,7 +249,7 @@ def flux2massheights(H_tilde):
     H[:-1] = (H_tilde[:-1] + H_tilde[1:]) / 2.
     H[-1] = 2 * H_tilde[-1] - H_tilde[-2]
 
-    return H[1:-1]
+    return H
 
 
 def mass2fluxheights(H):

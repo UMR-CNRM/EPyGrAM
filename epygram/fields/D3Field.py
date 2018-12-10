@@ -20,9 +20,12 @@ from bronx.syntax.arrays import stretch_array
 
 from epygram import epygramError, config
 from epygram.util import (write_formatted, Angle,
-                          degrees_nearest_mod)
+                          degrees_nearest_mod, vtk_check_transform,
+                          vtk_modify_grid, vtk_write_grid,
+                          as_numpy_array)
 from epygram.base import Field, FieldSet, FieldValidity, FieldValidityList, Resource
 from epygram.geometries import D3Geometry, SpectralGeometry
+from epygram.geometries.D3Geometry import D3ProjectedGeometry, D3RectangularGridGeometry
 
 
 class D3CommonField(Field):
@@ -45,13 +48,96 @@ class D3CommonField(Field):
         """Returns True if the field is spectral."""
         return self.spectral_geometry is not None and self.spectral_geometry != '__unknown__'
 
+###########################
+# ABOUT VERTICAL GEOMETRY #
+###########################
+    def use_field_as_vcoord(self, field, force_kind=None):
+        """
+        Use values from the field as vertical coordinates.
+        One example of use: field1 is a temperature field
+        extracted from a resource on hybrid levels whereas
+        field2 is the pressure field expressed on the same
+        grid. field1.use_field_as_vcoord(field2) transforms
+        the vertical coordinate of field1 to obtain a field
+        on pressure levels.
+        
+        :param field: must be a field on the same geometry and
+                      validity as self that we will use to replace
+                      the vertical coordinate. 'generic' fid must
+                      allow to recognize the vertical coordinate
+                      type (except if force_kind is set)
+        :param force_kind: if not None, is used as the vertical
+                           coordinate kind instead of trying to
+                           guess it from the fid
+        """
+        if self.geometry != field.geometry:
+            raise epygramError("geometries must be identical")
+        if self.validity != field.validity:
+            raise epygramError("validities must be identical")
+        
+        self.geometry.vcoordinate = field.as_vcoordinate(force_kind)
+        
+    def as_vcoordinate(self, force_kind=None):
+        """
+        Returns a VGeometry build from the values of field.
+        Field must have a 'generic' fid allowing to
+        recognize the vertical coordinate type (except if
+        force_kind is set)
+        
+        :param force_kind: if not None, is used as the vertical
+                           coordinate kind instead of trying to
+                           guess it from the fid
+        """
+        if force_kind is None:
+            if not 'generic' in self.fid:
+                raise epygramError("fid must contain a 'generic' key or force_kind must be set")
+            for k in ['discipline', 'parameterCategory', 'parameterNumber']:
+                if k not in self.fid['generic']:
+                    raise epygramError("fid['generic'] must contain the " + k + " key.")
+            fid = (self.fid['generic']['discipline'],
+                   self.fid['generic']['parameterCategory'],
+                   self.fid['generic']['parameterNumber'])
+            if fid == (0, 3, 0):
+                vcoord = 100
+            elif fid == (0, 3, 6):
+                vcoord = 102
+            else:
+                raise NotImplementedError("Do not know which kind of vertical coordinate fid corresponds to")
+        else:
+            vcoord = force_kind
 
+        levels = self.getdata().copy()
+        if vcoord == 100:
+            levels = levels / 100.
+        if len(self.validity) == 1:
+            #data is an array z, y, x with z being optional
+            if len(self.geometry.vcoordinate.levels) == 1:
+                #in case z dimension does not exist in data
+                levels = [levels]
+        else:
+            #data is an array t, z, y, x with z being optional
+            if len(self.geometry.vcoordinate.levels) == 1:
+                #in case z dimension does not exist in data
+                levels = [levels]
+            else:
+                #if z dimension exist, z and t dimensions must be exchanged
+                levels = levels.swapaxes(0, 1)
+
+        kwargs_vcoord = {'structure':'V',
+                         'typeoffirstfixedsurface': vcoord,
+                         'position_on_grid': self.geometry.vcoordinate.position_on_grid,
+                         'levels': list(levels)
+                         }
+        return fpx.geometry(**kwargs_vcoord)
+        
+        
 ##############
 # ABOUT DATA #
 ##############
 
     def getvalue_ll(self, lon=None, lat=None,
                     level=None,
+                    k=None,
                     validity=None,
                     interpolation='nearest',
                     neighborinfo=False,
@@ -66,11 +152,12 @@ class D3CommonField(Field):
                               - 'nearest' (default), returns the value of the
                                 nearest neighboring gridpoint;
                               - 'linear', computes and returns the field value
-                                with linear spline interpolation;
+                                with bilinear or linear spline interpolation;
                               - 'cubic', computes and returns the field value
-                                with cubic spline interpolation.
+                                with cubic spline interpolation;
         :param level: is the True level not the index of the level. Depending on
                       the vertical coordinate, it could be expressed in Pa, m.
+        :param k: is the index of the level.
         :param validity: is a FieldValidity or a FieldValidityList instance
         :param neighborinfo: if set to **True**, returns a tuple
                              *(value, (lon, lat))*, with *(lon, lat)* being
@@ -84,104 +171,90 @@ class D3CommonField(Field):
           If so, the nearest point is selected with
           distance = abs(target_value - external_field.data)
 
+        When linear interpolation method is choosen, if the grid is rectangular,
+        the interpolation is a bilinear one on the model grid, otherwise it
+        is a spline interpolation on the lat/lon domain.
+
         Warning: for interpolation on Gauss geometries, requires the
         :mod:`pyproj` module.
         """
-        if isinstance(validity, FieldValidity):
-            myvalidity = FieldValidityList(validity)
-        else:
-            myvalidity = validity
         if self.spectral:
             raise epygramError("field must be gridpoint to get value of a" +
                                " lon/lat point.")
-        if len(self.validity) > 1 and myvalidity is None:
-            raise epygramError("*validity* is mandatory when there are several validities")
-        if self.geometry.datashape['k'] and level is None:
-            raise epygramError("*level* is mandatory when field has a vertical coordinate")
-        if (self.geometry.datashape['j'] or self.geometry.datashape['i']) and \
-           (lon is None or lat is None):
-            raise epygramError("*lon* and *lat* are mandatory when field has an horizontal extension")
-
-        maxsize = numpy.array([numpy.array(dim).size for dim in [lon, lat, level] if dim is not None]).max()
-        if myvalidity is not None:
-            maxsize = max(maxsize, len(myvalidity))
-
-        # We look for indexes for vertical and time coordinates (no interpolation)
-        if myvalidity is None:
-            my_t = numpy.zeros(maxsize, dtype=int)
-        else:
-            my_t = []
-            for v in myvalidity:
-                for t in range(len(self.validity)):
-                    if v == self.validity[t]:
-                        my_t.append(t)
-                        break
-            my_t = numpy.array(my_t)
-            if my_t.size != maxsize:
-                if my_t.size != 1:
-                    raise epygramError("validity must be uniq or must have the same length as other indexes")
-                my_t = numpy.array([my_t.item()] * maxsize)
         if len(numpy.array(self.geometry.vcoordinate.levels).shape) == 1 and \
            len(self.geometry.vcoordinate.levels) != len(set(self.geometry.vcoordinate.levels)):
             raise epygramError('Some levels are represented twice in levels list.')
-        if level is None:
-            my_k = numpy.zeros(maxsize, dtype=int)
-        else:
-            my_level = numpy.array(level)
-            if my_level.size == 1:
-                my_level = numpy.array([my_level.item()])
-            my_k = []
-            for l in my_level:
-                my_k.append(self.geometry.vcoordinate.levels.index(l))
-            my_k = numpy.array(my_k)
-            if my_k.size != maxsize:
-                if my_k.size != 1:
-                    raise epygramError("k must be scalar or must have the same length as other indexes")
-                my_k = numpy.array([my_k.item()] * maxsize)
-        my_lon = numpy.array(lon)
-        if my_lon.size == 1:
-            my_lon = numpy.array([my_lon.item()])
-        my_lat = numpy.array(lat)
-        if my_lat.size == 1:
-            my_lat = numpy.array([my_lat.item()])
-        if my_lon.size != maxsize or my_lat.size != maxsize:
-            raise epygramError("lon and lat must have the same length and the same length as level and validity")
 
-        if interpolation == 'nearest':
-            (ri, rj) = self.geometry.nearest_points(lon, lat, {'n':'1'},
-                                                    external_distance=external_distance)
-            value = self.getvalue_ij(ri, rj, my_k, my_t, one=one)
+        # We look for indexes for time coordinate (no interpolation)
+        if validity is None:
+            if len(self.validity) > 1:
+                raise epygramError("*validity* is mandatory when there are several validities")
+            t = 0
+        else:
+            if isinstance(validity, FieldValidity):
+                validity = FieldValidityList(validity)
+            t = [[ind for ind , val in enumerate(self.validity) if val == v][0] for v in validity]
+        t = as_numpy_array(t).flatten()
+        
+        # We look for indexes for vertical coordinate (no interpolation)
+        if k is not None and level is not None:
+            raise epygramError("*level* and *k* cannot be different from None together")
+        elif k is level is None:
+            if self.geometry.datashape['k']:
+                raise epygramError("*level* or *k* is mandatory when field has a vertical coordinate")
+            k = 0
+        elif k is None:
+            #level is not None
+            k = [self.geometry.vcoordinate.levels.index(l) for l in as_numpy_array(level)]
+        k = as_numpy_array(k)
+        
+        if lon is None or lat is None:
+            raise epygramError("*lon* and *lat* are mandatory")
+        lon, lat = as_numpy_array(lon).flatten(), as_numpy_array(lat).flatten()
+        if len(lon) != len(lat):
+            raise epygramError("*lon* and *lat* must have the same length")
+
+        sizes = set([len(x) for x in [lon, lat, k, t]])
+        if len(sizes) > 2 or (len(sizes) == 2 and not 1 in sizes):
+            raise epygramError("each of lon, lat, k/level and validity must be scalar or have the same length as the others")
+        
+        if interpolation == 'linear':
+            if isinstance(self.geometry, D3RectangularGridGeometry):
+                method = 'bilinear'
+            else:
+                method = 'linear_spline'
+        else:
+            method = interpolation
+
+        if method == 'nearest':
+            (ri, rj) = numpy.moveaxis(numpy.array(self.geometry.nearest_points(lon, lat, {'n':'1'},
+                                                  external_distance=external_distance)), 0, -1)
+            value = self.getvalue_ij(ri, rj, k, t, one=one)
             if neighborinfo:
                 (lon, lat) = self.geometry.ij2ll(ri, rj)
                 if numpy.shape(lon) in ((1,), ()):
                     lon = float(lon)
                     lat = float(lat)
                 value = (value, (lon, lat))
-        elif interpolation in ('linear', 'cubic'):
-            from scipy.interpolate import interp1d, interp2d
-            nvalue = numpy.zeros(maxsize)
-            interp_points = []
-            for n in range(maxsize):
-                if maxsize > 1:
-                    lonn = lon[n]
-                    latn = lat[n]
-                    my_kn = my_k[n]
-                    my_tn = my_t[n]
-                else:
-                    lonn = my_lon.item()
-                    latn = my_lat.item()
-                    my_kn = my_k.item()
-                    my_tn = my_t.item()
-                interp_points.append(self.geometry.nearest_points(lonn, latn,
-                                                                  {'linear':{'n':'2*2'},
-                                                                   'cubic':{'n':'4*4'}}[interpolation]))
+
+        elif method in ('linear_spline', 'cubic', 'bilinear'):
+            lon = lon if len(lon) == max(sizes) else lon.repeat(max(sizes))
+            lat = lat if len(lat) == max(sizes) else lat.repeat(max(sizes))
+            k = k if len(k) == max(sizes) else k.repeat(max(sizes))
+            t = t if len(t) == max(sizes) else t.repeat(max(sizes))
+            value = numpy.zeros(max(sizes))
+            interp_points = self.geometry.nearest_points(lon, lat,
+                                                         {'linear':{'n':'2*2'},
+                                                          'linear_spline':{'n':'2*2'},
+                                                          'bilinear':{'n':'2*2'},
+                                                          'cubic':{'n':'4*4'}}[interpolation],
+                                                         squeeze=False)
             # depack
-            all_i = []
-            all_j = []
-            for points in interp_points:
-                for p in points:
-                    all_i.append(p[0])
-                    all_j.append(p[1])
+            all_i = interp_points[:, :, 0]
+            all_j = interp_points[:, :, 1]
+            all_k = numpy.repeat(k[:, numpy.newaxis], interp_points.shape[1], axis=1)
+            all_t = numpy.repeat(t[:, numpy.newaxis], interp_points.shape[1], axis=1)       
+            
             # get values and lons/lats
             flat_values_at_interp_points = list(self.getvalue_ij(all_i, all_j, my_kn, my_tn))
             all_lonslats = self.geometry.ij2ll(all_i, all_j)
@@ -202,14 +275,45 @@ class D3CommonField(Field):
                     if self.geometry.dimensions['X'] == 1:
                         f = interp1d(loc_lats, loc_values, kind=interpolation)
                         value = f(latn)
+            values_at_interp_points = self.getvalue_ij(all_i.flatten(),
+                                                       all_j.flatten(),
+                                                       all_k.flatten(),
+                                                       all_t.flatten()).reshape(all_i.shape)
+
+            if method in ('linear_spline', 'cubic'):
+                from scipy.interpolate import interp1d, interp2d
+                all_lons, all_lats = self.geometry.ij2ll(all_i.flatten(), all_j.flatten())
+                all_lons = all_lons.reshape(all_i.shape)
+                all_lats = all_lats.reshape(all_i.shape)
+                for n in range(max(sizes)):
+                    if self.geometry.name == 'academic' and \
+                       1 in (self.geometry.dimensions['X'], self.geometry.dimensions['Y'] == 1):
+                        if self.geometry.dimensions['X'] == 1:
+                            f = interp1d(all_lats[n], values_at_interp_points[n], kind=interpolation)
+                            value[n] = f(lat[n])
+                        else:
+                            f = interp1d(all_lons[n], values_at_interp_points[n], kind=interpolation)
+                            value[n] = f(lon[n])
                     else:
-                        f = interp1d(loc_lons, loc_values, kind=interpolation)
-                        value = f(lonn)
-                else:
-                    f = interp2d(loc_lons, loc_lats, loc_values, kind=interpolation)
-                    value = f(lonn, latn)
-                nvalue[n] = value
-            value = nvalue
+                        f = interp2d(all_lons[n], all_lats[n], values_at_interp_points[n], kind=interpolation)
+                        value[n] = f(as_numpy_array(lon)[n], as_numpy_array(lat)[n])
+            
+            elif method == 'bilinear':
+                def simple_inter(x1, q1, x2, q2, x):
+                    """Simple linear interpolant"""
+                    return (x2 - x) / (x2 - x1) * q1 + (x - x1) / (x2 - x1) * q2
+                
+                #Position of wanted point 
+                wanted_i, wanted_j = self.geometry.ll2ij(lon, lat)
+                
+                assert numpy.all(all_i[:, 0] == all_i[:, 1]) and numpy.all(all_i[:, 2] == all_i[:, 3]) and \
+                       numpy.all(all_j[:, 0] == all_j[:, 2]) and numpy.all(all_j[:, 1] == all_j[:, 3])
+
+                value = simple_inter(all_j[:, 0], simple_inter(all_i[:, 0], values_at_interp_points[:, 0],
+                                                                all_i[:, 2], values_at_interp_points[:, 2], wanted_i),
+                                     all_j[:, 1], simple_inter(all_i[:, 1], values_at_interp_points[:, 1],
+                                                               all_i[:, 3], values_at_interp_points[:, 3], wanted_i),
+                                     wanted_j)
         if one:
             try:
                 value = float(value)
@@ -218,6 +322,61 @@ class D3CommonField(Field):
 
         return copy.copy(value)
 
+
+    def as_vtkGrid(self, hCoord, grid_type, z_factor, offset,
+                   filename=None, name='scalar', grid=None):
+        """
+        Returns a vtkStructuredGrid filled with the field
+        :param hCoord: 'll': horizontal coordinates are the lon/lat values
+                       a basemap: horizontal coordinates are set according to this basemap
+        :param grid_type: can be:
+            - sgrid_point: structured grid filled with points
+            - sgrid_cell: structured grid filled with hexahedron
+                          If the field is 2D, a zero thickness is used.
+                          If the field is 3D, thickness are approximately computed
+            - ugrid_point: unstructured grid filled with points
+            - ugrid_cell: unstructured grid build filled with cells
+                          If the field is 2D, a zero thickness is used.
+                          If the field is 3D, thickness are approximately computed
+        :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
+        :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
+        :param filename: if not None, resulting grid will be written into filename
+        :param name: name to give to the scalar array (useful with the grid option)
+        :param grid: if grid is not None, the method will add the data to it.
+        
+        If grid_type is 'sgrid_point', the result is the grid; otherwise
+        the result is the function is the last filter used.
+        """
+        import vtk
+        from vtk.numpy_interface import dataset_adapter as dsa
+
+        if len(self.validity) != 1:
+            raise NotImplementedError("For now, animation are not possible, only one validity allowed.")
+        if self.spectral:
+            raise epygramError("Spectral field, please use sp2gp() before.")
+        
+        data = self.getdata(d4=True).astype(numpy.float32)
+        data = data[0, ...]
+
+        if grid is None:
+            grid = self.geometry.make_vtkGrid(hCoord, z_factor, offset)
+            grid.epygram = dict(geometry=self.geometry)
+        else:
+            if grid.epygram['geometry'] != self.geometry:
+                raise epygramError("To add a value to an existing grid, geometries must be the same")
+            names = [grid.GetPointData().GetArrayName(i) for i in range(grid.GetPointData().GetNumberOfArrays())]
+            if name in names:
+                raise epygramError("There already is an array with same name: " + name)
+        
+        grid.GetPointData().AddArray(dsa.numpyTovtkDataArray(data.flatten(), name))
+        grid.GetPointData().SetActiveScalars(name)
+    
+        grid = vtk_modify_grid(grid, grid_type, datamin=data.min())
+        
+        if filename is not None:
+            vtk_write_grid(grid, filename)
+        return grid
+        
     def as_lists(self, order='C', subzone=None):
         """
         Export values as a dict of lists (in fact numpy arrays).
@@ -365,6 +524,83 @@ class D3CommonField(Field):
                 result.append(profilefield)
         return result
 
+    def extractprofile(self, lon, lat,
+                       interpolation='nearest',
+                       external_distance=None,
+                       exclude_extralevels=True,
+                       getdata=True):
+        """
+        Extracts a vertical profile from the field, given
+        the geographic location (*lon*/*lat*) of the profile.
+
+        :param lon: the longitude of the desired point.
+        :param lat: the latitude of the desired point.
+          If both None, extract a horizontally-averaged profile.
+        :param interpolation: defines the interpolation function used to compute
+          the profile at requested lon/lat from the fields grid:\n
+          - if 'nearest' (default), extracts profile at the horizontal nearest neighboring gridpoint;
+          - if 'linear', computes profile with horizontal linear spline interpolation;
+          - if 'cubic', computes profile with horizontal cubic spline interpolation.
+        :param external_distance: can be a dict containing the target point value
+          and an external field on the same grid as self, to which the distance
+          is computed within the 4 horizontally nearest points; e.g.
+          {'target_value':4810, 'external_field':an_H2DField_with_same_geometry}.
+          If so, the nearest point is selected with
+          distance = abs(target_value - external_field.data)
+        :param exclude_extralevels: if True levels with no physical meaning are
+                                    suppressed.
+        :param getdata: if False returns a field without data
+        """
+        pointG = self.geometry.make_profile_geometry(lon, lat)
+        
+        profile = self.extract_subdomain(pointG,
+                                         interpolation=interpolation,
+                                         external_distance=external_distance,
+                                         exclude_extralevels=exclude_extralevels,
+                                         getdata=getdata)
+
+        return profile
+
+    def extractsection(self, end1, end2,
+                       points_number=None,
+                       resolution=None,
+                       interpolation='linear',
+                       exclude_extralevels=True,
+                       getdata=True):
+        """
+        Extracts a vertical section from the field, given
+        the geographic (lon/lat) coordinates of its ends.
+        The section is returned as a V2DField.
+
+        :param end1: must be a tuple (lon, lat).
+        :param end2: must be a tuple (lon, lat).
+        :param points_number: defines the total number of horizontal points of the
+          section (including ends). If None, defaults to a number computed from
+          the *ends* and the *resolution*.
+        :param resolution: defines the horizontal resolution to be given to the
+          field. If None, defaults to the horizontal resolution of the field.
+        :param interpolation: defines the interpolation function used to compute
+          the profile points locations from the fields grid: \n
+          - if 'nearest', each horizontal point of the section is
+            taken as the horizontal nearest neighboring gridpoint;
+          - if 'linear' (default), each horizontal point of the section is
+            computed with linear spline interpolation;
+          - if 'cubic', each horizontal point of the section is
+            computed with linear spline interpolation.
+        :param exclude_extralevels: if True levels with no physical meaning are
+                                    suppressed.
+        :param getdata: if False returns a field without data
+        """
+        sectionG = self.geometry.make_section_geometry(end1, end2,
+                                                       points_number=points_number,
+                                                       resolution=resolution)
+        section = self.extract_subdomain(sectionG,
+                                         interpolation=interpolation,
+                                         exclude_extralevels=exclude_extralevels,
+                                         getdata=getdata)
+
+        return section
+
     def extract_subdomain(self, geometry,
                           interpolation='nearest',
                           external_distance=None,
@@ -398,22 +634,28 @@ class D3CommonField(Field):
                         for (key, value) in self.fid.items()}
 
         # build vertical geometry
+        #k_index: ordered list of the level indexes of self used to build the new field
         kwargs_vcoord = {'structure':'V',
                          'typeoffirstfixedsurface': self.geometry.vcoordinate.typeoffirstfixedsurface,
                          'position_on_grid': self.geometry.vcoordinate.position_on_grid}
         if self.geometry.vcoordinate.typeoffirstfixedsurface == 119:
             kwargs_vcoord['grid'] = copy.copy(self.geometry.vcoordinate.grid)
             kwargs_vcoord['levels'] = copy.copy(self.geometry.vcoordinate.levels)
+            k_index = range(len(kwargs_vcoord['levels']))
         elif self.geometry.vcoordinate.typeoffirstfixedsurface == 118:
             kwargs_vcoord['grid'] = copy.copy(self.geometry.vcoordinate.grid)
             kwargs_vcoord['levels'] = copy.copy(self.geometry.vcoordinate.levels)
+            k_index = range(len(kwargs_vcoord['levels']))
             # Suppression of levels above or under physical domain
             if exclude_extralevels:
-                for level in kwargs_vcoord['levels']:
+                for ilevel, level in enumerate(list(kwargs_vcoord['levels'])):
                     if level < 1 or level > len(self.geometry.vcoordinate.grid['gridlevels']) - 1:
                         kwargs_vcoord['levels'].remove(level)
-        elif self.geometry.vcoordinate.typeoffirstfixedsurface in [100, 103, 109, 1, 106, 255, 160, 200]:
+                        k_index[ilevel] = None
+            k_index = [k for k in k_index if k is not None]
+        elif self.geometry.vcoordinate.typeoffirstfixedsurface in [100, 102, 103, 109, 1, 106, 255, 160, 200]:
             kwargs_vcoord['levels'] = list(copy.deepcopy(self.geometry.vcoordinate.levels))
+            k_index = range(len(kwargs_vcoord['levels']))
         else:
             raise NotImplementedError("type of first surface level: " + str(self.geometry.vcoordinate.typeoffirstfixedsurface))
         if geometry.vcoordinate.typeoffirstfixedsurface not in [255, kwargs_vcoord['typeoffirstfixedsurface']]:
@@ -421,16 +663,34 @@ class D3CommonField(Field):
         if geometry.vcoordinate.position_on_grid not in [None, '__unknown__', kwargs_vcoord['position_on_grid']]:
             raise epygramError("extract_subdomain cannot change position on vertical grid.")
         if geometry.vcoordinate.grid != {} and geometry.vcoordinate.grid != kwargs_vcoord['grid']:
-            # One could check if requested grid is a subsample of field grid
             raise epygramError("extract_subdomain cannot change vertical grid")
         if geometry.vcoordinate.levels != []:
+            k_index = []
             for level in geometry.vcoordinate.levels:
                 if level not in kwargs_vcoord['levels']:
                     raise epygramError("extract_subdomain cannot do vertical interpolations.")
+                k_index.append(self.geometry.vcoordinate.levels.index(level))
             kwargs_vcoord['levels'] = geometry.vcoordinate.levels
         vcoordinate = fpx.geometry(**kwargs_vcoord)
         # build geometry
-        kwargs_geom = {'structure': geometry.structure,
+        structure = geometry.structure
+        if len(kwargs_vcoord['levels']) == 1:
+            #We suppress the vertical dimension
+            structure = {'3D':'H2D',
+                         'V1D':'Point',
+                         'V2D':'H1D',
+                         'H1D':'H1D',
+                         'H2D':'H2D',
+                         'Point':'Point'}[structure]
+        else:
+            #We add the vertical dimension
+            structure = {'H2D':'3D',
+                         'Point':'V1D',
+                         'H1D':'V2D',
+                         'D3':'D3',
+                         'V2D':'V2D',
+                         'V1D':'V1D'}[structure]
+        kwargs_geom = {'structure': structure,
                        'name': geometry.name,
                        'grid': dict(geometry.grid),  # do not remove dict(), it is usefull for unstructured grid
                        'dimensions': copy.copy(geometry.dimensions),
@@ -444,15 +704,44 @@ class D3CommonField(Field):
             raise epygramError("extract_subdomain cannot deal with position_on_horizontal_grid other than 'center'")
         newgeometry = fpx.geometry(**kwargs_geom)
 
+        if any([isinstance(level, numpy.ndarray) for level in newgeometry.vcoordinate.levels]):
+            #level value is not constant on the domain, we must extract a subdomain.
+            #We build a new field with same structure/geometry/validity as self
+            #and we fill its data with the level values. We replace levels by index
+            #in the geometry to stop recursion and use the extract_subdomain method
+            #to get the level values on the new geometry levels.
+            temp_field = self.geometry.vcoord_as_field(self.geometry.vcoordinate.typeoffirstfixedsurface,
+                                                       self.validity)
+            
+            temp_geom = geometry.deepcopy()
+            del temp_geom.vcoordinate.levels[:]
+            temp_geom.vcoordinate.levels.extend(k_index) #We extract only the requested levels
+            extracted = temp_field.extract_subdomain(temp_geom,
+                                                     interpolation=interpolation,
+                                                     external_distance=external_distance,
+                                                     exclude_extralevels=False,
+                                                     getdata=True).getdata(d4=True)
+            extracted = extracted.swapaxes(0, 1) #z first, then validity for levels (opposite of fields)
+            if len(self.validity) > 1:
+                #We keep all dims when validity is not unique
+                extracted = list(extracted)
+            else:
+                #We suppress null dims
+                extracted = list(extracted.squeeze())
+            del newgeometry.vcoordinate.levels[:]
+            newgeometry.vcoordinate.levels.extend(extracted)
+            del temp_field, temp_geom
+
         # location & interpolation
         lons, lats = newgeometry.get_lonlat_grid()
         if len(lons.shape) > 1:
             lons = stretch_array(lons)
             lats = stretch_array(lats)
-        for (lon, lat) in numpy.nditer([lons, lats]):
-            if not self.geometry.point_is_inside_domain_ll(lon, lat):
-                raise ValueError("point (" + str(lon) + ", " +
-                                 str(lat) + ") is out of field domain.")
+        if not numpy.all(self.geometry.point_is_inside_domain_ll(lons, lats)):
+            for (lon, lat) in numpy.nditer([lons, lats]):
+                if not self.geometry.point_is_inside_domain_ll(lon, lat):
+                    raise ValueError("point (" + str(lon) + ", " +
+                                     str(lat) + ") is out of field domain.")
         comment = None
         if interpolation == 'nearest':
             if lons.size == 1:
@@ -510,8 +799,11 @@ class D3CommonField(Field):
             data = numpy.ndarray(shp)
             for t in range(len(self.validity)):
                 for k in range(len(newgeometry.vcoordinate.levels)):
-                    level = newgeometry.vcoordinate.levels[k]
-                    extracted = self.getvalue_ll(lons, lats, level, self.validity[t],
+                    #level = newgeometry.vcoordinate.levels[k]
+                    extracted = self.getvalue_ll(lons, lats,
+                                                 #level=level, #equivalent to k=k_index[k] except that the k option
+                                                 k=k_index[k], #still works when level is an array
+                                                 validity=self.validity[t],
                                                  interpolation=interpolation,
                                                  external_distance=external_distance,
                                                  one=False)
@@ -636,21 +928,68 @@ class D3CommonField(Field):
 
     def extract_subarray(self,
                          first_i, last_i,
-                         first_j, last_j):
+                         first_j, last_j,
+                         getdata=True,
+                         deepcopy=True):
         """
         Extract a rectangular sub-array from the field, given the i,j index limits
         of the sub-array, and return the extracted field.
+        If deepcopy is False, current field and returned field will share
+        some attributes (like validity).
         """
-        assert not self.spectral
         newgeom = self.geometry.make_subarray_geometry(first_i, last_i,
                                                        first_j, last_j)
-        # select data
-        subdata = self.getdata(d4=True)[:, :, first_j:last_j, first_i:last_i]
         # copy the field object and set the new geometry, then data
-        field_kwargs = copy.deepcopy(self._attributes)
+        field_kwargs = self._attributes
+        if deepcopy:
+            field_kwargs = copy.deepcopy(field_kwargs)
         field_kwargs['geometry'] = newgeom
         newfield = fpx.field(**field_kwargs)
-        newfield.setdata(subdata)
+        if getdata:
+            assert not self.spectral
+            # select data
+            subdata = self.getdata(d4=True)[:, :, first_j:last_j, first_i:last_i]
+            newfield.setdata(subdata)
+
+        return newfield
+    
+    def extract_subsample(self,
+                          sample_x, sample_y, sample_z,
+                          getdata=True,
+                          deepcopy=True):
+        """
+        Extract a subsample from field by decreasing resolution.
+        :param sample_x: take one over <sample_x> points in the x direction
+        :param sample_y: same for the y direction
+        :param sample_z: same for the z direction
+        If deepcopy is False, current field and returned field will share
+        some attributes (like validity).
+        
+        The extension zone of the original field is kept in the new field.
+        Hence, it's recommended to call this method on field without extension zone.
+        
+        Because the resolution change during this operation, field must be
+        localize on the grid center (use center method before if not).
+        """
+        assert self.geometry.position_on_horizontal_grid == 'center', \
+               "Field must be centered on the grid"
+        
+        newgeom = self.geometry.make_subsample_geometry(sample_x,
+                                                        sample_y,
+                                                        sample_z)
+        # copy the field object and set the new geometry, then data
+        field_kwargs = self._attributes
+        if deepcopy:
+            field_kwargs = copy.deepcopy(field_kwargs)
+        field_kwargs['geometry'] = newgeom
+        newfield = fpx.field(**field_kwargs)
+        if getdata:
+            assert not self.spectral
+            # select data
+            subdata = self.getdata(d4=True)[:, ::sample_z,
+                                               ::sample_y,
+                                               ::sample_x]
+            newfield.setdata(subdata)
 
         return newfield
 
@@ -893,6 +1232,14 @@ class D3CommonField(Field):
         self.validity.extend(another.validity)
         self.setdata(d)
 
+    def remove_level(self, k):
+        """
+        Remove one level from the current field
+        :param k: index of the level to remove
+        """
+        del self.geometry.vcoordinate.levels[k]
+        self.setdata(numpy.delete(self.getdata(d4=True), k, 1))
+
     def decumulate(self, center=False):
         """
         Decumulate cumulated fields (for a field with temporal dimension !).
@@ -967,6 +1314,181 @@ class D3CommonField(Field):
 
     def plotfield(self):
         raise NotImplementedError("plot of 3D field is not implemented")
+
+    def _vtk_check_transform(self, rendering, hCoord, z_factor, offset):
+        """
+        :param rendering:  a dictionary containing, at least, the renderer key
+        :param hCoord: 'll': horizontal coordinates are the lon/lat values
+                       a basemap: horizontal coordinates are set according to this basemap
+        :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
+        :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
+        """
+        
+        return vtk_check_transform(rendering,
+                                   self.geometry.vcoordinate.typeoffirstfixedsurface,
+                                   hCoord, z_factor, offset)
+
+    def plot3DOutline(self, rendering, color='Black',
+                      hCoord=None, z_factor=None, offset=None):
+        """
+        Plots the outline of the data
+        :param rendering:  a dictionary containing, at least, the renderer key
+        :param color: color to use for the outline
+        :param hCoord: 'll': horizontal coordinates are the lon/lat values
+                       a basemap: horizontal coordinates are set according to this basemap
+        :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
+        :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
+        """
+        import vtk
+        
+        hCoord, z_factor, offset = self._vtk_check_transform(rendering, hCoord, z_factor, offset)
+        
+        grid = self.as_vtkGrid(hCoord, 'sgrid_point', z_factor, offset)
+        
+        #outline = vtk.vtkStructuredGridOutlineFilter()
+        outline = vtk.vtkOutlineFilter()
+        outline.SetInputData(grid)
+        
+        outlineMapper = vtk.vtkPolyDataMapper()
+        outlineMapper.SetInputConnection(outline.GetOutputPort())
+        
+        outlineActor = vtk.vtkActor()
+        outlineActor.SetMapper(outlineMapper)
+        outlineActor.GetProperty().SetColor(vtk.vtkNamedColors().GetColor3d(color))
+        
+        rendering['renderer'].AddActor(outlineActor)
+        return (outlineActor, outlineMapper)
+
+    def plot3DContour(self, rendering,
+                      levels, color='Black', opacity=1.,
+                      hCoord=None, z_factor=None, offset=None):
+        """
+        This method adds contour lines. If the field is 3D, contours appear as isosurface.
+        :param rendering: a dictionary containing, at least, the renderer key
+        :param levels: list of values to use to compute the contour lines
+        :param color: color name used for coloring the contour lines
+        :param opacity: opacity value for the contour lines
+        :param hCoord: 'll': horizontal coordinates are the lon/lat values
+                       a basemap: horizontal coordinates are set according to this basemap
+        :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
+        :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
+        """
+        import vtk
+        
+        hCoord, z_factor, offset = self._vtk_check_transform(rendering, hCoord, z_factor, offset)
+    
+        ugrid = self.as_vtkGrid(hCoord, 'ugrid_point', z_factor, offset)
+        iso = vtk.vtkContourFilter()
+        #iso.GenerateTrianglesOff() 
+        iso.SetInputConnection(ugrid.GetOutputPort())
+        for i, value in enumerate(levels):
+            iso.SetValue(i, value)
+        
+        #Does it change something? We certainly need to adjust convergence
+        #smooth = vtk.vtkSmoothPolyDataFilter()
+        #smooth.SetInputConnection(iso.GetOutputPort())
+        #iso = smooth
+        
+        isoMapper = vtk.vtkPolyDataMapper()
+        isoMapper.SetInputConnection(iso.GetOutputPort())
+        isoMapper.ScalarVisibilityOff()
+        
+        isoActor = vtk.vtkActor()
+        isoActor.SetMapper(isoMapper)
+        isoActor.GetProperty().SetColor(vtk.vtkNamedColors().GetColor3d(color))
+        isoActor.GetProperty().SetOpacity(opacity)
+        rendering['renderer'].AddActor(isoActor)
+        return (isoActor, isoMapper)
+
+    def plot3DColore(self, rendering,
+                     color,
+                     hCoord=None, z_factor=None, offset=None):
+        """
+        This method color the field.
+        :param rendering: a dictionary containing, at least, the renderer key
+        :param color: look up table (vtk.vtkLookupTable) to colorize the contour lines
+        :param hCoord: 'll': horizontal coordinates are the lon/lat values
+                       a basemap: horizontal coordinates are set according to this basemap
+        :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
+        :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
+        """
+        import vtk
+        
+        hCoord, z_factor, offset = self._vtk_check_transform(rendering, hCoord, z_factor, offset)
+    
+        sgrid = self.as_vtkGrid(hCoord, 'sgrid_point', z_factor, offset)
+        sgridGeom = vtk.vtkStructuredGridGeometryFilter()
+        sgridGeom.SetInputData(sgrid)
+        
+        sgridGeomMap = vtk.vtkPolyDataMapper()
+        sgridGeomMap.SetInputConnection(sgridGeom.GetOutputPort())
+        sgridGeomMap.SetLookupTable(color)
+        sgridGeomMap.UseLookupTableScalarRangeOn()
+        sgridGeomMap.InterpolateScalarsBeforeMappingOn()
+        
+        sgridGeomMapActor = vtk.vtkActor()
+        sgridGeomMapActor.SetMapper(sgridGeomMap)
+        rendering['renderer'].AddActor(sgridGeomMapActor)
+        return (sgridGeomMapActor, sgridGeomMap)
+
+    def plot3DVolume(self, rendering,
+                     threshold, color, alpha,
+                     hCoord=None, z_factor=None, offset=None,
+                     algo='OpenGLProjectedTetrahedra'):
+        """
+        Adds a volume to the vtk rendering system
+        :param rendering: a dictionary containing, at least, the renderer key
+        :param threshold: a tuple (minval, maxval) used to discard values outside of the interval
+                          minval and/or maxval can be replace by None value
+        :param color: a vtk.vtkColorTransferFunction object or None to describe the color
+        :param alpha: a vtk.vtkPiecewiseFunction object or None to describe the alpha channel
+        :param hCoord: 'll': horizontal coordinates are the lon/lat values
+                       a basemap: horizontal coordinates are set according to this basemap
+        :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
+        :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
+        :param algo: among 'RayCast', 'ZSweep', 'ProjectedTetrahedra', 'OpenGLProjectedTetrahedra'
+        """
+        import vtk
+
+        hCoord, z_factor, offset = self._vtk_check_transform(rendering, hCoord, z_factor, offset)
+
+        minval, maxval = threshold
+        grid = self.as_vtkGrid(hCoord, 'ugrid_cell', z_factor, offset)
+        
+        fil = vtk.vtkThreshold()
+        fil.SetInputConnection(grid.GetOutputPort())
+        if maxval is None:
+            fil.ThresholdByUpper(minval)
+        elif minval is None:
+            fil.ThresholdByLower(maxval)
+        elif minval is None and maxval is None:
+            pass
+        else:
+            fil.ThresholdBetween(minval, maxval)
+        
+        tri = vtk.vtkDataSetTriangleFilter()
+        tri.SetInputConnection(fil.GetOutputPort())
+        
+        volumeMapper = {'RayCast':vtk.vtkUnstructuredGridVolumeRayCastMapper,
+                        'ZSweep':vtk.vtkUnstructuredGridVolumeZSweepMapper,
+                        'ProjectedTetrahedra':vtk.vtkProjectedTetrahedraMapper,
+                        'OpenGLProjectedTetrahedra':vtk.vtkOpenGLProjectedTetrahedraMapper}[algo]()
+        volumeMapper.SetInputConnection(tri.GetOutputPort())
+
+        volumeProperty = vtk.vtkVolumeProperty()
+        if color is not None:
+            volumeProperty.SetColor(color)
+        if alpha is not None:
+            volumeProperty.SetScalarOpacity(alpha)
+        volumeProperty.ShadeOff()
+        volumeProperty.SetInterpolationTypeToLinear()
+
+        volume = vtk.vtkVolume()
+        volume.SetMapper(volumeMapper)
+        volume.SetProperty(volumeProperty)
+         
+        rendering['renderer'].AddVolume(volume)
+        return (volume, volumeMapper)
 
     def stats(self, subzone=None):
         """
@@ -1731,53 +2253,39 @@ class D3Field(D3CommonField):
 
         If *one* is False, returns [value] instead of value.
         """
-        if len(self.validity) > 1 and t is None:
-            raise epygramError("*t* is mandatory when there are several validities")
-        if self.geometry.datashape['k'] and k is None:
-            raise epygramError("*k* is mandatory when field has a vertical coordinate")
-        if self.geometry.datashape['j'] and j is None:
-            raise epygramError("*j* is mandatory when field has a two horizontal dimensions")
-        if self.geometry.datashape['i'] and j is None:
-            raise epygramError("*i* is mandatory when field has one horizontal dimension")
-
-        if not self.geometry.point_is_inside_domain_ij(i, j):
+        if t is None:
+            if len(self.validity) > 1:
+                raise epygramError("*t* is mandatory when there are several validities")
+            t = 0
+        if k is None:
+            if self.geometry.datashape['k']:
+                raise epygramError("*k* is mandatory when field has a vertical coordinate")
+            k = 0
+        if j is None:
+            if self.geometry.datashape['j']:
+                raise epygramError("*j* is mandatory when field has a two horizontal dimensions")
+            j = 0
+        if i is None:
+            if self.geometry.datashape['i']:
+                raise epygramError("*i* is mandatory when field has one horizontal dimension")
+            i = 0
+        
+        i, j = as_numpy_array(i).flatten(), as_numpy_array(j).flatten()
+        k, t = as_numpy_array(k).flatten(), as_numpy_array(t).flatten()
+        
+        if not numpy.all(self.geometry.point_is_inside_domain_ij(i, j)):
             raise ValueError("point is out of field domain.")
 
-        maxsize = numpy.array([numpy.array(dim).size for dim in [i, j, k, t] if dim is not None]).max()
-        if t is None:
-            my_t = numpy.zeros(maxsize, dtype=int)
-        else:
-            my_t = numpy.array(t, dtype=int)
-            if my_t.size != maxsize:
-                if my_t.size != 1:
-                    raise epygramError("t must be scalar or must have the same length as other indexes")
-                my_t = numpy.array([my_t.item()] * maxsize, dtype=int)
-        if k is None:
-            my_k = numpy.zeros(maxsize, dtype=int)
-        else:
-            my_k = numpy.array(k, dtype=int)
-            if my_k.size != maxsize:
-                if my_k.size != 1:
-                    raise epygramError("k must be scalar or must have the same length as other indexes")
-                my_k = numpy.array([my_k.item()] * maxsize, dtype=int)
-        if j is None:
-            my_j = numpy.zeros(maxsize, dtype=int)
-        else:
-            my_j = numpy.array(j, dtype=int)
-            if my_j.size != maxsize:
-                raise epygramError("j must have the same length as other indexes")
-        if i is None:
-            my_i = numpy.zeros(maxsize, dtype=int)
-        else:
-            my_i = numpy.array(i, dtype=int)
-            if my_i.size != maxsize:
-                raise epygramError("i must have the same length as other indexes")
-
-        value = numpy.copy(self.getdata(d4=True)[my_t, my_k, my_j, my_i])
+        sizes = set([len(x) for x in [i, j, k, t]])
+        if len(sizes) > 2 or (len(sizes) == 2 and not 1 in sizes):
+            raise epygramError("each of i, j, k and t must be scalar or have the same length as the others")
+        
+        value = numpy.copy(self.getdata(d4=True)[t, k, j, i])
+        
         if value.size == 1 and one:
             value = value.item()
         return value
-
+    
     def getlevel(self, level=None, k=None):
         """
         Returns a level of the field as a new field.
@@ -1835,7 +2343,7 @@ class D3Field(D3CommonField):
         if self.spectral_geometry is not None:
             kwargs_field['spectral_geometry'] = self.spectral_geometry.copy()
         newfield = fpx.field(**kwargs_field)
-        newfield.setdata(self.getdata(d4=True)[:, my_k:my_k + 1, :, :])
+        newfield.setdata(self.getdata(d4=True)[:, my_k:my_k + 1, ...])
 
         return newfield
 
@@ -1871,6 +2379,28 @@ class D3Field(D3CommonField):
             newfield.geometry.vcoordinate = fpx.geometry(**kwargs_vcoord)
 
         return newfield
+    
+    def center(self):
+        """
+        Performs an averaging on data values to center the field on the grid (aka shuman)
+        and modify geometry.
+        """
+        posSpl = self.geometry.position_on_horizontal_grid.split('-')
+        if len(posSpl) == 2: #not center
+            posY, posX = posSpl
+            if (posY == 'lower' or posX == 'left'):
+                if not isinstance(self.geometry, D3ProjectedGeometry):
+                    raise NotImplementedError("Centering is not available with non-projected geometries")
+                data = self.getdata(d4=True)
+                if data is not None: #This test is useful if field has been retrieved with getdata=False
+                    if posY == 'lower':
+                        data[:, :, :-1, :] = 0.5 * (data[:, :, :-1, :] + data[:, :, 1:, :])
+                        data[:, :, -1, :] = data[:, :, -2, :]
+                    if posX == 'left':
+                        data[:, :, :, :-1] = 0.5 * (data[:, :, :, :-1] + data[:, :, :, 1:])
+                        data[:, :, :, -1] = data[:, :, :, -2]
+                    self.setdata(data)
+        self.geometry.position_on_horizontal_grid = 'center'
 
 
 class D3VirtualField(D3CommonField):
@@ -2033,7 +2563,7 @@ class D3VirtualField(D3CommonField):
         self._geometry = fpx.geometry(**kwargs_geom)
         self._spgpOpList = []
 
-    def as_real_field(self):
+    def as_real_field(self, getdata=True):
         field3d = fpx.field(fid=dict(self.fid),
                             structure={'H2D':'3D',
                                        'point':'V1D',
@@ -2171,61 +2701,50 @@ class D3VirtualField(D3CommonField):
 
         If *one* is False, returns [value] instead of value.
         """
-        if len(self.validity) > 1 and t is None:
-            raise epygramError("*t* is mandatory when there are several validities")
-        if self.geometry.datashape['k'] and k is None:
-            raise epygramError("*k* is mandatory when field has a vertical coordinate")
-        if self.geometry.datashape['j'] and j is None:
-            raise epygramError("*j* is mandatory when field has a two horizontal dimensions")
-        if self.geometry.datashape['i'] and j is None:
-            raise epygramError("*i* is mandatory when field has one horizontal dimension")
-
-        if not self.geometry.point_is_inside_domain_ij(i, j):
+        if t is None:
+            if len(self.validity) > 1:
+                raise epygramError("*t* is mandatory when there are several validities")
+            t = 0
+        if k is None:
+            if self.geometry.datashape['k']:
+                raise epygramError("*k* is mandatory when field has a vertical coordinate")
+            k = 0
+        if j is None:
+            if self.geometry.datashape['j']:
+                raise epygramError("*j* is mandatory when field has a two horizontal dimensions")
+            j = 0
+        if i is None:
+            if self.geometry.datashape['i']:
+                raise epygramError("*i* is mandatory when field has one horizontal dimension")
+            i = 0
+        
+        i, j = as_numpy_array(i).flatten(), as_numpy_array(j).flatten()
+        k, t = as_numpy_array(k).flatten(), as_numpy_array(t).flatten()
+        
+        if not numpy.all(self.geometry.point_is_inside_domain_ij(i, j)):
             raise ValueError("point is out of field domain.")
 
-        maxsize = numpy.array([numpy.array(dim).size for dim in [i, j, k, t] if dim is not None]).max()
-        if t is None:
-            my_t = numpy.zeros(maxsize, dtype=int)
-        else:
-            my_t = numpy.array(t)
-            if my_t.size != maxsize:
-                if my_t.size != 1:
-                    raise epygramError("t must be scalar or must have the same length as other indexes")
-                my_t = numpy.array([my_t.item()] * maxsize)
-        if k is None:
-            my_k = numpy.zeros(maxsize, dtype=int)
-        else:
-            my_k = numpy.array(k)
-            if my_k.size != maxsize:
-                if my_k.size != 1:
-                    raise epygramError("k must be scalar or must have the same length as other indexes")
-                my_k = numpy.array([my_k.item()] * maxsize)
-        if j is None:
-            my_j = numpy.zeros(maxsize, dtype=int)
-        else:
-            my_j = numpy.array(j)
-            if my_j.size != maxsize:
-                raise epygramError("j must have the same length as other indexes")
-        if i is None:
-            my_i = numpy.zeros(maxsize, dtype=int)
-        else:
-            my_i = numpy.array(i)
-            if my_i.size != maxsize:
-                raise epygramError("i must have the same length as other indexes")
+        sizes = set([len(x) for x in [i, j, k, t]])
+        if len(sizes) > 2 or (len(sizes) == 2 and not 1 in sizes):
+            raise epygramError("each of i, j, k and t must be scalar or have the same length as the others")
 
-        value = []
-        oldk = None
-        for x in range(my_k.size):
-            thisk = my_k[x] if my_k.size > 1 else my_k.item()
+        if max(sizes) > 1 and len(k) == 1:
+            k = k.repeat(max(sizes))
+
+        oldk = k[0]
+        data = self.getlevel(k=oldk).getdata(d4=True)
+        value = numpy.ndarray((max(sizes),), dtype=data.dtype)
+
+        for thisk in numpy.unique(k):
             if thisk != oldk:
-                field2d = self.getlevel(k=thisk)
+                data = self.getlevel(k=thisk).getdata(d4=True)
                 oldk = thisk
-            if my_t.size == 1:
-                pos = (my_t.item(), 0, my_j.item(), my_i.item())
-            else:
-                pos = (my_t[x], 0, my_j[x], my_i[x])
-            value.append(field2d.getdata(d4=True)[pos])
-        value = numpy.array(value)
+            mask = k == thisk
+            value[mask] = data[t[mask] if len(t) > 1 else t,
+                               0,
+                               j[mask] if len(j) > 1 else j,
+                               i[mask] if len(i) > 1 else i]
+
         if value.size == 1 and one:
             value = value.item()
         return value

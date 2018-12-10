@@ -17,6 +17,10 @@ Some of which may be dynamically needed only, i.e. needed at actual use of some 
 - :mod:`pyresample`
 - :mod:`scipy`
 - :mod:`six`
+- :mod:`urllib`
+- :mod:`urllib2`
+- :mod:`vortex`
+- :mod:`vtk`
 
 VORTEX site-packages (distributed with epygram)
 -----------------------------------------------

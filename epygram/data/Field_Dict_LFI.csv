@@ -152,8 +152,8 @@ name:RCT,type:3D,discipline:0,parameterCategory:1,parameterNumber:22
 name:RIT,type:3D,discipline:0,parameterCategory:1,parameterNumber:23
 name:RRT,type:3D,discipline:0,parameterCategory:1,parameterNumber:24
 name:RST,type:3D,discipline:0,parameterCategory:1,parameterNumber:25
-name:RGT,type:3D,discipline:0,parameterCategory:255,parameterNumber:255
-name:RHT,type:3D,discipline:0,parameterCategory:255,parameterNumber:255
+name:RGT,type:3D,discipline:0,parameterCategory:1,parameterNumber:253
+name:RHT,type:3D,discipline:0,parameterCategory:1,parameterNumber:252
 name:CIT,type:3D,discipline:0,parameterCategory:255,parameterNumber:255
 name:INPRR3D,type:3D,discipline:0,parameterCategory:1,parameterNumber:65
 name:EVAP3D,type:3D,discipline:0,parameterCategory:255,parameterNumber:255
@@ -161,7 +161,7 @@ name:UT,type:3D,discipline:0,parameterCategory:2,parameterNumber:2
 name:VT,type:3D,discipline:0,parameterCategory:2,parameterNumber:3
 name:WT,type:3D,discipline:0,parameterCategory:2,parameterNumber:9
 name:PABST,type:3D,discipline:0,parameterCategory:3,parameterNumber:0
-name:CLDFR,type:3D,discipline:0,parameterCategory:6,parameterNumber:1
+name:CLDFR,type:3D,discipline:0,parameterCategory:6,parameterNumber:7
 name:TKET,type:3D,discipline:0,parameterCategory:19,parameterNumber:11
 name:SRCT,type:3D,discipline:0,parameterCategory:255,parameterNumber:255
 name:SIGS,type:3D,discipline:0,parameterCategory:255,parameterNumber:255
@@ -171,8 +171,8 @@ name:RCM,type:3D,discipline:0,parameterCategory:1,parameterNumber:22
 name:RIM,type:3D,discipline:0,parameterCategory:1,parameterNumber:23
 name:RRM,type:3D,discipline:0,parameterCategory:1,parameterNumber:24
 name:RSM,type:3D,discipline:0,parameterCategory:1,parameterNumber:25
-name:RGM,type:3D,discipline:0,parameterCategory:255,parameterNumber:255
-name:RHM,type:3D,discipline:0,parameterCategory:255,parameterNumber:255
+name:RGM,type:3D,discipline:0,parameterCategory:1,parameterNumber:253
+name:RHM,type:3D,discipline:0,parameterCategory:1,parameterNumber:252
 name:UM,type:3D,discipline:0,parameterCategory:2,parameterNumber:2
 name:VM,type:3D,discipline:0,parameterCategory:2,parameterNumber:3
 name:WM,type:3D,discipline:0,parameterCategory:2,parameterNumber:9

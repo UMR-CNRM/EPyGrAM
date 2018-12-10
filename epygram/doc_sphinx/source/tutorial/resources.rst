@@ -198,4 +198,40 @@ telling it:
 already is a field with the same name in this FA: overwrite.
 
 
+-----------------------------------------------------------
+
+Resource modifiers
+---------------------
+
+Sometimes, fields in a resource does not take the appropriate form.
+For example, 3D plots require 3D fields; animations require fields with
+time evolution; complex treatments can require to work on a subdomain;
+and some applications can need variables that are not in the resource
+but can be computed from it.
+To deal with this problems, one can implement the transforms or use one of
+the resource modifiers provided by epygram:
+
+- CombineLevelsResource takes one resource and tries to expose 3D fields built
+  from the H2D fields actually present in the resource
+- MultiValiditiesResource takes several resources. Each resource must contain
+  the same fields but for different validities; the new resource join the different
+  fields to return a field with a time dimension
+- SubdomainResource takes one resource and return the fields on
+  a sub-domain defined by a geometry or by indexes bounds
+- DiagnosticsResource takes one resource and tries to compute new fields from
+  the fields contained in the resource. For example, one can request the
+  temperature field and the resource returns it if it is already
+  in the resource or computes it from potential temperature.
+
+All this modifiers should work in a pipeline if needed (one can compute
+diagnostics on a multivalidities resource for example).
+
+Here are some examples to build a resource modifier:
+
+>>> from footprints import proxy as fpx
+>>> r = epygram.formats.resource(filename, 'r')
+>>> rDiag = fpx.resource_modificator(name='Diagnostics', resource=r, openmode='r', ...)
+>>> r3d = fpx.resource_modificator(name='CombineLevels', resource=r)
+>>> r_time = fpx.resource_modificator(name='MultiValidities', resources=[r1, r2, ...])
+>>> r_subdo = fpx.resource_modificator(name='Subdomain', resource=r, geometry=geom)
 

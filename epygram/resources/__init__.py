@@ -43,7 +43,7 @@ from .FileResource import FileResource
 from .MultiValiditiesResource import MultiValiditiesResource
 from .CombineLevelsResource import CombineLevelsResource
 from .SubdomainResource import SubdomainResource
-
+from .DiagnosticsResource import DiagnosticsResource
 
 def meta_resource(filenames_or_resources, openmode, rtype):
     """

@@ -6,10 +6,6 @@
 
 -----------------------------------------------------------
 
-.. autofunction:: make_vector_field
-
------------------------------------------------------------
-
 .. autoclass:: H2DVectorField
    :show-inheritance:
    :members:

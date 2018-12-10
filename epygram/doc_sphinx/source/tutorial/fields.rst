@@ -223,7 +223,8 @@ Building Vector Fields
 ----------------------
 
 Wind fields (for instance) can be re-assembled from their U/V components
-into :doc:`H2DVectorField <../library/H2DVectorField>` for more integrated functionalities
+into :doc:`H2DVectorField <../library/H2DVectorField>` or
+:doc:`D3VectorField <../library/D3VectorField>` for more integrated functionalities
 (re-projection, computation of derivatives or direction/module, plotting and
 so on...).
 
@@ -298,3 +299,35 @@ Similarly, superposition of plots can be done:
 >>> bm = t.geometry.make_basemap()
 >>> fig, ax = geop.plotfield(use_basemap=bm, graphicmode='contourlines')
 >>> fig, ax = t.plotfield(use_basemap=bm, over=(fig, ax))
+
+-----------------------------------------------------------
+
+3D Plots
+--------
+Fields can be plotted in a 3D view in three ways:
+
+- contour with :meth:`Field.plot3DContour` method (which becomes a
+  classical contour plot if field is 2D, vertical or horizontal)
+- volume with :meth:`Field.plot3DVolume`
+- color with :meth:`Field.plot3DColor` (corresponding to the matplotlib contourf method)
+
+A vector field can be plotted using :meth:`Field.plot3DVector` (to plot arrows)
+or :meth:`Field.plot3DStream` to plot (stream lines or tubes).
+
+>>> import vtk #We need to import vtk before epygram even if do not use it directly in the script
+>>> import epygram
+>>> epygram.init_env() #initialisation of environment, for FA/LFI and spectrals transforms sub-libraries
+>>> r = epygram.formats.resource(filename, 'r', true3d=True)
+>>> 
+>>> CF = r.readfield('S---CLOUD_FRACTI')
+>>> 
+>>> #Set-up of the view
+... offset = CF.geometry.gimme_corners_ll()['ll'] #We translate the domain
+>>> hCoord = 'll' #We use lat/lon on the horizontal
+>>> z_factor = 0.1 #0.1 horizontal degree of lat/lon is represented by the same length as one model level on the vertical
+>>> ren = epygram.util.vtk_set_window((0.5, 0.5, 0.5), (800, 800))
+>>> 
+>>> CF.plot3DContour(ren, [1.], color='White', hCoord=hCoord, offset=offset, z_factor=z_factor)
+((vtkRenderingOpenGL2Python.vtkOpenGLActor)0x7f899c230390, (vtkRenderingOpenGL2Python.vtkOpenGLPolyDataMapper)0x7f89b8750a78)
+>>> 
+>>> ren['interactor'].Start()
