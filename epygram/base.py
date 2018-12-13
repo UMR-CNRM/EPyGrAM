@@ -265,9 +265,8 @@ class Field(RecursiveObject, FootprintBase):
         else:
             rhs = other
         result = self._data + rhs
-        newid = {'op':'+'}
-        newfield = footprints.proxy.field(fid=newid,
-                                          **kwargs)
+        kwargs.setdefault('fid', {'op':'+'})
+        newfield = footprints.proxy.field(**kwargs)
         newfield.setdata(result)
         return newfield
 
@@ -305,9 +304,8 @@ class Field(RecursiveObject, FootprintBase):
         else:
             rhs = other
         result = self._data - rhs
-        newid = {'op':'-'}
-        newfield = footprints.proxy.field(fid=newid,
-                                          **kwargs)
+        kwargs.setdefault('fid', {'op':'-'})
+        newfield = footprints.proxy.field(**kwargs)
         newfield.setdata(result)
         return newfield
 
@@ -904,12 +902,13 @@ class FieldValidity(RecursiveObject):
         (which is useless anyway).
 
         Args: \n
-        - *date_time*: has to be of type :class:`datetime.datetime`;
-        - *basis*: has to be of type :class:`datetime.datetime`;
-        - *term*: has to be of type :class:`datetime.timedelta`;
-        - *cumulativeduration*: has to be of type :class:`datetime.timedelta`;
-        - *statistical_process_on_duration*: kind of statistical process
-          that runs over the cumulative duration.
+        :param date_time: has to be of type :class:`datetime.datetime`
+        :param basis: has to be of type :class:`datetime.datetime`
+        :param term: has to be of type :class:`datetime.timedelta`
+        :param cumulativeduration: has to be of type :class:`datetime.timedelta`
+        :param statistical_process_on_duration: kind of statistical process
+            that runs over the cumulative duration.
+            Cf. GRIB2 typeOfStatisticalProcessing
         """
         if isinstance(date_time, datetime.datetime):
             self._date_time = date_time

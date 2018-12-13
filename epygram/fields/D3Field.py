@@ -60,7 +60,7 @@ class D3CommonField(Field):
         grid. field1.use_field_as_vcoord(field2) transforms
         the vertical coordinate of field1 to obtain a field
         on pressure levels.
-        
+
         :param field: must be a field on the same geometry and
                       validity as self that we will use to replace
                       the vertical coordinate. 'generic' fid must
@@ -74,22 +74,22 @@ class D3CommonField(Field):
             raise epygramError("geometries must be identical")
         if self.validity != field.validity:
             raise epygramError("validities must be identical")
-        
+
         self.geometry.vcoordinate = field.as_vcoordinate(force_kind)
-        
+
     def as_vcoordinate(self, force_kind=None):
         """
         Returns a VGeometry build from the values of field.
         Field must have a 'generic' fid allowing to
         recognize the vertical coordinate type (except if
         force_kind is set)
-        
+
         :param force_kind: if not None, is used as the vertical
                            coordinate kind instead of trying to
                            guess it from the fid
         """
         if force_kind is None:
-            if not 'generic' in self.fid:
+            if 'generic' not in self.fid:
                 raise epygramError("fid must contain a 'generic' key or force_kind must be set")
             for k in ['discipline', 'parameterCategory', 'parameterNumber']:
                 if k not in self.fid['generic']:
@@ -110,17 +110,17 @@ class D3CommonField(Field):
         if vcoord == 100:
             levels = levels / 100.
         if len(self.validity) == 1:
-            #data is an array z, y, x with z being optional
+            # data is an array z, y, x with z being optional
             if len(self.geometry.vcoordinate.levels) == 1:
-                #in case z dimension does not exist in data
+                # in case z dimension does not exist in data
                 levels = [levels]
         else:
-            #data is an array t, z, y, x with z being optional
+            # data is an array t, z, y, x with z being optional
             if len(self.geometry.vcoordinate.levels) == 1:
-                #in case z dimension does not exist in data
+                # in case z dimension does not exist in data
                 levels = [levels]
             else:
-                #if z dimension exist, z and t dimensions must be exchanged
+                # if z dimension exist, z and t dimensions must be exchanged
                 levels = levels.swapaxes(0, 1)
 
         kwargs_vcoord = {'structure':'V',
@@ -129,8 +129,8 @@ class D3CommonField(Field):
                          'levels': list(levels)
                          }
         return fpx.geometry(**kwargs_vcoord)
-        
-        
+
+
 ##############
 # ABOUT DATA #
 ##############
@@ -195,7 +195,7 @@ class D3CommonField(Field):
                 validity = FieldValidityList(validity)
             t = [[ind for ind , val in enumerate(self.validity) if val == v][0] for v in validity]
         t = as_numpy_array(t).flatten()
-        
+
         # We look for indexes for vertical coordinate (no interpolation)
         if k is not None and level is not None:
             raise epygramError("*level* and *k* cannot be different from None together")
@@ -204,10 +204,10 @@ class D3CommonField(Field):
                 raise epygramError("*level* or *k* is mandatory when field has a vertical coordinate")
             k = 0
         elif k is None:
-            #level is not None
+            # level is not None
             k = [self.geometry.vcoordinate.levels.index(l) for l in as_numpy_array(level)]
         k = as_numpy_array(k)
-        
+
         if lon is None or lat is None:
             raise epygramError("*lon* and *lat* are mandatory")
         lon, lat = as_numpy_array(lon).flatten(), as_numpy_array(lat).flatten()
@@ -215,9 +215,9 @@ class D3CommonField(Field):
             raise epygramError("*lon* and *lat* must have the same length")
 
         sizes = set([len(x) for x in [lon, lat, k, t]])
-        if len(sizes) > 2 or (len(sizes) == 2 and not 1 in sizes):
+        if len(sizes) > 2 or (len(sizes) == 2 and 1 not in sizes):
             raise epygramError("each of lon, lat, k/level and validity must be scalar or have the same length as the others")
-        
+
         if interpolation == 'linear':
             if isinstance(self.geometry, D3RectangularGridGeometry):
                 method = 'bilinear'
@@ -253,28 +253,9 @@ class D3CommonField(Field):
             all_i = interp_points[:, :, 0]
             all_j = interp_points[:, :, 1]
             all_k = numpy.repeat(k[:, numpy.newaxis], interp_points.shape[1], axis=1)
-            all_t = numpy.repeat(t[:, numpy.newaxis], interp_points.shape[1], axis=1)       
-            
+            all_t = numpy.repeat(t[:, numpy.newaxis], interp_points.shape[1], axis=1)
+
             # get values and lons/lats
-            flat_values_at_interp_points = list(self.getvalue_ij(all_i, all_j, my_kn, my_tn))
-            all_lonslats = self.geometry.ij2ll(all_i, all_j)
-            all_lonslats = (list(all_lonslats[0]), list(all_lonslats[1]))
-            # repack and interpolate
-            for n in range(maxsize):
-                if maxsize > 1:
-                    lonn = lon[n]
-                    latn = lat[n]
-                else:
-                    lonn = my_lon.item()
-                    latn = my_lat.item()
-                loc_values = [flat_values_at_interp_points.pop(0) for _ in range(len(interp_points[n]))]
-                loc_lons = [all_lonslats[0].pop(0) for _ in range(len(interp_points[n]))]
-                loc_lats = [all_lonslats[1].pop(0) for _ in range(len(interp_points[n]))]
-                if self.geometry.name == 'academic' and \
-                   1 in (self.geometry.dimensions['X'], self.geometry.dimensions['Y'] == 1):
-                    if self.geometry.dimensions['X'] == 1:
-                        f = interp1d(loc_lats, loc_values, kind=interpolation)
-                        value = f(latn)
             values_at_interp_points = self.getvalue_ij(all_i.flatten(),
                                                        all_j.flatten(),
                                                        all_k.flatten(),
@@ -297,15 +278,15 @@ class D3CommonField(Field):
                     else:
                         f = interp2d(all_lons[n], all_lats[n], values_at_interp_points[n], kind=interpolation)
                         value[n] = f(as_numpy_array(lon)[n], as_numpy_array(lat)[n])
-            
+
             elif method == 'bilinear':
                 def simple_inter(x1, q1, x2, q2, x):
                     """Simple linear interpolant"""
                     return (x2 - x) / (x2 - x1) * q1 + (x - x1) / (x2 - x1) * q2
-                
-                #Position of wanted point 
+
+                # Position of wanted point
                 wanted_i, wanted_j = self.geometry.ll2ij(lon, lat)
-                
+
                 assert numpy.all(all_i[:, 0] == all_i[:, 1]) and numpy.all(all_i[:, 2] == all_i[:, 3]) and \
                        numpy.all(all_j[:, 0] == all_j[:, 2]) and numpy.all(all_j[:, 1] == all_j[:, 3])
 
@@ -314,6 +295,8 @@ class D3CommonField(Field):
                                      all_j[:, 1], simple_inter(all_i[:, 1], values_at_interp_points[:, 1],
                                                                all_i[:, 3], values_at_interp_points[:, 3], wanted_i),
                                      wanted_j)
+        else:
+            raise NotImplementedError('*interpolation*=' + interpolation)
         if one:
             try:
                 value = float(value)
@@ -321,7 +304,6 @@ class D3CommonField(Field):
                 pass
 
         return copy.copy(value)
-
 
     def as_vtkGrid(self, hCoord, grid_type, z_factor, offset,
                    filename=None, name='scalar', grid=None):
@@ -343,18 +325,17 @@ class D3CommonField(Field):
         :param filename: if not None, resulting grid will be written into filename
         :param name: name to give to the scalar array (useful with the grid option)
         :param grid: if grid is not None, the method will add the data to it.
-        
+
         If grid_type is 'sgrid_point', the result is the grid; otherwise
         the result is the function is the last filter used.
         """
-        import vtk
-        from vtk.numpy_interface import dataset_adapter as dsa
+        from vtk.numpy_interface import dataset_adapter as dsa  # @UnresolvedImport
 
         if len(self.validity) != 1:
             raise NotImplementedError("For now, animation are not possible, only one validity allowed.")
         if self.spectral:
             raise epygramError("Spectral field, please use sp2gp() before.")
-        
+
         data = self.getdata(d4=True).astype(numpy.float32)
         data = data[0, ...]
 
@@ -367,16 +348,16 @@ class D3CommonField(Field):
             names = [grid.GetPointData().GetArrayName(i) for i in range(grid.GetPointData().GetNumberOfArrays())]
             if name in names:
                 raise epygramError("There already is an array with same name: " + name)
-        
+
         grid.GetPointData().AddArray(dsa.numpyTovtkDataArray(data.flatten(), name))
         grid.GetPointData().SetActiveScalars(name)
-    
+
         grid = vtk_modify_grid(grid, grid_type, datamin=data.min())
-        
+
         if filename is not None:
             vtk_write_grid(grid, filename)
         return grid
-        
+
     def as_lists(self, order='C', subzone=None):
         """
         Export values as a dict of lists (in fact numpy arrays).
@@ -552,13 +533,11 @@ class D3CommonField(Field):
         :param getdata: if False returns a field without data
         """
         pointG = self.geometry.make_profile_geometry(lon, lat)
-        
         profile = self.extract_subdomain(pointG,
                                          interpolation=interpolation,
                                          external_distance=external_distance,
                                          exclude_extralevels=exclude_extralevels,
                                          getdata=getdata)
-
         return profile
 
     def extractsection(self, end1, end2,
@@ -634,7 +613,7 @@ class D3CommonField(Field):
                         for (key, value) in self.fid.items()}
 
         # build vertical geometry
-        #k_index: ordered list of the level indexes of self used to build the new field
+        # k_index: ordered list of the level indexes of self used to build the new field
         kwargs_vcoord = {'structure':'V',
                          'typeoffirstfixedsurface': self.geometry.vcoordinate.typeoffirstfixedsurface,
                          'position_on_grid': self.geometry.vcoordinate.position_on_grid}
@@ -675,7 +654,7 @@ class D3CommonField(Field):
         # build geometry
         structure = geometry.structure
         if len(kwargs_vcoord['levels']) == 1:
-            #We suppress the vertical dimension
+            # We suppress the vertical dimension
             structure = {'3D':'H2D',
                          'V1D':'Point',
                          'V2D':'H1D',
@@ -683,7 +662,7 @@ class D3CommonField(Field):
                          'H2D':'H2D',
                          'Point':'Point'}[structure]
         else:
-            #We add the vertical dimension
+            # We add the vertical dimension
             structure = {'H2D':'3D',
                          'Point':'V1D',
                          'H1D':'V2D',
@@ -705,28 +684,27 @@ class D3CommonField(Field):
         newgeometry = fpx.geometry(**kwargs_geom)
 
         if any([isinstance(level, numpy.ndarray) for level in newgeometry.vcoordinate.levels]):
-            #level value is not constant on the domain, we must extract a subdomain.
-            #We build a new field with same structure/geometry/validity as self
-            #and we fill its data with the level values. We replace levels by index
-            #in the geometry to stop recursion and use the extract_subdomain method
-            #to get the level values on the new geometry levels.
+            # level value is not constant on the domain, we must extract a subdomain.
+            # We build a new field with same structure/geometry/validity as self
+            # and we fill its data with the level values. We replace levels by index
+            # in the geometry to stop recursion and use the extract_subdomain method
+            # to get the level values on the new geometry levels.
             temp_field = self.geometry.vcoord_as_field(self.geometry.vcoordinate.typeoffirstfixedsurface,
                                                        self.validity)
-            
             temp_geom = geometry.deepcopy()
             del temp_geom.vcoordinate.levels[:]
-            temp_geom.vcoordinate.levels.extend(k_index) #We extract only the requested levels
+            temp_geom.vcoordinate.levels.extend(k_index)  # We extract only the requested levels
             extracted = temp_field.extract_subdomain(temp_geom,
                                                      interpolation=interpolation,
                                                      external_distance=external_distance,
                                                      exclude_extralevels=False,
                                                      getdata=True).getdata(d4=True)
-            extracted = extracted.swapaxes(0, 1) #z first, then validity for levels (opposite of fields)
+            extracted = extracted.swapaxes(0, 1)  # z first, then validity for levels (opposite of fields)
             if len(self.validity) > 1:
-                #We keep all dims when validity is not unique
+                # We keep all dims when validity is not unique
                 extracted = list(extracted)
             else:
-                #We suppress null dims
+                # We suppress null dims
                 extracted = list(extracted.squeeze())
             del newgeometry.vcoordinate.levels[:]
             newgeometry.vcoordinate.levels.extend(extracted)
@@ -799,10 +777,10 @@ class D3CommonField(Field):
             data = numpy.ndarray(shp)
             for t in range(len(self.validity)):
                 for k in range(len(newgeometry.vcoordinate.levels)):
-                    #level = newgeometry.vcoordinate.levels[k]
+                    # level = newgeometry.vcoordinate.levels[k]
                     extracted = self.getvalue_ll(lons, lats,
-                                                 #level=level, #equivalent to k=k_index[k] except that the k option
-                                                 k=k_index[k], #still works when level is an array
+                                                 # level=level,  # equivalent to k=k_index[k] except that the k option
+                                                 k=k_index[k],  # still works when level is an array
                                                  validity=self.validity[t],
                                                  interpolation=interpolation,
                                                  external_distance=external_distance,
@@ -952,7 +930,7 @@ class D3CommonField(Field):
             newfield.setdata(subdata)
 
         return newfield
-    
+
     def extract_subsample(self,
                           sample_x, sample_y, sample_z,
                           getdata=True,
@@ -964,16 +942,16 @@ class D3CommonField(Field):
         :param sample_z: same for the z direction
         If deepcopy is False, current field and returned field will share
         some attributes (like validity).
-        
+
         The extension zone of the original field is kept in the new field.
         Hence, it's recommended to call this method on field without extension zone.
-        
+
         Because the resolution change during this operation, field must be
         localize on the grid center (use center method before if not).
         """
         assert self.geometry.position_on_horizontal_grid == 'center', \
                "Field must be centered on the grid"
-        
+
         newgeom = self.geometry.make_subsample_geometry(sample_x,
                                                         sample_y,
                                                         sample_z)
@@ -1323,7 +1301,6 @@ class D3CommonField(Field):
         :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
         :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
         """
-        
         return vtk_check_transform(rendering,
                                    self.geometry.vcoordinate.typeoffirstfixedsurface,
                                    hCoord, z_factor, offset)
@@ -1339,23 +1316,23 @@ class D3CommonField(Field):
         :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
         :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
         """
-        import vtk
-        
+        import vtk  # @UnresolvedImport
+
         hCoord, z_factor, offset = self._vtk_check_transform(rendering, hCoord, z_factor, offset)
-        
+
         grid = self.as_vtkGrid(hCoord, 'sgrid_point', z_factor, offset)
-        
-        #outline = vtk.vtkStructuredGridOutlineFilter()
+
+        # outline = vtk.vtkStructuredGridOutlineFilter()
         outline = vtk.vtkOutlineFilter()
         outline.SetInputData(grid)
-        
+
         outlineMapper = vtk.vtkPolyDataMapper()
         outlineMapper.SetInputConnection(outline.GetOutputPort())
-        
+
         outlineActor = vtk.vtkActor()
         outlineActor.SetMapper(outlineMapper)
         outlineActor.GetProperty().SetColor(vtk.vtkNamedColors().GetColor3d(color))
-        
+
         rendering['renderer'].AddActor(outlineActor)
         return (outlineActor, outlineMapper)
 
@@ -1373,26 +1350,28 @@ class D3CommonField(Field):
         :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
         :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
         """
-        import vtk
-        
+        import vtk  # @UnresolvedImport
+
         hCoord, z_factor, offset = self._vtk_check_transform(rendering, hCoord, z_factor, offset)
-    
+
         ugrid = self.as_vtkGrid(hCoord, 'ugrid_point', z_factor, offset)
         iso = vtk.vtkContourFilter()
-        #iso.GenerateTrianglesOff() 
+        # iso.GenerateTrianglesOff()
         iso.SetInputConnection(ugrid.GetOutputPort())
         for i, value in enumerate(levels):
             iso.SetValue(i, value)
-        
-        #Does it change something? We certainly need to adjust convergence
-        #smooth = vtk.vtkSmoothPolyDataFilter()
-        #smooth.SetInputConnection(iso.GetOutputPort())
-        #iso = smooth
-        
+
+        # Does it change something? We certainly need to adjust convergence
+        """
+        smooth = vtk.vtkSmoothPolyDataFilter()
+        smooth.SetInputConnection(iso.GetOutputPort())
+        iso = smooth
+        """
+
         isoMapper = vtk.vtkPolyDataMapper()
         isoMapper.SetInputConnection(iso.GetOutputPort())
         isoMapper.ScalarVisibilityOff()
-        
+
         isoActor = vtk.vtkActor()
         isoActor.SetMapper(isoMapper)
         isoActor.GetProperty().SetColor(vtk.vtkNamedColors().GetColor3d(color))
@@ -1412,20 +1391,20 @@ class D3CommonField(Field):
         :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
         :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
         """
-        import vtk
-        
+        import vtk  # @UnresolvedImport
+
         hCoord, z_factor, offset = self._vtk_check_transform(rendering, hCoord, z_factor, offset)
-    
+
         sgrid = self.as_vtkGrid(hCoord, 'sgrid_point', z_factor, offset)
         sgridGeom = vtk.vtkStructuredGridGeometryFilter()
         sgridGeom.SetInputData(sgrid)
-        
+
         sgridGeomMap = vtk.vtkPolyDataMapper()
         sgridGeomMap.SetInputConnection(sgridGeom.GetOutputPort())
         sgridGeomMap.SetLookupTable(color)
         sgridGeomMap.UseLookupTableScalarRangeOn()
         sgridGeomMap.InterpolateScalarsBeforeMappingOn()
-        
+
         sgridGeomMapActor = vtk.vtkActor()
         sgridGeomMapActor.SetMapper(sgridGeomMap)
         rendering['renderer'].AddActor(sgridGeomMapActor)
@@ -1448,13 +1427,13 @@ class D3CommonField(Field):
         :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
         :param algo: among 'RayCast', 'ZSweep', 'ProjectedTetrahedra', 'OpenGLProjectedTetrahedra'
         """
-        import vtk
+        import vtk  # @UnresolvedImport
 
         hCoord, z_factor, offset = self._vtk_check_transform(rendering, hCoord, z_factor, offset)
 
         minval, maxval = threshold
         grid = self.as_vtkGrid(hCoord, 'ugrid_cell', z_factor, offset)
-        
+
         fil = vtk.vtkThreshold()
         fil.SetInputConnection(grid.GetOutputPort())
         if maxval is None:
@@ -1465,10 +1444,10 @@ class D3CommonField(Field):
             pass
         else:
             fil.ThresholdBetween(minval, maxval)
-        
+
         tri = vtk.vtkDataSetTriangleFilter()
         tri.SetInputConnection(fil.GetOutputPort())
-        
+
         volumeMapper = {'RayCast':vtk.vtkUnstructuredGridVolumeRayCastMapper,
                         'ZSweep':vtk.vtkUnstructuredGridVolumeZSweepMapper,
                         'ProjectedTetrahedra':vtk.vtkProjectedTetrahedraMapper,
@@ -1486,7 +1465,7 @@ class D3CommonField(Field):
         volume = vtk.vtkVolume()
         volume.SetMapper(volumeMapper)
         volume.SetProperty(volumeProperty)
-         
+
         rendering['renderer'].AddVolume(volume)
         return (volume, volumeMapper)
 
@@ -1810,16 +1789,16 @@ class D3CommonField(Field):
         """
         if isinstance(other, self.__class__):
             assert self.spectral == other.spectral, \
-                   "cannot operate a spectral field with a non-spectral field."
+                "cannot operate a spectral field with a non-spectral field."
             assert self.geometry.dimensions == other.geometry.dimensions, \
-                   ' '.join(["operations on fields cannot be done if fields do",
-                             "not share their gridpoint dimensions."])
+                ' '.join(["operations on fields cannot be done if fields do",
+                          "not share their gridpoint dimensions."])
             assert self.spectral_geometry == other.spectral_geometry, \
-                   ' '.join(["operations on fields cannot be done if fields do",
-                             "not share their spectral geometry."])
+                ' '.join(["operations on fields cannot be done if fields do",
+                          "not share their spectral geometry."])
             assert len(self.validity) == len(other.validity), \
-                   ' '.join(["operations on fields cannot be done if fields do",
-                             "not share their time dimension."])
+                ' '.join(["operations on fields cannot be done if fields do",
+                          "not share their time dimension."])
         else:
             super(D3CommonField, self)._check_operands(other)
 
@@ -1829,13 +1808,35 @@ class D3CommonField(Field):
         - a scalar (integer/float)
         - another Field of the same subclass.
         Returns a new Field whose data is the resulting operation,
-        with 'fid' = {'op':'+'} and null validity.
+        with 'fid' = {'op':'+'} and null validity in the general case,
+        or conserved fid if shared by both fields, and extended validity if
+        both consistent; to be checked anyway.
         """
-        newfield = self._add(other,
-                             structure=self.structure,
-                             geometry=self.geometry,
-                             spectral_geometry=self.spectral_geometry,
-                             validity=FieldValidityList(length=len(self.validity)))
+        new_attributes = dict(structure=self.structure,
+                              geometry=self.geometry,
+                              spectral_geometry=self.spectral_geometry,
+                              validity=FieldValidityList(length=len(self.validity)))
+        if isinstance(other, self.__class__):
+            if len(self.validity) == 1:
+                if self.validity[0] == other.validity[0]:
+                    new_attributes.update(validity=self.validity.deepcopy())
+                else:
+                    if None not in (self.validity.cumulativeduration(), other.validity.cumulativeduration()):
+                        if self.validity.get() != other.validity.get():
+                            if self.validity.get() < other.validity.get():
+                                last = other
+                                first = self
+                            elif other.validity.get() < self.validity.get():
+                                last = self
+                                first = other
+                            if last.validity.get() - last.validity.cumulativeduration() == first.validity.get():
+                                # the beginning of other cumulation is the end of self cumulation
+                                validity = last.validity.deepcopy()
+                                validity.set(cumulativeduration=self.validity.cumulativeduration() + other.validity.cumulativeduration())
+                                new_attributes.update(validity=validity)
+            if self.fid == other.fid:
+                new_attributes.update(fid=self.fid)
+        newfield = self._add(other, **new_attributes)
         return newfield
 
     def __mul__(self, other):
@@ -1859,13 +1860,44 @@ class D3CommonField(Field):
         - a scalar (integer/float)
         - another Field of the same subclass.
         Returns a new Field whose data is the resulting operation,
-        with 'fid' = {'op':'-'} and null validity.
+        with 'fid' = {'op':'-'} and null validity in the general case,
+        or conserved fid if shared by both fields, and extended validity if
+        both consistent; to be checked anyway.
         """
-        newfield = self._sub(other,
-                             structure=self.structure,
-                             geometry=self.geometry,
-                             spectral_geometry=self.spectral_geometry,
-                             validity=FieldValidityList(length=len(self.validity)))
+        new_attributes = dict(structure=self.structure,
+                              geometry=self.geometry,
+                              spectral_geometry=self.spectral_geometry,
+                              validity=FieldValidityList(length=len(self.validity)))
+        if isinstance(other, self.__class__):
+            if len(self.validity) == 1:
+                if self.validity[0] == other.validity[0]:
+                    new_attributes.update(validity=self.validity.deepcopy())
+                else:
+                    if None not in (self.validity.cumulativeduration(), other.validity.cumulativeduration()):
+                        if self.validity.get() != other.validity.get():
+                            if other.validity.get() < self.validity.get():
+                                if self.validity.get() - self.validity.cumulativeduration() == \
+                                   other.validity.get() - other.validity.cumulativeduration():
+                                    # same start of cumulation
+                                    validity = self.validity.deepcopy()
+                                    validity.set(cumulativeduration=self.validity.get() - other.validity.get())
+                                    new_attributes.update(validity=validity)
+                    else:
+                        if self.validity.get() != other.validity.get():
+                            if self.validity.get() < other.validity.get():
+                                validity = other.validity.deepcopy()
+                                validity.set(cumulativeduration=other.validity.get() - self.validity.get(),
+                                             statistical_process_on_duration=8)
+                            elif other.validity.get() < self.validity.get():
+                                validity = self.validity.deepcopy()
+                                print('ok')
+                                validity.set(cumulativeduration=self.validity.get() - other.validity.get(),
+                                             statistical_process_on_duration=4)
+                                print(validity)
+                            new_attributes.update(validity=validity)
+            if self.fid == other.fid:
+                new_attributes.update(fid=self.fid)
+        newfield = self._sub(other, **new_attributes)
         return newfield
 
     def __div__(self, other):
@@ -2147,8 +2179,8 @@ class D3Field(D3CommonField):
             d4 = len(data.shape) == 4
         if d4:
             assert data.shape == shp, \
-                   ' '.join(['data', str(data.shape),
-                             'should have shape', str(shp)])
+                ' '.join(['data', str(data.shape),
+                          'should have shape', str(shp)])
         else:
             # find indexes corresponding to dimensions
             dimensions = 0
@@ -2188,36 +2220,36 @@ class D3Field(D3CommonField):
                    dataType + " data should be " + str(dimensions) + "D array."
             if indexes['t'] is not None:
                 assert data.shape[0] == len(self.validity), \
-                       ' == '.join(['data.shape[0] should be len(self.validity)',
-                                    str(len(self.validity))])
+                    ' == '.join(['data.shape[0] should be len(self.validity)',
+                                 str(len(self.validity))])
             if self.geometry.datashape['k']:
                 assert data.shape[indexes['z']] == len(self.geometry.vcoordinate.levels), \
-                       ' == '.join(['data.shape[' + str(indexes['z']) +
-                                    '] should be len(self.geometry.vcoordinate.levels)',
-                                    str(len(self.geometry.vcoordinate.levels))])
+                    ' == '.join(['data.shape[' + str(indexes['z']) +
+                                 '] should be len(self.geometry.vcoordinate.levels)',
+                                 str(len(self.geometry.vcoordinate.levels))])
             if not self.spectral:
                 if 'gauss' in self.geometry.name:
                     if self.geometry.datashape['j']:
                         assert data.shape[indexes['y']] == self.geometry.dimensions['lat_number'], \
-                               ' == '.join(['data.shape[' + str(indexes['y']) +
-                                            "] should be self.geometry.dimensions['lat_number']",
-                                            str(self.geometry.dimensions['lat_number'])])
+                            ' == '.join(['data.shape[' + str(indexes['y']) +
+                                         "] should be self.geometry.dimensions['lat_number']",
+                                         str(self.geometry.dimensions['lat_number'])])
                     if self.geometry.datashape['i']:
                         assert data.shape[indexes['x']] == self.geometry.dimensions['max_lon_number'], \
-                               ' == '.join(['data.shape[' + str(indexes['x']) +
-                                            "] should be self.geometry.dimensions['max_lon_number']",
-                                            str(self.geometry.dimensions['max_lon_number'])])
+                            ' == '.join(['data.shape[' + str(indexes['x']) +
+                                         "] should be self.geometry.dimensions['max_lon_number']",
+                                         str(self.geometry.dimensions['max_lon_number'])])
                 else:
                     if self.geometry.datashape['j']:
                         assert data.shape[indexes['y']] == self.geometry.dimensions['Y'], \
-                               ' == '.join(['data.shape[' + str(indexes['y']) +
-                                            "] should be self.geometry.dimensions['Y']",
-                                            str(self.geometry.dimensions['Y'])])
+                            ' == '.join(['data.shape[' + str(indexes['y']) +
+                                         "] should be self.geometry.dimensions['Y']",
+                                         str(self.geometry.dimensions['Y'])])
                     if self.geometry.datashape['i']:
                         assert data.shape[indexes['x']] == self.geometry.dimensions['X'], \
-                               ' == '.join(['data.shape[' + str(indexes['x']) +
-                                            "] should be self.geometry.dimensions['X']",
-                                            str(self.geometry.dimensions['X'])])
+                            ' == '.join(['data.shape[' + str(indexes['x']) +
+                                         "] should be self.geometry.dimensions['X']",
+                                         str(self.geometry.dimensions['X'])])
             # reshape to 4D
             data = data.reshape(shp)
         super(D3Field, self).setdata(data)
@@ -2269,23 +2301,23 @@ class D3Field(D3CommonField):
             if self.geometry.datashape['i']:
                 raise epygramError("*i* is mandatory when field has one horizontal dimension")
             i = 0
-        
+
         i, j = as_numpy_array(i).flatten(), as_numpy_array(j).flatten()
         k, t = as_numpy_array(k).flatten(), as_numpy_array(t).flatten()
-        
+
         if not numpy.all(self.geometry.point_is_inside_domain_ij(i, j)):
             raise ValueError("point is out of field domain.")
 
         sizes = set([len(x) for x in [i, j, k, t]])
-        if len(sizes) > 2 or (len(sizes) == 2 and not 1 in sizes):
+        if len(sizes) > 2 or (len(sizes) == 2 and 1 not in sizes):
             raise epygramError("each of i, j, k and t must be scalar or have the same length as the others")
-        
+
         value = numpy.copy(self.getdata(d4=True)[t, k, j, i])
-        
+
         if value.size == 1 and one:
             value = value.item()
         return value
-    
+
     def getlevel(self, level=None, k=None):
         """
         Returns a level of the field as a new field.
@@ -2379,20 +2411,20 @@ class D3Field(D3CommonField):
             newfield.geometry.vcoordinate = fpx.geometry(**kwargs_vcoord)
 
         return newfield
-    
+
     def center(self):
         """
         Performs an averaging on data values to center the field on the grid (aka shuman)
         and modify geometry.
         """
         posSpl = self.geometry.position_on_horizontal_grid.split('-')
-        if len(posSpl) == 2: #not center
+        if len(posSpl) == 2:  # not center
             posY, posX = posSpl
             if (posY == 'lower' or posX == 'left'):
                 if not isinstance(self.geometry, D3ProjectedGeometry):
                     raise NotImplementedError("Centering is not available with non-projected geometries")
                 data = self.getdata(d4=True)
-                if data is not None: #This test is useful if field has been retrieved with getdata=False
+                if data is not None:  # This test is useful if field has been retrieved with getdata=False
                     if posY == 'lower':
                         data[:, :, :-1, :] = 0.5 * (data[:, :, :-1, :] + data[:, :, 1:, :])
                         data[:, :, -1, :] = data[:, :, -2, :]
@@ -2575,7 +2607,8 @@ class D3VirtualField(D3CommonField):
                             validity=self.validity,
                             spectral_geometry=self.spectral_geometry,
                             processtype=self.processtype)
-        field3d.setdata(self.getdata(d4=True))
+        if getdata:
+            field3d.setdata(self.getdata(d4=True))
         return field3d
 
     @property
@@ -2717,15 +2750,15 @@ class D3VirtualField(D3CommonField):
             if self.geometry.datashape['i']:
                 raise epygramError("*i* is mandatory when field has one horizontal dimension")
             i = 0
-        
+
         i, j = as_numpy_array(i).flatten(), as_numpy_array(j).flatten()
         k, t = as_numpy_array(k).flatten(), as_numpy_array(t).flatten()
-        
+
         if not numpy.all(self.geometry.point_is_inside_domain_ij(i, j)):
             raise ValueError("point is out of field domain.")
 
         sizes = set([len(x) for x in [i, j, k, t]])
-        if len(sizes) > 2 or (len(sizes) == 2 and not 1 in sizes):
+        if len(sizes) > 2 or (len(sizes) == 2 and 1 not in sizes):
             raise epygramError("each of i, j, k and t must be scalar or have the same length as the others")
 
         if max(sizes) > 1 and len(k) == 1:
