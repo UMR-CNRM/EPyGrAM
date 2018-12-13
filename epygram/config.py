@@ -74,7 +74,7 @@ internet_cache_dir = None
 #: same family (e.g. FA before LFI, DDHLFA before LFA...)
 #: Removing one of these (in userconfig file) may allow an incomplete install
 #: of epygram, disabling one format.
-implemented_formats = ['netCDF', 'GRIB', 'GeoPoints', 'TIFFMF', 'FA', 'LFI', 'DDHLFA', 'LFA']
+implemented_formats = ['netCDFMNH', 'netCDF', 'GRIB', 'GeoPoints', 'TIFFMF', 'FA', 'LFI', 'DDHLFA', 'LFA']
 
 #: FA default compression parameters
 FA_default_compression = {'KNGRIB': 2, 'KDMOPL': 0, 'KPUILA': 0, 'KSTRON': 0,
@@ -187,6 +187,15 @@ LFI_field_dictionaries_csv = {'default':os.path.join(installdir,
                                                   'user_Field_Dict_LFI.csv')}
 #: geoid of LFI files in pyproj syntax
 LFI_default_geoid = {'a':6371229., 'b':6371229.}
+
+#: netCDFMNH field dictionaries
+netCDFMNH_field_dictionaries_csv = {'default':os.path.join(installdir,
+                                                          'data',
+                                                          'Field_Dict_netCDFMNH.csv'),
+                                    'user':os.path.join(userlocaldir,
+                                                        'user_Field_Dict_netCDFMNH.csv')}
+#: geoid of netCDFMNH files in pyproj syntax
+netCDFMNH_default_geoid = {'a':6371229., 'b':6371229.}
 
 #: netCDF standard dimensions
 netCDF_standard_dimensions = ['N_dimension',  # numerotation (obs, profile, ...)

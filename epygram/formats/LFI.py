@@ -598,7 +598,7 @@ class LFI(FileResource):
                               processtype='forecast', comment=comment)
         elif field_info['type'] == 'Misc':
             # Create Misc field
-            fid = {self.format: (fieldname, None),
+            fid = {self.format: fieldname if self.true3d else (fieldname, None),
                    'generic': FPDict()
                    }
 
