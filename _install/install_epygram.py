@@ -11,10 +11,15 @@ epygram_repositories = {
     'cnrm':'/home/common/epygram',
     'bullx':'/home/gmap/mrpe/mary/public',
     'dsidev':'/soprano/home/marp999/epygram'}
+vortex_repositories = {
+    'cnrm':'/home/common/sync/vortex',
+    'bullx':'/home/mf/dp/marp/verolive/vortex',
+    'dsidev':'/soprano/home/marp999/vortex'}
 userconfigs = defaultdict(lambda:'userconfig_no_arpifs4py.py',  # default
                           cnrm='userconfig_empty.py',
                           bullx='userconfig_empty.py')
 linkname = 'src'
+vortex_linkname = 'vortex'
 epygram_home = os.path.join(os.environ['HOME'], '.epygram')
 profile = os.path.join(epygram_home, 'profile')
 
@@ -28,18 +33,25 @@ else:
     localhost = 'cnrm'
 epygram_repo = epygram_repositories.get(localhost,
                                         epygram_repositories['cnrm'])
+vortex_repo = vortex_repositories.get(localhost,
+                                      epygram_repositories['cnrm'])
 userconfig = userconfigs[localhost]
 _install_profile = localhost + '_profile'
+_vortex_install_profile = 'vortex_profile'
 
 
 def main(version='',
          fromdir=epygram_repo,
          update_epygram_profile=False,
-         update_bash_profile=False):
+         update_bash_profile=False,
+         install_vortex=True,
+         vortex_version='olive',
+         vortex_from=vortex_repo):
     """
     Link to **version** from **fromdir**, copy adequate profile and
     make .bash_profile source it.
     """
+    # link epygram version
     if version != '':
         if version.startswith('EPyGrAM'):
             version = version[7:]
@@ -52,15 +64,33 @@ def main(version='',
         os.remove(linkname)
     os.symlink(os.path.join(fromdir, 'EPyGrAM' + version),
                linkname)
+    # vortex (if needed)
+    if install_vortex:
+        if vortex_version != '':
+            if not vortex_version.startswith('-'):
+                vortex_version = '-' + vortex_version
+        if os.path.islink(vortex_linkname):
+            os.remove(vortex_linkname)
+        os.symlink(os.path.join(vortex_from, 'vortex' + vortex_version),
+                   vortex_linkname)
+    # profile
     if update_epygram_profile or not os.path.exists(profile):
-        shutil.copy(os.path.join(linkname, '_install', _install_profile),
-                    profile)
+        with open(os.path.join(linkname, '_install', _install_profile), 'r') as p:
+            lines = p.readlines()
+        if install_vortex:
+            with open(os.path.join(linkname, '_install', _vortex_install_profile), 'r') as p:
+                lines.extend(p.readlines())
+        with open(profile, 'w') as p:
+            for l in lines:
+                p.write(l)
+    # user customization
     if not os.path.exists('userconfig.py'):
         shutil.copy(os.path.join(linkname, '_install', userconfig),
                     'userconfig.py')
     ufdf = 'user_Field_Dict_FA.csv'
     if not os.path.exists(ufdf):
         shutil.copy(os.path.join(linkname, '_install', ufdf), ufdf)
+    # bash_profile
     if update_bash_profile:
         with io.open(os.path.join(os.environ['HOME'], '.bash_profile'), 'a') as pf:
             pf.write('\n#\n')
@@ -90,12 +120,24 @@ if __name__ == '__main__':
                         action='store_true',
                         default=False)
     parser.add_argument('-b', '--bash_profile',
-                        help=' '.join(['update bash_profile, making it source'
+                        help=' '.join(['update bash_profile, making it source',
                                        '{}']).format(profile),
                         action='store_true',
                         default=False)
+    parser.add_argument('--nv', '--no_vortex',
+                        help='do not install vortex (supposedly you already have it your own way)',
+                        action='store_false',
+                        dest='install_vortex',
+                        default=True)
+    parser.add_argument('--vv', '--vortex_version',
+                        help=' '.join(['Vortex version to be linked']),
+                        dest='vortex_version',
+                        required=False,
+                        default='olive')
     args = parser.parse_args()
     main(args.version_to_be_linked,
          fromdir=args.fromdir,
          update_epygram_profile=args.epygram_profile,
-         update_bash_profile=args.bash_profile)
+         update_bash_profile=args.bash_profile,
+         install_vortex=args.install_vortex,
+         vortex_version=args.vortex_version)
