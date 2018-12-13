@@ -381,7 +381,7 @@ class D3VectorField(Field):
         for component in self.components[2:]:
             result.attach_components(component.extract_subarray(*args, **kwargs))
         return result
-    
+
     def extract_subsample(self, *args, **kwargs):
         """Cf. D3Field.extract_subsample"""
         result = make_vector_field(self.components[0].extract_subsample(*args, **kwargs),
@@ -389,7 +389,7 @@ class D3VectorField(Field):
         for component in self.components[2:]:
             result.attach_components(component.extract_subsample(*args, **kwargs))
         return result
-        
+
     def resample(self, *args, **kwargs):
         """Cf. D3Field.resample()"""
         result = make_vector_field(self.components[0].resample(*args, **kwargs),
@@ -405,17 +405,17 @@ class D3VectorField(Field):
         for component in self.components[2:]:
             result.attach_components(component.resample_on_regularll(*args, **kwargs))
         return result
-    
+
     def center(self, *args, **kwargs):
         """Cf. D3Field.center()"""
         for component in self.components:
             component.center(*args, **kwargs)
-    
+
     def select_subzone(self, *args, **kwargs):
         """Cf. D3Field.select_subzone()"""
         for component in self.components:
             component.select_subzone(*args, **kwargs)
-    
+
     def use_field_as_vcoord(self, *args, **kwargs):
         """Cf. D3Field.use_field_as_vcoord()"""
         for component in self.components:
@@ -519,28 +519,27 @@ class D3VectorField(Field):
                             (useful with the grid option)
         :param vector_name': name of the vector field (useful with the grid option)
         :param grid: if grid is not None, the method will add the data to it.
-        
+
         If grid_type is 'sgrid_point', the output is directly the grid. Otherwise,
         the output is the last used filter.
         """
-        import vtk
-        from vtk.numpy_interface import dataset_adapter as dsa
+        from vtk.numpy_interface import dataset_adapter as dsa  # @UnresolvedImport
 
         if len(self.validity) != 1:
             raise NotImplementedError("For now, animation are not possible, only one validity allowed.")
         if self.spectral:
             raise epygramError("Spectral field, please use sp2gp() before.")
-        
-        #data = numpy.array(self.getdata(d4=True)).astype(numpy.float64)
+
+        # data = numpy.array(self.getdata(d4=True)).astype(numpy.float64)
         data = self.getdata(d4=True)
         if not all([d.shape[0] == 1 for d in data]):
             raise NotImplementedError("For now, animation are not possible.")
         data = [d[0, ...].astype(numpy.float32) for d in data]
-        while len(data) < 3: #We need 3 components to form a vtk vector
+        while len(data) < 3:  # We need 3 components to form a vtk vector
             data.append(data[0] * 0.)
-            
-        #CAUTION: this part is non trivial and is certainly due to C versus F order
-        #see: http://vtk.1045678.n5.nabble.com/Array-order-in-VTK-td5740413.html
+
+        # CAUTION: this part is non trivial and is certainly due to C versus F order
+        # see: http://vtk.1045678.n5.nabble.com/Array-order-in-VTK-td5740413.html
         data = [d.flatten() for d in data]
         data = numpy.array(data).swapaxes(0, -1).flatten()
 
@@ -555,14 +554,14 @@ class D3VectorField(Field):
                 raise epygramError("There already is an array with same name: " + module_name)
             if vector_name in names:
                 raise epygramError("There already is an array with same name: " + vector_name)
-        
+
         grid.GetPointData().AddArray(dsa.numpyTovtkDataArray(self.to_module().getdata().flatten(), module_name))
         grid.GetPointData().SetActiveScalars(module_name)
         vector = dsa.numpyTovtkDataArray(data, vector_name)
         vector.SetNumberOfComponents(3)
         grid.GetPointData().AddArray(vector)
         grid.GetPointData().SetActiveVectors(vector_name)
-        
+
         grid = vtk_modify_grid(grid, grid_type, datamin=data.min())
 
         if filename is not None:
@@ -591,13 +590,13 @@ class D3VectorField(Field):
         :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
         :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
         """
-        import vtk
-        
+        import vtk  # @UnresolvedImport
+
         hCoord, z_factor, offset = vtk_check_transform(rendering,
                                                        self.geometry.vcoordinate.typeoffirstfixedsurface,
                                                        hCoord, z_factor, offset)
 
-        #generate grid and seed grid
+        # generate grid and seed grid
         if samplerate is None:
             samplerate = dict()
         grid = self.as_vtkGrid(hCoord, 'sgrid_point', z_factor, offset)
@@ -620,7 +619,7 @@ class D3VectorField(Field):
         glyphActor.SetMapper(glyphMapper)
         rendering['renderer'].AddActor(glyphActor)
         return (glyphActor, glyphMapper)
-        
+
     def plot3DStream(self, rendering,
                      samplerate=None,
                      maxTime=None, tubesRadius=0.1,
@@ -646,13 +645,13 @@ class D3VectorField(Field):
         :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
         :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
         """
-        import vtk
-        
+        import vtk  # @UnresolvedImport
+
         hCoord, z_factor, offset = vtk_check_transform(rendering,
                                                        self.geometry.vcoordinate.typeoffirstfixedsurface,
                                                        hCoord, z_factor, offset)
 
-        #generate grid and seed grid
+        # generate grid and seed grid
         if samplerate is None:
             samplerate = dict()
         grid = self.as_vtkGrid(hCoord, 'sgrid_point', z_factor, offset)
@@ -661,13 +660,13 @@ class D3VectorField(Field):
         seedGrid.SetSampleRate(samplerate.get('x', 1),
                                samplerate.get('y', 1),
                                samplerate.get('z', 1))
-        
-        #Using directly seedGrid sometimes work
-        #But using a vtkStructuredGridGeometryFilter in between
-        #helps at suppressing some error messages about extent
+
+        # Using directly seedGrid sometimes work
+        # But using a vtkStructuredGridGeometryFilter in between
+        # helps at suppressing some error messages about extent
         seedGeom = vtk.vtkStructuredGridGeometryFilter()
         seedGeom.SetInputConnection(seedGrid.GetOutputPort())
-        
+
         scalarRange = list(grid.GetPointData().GetScalars().GetRange())
 
         if maxTime is None:
@@ -688,7 +687,7 @@ class D3VectorField(Field):
             tubes.SetRadius(tubesRadius)
             tubes.SetNumberOfSides(6)
             tubes.SetVaryRadius(0)
-        
+
         mapper = vtk.vtkPolyDataMapper()
         mapper.SetInputConnection((tubes if plot_tube else streamers).GetOutputPort())
         mapper.SetScalarRange(scalarRange[0], scalarRange[1])
@@ -701,7 +700,7 @@ class D3VectorField(Field):
         actor.SetMapper(mapper)
         rendering['renderer'].AddActor(actor)
         return (actor, mapper)
-        
+
 #############
 # OPERATORS #
 #############

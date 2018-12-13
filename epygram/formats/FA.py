@@ -41,6 +41,7 @@ from epygram.fields import MiscField, H2DField
 __all__ = ['FA', 'inquire_field_dict']
 
 epylog = footprints.loggers.getLogger(__name__)
+_cache_inquire_field_dict = {}
 
 
 def find_wind_pair(fieldname):
@@ -67,7 +68,7 @@ def find_wind_pair(fieldname):
     else:
         return pair
 
-cache_inquire_field_dict = {}
+
 def inquire_field_dict(fieldname, defaults_to_Misc=True):
     """
     Returns the info contained in the FA _field_dict for the requested
@@ -78,7 +79,7 @@ def inquire_field_dict(fieldname, defaults_to_Misc=True):
         if os.path.exists(FA.CSV_field_dictionaries['user']):
             FA._read_field_dict(FA.CSV_field_dictionaries['user'])
 
-    if fieldname not in cache_inquire_field_dict:
+    if fieldname not in _cache_inquire_field_dict:
         matching_field = None
         for fd in FA._field_dict:
             dictitem = fd['name']
@@ -89,9 +90,9 @@ def inquire_field_dict(fieldname, defaults_to_Misc=True):
             if re.match(pattern, fieldname):
                 matching_field = fd
                 break
-        cache_inquire_field_dict[fieldname] = matching_field
+        _cache_inquire_field_dict[fieldname] = matching_field
     else:
-        matching_field = cache_inquire_field_dict[fieldname]
+        matching_field = _cache_inquire_field_dict[fieldname]
 
     if matching_field is None and defaults_to_Misc:
         epylog.info("field '" + fieldname + "' is not referenced in" +
@@ -161,7 +162,8 @@ def _complete_generic_fid_from_name(generic_fid, fieldname):
             generic_fid['parameterCategory'] = config.satellites_local_GRIB2[satellite]
             generic_fid['parameterNumber'] = config.sensors_local_GRIB2[sensor]
             generic_fid['level'] = channel
-    #productDefinitionTemplateNumber to distinguish between CLSTEMPERATURE and CLSMINI.TEMPERAT / CLSMAXI.TEMPERAT
+    # productDefinitionTemplateNumber to distinguish between
+    # CLSTEMPERATURE and CLSMINI.TEMPERAT / CLSMAXI.TEMPERAT (for instance)
     if 'productDefinitionTemplateNumber' not in generic_fid:
         generic_fid['productDefinitionTemplateNumber'] = 0
     return generic_fid
@@ -473,7 +475,7 @@ class FA(FileResource):
 
         if not self.fmtdelayedopen:
             self.open()
-    
+
         self._cache_find_re_in_list = {}
 
     def open(self,
@@ -842,7 +844,7 @@ class FA(FileResource):
                 if 'fourier' in self.spectral_geometry.space:
                     # LAM
                     gpdims = copy.deepcopy(self.geometry.dimensions)
-                    gpdims.update({k:v for k,v in self.geometry.grid.items() if 'resolution' in k})
+                    gpdims.update({k:v for k, v in self.geometry.grid.items() if 'resolution' in k})
                     SPdatasize = self.spectral_geometry.etrans_inq(gpdims)[1]
                 elif self.spectral_geometry.space == 'legendre':
                     # Global
@@ -1790,7 +1792,7 @@ class FA(FileResource):
             latitudes = [Angle((math.cos(math.asin(sinlat)), sinlat), 'cos_sin')
                          for sinlat in PSINLA] \
                         + [Angle((math.cos(math.asin(PSINLA[-(n + 1)])),
-                                  -PSINLA[-(n + 1)]),
+                                  - PSINLA[-(n + 1)]),
                                  'cos_sin')
                            for n in range(0, len(PSINLA))]
             grid = {'dilatation_coef':PCODIL,
@@ -1963,6 +1965,7 @@ class FA(FileResource):
                     comp['KPUILA'],
                     comp['KDMOPL'])
 
+
 class FA3d(FileResource):
     """Class implementing a direct 3D access to a FA resource format."""
 
@@ -1982,11 +1985,11 @@ class FA3d(FileResource):
         self.isopen = False
 
         super(FA3d, self).__init__(*args, **kwargs)
-        
+
         self.resource = FA(*args, **kwargs)
         if not self.fmtdelayedopen:
             self.open()
-    
+
         self._cache_find_re_in_list = {}
         self._3dnames = [(re.compile('P[0-9][0-9][0-9][0-9][0-9]'), 'P-----'),
                          (re.compile('S[0-9][0-9][0-9]'), 'S---'),
@@ -2238,28 +2241,28 @@ class FA3d(FileResource):
                 fieldset.append(self.resource.readfield(fid))
             assert all([len(f.geometry.vcoordinate.levels) == 1 for f in fieldset]), "Internal error"
             levels = [f.geometry.vcoordinate.levels[0] for f in fieldset]
-            
+
             vcoordinate = fieldset[0].geometry.vcoordinate
             del vcoordinate.levels[:]
             vcoordinate.levels.extend(sorted(levels))
-            
+
             kwargs_geom = fieldset[0].geometry._attributes
             kwargs_geom['structure'] = '3D'
-            
+
             kwargs_field = fieldset[0]._attributes
             kwargs_field['structure'] = '3D'
             kwargs_field['geometry'] = fpx.geometry(**kwargs_geom)
-            
+
             field = fpx.field(**kwargs_field)
-            
+
             field.fid['FA'] = fieldname
             if 'generic' in field.fid:
                 del field.fid['generic']['level']
-            
+
             if getdata:
                 indexes = sorted(range(len(levels)), key=lambda k: levels[k])
                 field.setdata(numpy.array([fieldset[i].getdata() for i in indexes]))
-            
+
         return field
 
     def readfields(self, requestedfields=None, getdata=True):

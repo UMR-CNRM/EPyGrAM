@@ -26,6 +26,7 @@ from epygram.base import Resource
 
 class open_and_close_resource(object):
     """Context manager for automatically open/close resources."""
+
     def __init__(self, r):
         """
         :param r: resource to open
@@ -44,6 +45,7 @@ from .MultiValiditiesResource import MultiValiditiesResource
 from .CombineLevelsResource import CombineLevelsResource
 from .SubdomainResource import SubdomainResource
 from .DiagnosticsResource import DiagnosticsResource
+
 
 def meta_resource(filenames_or_resources, openmode, rtype):
     """
@@ -88,7 +90,7 @@ def meta_resource(filenames_or_resources, openmode, rtype):
         # step 1
         if len(resources) > 1:
             assert rtype.endswith('MV'), \
-                   '*filenames* should be unique with this *rtype*:' + rtype
+                '*filenames* should be unique with this *rtype*:' + rtype
         resources = [fpx.epyresource(resource=r,
                                      openmode=openmode,
                                      name='CombineLevels') for r in resources]

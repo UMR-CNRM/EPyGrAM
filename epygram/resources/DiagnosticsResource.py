@@ -53,28 +53,22 @@ More tricky diagnostics:
 
 from __future__ import print_function, absolute_import, unicode_literals, division
 
-
 import six
 import numpy
-import copy
 
 from footprints import FPDict, proxy as fpx
+from bronx.meteo import constants
+from bronx.meteo.conversion import q2R
 
 from epygram.base import Resource, FieldSet
 from epygram import epygramError
 from epygram import profiles
 from epygram.geometries.VGeometry import hybridP2pressure, hybridH2altitude
 
-from vortex import bronx
-from bronx import meteo
-from bronx.meteo import constants
-from bronx.meteo.conversion import q2R
-
-
-
 ##########
-#Temporary extension, waiting for bronx update
+# Temporary extension, waiting for bronx update
 constants.P0 = 100000.
+
 
 class DiagnosticsResource(Resource):
     """Class implementing a DiagnosticsResource."""
@@ -110,7 +104,7 @@ class DiagnosticsResource(Resource):
 
         self.format = "Diagnostics"
         self._diagMethod = None
-        self._cache = {} #cache for various method, key is the method name
+        self._cache = {}  # cache for various method, key is the method name
 
     def open(self):
         """Opens the low level resource"""
@@ -164,28 +158,28 @@ class DiagnosticsResource(Resource):
         """Creates the list of available fields associated with the original fids."""
 
         if self._diagMethod is None:
-            #self._diagMethod is a dictionary that associate to each available field the way to produce it
-            self._diagMethod_done = False #Boolean to inform the different diag that all available fields are not yet known
+            # self._diagMethod is a dictionary that associate to each available field the way to produce it
+            self._diagMethod_done = False  # Boolean to inform the different diag that all available fields are not yet known
             self._diagMethod = {}
-            #First: fields directly available in the low level resource
+            # First: fields directly available in the low level resource
             for fid in self.resource.listfields(complete=True):
                 self._diagMethod[self._hash_dict(fid['generic'])] = {'generic':dict(fid['generic']),
                                                                      'method':None,
                                                                      'original_fid':fid[self.resource.format]}
-            #Second: list fields that can be produced by the different diag
-            #        must be done several times to deal with dependencies
-            #        list is complete when do not evolve during iteration
-            previousLength = - 1
+            # Second: list fields that can be produced by the different diag
+            #         must be done several times to deal with dependencies
+            #         list is complete when do not evolve during iteration
+            previousLength = -1
             diags = [method for method in dir(self) if method.startswith('diag_') and callable(getattr(self, method))]
             while len(self._diagMethod) > previousLength:
                 previousLength = len(self._diagMethod)
-                for method in diags: #loop over the different diags
-                    for fid in getattr(self, method)(dolist=True): #Loop over the fields the diag can produce
+                for method in diags:  # loop over the different diags
+                    for fid in getattr(self, method)(dolist=True):  # Loop over the fields the diag can produce
                         hash_fid = self._hash_dict(fid['generic'])
                         if hash_fid not in self._diagMethod:
-                            #We keep the first solution found to select the solution with the least conversions
+                            # We keep the first solution found to select the solution with the least conversions
                             self._diagMethod[hash_fid] = {'generic':dict(fid['generic']), 'method':method}
-            self._diagMethod_done = True #All fields are known
+            self._diagMethod_done = True  # All fields are known
 
         return self._diagMethod.values()
 
@@ -235,7 +229,7 @@ class DiagnosticsResource(Resource):
 
         result = self.readfields(handgrip=handgrip, getdata=getdata)
         if len(result) != 1:
-            raise epygramError(str(len(result)) + " field(s) have been found, one and only one expected (handgrib=" + str(handgrip) + ")." )
+            raise epygramError(str(len(result)) + " field(s) have been found, one and only one expected (handgrib=" + str(handgrip) + ").")
         return result[0]
 
     def readfields(self, handgrip, getdata=True):
@@ -280,11 +274,11 @@ class DiagnosticsResource(Resource):
     def writefields(self, *args, **kwargs):
         """Write fields."""
         self.resource.writefields(*args, **kwargs)
-    
+
     def _get_field3d_from_handrgrip(self, handgrip):
         """
         Returns the requested 3D field described by the handgrip
-        
+
         :param handgrip:  MUST define the parameter and the type of levels
         """
         if len(self.find_fields_in_resource(handgrip)) > 1:
@@ -429,24 +423,24 @@ class DiagnosticsResource(Resource):
 
         # preparation for vertical coords conversion
         if vertical_coordinate not in (None, subdomain.geometry.vcoordinate.typeoffirstfixedsurface):
-            
+
             vertical_fid = {100:{'discipline':0, 'parameterCategory':3, 'parameterNumber':0},
                             102:{'discipline':0, 'parameterCategory':3, 'parameterNumber':6},
                             103:{'discipline':0, 'parameterCategory':3, 'parameterNumber':6}
-                           }
+                            }
             if vertical_coordinate not in vertical_fid:
                 raise NotImplementedError("this vertical coordinate conversion.")
             vertical_fid = vertical_fid[vertical_coordinate]
             if 'typeOfFirstFixedSurface' in handgrip:
                 vertical_fid['typeOfFirstFixedSurface'] = handgrip['typeOfFirstFixedSurface']
-            
+
             vertical_field = self._get_field3d_from_handrgrip(vertical_fid)
             if vertical_field.spectral:
                 vertical_field.sp2gp()
             levels = vertical_field.extract_subdomain(subdomain.geometry,
                                                       interpolation=interpolation,
                                                       exclude_extralevels=True)
-            
+
             if vertical_coordinate == 100:
                 pass
             elif vertical_coordinate == 103:
@@ -459,7 +453,7 @@ class DiagnosticsResource(Resource):
                 if surface_height.spectral:
                     surface_height.sp2gp()
                 levels.setdata(levels.getdata() - surface_height.getdata())
-            
+
             subdomain.use_field_as_vcoord(levels, force_kind=vertical_coordinate)
 
         return subdomain
@@ -467,7 +461,7 @@ class DiagnosticsResource(Resource):
     @staticmethod
     def _common_levels(parameters):
         """Look for common levels between several sets of generic fids"""
-        #we must exclude unknown levels
+        # we must exclude unknown levels
         setList = []
         for p in parameters:
             pSet = set()
@@ -477,8 +471,8 @@ class DiagnosticsResource(Resource):
                 f.pop('discipline', None)
                 f.pop('parameterNumber', None)
                 f.pop('productDefinitionTemplateNumber', None)
-                if ((not 'level' in f) or f['level'] != 255) and \
-                   ((not 'typeOfFirstFixedSurface' in f) or f['typeOfFirstFixedSurface'] != 255):
+                if (('level' not in f) or f['level'] != 255) and \
+                   (('typeOfFirstFixedSurface' not in f) or f['typeOfFirstFixedSurface'] != 255):
                     pSet.add(DiagnosticsResource._hash_dict(f))
             setList.append(pSet)
         result = []
@@ -492,22 +486,22 @@ class DiagnosticsResource(Resource):
             raise epygramError("field1 and fid1 cannot be None at the same time")
         if field2 is None and fid2 is None:
             raise epygramError("field2 and fid2 cannot be None at the same time")
-        
+
         if field1 is not None and fid1 is not None:
             if field1.fid[self.format] != fid1:
                 raise epygramError("fids are not equal")
         if field2 is not None and fid2 is not None:
             if field2.fid[self.format] != fid2:
                 raise epygramError("fids are not equal")
-        
+
         if field1 is not None and fid1 is None:
             fid1 = field1.fid[self.format]
         if field2 is not None and fid2 is None:
             fid2 = field2.fid[self.format]
-        
-        if not 'check_compatibilty' in self._cache:
+
+        if 'check_compatibilty' not in self._cache:
             self._cache['check_compatibilty'] = {}
-        
+
         hfid1 = self._hash_dict(fid1)
         hfid2 = self._hash_dict(fid2)
         if not (hfid1, hfid2) in self._cache['check_compatibilty']:
@@ -536,10 +530,10 @@ class DiagnosticsResource(Resource):
         if not dolist:
             if not all([fid in self.listfields() for fid in fids]):
                 raise epygramError("Some fids are not available")
-                
+
     def _simple_HDiag(self, inputs, output):
         """Common list algorithm for horizontal diag"""
-        
+
         result = []
         try:
             parameters = [self.find_fields_in_resource(seed) for seed in inputs]
@@ -551,12 +545,12 @@ class DiagnosticsResource(Resource):
                 fid = level.copy()
                 fid.update(seed)
                 InputFids.append(fid)
-            if all([self._check_compatibilty(InputFids[0], InputFids[i+1]) for i in range(len(InputFids) - 1)]):
+            if all([self._check_compatibilty(InputFids[0], InputFids[i + 1]) for i in range(len(InputFids) - 1)]):
                 fid = level.copy()
                 fid.update(output)
                 result.append({'generic':fid})
         return result
-    
+
     def _get_field(self, param, level, getdata, deepcopy=False):
         """Wrapper to simplify field reading"""
         myfid = level.copy()
@@ -564,7 +558,7 @@ class DiagnosticsResource(Resource):
         if 'level' in level:
             field = self.readfield(myfid, getdata=getdata)
         else:
-            #We must select the field that do not have level in its fid
+            # We must select the field that do not have level in its fid
             fields = self.readfields(myfid, getdata=getdata)
             for fid in [field.fid for field in fields]:
                 if 'level' in fid[self.format]:
@@ -579,27 +573,27 @@ class DiagnosticsResource(Resource):
         return field
 
     def diag_equiv_geopot_hgeopot(self, *args, **kwargs):
-        equiv = ({'discipline':0, 'parameterCategory':3, 'parameterNumber':4}, #Geopotential
-                 {'discipline':0, 'parameterCategory':3, 'parameterNumber':5}, #Geopotential height
-                 True, constants.g0, None) #Equivalent with approximation, factor is g
+        equiv = ({'discipline':0, 'parameterCategory':3, 'parameterNumber':4},  # Geopotential
+                 {'discipline':0, 'parameterCategory':3, 'parameterNumber':5},  # Geopotential height
+                 True, constants.g0, None)  # Equivalent with approximation, factor is g
         return self._diag_equivalence(equiv, *args, **kwargs)
-    
+
     def diag_equiv_hgeopot_hgeom(self, *args, **kwargs):
-        equiv = ({'discipline':0, 'parameterCategory':3, 'parameterNumber':5}, #Geopotential height
-                 {'discipline':0, 'parameterCategory':3, 'parameterNumber':6}, #Geometric height
-                 self.approx.get('approx_gIsConstant', 0) == 1, 1, None) #Equivalent with approximation, no factor
+        equiv = ({'discipline':0, 'parameterCategory':3, 'parameterNumber':5},  # Geopotential height
+                 {'discipline':0, 'parameterCategory':3, 'parameterNumber':6},  # Geometric height
+                 self.approx.get('approx_gIsConstant', 0) == 1, 1, None)  # Equivalent with approximation, no factor
         return self._diag_equivalence(equiv, *args, **kwargs)
 
     def diag_equiv_model_terrain_height(self, *args, **kwargs):
-        equiv = ({'discipline':2, 'parameterCategory':0, 'parameterNumber':7}, #Model terrain height
-                 {'discipline':0, 'parameterCategory':3, 'parameterNumber':6, 'typeOfFirstFixedSurface':1}, #Geometric height
-                 True, 1, None) #Always equivalent, no factor
+        equiv = ({'discipline':2, 'parameterCategory':0, 'parameterNumber':7},  # Model terrain height
+                 {'discipline':0, 'parameterCategory':3, 'parameterNumber':6, 'typeOfFirstFixedSurface':1},  # Geometric height
+                 True, 1, None)  # Always equivalent, no factor
         return self._diag_equivalence(equiv, *args, **kwargs)
 
     def diag_equiv_P_logP(self, *args, **kwargs):
-        equiv = ({'discipline':0, 'parameterCategory':3, 'parameterNumber':25}, #log(P)
-                 {'discipline':0, 'parameterCategory':3, 'parameterNumber':0}, #P
-                 True, 1, numpy.log) #Always equivalent, no factor
+        equiv = ({'discipline':0, 'parameterCategory':3, 'parameterNumber':25},  # log(P)
+                 {'discipline':0, 'parameterCategory':3, 'parameterNumber':0},  # P
+                 True, 1, numpy.log)  # Always equivalent, no factor
         return self._diag_equivalence(equiv, *args, **kwargs)
 
     def _diag_equivalence(self, equiv, fids=[], dolist=False, getdata=True):
@@ -626,9 +620,9 @@ class DiagnosticsResource(Resource):
             fieldset = FieldSet()
             for fid in fids:
                 if equiv[2]:
-                    for e in [(equiv[0], equiv[1], equiv[3], equiv[4]), (equiv[1], equiv[0], 1./equiv[3], {numpy.log:numpy.exp,
-                                                                                                           numpy.exp:numpy.log,
-                                                                                                           None:None}[equiv[4]])]:
+                    for e in [(equiv[0], equiv[1], equiv[3], equiv[4]), (equiv[1], equiv[0], 1. / equiv[3], {numpy.log:numpy.exp,
+                                                                                                             numpy.exp:numpy.log,
+                                                                                                             None:None}[equiv[4]])]:
                         if all([k in fid and fid[k] == e[0][k] for k in e[0]]):
                             myfid = fid.copy()
                             myfid.update(e[1])
@@ -655,12 +649,12 @@ class DiagnosticsResource(Resource):
         """Returns pressure on levels with constant pressure."""
         self._diag_checks(fids, dolist)
         fid_P = {'discipline': 0, 'parameterCategory': 3, 'parameterNumber': 0, 'productDefinitionTemplateNumber':0}
-        fid_field ={'typeOfFirstFixedSurface': 100}
-        
+        fid_field = {'typeOfFirstFixedSurface': 100}
+
         if dolist:
-            #We need a cache to know in which order fids have been found
-            #to not try to use a fid depending on the current diag
-            if not 'P_from_Plevels' in self._cache:
+            # We need a cache to know in which order fids have been found
+            # to not try to use a fid depending on the current diag
+            if 'P_from_Plevels' not in self._cache:
                 self._cache['P_from_Plevels'] = {'levels':set(), 'fids':[]}
             try:
                 fidlist = self.find_fields_in_resource(fid_field)
@@ -680,7 +674,7 @@ class DiagnosticsResource(Resource):
                     fidlist.extend(self.find_fields_in_resource(one_fid))
                 for f in fidlist:
                     if not all([f[k] == v for k, v in fid_P.iteritems()]):
-                        readfid = f 
+                        readfid = f
                         break
                 field = self.readfield(readfid, getdata=getdata)
                 for fmt in field.fid.keys():
@@ -689,25 +683,25 @@ class DiagnosticsResource(Resource):
                 field.fid['generic'] = dict(level=fid['level'], typeOfFirstFixedSurface=100, **fid_P)
                 if len(field.geometry.vcoordinate.levels) != 1:
                     raise NotImplementedError("Pb could be easily resolved here")
-                    #To solve pb, one must set a new numpy array for data instead of using field.getdata()
+                    # To solve pb, one must set a new numpy array for data instead of using field.getdata()
                 del field.geometry.vcoordinate.levels[:]
                 field.geometry.vcoordinate.levels.append(fid['level'])
                 if getdata:
                     if field.spectral:
                         field.sp2gp()
                     data = field.getdata()
-                    data[...] = fid['level'] * 100 #convert hPa into Pa
+                    data[...] = fid['level'] * 100  # convert hPa into Pa
                     field.setdata(data)
                 fieldset.append(field)
             return fieldset
-        
+
     def diag_theta_from_T_P(self, fids=[], dolist=False, getdata=True):
         """Computes theta from T and P (no approximation)"""
         self._diag_checks(fids, dolist)
         fid_T = {'discipline':0, 'parameterCategory':0, 'parameterNumber':0, 'productDefinitionTemplateNumber':0}
         fid_P = {'discipline':0, 'parameterCategory':3, 'parameterNumber':0, 'productDefinitionTemplateNumber':0}
         fid_Theta = {'discipline':0, 'parameterCategory':0, 'parameterNumber':2, 'productDefinitionTemplateNumber':0}
-        
+
         if dolist:
             return self._simple_HDiag([fid_T, fid_P], fid_Theta)
         else:
@@ -721,7 +715,7 @@ class DiagnosticsResource(Resource):
                     raise epygramError("Internal error: T and P fields are not compatible")
                 if getdata:
                     pass
-                    T.setdata(T.getdata()*(constants.P0/P.getdata())**(constants.Rd/constants.Cpd))
+                    T.setdata(T.getdata() * (constants.P0 / P.getdata()) ** (constants.Rd / constants.Cpd))
                 myfid_Theta = fid.copy()
                 myfid_Theta.update(fid_Theta)
                 for fmt in T.fid.keys():
@@ -738,7 +732,7 @@ class DiagnosticsResource(Resource):
         fid_qv = {'discipline':0, 'parameterCategory':1, 'parameterNumber':0, 'productDefinitionTemplateNumber':0}
         fid_qt = {'discipline':0, 'parameterCategory':1, 'parameterNumber':251, 'productDefinitionTemplateNumber':0}
         fid_ThetaV = {'discipline':0, 'parameterCategory':0, 'parameterNumber':15, 'productDefinitionTemplateNumber':0}
-        
+
         if dolist:
             return self._simple_HDiag([fid_theta, fid_qv, fid_qt], fid_ThetaV)
         else:
@@ -768,7 +762,7 @@ class DiagnosticsResource(Resource):
         fid_T = {'discipline':0, 'parameterCategory':0, 'parameterNumber':0, 'productDefinitionTemplateNumber':0}
         fid_P = {'discipline':0, 'parameterCategory':3, 'parameterNumber':0, 'productDefinitionTemplateNumber':0}
         fid_Theta = {'discipline':0, 'parameterCategory':0, 'parameterNumber':2, 'productDefinitionTemplateNumber':0}
-        
+
         if dolist:
             return self._simple_HDiag([fid_P, fid_Theta], fid_T)
         else:
@@ -779,7 +773,7 @@ class DiagnosticsResource(Resource):
                 if not self._check_compatibilty(field1=Theta, field2=P):
                     raise epygramError("Internal error: Theta and P fields are not compatible")
                 if getdata:
-                    Theta.setdata(Theta.getdata()*(P.getdata()/constants.P0)**(constants.Rd/constants.Cpd))
+                    Theta.setdata(Theta.getdata() * (P.getdata() / constants.P0) ** (constants.Rd / constants.Cpd))
                 myfid_Theta = fid.copy()
                 myfid_Theta.update(fid_T)
                 for fmt in Theta.fid.keys():
@@ -804,10 +798,10 @@ class DiagnosticsResource(Resource):
         fid_qr = {'discipline':0, 'parameterCategory':1, 'parameterNumber':85, 'productDefinitionTemplateNumber':0}
         fid_qi = {'discipline':0, 'parameterCategory':1, 'parameterNumber':84, 'productDefinitionTemplateNumber':0}
         fid_qs = {'discipline':0, 'parameterCategory':1, 'parameterNumber':86, 'productDefinitionTemplateNumber':0}
-        fid_qg = {'discipline':0, 'parameterCategory':1, 'parameterNumber':32, 'productDefinitionTemplateNumber':0} 
+        fid_qg = {'discipline':0, 'parameterCategory':1, 'parameterNumber':32, 'productDefinitionTemplateNumber':0}
         fid_qh = {'discipline':0, 'parameterCategory':1, 'parameterNumber':31, 'productDefinitionTemplateNumber':0}
         fid_qt = {'discipline':0, 'parameterCategory':1, 'parameterNumber':251, 'productDefinitionTemplateNumber':0}
-        
+
         approx_qt = self.approx.get('approx_qt', 0)
 
         if dolist:
@@ -868,10 +862,10 @@ class DiagnosticsResource(Resource):
         fid_rr = {'discipline':0, 'parameterCategory':1, 'parameterNumber':24, 'productDefinitionTemplateNumber':0}
         fid_ri = {'discipline':0, 'parameterCategory':1, 'parameterNumber':23, 'productDefinitionTemplateNumber':0}
         fid_rs = {'discipline':0, 'parameterCategory':1, 'parameterNumber':25, 'productDefinitionTemplateNumber':0}
-        fid_rg = {'discipline':0, 'parameterCategory':1, 'parameterNumber':253, 'productDefinitionTemplateNumber':0} 
+        fid_rg = {'discipline':0, 'parameterCategory':1, 'parameterNumber':253, 'productDefinitionTemplateNumber':0}
         fid_rh = {'discipline':0, 'parameterCategory':1, 'parameterNumber':252, 'productDefinitionTemplateNumber':0}
         fid_qt = {'discipline':0, 'parameterCategory':1, 'parameterNumber':251, 'productDefinitionTemplateNumber':0}
-        
+
         approx_qt = self.approx.get('approx_qt', 0)
 
         if dolist:
@@ -904,10 +898,10 @@ class DiagnosticsResource(Resource):
                         hydrometeors['rg'] = self._get_field(fid_rg, fid, getdata).getdata()
                     if approx_qt == 0:
                         hydrometeors['rh'] = self._get_field(fid_rh, fid, getdata).getdata()
-                    qt = rv.getdata() #mixing ratio
+                    qt = rv.getdata()  # mixing ratio
                     for h in hydrometeors.values():
-                        qt += h #mixing ratio
-                    qt = qt / (1 + qt) #convert mixing ratio into specific content
+                        qt += h  # mixing ratio
+                    qt = qt / (1 + qt)  # convert mixing ratio into specific content
                     rv.setdata(qt)
                 myfid_qt = fid.copy()
                 myfid_qt.update(fid_qt)
@@ -917,7 +911,6 @@ class DiagnosticsResource(Resource):
                 rv.fid['generic'] = myfid_qt
                 fieldset.append(rv)
             return fieldset
-
 
     def _diag_q_from_r_qt(self, fid_r, fid_q, fids, dolist, getdata):
         fid_qt = {'discipline':0, 'parameterCategory':1, 'parameterNumber':251, 'productDefinitionTemplateNumber':0}
@@ -931,7 +924,7 @@ class DiagnosticsResource(Resource):
                 if not self._check_compatibilty(field1=qt, field2=r):
                     raise epygramError("Internal error: qt and r fields are not compatible")
                 if getdata:
-                    qt.setdata(r.getdata() *(1. - qt.getdata()))
+                    qt.setdata(r.getdata() * (1. - qt.getdata()))
                 myfid_Theta = fid.copy()
                 myfid_Theta.update(fid_q)
                 for fmt in qt.fid.keys():
@@ -940,36 +933,42 @@ class DiagnosticsResource(Resource):
                 qt.fid['generic'] = myfid_Theta
                 fieldset.append(qt)
             return fieldset
-    
+
     def diag_qv_from_rv(self, fids=[], dolist=False, getdata=True):
         fid_r = {'discipline':0, 'parameterCategory':1, 'parameterNumber':2, 'productDefinitionTemplateNumber':0}
         fid_q = {'discipline':0, 'parameterCategory':1, 'parameterNumber':0, 'productDefinitionTemplateNumber':0}
         return self._diag_q_from_r_qt(fid_r, fid_q, fids, dolist, getdata)
+
     def diag_qc_from_rc(self, fids=[], dolist=False, getdata=True):
         fid_r = {'discipline':0, 'parameterCategory':1, 'parameterNumber':22, 'productDefinitionTemplateNumber':0}
         fid_q = {'discipline':0, 'parameterCategory':1, 'parameterNumber':83, 'productDefinitionTemplateNumber':0}
         return self._diag_q_from_r_qt(fid_r, fid_q, fids, dolist, getdata)
+
     def diag_qr_from_rr(self, fids=[], dolist=False, getdata=True):
         fid_r = {'discipline':0, 'parameterCategory':1, 'parameterNumber':24, 'productDefinitionTemplateNumber':0}
         fid_q = {'discipline':0, 'parameterCategory':1, 'parameterNumber':85, 'productDefinitionTemplateNumber':0}
         return self._diag_q_from_r_qt(fid_r, fid_q, fids, dolist, getdata)
+
     def diag_qi_from_ri(self, fids=[], dolist=False, getdata=True):
         fid_r = {'discipline':0, 'parameterCategory':1, 'parameterNumber':23, 'productDefinitionTemplateNumber':0}
         fid_q = {'discipline':0, 'parameterCategory':1, 'parameterNumber':84, 'productDefinitionTemplateNumber':0}
         return self._diag_q_from_r_qt(fid_r, fid_q, fids, dolist, getdata)
+
     def diag_qs_from_rs(self, fids=[], dolist=False, getdata=True):
         fid_r = {'discipline':0, 'parameterCategory':1, 'parameterNumber':25, 'productDefinitionTemplateNumber':0}
         fid_q = {'discipline':0, 'parameterCategory':1, 'parameterNumber':86, 'productDefinitionTemplateNumber':0}
         return self._diag_q_from_r_qt(fid_r, fid_q, fids, dolist, getdata)
+
     def diag_qg_from_rg(self, fids=[], dolist=False, getdata=True):
         fid_r = {'discipline':0, 'parameterCategory':1, 'parameterNumber':253, 'productDefinitionTemplateNumber':0}
         fid_q = {'discipline':0, 'parameterCategory':1, 'parameterNumber':32, 'productDefinitionTemplateNumber':0}
         return self._diag_q_from_r_qt(fid_r, fid_q, fids, dolist, getdata)
+
     def diag_qh_from_rh(self, fids=[], dolist=False, getdata=True):
         fid_r = {'discipline':0, 'parameterCategory':1, 'parameterNumber':252, 'productDefinitionTemplateNumber':0}
         fid_q = {'discipline':0, 'parameterCategory':1, 'parameterNumber':31, 'productDefinitionTemplateNumber':0}
         return self._diag_q_from_r_qt(fid_r, fid_q, fids, dolist, getdata)
-    
+
     def diag_R_from_q(self, fids=[], dolist=False, getdata=True):
         """
         Computes R from the hydrometeor contents
@@ -985,10 +984,10 @@ class DiagnosticsResource(Resource):
         fid_qr = {'discipline':0, 'parameterCategory':1, 'parameterNumber':85, 'productDefinitionTemplateNumber':0}
         fid_qi = {'discipline':0, 'parameterCategory':1, 'parameterNumber':84, 'productDefinitionTemplateNumber':0}
         fid_qs = {'discipline':0, 'parameterCategory':1, 'parameterNumber':86, 'productDefinitionTemplateNumber':0}
-        fid_qg = {'discipline':0, 'parameterCategory':1, 'parameterNumber':32, 'productDefinitionTemplateNumber':0} 
+        fid_qg = {'discipline':0, 'parameterCategory':1, 'parameterNumber':32, 'productDefinitionTemplateNumber':0}
         fid_qh = {'discipline':0, 'parameterCategory':1, 'parameterNumber':31, 'productDefinitionTemplateNumber':0}
         fid_R = {'discipline':0, 'parameterCategory':1, 'parameterNumber':254, 'productDefinitionTemplateNumber':0}
-        
+
         approx_R = self.approx.get('approx_R', 0)
 
         if dolist:
@@ -1031,7 +1030,7 @@ class DiagnosticsResource(Resource):
                 qv.fid['generic'] = myfid_R
                 fieldset.append(qv)
             return fieldset
-        
+
     def diag_ff_from_U_V_W(self, fids=[], dolist=False, getdata=True):
         """
         Computes the wind speed from its components.
@@ -1044,7 +1043,7 @@ class DiagnosticsResource(Resource):
         fid_W = {'discipline':0, 'parameterCategory':2, 'parameterNumber':9, 'productDefinitionTemplateNumber':0}
         fid_ff = {'discipline':0, 'parameterCategory':2, 'parameterNumber':1, 'productDefinitionTemplateNumber':0}
         approx_ff = self.approx.get('approx_ff', 0)
-        
+
         if dolist:
             if approx_ff == 0:
                 return self._simple_HDiag([fid_U, fid_V, fid_W], fid_ff)
@@ -1058,13 +1057,13 @@ class DiagnosticsResource(Resource):
                 if not self._check_compatibilty(field1=U, field2=V):
                     raise epygramError("Internal error: U and V fields are not compatible")
                 if getdata:
-                    U.setdata(U.getdata()**2+V.getdata()**2)
+                    U.setdata(U.getdata() ** 2 + V.getdata() ** 2)
                 if approx_ff == 0:
                     W = self._get_field(fid_W, fid, getdata)
                     if not self._check_compatibilty(field1=U, field2=W):
                         raise epygramError("Internal error or approx needed: U and W fields are not compatible")
                     if getdata:
-                        U.setdata(U.getdata() + W.getdata()**2)
+                        U.setdata(U.getdata() + W.getdata() ** 2)
                 if getdata:
                     U.setdata(numpy.sqrt(U.getdata()))
                 myfid_ff = fid.copy()
@@ -1083,7 +1082,7 @@ class DiagnosticsResource(Resource):
         fid_Ps = {'discipline':0, 'parameterCategory':3, 'parameterNumber':25, 'typeOfFirstFixedSurface':1, 'productDefinitionTemplateNumber':0}
 
         fid_for_vcoord = None
-        if not 'hybridP' in self._cache:
+        if 'hybridP' not in self._cache:
             fid_for_vcoord = [fid[self.resource.format] for fid in self.resource.listfields(complete=True) if fid['generic'].get('typeOfFirstFixedSurface', 255) == 119]
             if len(fid_for_vcoord) != 0:
                 hybridP_geometry = self.resource.readfield(fid_for_vcoord[0], getdata=False).geometry.vcoordinate
@@ -1098,13 +1097,13 @@ class DiagnosticsResource(Resource):
                 if fid_Ps is None:
                     result = None
                 else:
-                    field_3d = len(hybridP_geometry.levels) > 1 #True if the first field on hybrid-P level is 3D
+                    field_3d = len(hybridP_geometry.levels) > 1  # True if the first field on hybrid-P level is 3D
                     result = dict(A=A, B=B, ABgrid_position=hybridP_geometry.grid['ABgrid_position'],
                                   fid_for_vcoord=fid_for_vcoord[0], field_3d=field_3d,
                                   vgeometry=hybridP_geometry)
             else:
                 result = None
-                
+
             if self._diagMethod_done or result is not None:
                 self._cache['hybridP'] = result
         else:
@@ -1136,10 +1135,10 @@ class DiagnosticsResource(Resource):
             if hybridP is not None:
                 A = hybridP['A']
                 if hybridP['field_3d']:
-                    #First field on hybrid-P level is 3D, so we put the 3D P field in the list
+                    # First field on hybrid-P level is 3D, so we put the 3D P field in the list
                     result = [{'generic':dict(typeOfFirstFixedSurface=119, **fid_P)}]
                 else:
-                    #First field on hybrid-P level is 2D, so we put the 2D P fields in the list
+                    # First field on hybrid-P level is 2D, so we put the 2D P fields in the list
                     result = [{'generic':dict(typeOfFirstFixedSurface=119, level=l, **fid_P)} for l in range(1, len(A) + 1)]
             else:
                 result = []
@@ -1149,7 +1148,7 @@ class DiagnosticsResource(Resource):
             if Ps.spectral and getdata:
                 Ps.sp2gp()
             if getdata and Ps.getdata().flatten()[0] < 100:
-                #Ps contains lnsp and not sp
+                # Ps contains lnsp and not sp
                 Ps.setdata(numpy.exp(Ps.getdata()))
             if getdata:
                 pressure = hybridP2pressure(hybridP['vgeometry'], Ps.getdata(), option_vertical_mean,
@@ -1202,7 +1201,7 @@ class DiagnosticsResource(Resource):
         fid_Zs = {'discipline':2, 'parameterCategory':0, 'parameterNumber':7, 'productDefinitionTemplateNumber':0}
 
         fid_for_vcoord = None
-        if not 'hybridH' in self._cache:
+        if 'hybridH' not in self._cache:
             fid_for_vcoord = [fid[self.resource.format] for fid in self.resource.listfields(complete=True) if fid['generic'].get('typeOfFirstFixedSurface', 255) == 118]
             if len(fid_for_vcoord) != 0:
                 hybridH_geometry = self.resource.readfield(fid_for_vcoord[0], getdata=False).geometry.vcoordinate
@@ -1217,13 +1216,13 @@ class DiagnosticsResource(Resource):
                 if fid_Zs is None:
                     result = None
                 else:
-                    field_3d = len(hybridH_geometry.levels) > 1 #True if the first field on hybrid-H level is 3D
+                    field_3d = len(hybridH_geometry.levels) > 1  # True if the first field on hybrid-H level is 3D
                     result = dict(A=A, B=B, ABgrid_position=hybridH_geometry.grid['ABgrid_position'],
                                   fid_for_vcoord=fid_for_vcoord[0], field_3d=field_3d,
                                   vgeometry=hybridH_geometry)
             else:
                 result = None
-                
+
             if self._diagMethod_done or result is not None:
                 self._cache['hybridH'] = result
         else:
@@ -1250,10 +1249,10 @@ class DiagnosticsResource(Resource):
             if hybridH is not None:
                 A = hybridH['A']
                 if hybridH['field_3d']:
-                    #First field on hybrid-H level is 3D, so we put the 3D H field in the list
+                    # First field on hybrid-H level is 3D, so we put the 3D H field in the list
                     result = [{'generic':dict(typeOfFirstFixedSurface=118, **fid_Z)}]
                 else:
-                    #First field on hybrid-H level is 2D, so we put the 2D H fields in the list
+                    # First field on hybrid-H level is 2D, so we put the 2D H fields in the list
                     result = [{'generic':dict(typeOfFirstFixedSurface=118, level=l, **fid_Z)} for l in range(0, len(A) + 2)]
             else:
                 result = []
@@ -1309,6 +1308,7 @@ class DiagnosticsResource(Resource):
                 fieldset.append(Z)
             return fieldset
 
+
 class DiagnosticsAROMEResource(DiagnosticsResource):
     """Class implementing a DiagnosticsResource for AROME."""
 
@@ -1319,7 +1319,7 @@ class DiagnosticsAROMEResource(DiagnosticsResource):
                 values=set(['DiagnosticsAROME']))
         )
     )
-    
+
     def diag_Hgeopot_from_T_q(self, fids=[], dolist=False, getdata=True):
         """
         Computes Z on hybrid-P levels
@@ -1344,43 +1344,43 @@ class DiagnosticsAROMEResource(DiagnosticsResource):
 
         hybridP = self._hybridP()
         A = hybridP['A']
-        
+
         if dolist:
             if hybridP is not None:
                 params = [fid_T, fid_R]
                 if option_cheap_height != 1:
                     params.append(fid_Pdep)
-                result = self._simple_HDiag(params, fid_HGeopot) #list of fids for HGeopot that we can actually produce
+                result = self._simple_HDiag(params, fid_HGeopot)  # list of fids for HGeopot that we can actually produce
                 field_3d = not any(['level' in r['generic'] for r in result])
                 if field_3d:
-                    result = [r for r in result if 'level' not in r] #we limit to 3D results
+                    result = [r for r in result if 'level' not in r]  # we limit to 3D results
                 else:
                     if set([r['generic']['level'] for r in result if 'level' in r['generic']]) != set(range(1, len(A) + 1)):
                         result = []
                     else:
-                        result = [r for r in result if 'level' in r['generic']] #we limit to 2D results
+                        result = [r for r in result if 'level' in r['generic']]  # we limit to 2D results
             else:
                 result = []
             return result
         else:
             Ps = self.readfield(fid_Ps, getdata=getdata)
-            
+
             if getdata:
                 if 'HGeopot' not in self._cache:
                     if Ps.spectral:
                         Ps.sp2gp()
                     if Ps.getdata().flatten()[0] < 100:
-                        #Ps contains lnsp and not sp
+                        # Ps contains lnsp and not sp
                         Ps.setdata(numpy.exp(Ps.getdata()))
-                    
-                    #Pressure on mass levels
+
+                    # Pressure on mass levels
                     pi = hybridP2pressure(hybridP['vgeometry'], Ps.getdata(), option_vertical_mean,
                                           gridposition='mass').levels
                     pi = numpy.array(pi) * 100
 
                     field_3d = not any(['level' in fid for fid in fids])
 
-                    #R, T
+                    # R, T
                     if field_3d:
                         R = self.readfield(fid_R).getdata()
                         T = self.readfield(fid_T)
@@ -1398,7 +1398,7 @@ class DiagnosticsAROMEResource(DiagnosticsResource):
                             T[k - 1] = Tl.getdata()
                             del Tl
 
-                    #Pressure departure
+                    # Pressure departure
                     if option_cheap_height != 1:
                         if field_3d:
                             Pdep = self.readfield(fid_Pdep)
@@ -1425,7 +1425,7 @@ class DiagnosticsAROMEResource(DiagnosticsResource):
                                                                         Phi_surf=Phi_surf.getdata(),
                                                                         Pdep=Pdep)
                 HGeopotVal = self._cache['HGeopot']
-    
+
             fieldset = FieldSet()
             for fid in fids:
                 HGeopot = self.resource.readfield(hybridP['fid_for_vcoord'], getdata=False)
@@ -1462,5 +1462,5 @@ class DiagnosticsAROMEResource(DiagnosticsResource):
                     else:
                         HGeopot.setdata(HGeopotVal)
                 fieldset.append(HGeopot)
-                
+
             return fieldset

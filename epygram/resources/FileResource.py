@@ -44,11 +44,14 @@ class FileResource(Resource):
     @nicedeco
     def _openbeforedelayed(mtd):
         """Decorator for Resource: open resource before calling method."""
+
         def nowopen(self, *args, **kwargs):
             if not self.isopen:
                 self.open()
             return mtd(self, *args, **kwargs)
+
         return nowopen
+
     _openbeforedelayed = staticmethod(_openbeforedelayed)
 
     def __init__(self, *args, **kwargs):
@@ -61,7 +64,7 @@ class FileResource(Resource):
 
         if self.openmode in ('r', 'a'):
             assert os.access(self.container.abspath, os.R_OK), \
-                   'No reading permission for file: ' + self.container.abspath
+                'No reading permission for file: ' + self.container.abspath
 
         # protection against unhappy overwrites...
         if config.protect_unhappy_writes and \
@@ -74,11 +77,11 @@ class FileResource(Resource):
                 raise epygramError(self.container.abspath + " already exists.")
         if self.openmode == 'a':
             assert os.access(self.container.abspath, os.W_OK), \
-                   'No writing permission for file: ' + self.container.abspath
+                'No writing permission for file: ' + self.container.abspath
         if self.openmode == 'w':
             if os.path.exists(self.container.abspath):
                 assert os.access(self.container.abspath, os.W_OK), \
-                       'No overwriting permission for file: ' + self.container.abspath
+                    'No overwriting permission for file: ' + self.container.abspath
             else:
                 dirpath = os.path.dirname(self.container.abspath)
                 assert os.path.exists(dirpath), \
@@ -95,6 +98,7 @@ class FileResource(Resource):
         """
         if openmode is not None:
             self._attributes['openmode'] = openmode
+
 
 footprints.collectors.get(tag='epyresources').fasttrack = ('format',)
 footprints.collectors.get(tag='dataformats').fasttrack = ('format',)

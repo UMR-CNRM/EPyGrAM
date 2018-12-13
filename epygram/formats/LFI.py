@@ -35,7 +35,6 @@ __all__ = ['LFI']
 
 epylog = footprints.loggers.getLogger(__name__)
 
-
 gridIndicatorDict = {0:('__unknown__', '__unknown__'),
                      1:('center', 'mass'),
                      2:('center-left', 'mass'),
@@ -70,6 +69,8 @@ def parse_LFIstr_totuple(strfid):
 
 cache_inquire = {}
 cache_inquire_re = {}
+
+
 def inquire_field_dict(fieldname):
     """
     Returns the info contained in the LFI _field_dict for the requested field.
@@ -115,7 +116,7 @@ def _complete_generic_fid_from_fid(generic_fid, fieldidentifier):
         elif field_info['type'] == '3D':
             pass  # multilevel in true3d
         elif field_info['type'] == 'Misc':
-            pass #No level to add to the generic_fid
+            pass  # No level to add to the generic_fid
         else:
             raise epygramError("Must not happen...")
     if 'productDefinitionTemplateNumber' not in generic_fid:
@@ -302,10 +303,12 @@ class LFI(FileResource):
                 # If you look for 2D fields, you must also take 3D fields
                 fieldtypeslist.append('3D')
         fieldslist = []
+
         def fill_fieldslist(tmplist):
             for f in tmplist:
                 if fieldtypeslist == [] or inquire_field_dict(f if self.true3d else f[0])['type'] in fieldtypeslist:
                     fieldslist.append(f)
+
         if seed is None:
             tmplist = self.listfields()
             fill_fieldslist(tmplist)
@@ -558,9 +561,9 @@ class LFI(FileResource):
                                                               self.geometry.dimensions['Y'] *
                                                               kmax])
                     data3d = data3d.reshape((kmax, self.geometry.dimensions['X'] * self.geometry.dimensions['Y']))
-                    data3d[:-1, :] = 0.5 * (data3d[:-1, :] + data3d[1:, :]) #last level kept untouched
+                    data3d[:-1, :] = 0.5 * (data3d[:-1, :] + data3d[1:, :])  # last level kept untouched
                     data = data3d.flatten()
-                    
+
                 if self.true3d:
                     offset = 0
                     data = numpy.array(data.view('float64')[offset:offset +
@@ -598,7 +601,10 @@ class LFI(FileResource):
             fid = {self.format: (fieldname, None),
                    'generic': FPDict()
                    }
-            class empty(object): pass
+
+            class empty(object):
+                pass
+
             geometry = empty()
             geometry.position_on_horizontal_grid = gridIndicator['horizontal']
             geometry.vcoordinate = empty()
@@ -613,7 +619,7 @@ class LFI(FileResource):
                 # 3D data
                 data = data.reshape((len(self.geometry.vcoordinate.grid['gridlevels']) + 1,
                                      self.geometry.dimensions['X'] * self.geometry.dimensions['Y']))
-                data = geometry.reshape_data(data, 'Z') 
+                data = geometry.reshape_data(data, 'Z')
             field.setdata(data)
             if fieldname == 'LFI_COMPRESSED':
                 self._compressed = data
@@ -793,7 +799,10 @@ class LFI(FileResource):
                         if keep:
                             comment = specialFieldsComments[record]
                             (h, v) = gridIndicatorDict[specialFieldsGridIndicator[record]]
-                            class empty(object): pass
+
+                            class empty(object):
+                                pass
+
                             geometry = empty()
                             geometry.position_on_horizontal_grid = h
                             geometry.vcoordinate = empty()
@@ -1143,11 +1152,13 @@ class LFI(FileResource):
                        ':' +
                        '{:>{width}}'.format(str(value), width=secondcolumn_width) +
                        '\n')
+
         def write_formatted_col(dest, label, value):
             dest.write('{:>{width}}'.format(label, width=firstcolumn_width) +
                        ':' +
                        '{:>{width}}'.format(str(value), width=secondcolumn_width) +
                        '\n')
+
         def write_formatted_fields(dest, label, gridIndicator=None, comment=None):
             if gridIndicator is None and comment is None:
                 dest.write('{:<{width}}'.format(label, width=20) +
@@ -1159,6 +1170,7 @@ class LFI(FileResource):
                            ':' +
                            comment +
                            '\n')
+
         out.write("### FORMAT: " + self.format + "\n")
         out.write("\n")
 
@@ -1214,6 +1226,7 @@ class LFI(FileResource):
 ###############
     @staticmethod
     def _get_latin1_latin2_lambert(lat0, rpk):
+
         def k(latin2):
             latin1 = lat0
             m1 = math.cos(math.radians(latin1))
@@ -1221,12 +1234,14 @@ class LFI(FileResource):
             t1 = math.tan(math.pi / 4. - math.radians(latin1) / 2.)
             t2 = math.tan(math.pi / 4. - math.radians(latin2) / 2.)
             return (math.log(m1) - math.log(m2)) / (math.log(t1) - math.log(t2)) - rpk
+
         try:
             import scipy.optimize as op
             latin2 = Angle(op.fsolve(k, math.degrees(2 * math.asin(rpk)) - lat0)[0],
                            'degrees')
             latin1 = Angle(float(lat0), 'degrees')
         except Exception:
+
             def solve(function, x0):
                 """A solver adapted to this problem. Do not try to use it elsewhere!"""
                 x1 = x0 + 1.
@@ -1237,6 +1252,7 @@ class LFI(FileResource):
                     x1, x2 = x2, x2 - (x2 - x1) / (y2 - y1) * y2
                     y1, y2 = y2, function(x2)
                 return x2
+
             latin2 = Angle(solve(k, math.degrees(2 * math.asin(rpk)) - lat0),
                            'degrees')
             latin1 = Angle(float(lat0), 'degrees')
@@ -1248,11 +1264,13 @@ class LFI(FileResource):
         Reads the geometry in the LFI articles.
         Interface to Fortran routines from 'ifsaux'.
         """
+
         def s(name, level):
             if self.true3d:
                 return name
             else:
                 return (name, level)
+
         listnames = self._listLFInames()
         if 'CARTESIAN' in listnames:
             cartesian = self.readfield(s('CARTESIAN', None)).getdata()
@@ -1400,11 +1418,13 @@ class LFI(FileResource):
     @FileResource._openbeforedelayed
     def _read_validity(self):
         """Reads the validity in the LFI articles."""
+
         def s(name, level):
             if self.true3d:
                 return name
             else:
                 return (name, level)
+
         listnames = self._listLFInames()
         kwargs = {}
         if 'DTEXP%TDATE' in listnames:

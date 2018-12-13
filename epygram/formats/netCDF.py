@@ -490,7 +490,7 @@ class netCDF(FileResource):
                     Ygrid = self._variables[var_corresponding_to_Y_grid][:, :]
                 elif len(self._variables[var_corresponding_to_X_grid].dimensions) == 3 and \
                      len(self._variables[var_corresponding_to_Y_grid].dimensions) == 3:
-                    #In this case, we check that X and Y are constant on Z axis
+                    # In this case, we check that X and Y are constant on Z axis
                     Xgrid = self._variables[var_corresponding_to_X_grid][:, :, :]
                     Ygrid = self._variables[var_corresponding_to_Y_grid][:, :, :]
                     if not all([numpy.all(Xgrid[0] == Xgrid[i] for i in range(len(Xgrid)))]):
@@ -891,6 +891,7 @@ class netCDF(FileResource):
                 assert len(self._dimensions[d]) == size, \
                     "dimensions mismatch: " + d + ": " + \
                     str(self._dimensions[d]) + " != " + str(size)
+
         def check_or_add_variable(varname, vartype,
                                   dimensions=(),
                                   **kwargs):

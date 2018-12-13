@@ -12,7 +12,6 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 import numpy
 import sys
 
-import footprints
 from footprints import FootprintBase, FPDict, FPList, proxy as fpx
 
 from epygram import profiles, epygramError, config
@@ -32,9 +31,12 @@ class VGeometry(RecursiveObject, FootprintBase):
     - flux: points are located on half-levels, hence are N+1.
 
     levels is a list with one item for each level represented in data.
-    Each item can be a scalar (constant value for all the data point),
-                     an array with the horizontal geographic shape (level constant in time but varying on the horizontal),
-                     an array with the first dimension corresponding to the validity lengthy and other dimensions to represent the horizotal.
+    Each item can be:\n
+        - a scalar (constant value for all the data point),
+        - an array with the horizontal geographic shape (level constant in time
+          but varying on the horizontal),
+        - an array with the first dimension corresponding to the validity
+          lengthy and other dimensions to represent the horizotal.
     It is not allowed to have a level varying in time and constant on the geographic domain.
     """
 
