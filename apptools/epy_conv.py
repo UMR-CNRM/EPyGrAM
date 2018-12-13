@@ -10,10 +10,13 @@ import six
 import argparse
 import time
 import copy
+from distutils.version import LooseVersion
 
 import footprints
 from footprints import FPDict, FPList
 import taylorism
+assert LooseVersion(taylorism.__version__) >= LooseVersion('1.0.7'), \
+    'Version of package taylorism (here {}) need to be >= 1.0.7'.format(taylorism.__version__)
 from bronx.fancies.display import printstatus
 from bronx.syntax.parsing import str2dict
 
@@ -24,9 +27,7 @@ from epygram.args_catalog import (add_arg_to_parser,
                                   operational_options, output_options)
 import grib_utilities
 
-# taylorism.interrupt.logger.setLevel('WARNING')
 epylog = footprints.loggers.getLogger(__name__)
-
 fmt_dict = {'grb':'GRIB', 'nc':'netCDF', 'geo':'GeoPoints'}
 
 
@@ -436,9 +437,6 @@ def main(filenames,
     individual_instructions = {'filename':filenames}
 
     # run !
-    assert taylorism.__version__ >= '1.0.7', \
-        ("This version of epy_conv needs an up-to-date 'taylorism' package: " +
-         "within vortex-1.2.2 at least. Update your environment.")
     taylorism.batch_main(common_instructions, individual_instructions,
                          scheduler=footprints.proxy.scheduler(limit='threads', max_threads=threads_number),
                          verbose=(progressmode == 'verbose'))
@@ -529,8 +527,8 @@ if __name__ == '__main__':
         fieldseed = [args.field]
     elif args.listoffields is not None:
         listfile = epygram.containers.File(filename=args.listoffields)
-        with open(listfile.abspath, 'r') as l:
-            fieldseed = l.readlines()
+        with open(listfile.abspath, 'r') as listfile:
+            fieldseed = listfile.readlines()
         for n in range(len(fieldseed)):
             fieldseed[n] = fieldseed[n].replace('\n', '').strip()
     else:
