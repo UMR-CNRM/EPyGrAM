@@ -130,7 +130,6 @@ class D3CommonField(Field):
                          }
         return fpx.geometry(**kwargs_vcoord)
 
-
 ##############
 # ABOUT DATA #
 ##############
@@ -280,6 +279,7 @@ class D3CommonField(Field):
                         value[n] = f(as_numpy_array(lon)[n], as_numpy_array(lat)[n])
 
             elif method == 'bilinear':
+
                 def simple_inter(x1, q1, x2, q2, x):
                     """Simple linear interpolant"""
                     return (x2 - x) / (x2 - x1) * q1 + (x - x1) / (x2 - x1) * q2
@@ -1117,8 +1117,10 @@ class D3CommonField(Field):
             weighting = 'nn'
             weight_funcs = None
         elif weighting == 'gauss':
+
             def gauss(s):
                 return lambda r: numpy.exp(-r ** 2 / s ** 2)
+
             weighting = 'custom'
             if sigma is None:
                 sigma = 2. * _resolution()
@@ -1890,10 +1892,8 @@ class D3CommonField(Field):
                                              statistical_process_on_duration=8)
                             elif other.validity.get() < self.validity.get():
                                 validity = self.validity.deepcopy()
-                                print('ok')
                                 validity.set(cumulativeduration=self.validity.get() - other.validity.get(),
                                              statistical_process_on_duration=4)
-                                print(validity)
                             new_attributes.update(validity=validity)
             if self.fid == other.fid:
                 new_attributes.update(fid=self.fid)
@@ -1986,7 +1986,6 @@ class D3Field(D3CommonField):
                 info="Generating process.")
         )
     )
-
 
 ##############
 # ABOUT DATA #
@@ -2477,6 +2476,7 @@ class D3VirtualField(D3CommonField):
             def fieldGenerator(getdata):
                 for field in self.fieldset:
                     yield field.fid, field
+
             self._fieldGenerator = fieldGenerator
 
             def getFieldByFid(fid, getdata):
@@ -2484,6 +2484,7 @@ class D3VirtualField(D3CommonField):
                 if len(result) != 1:
                     raise epygramError("There is no, or more than one, field(s) matching with this fid.")
                 return result[0]
+
             self._getFieldByFid = getFieldByFid
             self._mode = 'fieldset'
         else:
@@ -2498,10 +2499,12 @@ class D3VirtualField(D3CommonField):
                 for fid in fidlist:
                     field = self.resource.readfield(fid, getdata=getdata)
                     yield fid, field
+
             self._fieldGenerator = fieldGenerator
 
             def getFieldByFid(fid, getdata):
                 return self.resource.readfield(fid, getdata=getdata)
+
             self._getFieldByFid = getFieldByFid
             self._mode = 'resource'
 
@@ -2626,7 +2629,6 @@ class D3VirtualField(D3CommonField):
     @property
     def processtype(self):
         return self._processtype
-
 
 ##############
 # ABOUT DATA #
