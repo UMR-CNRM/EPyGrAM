@@ -201,7 +201,7 @@ class CombineLevelsResource(Resource):
                     structure = self.resource.readfield(fidList[0], getdata=False).structure
                     virtualField = fpx.field(fid={'generic':fid, self.format:fid},
                                              structure={'H2D':'3D',
-                                                        'point':'V1D',
+                                                        'Point':'V1D',
                                                         'H1D':'V2D',
                                                         'V1D':'V1D',
                                                         'V2D':'V2D',

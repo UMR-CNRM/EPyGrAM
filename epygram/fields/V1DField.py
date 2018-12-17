@@ -16,14 +16,14 @@ import six
 import footprints
 from bronx.graphics.axes import set_figax, set_nice_time_axis
 
-from .D3Field import D3CommonField, D3Field, D3VirtualField
+from .D3Field import _D3CommonField, D3Field, D3VirtualField
 from epygram import epygramError, config, util
 from epygram.geometries import V1DGeometry
 
 epylog = footprints.loggers.getLogger(__name__)
 
 
-class V1DCommonField(D3CommonField):
+class V1DCommonField(_D3CommonField):
     """
     Vertical 1-Dimension (column) virtual or not field class.
     A field is defined by its identifier 'fid',
@@ -38,7 +38,6 @@ class V1DCommonField(D3CommonField):
                 values=set(['V1D'])),
         )
     )
-
 
 ###################
 # PRE-APPLICATIVE #
@@ -146,7 +145,7 @@ def plotverticalhovmoller(profile,
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 
     if rcparams is None:
-        rcparams = [(('font',), dict(family='serif')),]
+        rcparams = [(('font',), dict(family='serif')), ]
     for args, kwargs in rcparams:
         plt.rc(*args, **kwargs)
 
@@ -494,7 +493,7 @@ def plotanimation(profile,
     fig, ax = plotprofiles(profile0,
                            title=title,
                            **kwargs)
-    #if kwargs.get('colorbar_over') is None:
+    # if kwargs.get('colorbar_over') is None:
     #        kwargs['colorbar_over'] = fig.axes[-1]  # the last being created, in plotfield()
     kwargs['over'] = (fig, ax)
 

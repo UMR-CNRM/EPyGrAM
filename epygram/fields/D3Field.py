@@ -28,7 +28,7 @@ from epygram.geometries import D3Geometry, SpectralGeometry
 from epygram.geometries.D3Geometry import D3ProjectedGeometry, D3RectangularGridGeometry
 
 
-class D3CommonField(Field):
+class _D3CommonField(Field):
     """
     3-Dimensions common field class.
     """
@@ -1490,30 +1490,30 @@ class D3CommonField(Field):
 
     def min(self, subzone=None):
         """Returns the minimum value of data."""
-        return super(D3CommonField, self).min(subzone=subzone)
+        return super(_D3CommonField, self).min(subzone=subzone)
 
     def max(self, subzone=None):
         """Returns the maximum value of data."""
-        return super(D3CommonField, self).max(subzone=subzone)
+        return super(_D3CommonField, self).max(subzone=subzone)
 
     def mean(self, subzone=None):
         """Returns the mean value of data."""
-        return super(D3CommonField, self).mean(subzone=subzone)
+        return super(_D3CommonField, self).mean(subzone=subzone)
 
     def std(self, subzone=None):
         """Returns the standard deviation of data."""
-        return super(D3CommonField, self).std(subzone=subzone)
+        return super(_D3CommonField, self).std(subzone=subzone)
 
     def quadmean(self, subzone=None):
         """Returns the quadratic mean of data."""
-        return super(D3CommonField, self).quadmean(subzone=subzone)
+        return super(_D3CommonField, self).quadmean(subzone=subzone)
 
     def nonzero(self, subzone=None):
         """
         Returns the number of non-zero values (whose absolute
         value > config.epsilon).
         """
-        return super(D3CommonField, self).nonzero(subzone=subzone)
+        return super(_D3CommonField, self).nonzero(subzone=subzone)
 
     def dctspectrum(self, subzone=None, level_index=None, validity_index=None):
         """
@@ -1802,7 +1802,7 @@ class D3CommonField(Field):
                 ' '.join(["operations on fields cannot be done if fields do",
                           "not share their time dimension."])
         else:
-            super(D3CommonField, self)._check_operands(other)
+            super(_D3CommonField, self)._check_operands(other)
 
     def __add__(self, other):
         """
@@ -1949,7 +1949,7 @@ class D3CommonField(Field):
         return newfield
 
 
-class D3Field(D3CommonField):
+class D3Field(_D3CommonField):
     """
     3-Dimensions field class.
     A field is defined by its identifier 'fid',
@@ -2434,7 +2434,7 @@ class D3Field(D3CommonField):
         self.geometry.position_on_horizontal_grid = 'center'
 
 
-class D3VirtualField(D3CommonField):
+class D3VirtualField(_D3CommonField):
     """
     3-Dimensions Virtual field class.
 
@@ -2491,7 +2491,7 @@ class D3VirtualField(D3CommonField):
             if self.resource is None or self.resource_fids == FPList():
                 raise epygramError("If you do not set fieldset, you need to provide resource and resource_fids.")
             fidlist = self.resource.find_fields_in_resource(seed=self.resource_fids,
-                                                            fieldtype=['point', 'V1D', 'V2D', 'H2D', '3D'])
+                                                            fieldtype=['Point', 'V1D', 'V2D', 'H2D', '3D'])
             if len(fidlist) == 0:
                 raise epygramError("There is no field in resource matching with resource_fids")
 
@@ -2514,7 +2514,7 @@ class D3VirtualField(D3CommonField):
         levelIsArray = False
 
         for fid, field in self._fieldGenerator(getdata=False):
-            if field.structure not in ['point', 'V1D', 'V2D', 'H1D', 'H2D', '3D']:
+            if field.structure not in ['Point', 'V1D', 'V2D', 'H1D', 'H2D', '3D']:
                 raise epygramError("3D virtual fields must be build from 'physical' fields only")
             if first:
                 self._structure = field.structure
@@ -2578,7 +2578,7 @@ class D3VirtualField(D3CommonField):
         newstructure = {'3D': '3D',
                         'H2D': '3D',
                         'V1D': 'V1D',
-                        'point': 'V1D',
+                        'Point': 'V1D',
                         'V2D': 'V2D',
                         'H1D': 'V2D'}[field.structure]
         assert newstructure == self.structure, \
@@ -2601,7 +2601,7 @@ class D3VirtualField(D3CommonField):
     def as_real_field(self, getdata=True):
         field3d = fpx.field(fid=dict(self.fid),
                             structure={'H2D':'3D',
-                                       'point':'V1D',
+                                       'Point':'V1D',
                                        'H1D':'V2D',
                                        'V1D':'V1D',
                                        'V2D':'V2D',

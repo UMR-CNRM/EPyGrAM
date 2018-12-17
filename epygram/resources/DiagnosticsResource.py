@@ -1165,16 +1165,16 @@ class DiagnosticsResource(Resource):
                 if 'level' in fid:
                     kwargs_geom['structure'] = {'3D':'H2D',
                                                 'H2D':'H2D',
-                                                'V1D':'point',
+                                                'V1D':'Point',
                                                 'V2D':'H1D',
                                                 'H1D':'H1D',
-                                                'point':'point'}[P.structure]
+                                                'Point':'Point'}[P.structure]
                     kwargs_geom['vcoordinate'].levels.append(fid['level'])
                 else:
                     A = hybridP['A']
                     kwargs_geom['structure'] = {'H2D':'3D',
                                                 '3D':'3D',
-                                                'point':'V1D',
+                                                'Point':'V1D',
                                                 'H1D':'V2D',
                                                 'V2D':'V2D',
                                                 'V1D':'V1D'}[P.structure]
@@ -1280,15 +1280,15 @@ class DiagnosticsResource(Resource):
                 if 'level' in fid:
                     kwargs_geom['structure'] = {'3D':'H2D',
                                                 'H2D':'H2D',
-                                                'V1D':'point',
+                                                'V1D':'Point',
                                                 'V2D':'H1D',
                                                 'H1D':'H1D',
-                                                'point':'point'}[Z.structure]
+                                                'Point':'Point'}[Z.structure]
                     kwargs_geom['vcoordinate'].levels.append(fid['level'])
                 else:
                     kwargs_geom['structure'] = {'H2D':'3D',
                                                 '3D':'3D',
-                                                'point':'V1D',
+                                                'Point':'V1D',
                                                 'H1D':'V2D',
                                                 'V2D':'V2D',
                                                 'V1D':'V1D'}[Z.structure]
@@ -1437,15 +1437,15 @@ class DiagnosticsAROMEResource(DiagnosticsResource):
                 if 'level' in fid:
                     kwargs_geom['structure'] = {'3D':'H2D',
                                                 'H2D':'H2D',
-                                                'V1D':'point',
+                                                'V1D':'Point',
                                                 'V2D':'H1D',
                                                 'H1D':'H1D',
-                                                'point':'point'}[HGeopot.structure]
+                                                'Point':'Point'}[HGeopot.structure]
                     kwargs_geom['vcoordinate'].levels.append(fid['level'])
                 else:
                     kwargs_geom['structure'] = {'H2D':'3D',
                                                 '3D':'3D',
-                                                'point':'V1D',
+                                                'Point':'V1D',
                                                 'H1D':'V2D',
                                                 'V2D':'V2D',
                                                 'V1D':'V1D'}[HGeopot.structure]

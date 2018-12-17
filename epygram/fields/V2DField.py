@@ -16,12 +16,12 @@ from bronx.graphics.axes import set_figax
 
 from epygram import config, util, epygramError
 from epygram.geometries import V2DGeometry
-from .D3Field import D3Field, D3CommonField, D3VirtualField
+from .D3Field import D3Field, _D3CommonField, D3VirtualField
 
 epylog = footprints.loggers.getLogger(__name__)
 
 
-class V2DCommonField(D3CommonField):
+class V2DCommonField(_D3CommonField):
     """
     Vertical 2-Dimension (section) virtual or not field class.
     A field is defined by its identifier 'fid',
@@ -125,7 +125,7 @@ class V2DCommonField(D3CommonField):
         from mpl_toolkits.axes_grid1 import make_axes_locatable
 
         if rcparams is None:
-            rcparams = [(('font',), dict(family='serif')),]
+            rcparams = [(('font',), dict(family='serif')), ]
         for args, kwargs in rcparams:
             plt.rc(*args, **kwargs)
         if figsize is None:
