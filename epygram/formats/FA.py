@@ -768,7 +768,8 @@ class FA(FileResource):
                                    0,
                                    fieldname[4:])[1:6]
         except RuntimeError as e:
-            if 'arpifs4py: Error code -93 was raised' in str(e):
+            if 'arpifs4py: Error code -93 was raised' in str(e) or \
+               'arpifs4py: Error code -91 was raised' in str(e):
                 raise epygramError(fieldname + ': seems like you try to read a MiscField as a H2DField...')
             else:
                 raise e
