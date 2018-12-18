@@ -34,14 +34,23 @@ epygram_colormaps = {'aspect':os.path.join(installdir, 'data', 'colormaps', 'asp
                      'rr1h':os.path.join(installdir, 'data', 'colormaps', 'rr1h.cmap'),
                      'rr6h':os.path.join(installdir, 'data', 'colormaps', 'rr24h.cmap'),
                      'rr24h':os.path.join(installdir, 'data', 'colormaps', 'rr24h.cmap'),
+                     'ptype':os.path.join(installdir, 'data', 'colormaps', 'ptype.cmap'),
+                     'ptype0':os.path.join(installdir, 'data', 'colormaps', 'ptype0.cmap'),
                      }
 #: epygram colormaps scalings
 epygram_colormaps_scaling = {'radar':[0., 0.1, 1., 3., 5., 7., 10., 15., 20., 30., 50., 70., 100., 150., 300.],
                              'rr1h':[0., 0.2, 0.5, 1, 1.5, 2., 4., 10., 25., 50., 100., 300.],
                              'rr6h':[0., 0.2, 0.5, 1, 1.5, 2., 4., 10., 25., 50., 100., 300.],
-                             'rr24h':[0., 0.2, 1., 2., 4., 10., 25., 50., 100., 150., 200., 300., 500.]
+                             'rr24h':[0., 0.2, 1., 2., 4., 10., 25., 50., 100., 150., 200., 300., 500.],
+                             'ptype':[0.1, 1.1, 3.1, 5.1, 6.1, 7.1, 8.1, 9.1, 10.1, 11.1, 12.1,
+                                      193.1, 201.1, 205.1, 206.1, 207.1, 213.1],
+                             'ptype0':[0., 0.1, 1.1, 3.1, 5.1, 6.1, 7.1, 8.1, 9.1, 10.1, 11.1, 12.1,
+                                       193.1, 201.1, 205.1, 206.1, 207.1, 213.1],
                              }
-
+#: epygram colormaps scalings labels
+epygram_colormaps_scaling_labels = {'ptype':[int(l) for l in epygram_colormaps_scaling['ptype'][1:]],
+                                    'ptype0':[int(l) for l in epygram_colormaps_scaling['ptype0'][1:]]
+                                    }
 
 # PARAMETERS #
 ##############
@@ -190,8 +199,8 @@ LFI_default_geoid = {'a':6371229., 'b':6371229.}
 
 #: netCDFMNH field dictionaries
 netCDFMNH_field_dictionaries_csv = {'default':os.path.join(installdir,
-                                                          'data',
-                                                          'Field_Dict_netCDFMNH.csv'),
+                                                           'data',
+                                                           'Field_Dict_netCDFMNH.csv'),
                                     'user':os.path.join(userlocaldir,
                                                         'user_Field_Dict_netCDFMNH.csv')}
 #: geoid of netCDFMNH files in pyproj syntax

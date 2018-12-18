@@ -80,7 +80,6 @@ class H2DField(D3Field):
         pt.setdata(value)
         return pt
 
-
 ###################
 # PRE-APPLICATIVE #
 ###################
@@ -129,7 +128,9 @@ class H2DField(D3Field):
                   drawequator_kwargs=None,
                   drawgreenwich_kwargs=None,
                   rcparams=None,
-                  colorbar_ax_kwargs=None):
+                  colorbar_ax_kwargs=None,
+                  force_colorbar_ticks_positions=None,
+                  force_colorbar_ticks_labels=None):
         """
         Makes a simple plot of the field, with a number of options.
 
@@ -239,6 +240,9 @@ class H2DField(D3Field):
         :param colorbar_ax_kwargs: kwargs to be passed to
                                    make_axes_locatable(ax).append_axes(colorbar,
                                                                        **kwargs)
+        :param force_colorbar_ticks_position: as a list, or 'center' to center
+            it between the color shifting levels of the colormap
+        :param force_colorbar_ticks_labels: as a list
 
         This method uses (hence requires) 'matplotlib' and 'basemap' libraries.
         """
@@ -250,7 +254,7 @@ class H2DField(D3Field):
         from mpl_toolkits.axes_grid1 import make_axes_locatable
 
         if rcparams is None:
-            rcparams = [(('font',), dict(family='serif')),]
+            rcparams = [(('font',), dict(family='serif')), ]
         for args, kwargs in rcparams:
             plt.rc(*args, **kwargs)
         if figsize is None:
@@ -389,20 +393,31 @@ class H2DField(D3Field):
             # set levels and ticks levels
             if isinstance(levelsnumber, list):
                 levels = levelsnumber
-                tick_levels = levelsnumber
+                ticks_positions = levelsnumber
             else:
                 levels = numpy.linspace(m, M, levelsnumber)
                 L = int((levelsnumber - 1) // 15) + 1
-                tick_levels = [levels[l]
-                               for l in range(len(levels) - (L // 3 + 1))
-                               if l % L == 0] + [levels[-1]]
+                ticks_positions = [levels[l]
+                                   for l in range(len(levels) - (L // 3 + 1))
+                                   if l % L == 0] + [levels[-1]]
             if colormap in config.colormaps_scaling:
                 (norm, levels) = util.scale_colormap(colormap)
-                tick_levels = levels
+                if not isinstance(levelsnumber, list):
+                    ticks_positions = levels
                 vmin = vmax = None
             else:
                 norm = None
-
+            ticks_labels = None
+            if force_colorbar_ticks_labels is not None:
+                ticks_labels = [str(l) for l in force_colorbar_ticks_labels]
+            if force_colorbar_ticks_positions is not None:
+                if isinstance(force_colorbar_ticks_positions, list):
+                    ticks_positions = force_colorbar_ticks_positions
+                elif force_colorbar_ticks_positions == 'center':
+                    ticks_positions = [(levels[i] + levels[i + 1]) / 2. for i in range(len(levels) - 1)]
+            if ticks_labels is not None:
+                assert len(ticks_labels) == len(ticks_positions), \
+                    str(len(ticks_labels)) + '!=' + str(len(ticks_positions))
             # 5. Plot
             #########
             if graphicmode == 'colorshades':
@@ -440,8 +455,10 @@ class H2DField(D3Field):
                     orientation = 'vertical' if colorbar in ('right', 'left') else 'horizontal'
                     cb = plt.colorbar(pf,
                                       orientation=orientation,
-                                      ticks=tick_levels,
+                                      ticks=ticks_positions,
                                       cax=cax)
+                    if ticks_labels is not None:
+                        cax.set_yticklabels(ticks_labels)
                     if minmax_in_title:
                         cb.set_label(minmax_in_title)
             elif graphicmode == 'contourlines':
@@ -512,8 +529,10 @@ class H2DField(D3Field):
                     orientation = 'vertical' if colorbar in ('right', 'left') else 'horizontal'
                     cb = plt.colorbar(pf,
                                       orientation=orientation,
-                                      ticks=tick_levels,
+                                      ticks=ticks_positions,
                                       cax=cax)
+                    if ticks_labels is not None:
+                        cax.set_yticklabels(ticks_labels)
                     if minmax_in_title != '':
                         cb.set_label(minmax_in_title)
                 elif uniform:
