@@ -243,7 +243,7 @@ AromeGuyaneForecastGrib: {
             namespace: "oper.multi.fr",
             suite: "oper",
             experiment: "",
-            block: ""
+            block: "forecast"
         },
         DsiVortex: {
             namespace: "vortex.multi.fr",
@@ -320,8 +320,6 @@ $(document).ready(function() {
         zoom_spinner[key].spinner("option", "step", 0.1);
     });    
     
-    var path_data = "/home/faure/web/data/";
-
     var waiting_text = '<img id="img-wait-spinner" src="static/loader.gif" alt="Loading"/></img>';
 
     ///////// V O R T E X  I N I T ///////// 
@@ -711,17 +709,28 @@ $("#getplot").click(function() {
             args_plot["file"]["A"] = activeDesc["local_path"].sort(); 
 
              //Gestion de la lecture des paramètres selon le format de fichier
-            //Cas d'un fichier grib
-            if (activeDesc["format"] == "grib") {
-                args_plot["field"]["A"] = giveme_grib_handgrip(activeSuffixe) ;
+            //Cas d'un fichier grib1
+            if (activeDesc["format"] == "grib1") {
+                args_plot["field"]["A"] = giveme_grib1_handgrip(activeSuffixe) ;
                 //Pour la composante V, tout idem sauf indicatorOfParameter
-                args_plot["field_v"]["A"] = giveme_grib_handgrip(activeSuffixe) ;
+                args_plot["field_v"]["A"] = giveme_grib1_handgrip(activeSuffixe) ;
                 try {
                     args_plot["field_v"]["A"]["indicatorOfParameter"] = parseInt(GetGribKey("#field_v" + activeSuffixe,0));                    
                 }
                 catch (err) {}
             }
-                    
+
+            //Cas d'un fichier grib2
+            else if (activeDesc["format"] == "grib2") {
+                args_plot["field"]["A"] = giveme_grib2_handgrip(activeSuffixe) ;
+                //Pour la composante V, tout idem sauf indicatorOfParameter
+                args_plot["field_v"]["A"] = giveme_grib2_handgrip(activeSuffixe) ;
+                try {
+                    args_plot["field_v"]["A"]["parameterNumber"] = parseInt(GetGribKey("#field_v" + activeSuffixe,0));                    
+                }
+                catch (err) {}
+            }
+
             else {
                 args_plot["field"]["A"] = $("#field" + activeSuffixe).val();
                 args_plot["field_v"]["A"] = $("#field_v" + activeSuffixe).val();
@@ -1069,11 +1078,13 @@ $("#getplotboth").click(function() {
     //$("#range1").change(function() {
 
     $(".smart_grib").change(function() {
-        if (Adesc["format"] == "grib") {SmartGribSelect(Adesc);}
+        if (Adesc["format"] == "grib1") {SmartGribSelect(Adesc);}
+        if (Adesc["format"] == "grib2") {SmartGrib2Select(Adesc);}
     });
 
     $(".smart_grib").click(function() {
-        if (Adesc["format"] == "grib") {SmartGribSelect(Adesc);}
+        if (Adesc["format"] == "grib1") {SmartGribSelect(Adesc);}
+        if (Adesc["format"] == "grib2") {SmartGrib2Select(Adesc);}
     });
 
 
@@ -1296,14 +1307,20 @@ $("#cloneFileField").click(function () {
         
         //Gestion auto completion grib
         $(".smart_grib_cloned").change(function() {
-            if (Bdesc["format"] == "grib") {
+            if (Bdesc["format"] == "grib1") {
                 SmartGribSelect(Bdesc);
+            }
+            if (Bdesc["format"] == "grib2") {
+                SmartGrib2Select(Bdesc);
             }
         });
 
         $(".smart_grib").click(function() {
-            if (Bdesc["format"] == "grib") {
+            if (Bdesc["format"] == "grib1") {
                 SmartGribSelect(Bdesc);
+            }
+            if (Bdesc["format"] == "grib2") {
+                SmartGrib2Select(Bdesc);
             }
         });
         
@@ -1668,74 +1685,6 @@ function ManageUandV(suffixe) {
 
 
 
-//Mise à jour auto de la liste des champs quand on change le fichier d'entrée  
-//function UpdateFields(onefilename,zoom_spinner) {
-function UpdateFields(oneDesc,zoom_spinner) {
-    // Arguments : chemin absolu du fichier
-    var args_fields = {};
-    args_fields["file"] = oneDesc["local_path"][oneDesc["local_path"].length-1]; //path_data + $(this).val();
-    
-    //Cas du clonage avant remplissage des champs : on vérifie que le fichier existe bien! 
-    
-    var args_fields_json = JSON.stringify(args_fields);
-
-    //Appel pour obtenir la liste des champs en JSON, utilisée dans une boite d'autocomplétion
-    $.ajax({
-        type: "POST",
-        async: true,
-        url: "/getfieldsasjson",
-        data: args_fields_json,
-        contentType: "application/json; charset=utf-8",
-        dataType: "json",
-        success: function(fields) {
-
-            //Reco empirique de FA vs GRIB -> attribution d'un type et (dés)activation des champs supplémentaires
-            if (fields[0]["typeOfLevel"] != undefined ) {
-                oneDesc["format"] = "grib";
-                $(".gribonly").prop("disabled", false);
-                $("#TypeOfLevel" + oneDesc["suffixe"]).prop("disabled", false);
-                $("#Level" + oneDesc["suffixe"]).prop("disabled", false);
-            }
-            if (fields[0]["typeOfLevel"] == undefined ) {
-                oneDesc["format"] = "FA";
-                $(".gribonly").prop("disabled", true);
-                $("#TypeOfLevel" + oneDesc["suffixe"]).prop("disabled", true);
-                $("#Level" + oneDesc["suffixe"]).prop("disabled", true);
-            }
-
-            if (oneDesc["format"] == "grib") {
-                oneDesc["grib_param"] = fields;
-                SmartGribSelect(oneDesc);
-            }
-            else if (oneDesc["format"] == "FA") {
-                var ListeParam = [];
-                $.each(fields, function(index, field) {
-                    ListeParam.push(field);
-                })
-                MakeAutoComplete("#field" + oneDesc["suffixe"],ListeParam);
-                MakeAutoComplete("#field_v" + oneDesc["suffixe"],ListeParam);
-            }
-            $("#accordion_actions").accordion("option", "active", 0);
-            
-            //On met la lecture du domaine à ce niveau pour éviter les conflits de lecture simultané de FA
-            //On ne met pas à jour le zoom pour le fichier B (= cloned)
-            if (oneDesc["suffixe"] == "") {
-                GetCoordinates(zoom_spinner,fields[0]);
-            }
-            
-        },
-        error: function(response) {
-            console.log(response.responseText + " File is probably non existent ");
-            //$("#getplot").prop("disabled", false);
-        }
-    });
-
-
-
-}
-
-
-
 
 function UpdateCheckGet() {
 
@@ -1751,7 +1700,6 @@ function UpdateCheckGet() {
         $("#getfile").effect("pulsate", 500);
         $("#file_path").prop("disabled", false);
         $("#file_path").effect("pulsate", 500);
-
 
     } else {
         $('#checkexistence').prop("disabled", true);
@@ -1884,6 +1832,81 @@ function MakeAutoComplete(id,liste) {
             });
 }
 
+
+
+//Mise à jour auto de la liste des champs quand on change le fichier d'entrée  
+function UpdateFields(oneDesc,zoom_spinner) {
+    // Arguments : chemin absolu du fichier
+    var args_fields = {};
+    args_fields["file"] = oneDesc["local_path"][oneDesc["local_path"].length-1]; 
+    
+    //Cas du clonage avant remplissage des champs : on vérifie que le fichier existe bien! 
+    
+    var args_fields_json = JSON.stringify(args_fields);
+
+    //Appel pour obtenir la liste des champs en JSON, utilisée dans une boite d'autocomplétion
+    $.ajax({
+        type: "POST",
+        async: true,
+        url: "/getfieldsasjson",
+        data: args_fields_json,
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function(fields) {
+
+            //Reco empirique de FA vs GRIB1 vs GRIB2 -> attribution d'un type et (dés)activation des champs supplémentaires
+            if (fields[0]["typeOfLevel"] != undefined ) {
+                oneDesc["format"] = "grib1";
+                $(".gribonly").prop("disabled", false);
+                $("#TypeOfLevel" + oneDesc["suffixe"]).prop("disabled", false);
+                $("#Level" + oneDesc["suffixe"]).prop("disabled", false);
+            }
+            if (fields[0]["discipline"] != undefined ) {
+                oneDesc["format"] = "grib2";
+                $(".gribonly").prop("disabled", false);
+                $("#TypeOfLevel" + oneDesc["suffixe"]).prop("disabled", false);
+                $("#Level" + oneDesc["suffixe"]).prop("disabled", false);
+            }
+            if (fields[0]["typeOfLevel"] == undefined && fields[0]["discipline"] == undefined) {
+                oneDesc["format"] = "FA";
+                $(".gribonly").prop("disabled", true);
+                $("#TypeOfLevel" + oneDesc["suffixe"]).prop("disabled", true);
+                $("#Level" + oneDesc["suffixe"]).prop("disabled", true);
+            }
+
+            if (oneDesc["format"] == "grib1") {
+                oneDesc["grib_param"] = fields;
+                SmartGribSelect(oneDesc);
+            }
+            else if (oneDesc["format"] == "grib2") {
+                oneDesc["grib_param"] = fields;
+                SmartGrib2Select(oneDesc);
+            }
+            else if (oneDesc["format"] == "FA") {
+                var ListeParam = [];
+                $.each(fields, function(index, field) {
+                    ListeParam.push(field);
+                })
+                MakeAutoComplete("#field" + oneDesc["suffixe"],ListeParam);
+                MakeAutoComplete("#field_v" + oneDesc["suffixe"],ListeParam);
+            }
+            $("#accordion_actions").accordion("option", "active", 0);
+            
+            //On met la lecture du domaine à ce niveau pour éviter les conflits de lecture simultané de FA
+            //On ne met pas à jour le zoom pour le fichier B (= cloned)
+            if (oneDesc["suffixe"] == "") {
+                GetCoordinates(zoom_spinner,fields[0]);
+            }
+            
+        },
+        error: function(response) {
+            console.log(response.responseText + " File is probably non existent ");
+            //$("#getplot").prop("disabled", false);
+        }
+    });
+}
+
+
 function GetGribKey(ID,number) {
     //En accord avec le remplissage, on retourne la n-ème valeur du champ ID (n=0, 1, ..)
     champs = $(ID).val().split('/') ;
@@ -1895,7 +1918,52 @@ function GetGribKey(ID,number) {
     	return $(ID).val().split('/')[0].trim();
     }
 }
+
+
+//Gives unique description of parameter (grib1)
+// with only "indicatorOfParameter", "table2Version","level","typeOfLevel"
+function giveme_grib1_handgrip(suffixe) {
+    
+    handgrip = {}
+    handgrip["indicatorOfParameter"] = parseInt(GetGribKey("#field"+suffixe,0));
+    handgrip["table2Version"] = parseInt(GetGribKey("#field"+suffixe,1));
+    handgrip["level"] = parseInt(GetGribKey("#Level"+suffixe,0));
+    handgrip["typeOfLevel"] = GetGribKey("#TypeOfLevel"+suffixe,0);
+    //console.log ("handgrip min max :" + handgrip);
+    return handgrip;
+    
+}
+
+//Gives unique description of parameter (grib2)
+// with only 'parameterNumber','parameterCategory','discipline','typeOfFirstFixedSurface',[ 'level' OR  'scaledValueOfCentralWaveNumber']
+//Web interface:
+//     #field           [ 'parameterNumber','name','parameterCategory',"shortname",'discipline' ];                    ]
+//     #TypeOfLevel     [ 'typeOfFirstFixedSurface' ] 
+//     #Level           [ 'level' OR  'scaledValueOfCentralWaveNumber']
+function giveme_grib2_handgrip(suffixe) {
+    
+    handgrip = {}
+    handgrip["parameterNumber"] = parseInt(GetGribKey("#field"+suffixe,0));
+    handgrip["parameterCategory"] = parseInt(GetGribKey("#field"+suffixe,2));
+    handgrip["discipline"] = parseInt(GetGribKey("#field"+suffixe,4));
+    //ISP (bad) hack
+    if (handgrip["parameterNumber"] == 7) {
+      handgrip["scaledValueOfCentralWaveNumber"] = parseInt(GetGribKey("#Level"+suffixe,0));
+    }
+    else {
+      handgrip["level"] = parseInt(GetGribKey("#Level"+suffixe,0));
+      handgrip["typeOfFirstFixedSurface"] = parseInt(GetGribKey("#TypeOfLevel"+suffixe,0));
+    }
+    
+    //console.log ("handgrip min max :" + handgrip);
+    return handgrip;
+    
+}
+
+
 //dict A ou B (avec suffixe)
+//from epygram list of field to text boxes...
+//GRIB1 only !
 function SmartGribSelect(oneDesc) {
     
             var ListeParam = [];
@@ -1955,21 +2023,161 @@ function SmartGribSelect(oneDesc) {
                 MakeAutoComplete("#TypeOfLevel" + oneDesc["suffixe"],ListeTypeLevel);
                 MakeAutoComplete("#Level" + oneDesc["suffixe"],ListeLevel);
   
-	if ($.inArray($("#field" + oneDesc["suffixe"]).val(), ListeParam) == -1)
-    { $("#field" + oneDesc["suffixe"]).addClass("fieldnothere"); }
-else  { $("#field" + oneDesc["suffixe"]).removeClass("fieldnothere"); }
+            //Check of existence disabled (grib1 and grib2 coexistence -> troubles...)
+            //if ($.inArray($("#field" + oneDesc["suffixe"]).val(), ListeParam) == -1)
+            //    { $("#field" + oneDesc["suffixe"]).addClass("fieldnothere"); }
+            //else  { $("#field" + oneDesc["suffixe"]).removeClass("fieldnothere"); }
 
-if ($.inArray($("#TypeOfLevel" + oneDesc["suffixe"]).val(), ListeTypeLevel) == -1)
-    { $("#TypeOfLevel" + oneDesc["suffixe"]).addClass("fieldnothere"); }
-else  { $("#TypeOfLevel" + oneDesc["suffixe"]).removeClass("fieldnothere"); }
+            //if ($.inArray($("#TypeOfLevel" + oneDesc["suffixe"]).val(), ListeTypeLevel) == -1)
+            //    { $("#TypeOfLevel" + oneDesc["suffixe"]).addClass("fieldnothere"); }
+            //else  { $("#TypeOfLevel" + oneDesc["suffixe"]).removeClass("fieldnothere"); }
 
-if ($.inArray($("#Level" + oneDesc["suffixe"]).val(), ListeLevel) == -1)
-    { $("#Level" + oneDesc["suffixe"]).addClass("fieldnothere"); }
-else  { $("#Level" + oneDesc["suffixe"]).removeClass("fieldnothere"); }
+            //if ($.inArray($("#Level" + oneDesc["suffixe"]).val(), ListeLevel) == -1)
+            //    { $("#Level" + oneDesc["suffixe"]).addClass("fieldnothere"); }
+            //else  { $("#Level" + oneDesc["suffixe"]).removeClass("fieldnothere"); }
 
 	
 }
+
+
+
+//dict A ou B (avec suffixe)
+//from epygram list of field to text boxes...
+//GRIB2 only !
+//GRIB1 keys from listfields:
+//{'typeOfLevel', 'indicatorOfTypeOfLevel', 'name', 'level', 'table2Version', ('editionNumber'), 'shortName', ('paramId'), 'indicatorOfParameter'}, () = unused in epyweb form
+//We gather them this way:
+//          [ "indicatorOfParameter","table2Version","shortName","name" ];                    ]
+//          [ 'typeOfLevel', 'indicatorOfTypeOfLevel' ] 
+//          [  'level' ]
+//to produce a handgrip for epygram plot with only:
+//          "indicatorOfParameter", "table2Version","level","typeOfLevel"
+
+//GRIB2 keys from listfields:
+//{'discipline', 'parameterCategory', 'name', 'level', 'typeOfFirstFixedSurface', ('productDefinitionTemplateNumber'), 'parameterNumber', ('editionNumber'), 'shortName', 'typeOfSecondFixedSurface', ('tablesVersion') } () = unused in epyweb form
+//Special case of ISP :
+//{'discipline', 'parameterCategory', 'name', 'satelliteSeries', 'instrumentType', 'productDefinitionTemplateNumber', 'parameterNumber', 'editionNumber', 'shortName', 'typeOfSecondFixedSurface', 'tablesVersion', 'satelliteNumber', 'scaleFactorOfCentralWaveNumber', 'scaledValueOfCentralWaveNumber'}
+
+//lengthOfTimeRange
+
+//We gather them this way:
+//          [ 'parameterNumber','name','parameterCategory',"shortname",'discipline' ];                    ]
+//          [ 'typeOfFirstFixedSurface' ] 
+//          [ 'level' OR  'scaledValueOfCentralWaveNumber']
+//to produce a handgrip for epygram plot with only:
+//          'parameterNumber','parameterCategory','discipline','typeOfFirstFixedSurface', ['level' OR  'scaledValueOfCentralWaveNumber']
+
+function SmartGrib2Select(oneDesc) {
     
+            var ListeParam = [];
+            var ListeTypeLevel = [];
+            var ListeLevel = [];
+            
+            //On récupère la 1ère valeur de chaque champ
+            var user_Param = GetGribKey("#field" + oneDesc["suffixe"],0);
+            var user_table2 = GetGribKey("#field" + oneDesc["suffixe"],2);
+            var user_TypeOfLevel = GetGribKey("#TypeOfLevel" + oneDesc["suffixe"],0);
+            //console.log("Valeur du champ Level type : " + user_TypeOfLevel)
+            //.val().split('/')[0].trim();
+            var user_Level = GetGribKey("#Level" + oneDesc["suffixe"],0);
+
+            //console.log(user_Param,user_TypeOfLevel,user_Level,user_table2,field["table2Version"])
+
+                //On parcourt la liste des clés du grib et on filtre 
+                //si valeurs déjà saisies dans les autres champs -> on filtre avec
+                //sinon on prend tout
+                //Exemple pour le paramètre : conditions sur le type de niveau et le niveau
+                $.each(oneDesc["grib_param"], function(index, field) {
+                  
+                    //Dealing with (missing) level in ISP case...
+                    try {
+                          levelasgrib1 = field["level"].toString();
+                        }
+                        catch(error) {
+                          console.log("ISP initialization " + field["scaledValueOfCentralWaveNumber"].toString())
+                          levelasgrib1 = field["scaledValueOfCentralWaveNumber"].toString();                          
+                        }
+                    
+                    
+                    
+                  //TYPE OF PARAM
+                    if ((user_TypeOfLevel == "" || user_TypeOfLevel == field["typeOfFirstFixedSurface"]) &&
+                    (user_Level == "" || user_Level == levelasgrib1)) {
+                    description = field["parameterNumber"] + " / " + field["name"] + " / " + field["parameterCategory"] + " / " + field["shortName"] + " / " + field["discipline"];
+                        //On n'ajoute que si pas déjà present
+                        if (jQuery.inArray(description,ListeParam) == -1) {
+                            ListeParam.push(description);
+                        }
+                    }
+   
+                //TYPE OF LEVEL : idem
+                    if ((user_Param == "" || user_Param == field["parameterNumber"]) &&
+                    (user_table2 == "" || user_table2 == field["parameterCategory"]) &&
+                    (user_Level == "" || user_Level == levelasgrib1)) {
+                        try {
+                            description = field["typeOfFirstFixedSurface"] + " / " + " None"; //field["indicatorOfTypeOfLevel"];
+                        }
+                        catch(error) {
+                          console.log("Gloups")
+                          description = "gloups"
+                        }
+                        if (jQuery.inArray(description,ListeTypeLevel) == -1) {
+                            ListeTypeLevel.push(description);
+                        }    
+                    }
+                    
+
+               //LEVEL
+                    if ((user_TypeOfLevel == "" || user_TypeOfLevel == field["typeOfFirstFixedSurface"]) &&
+                    (user_Param == "" || user_Param == field["parameterNumber"])) {
+                        try {
+                          description = field["level"].toString();
+                        }
+                        catch(error) {
+                          console.log("ISP level " + field["scaledValueOfCentralWaveNumber"].toString())
+                          description = field["scaledValueOfCentralWaveNumber"].toString();                          
+                        }
+                        
+                        if (jQuery.inArray(description,ListeLevel) == -1) {
+                            ListeLevel.push(description);
+                        }
+                    }
+                    
+                    //}
+                   });
+
+                MakeAutoComplete("#field" + oneDesc["suffixe"],ListeParam);
+                MakeAutoComplete("#field_v" + oneDesc["suffixe"],ListeParam);
+                MakeAutoComplete("#TypeOfLevel" + oneDesc["suffixe"],ListeTypeLevel);
+                MakeAutoComplete("#Level" + oneDesc["suffixe"],ListeLevel);
+  
+            //Check of existence disabled (grib1 and grib2 coexistence -> troubles...)
+            //if ($.inArray($("#field" + oneDesc["suffixe"]).val(), ListeParam) == -1)
+            //    { $("#field" + oneDesc["suffixe"]).addClass("fieldnothere"); }
+            //else  { $("#field" + oneDesc["suffixe"]).removeClass("fieldnothere"); }
+
+            //if ($.inArray($("#TypeOfLevel" + oneDesc["suffixe"]).val(), ListeTypeLevel) == -1)
+            //    { $("#TypeOfLevel" + oneDesc["suffixe"]).addClass("fieldnothere"); }
+            //else  { $("#TypeOfLevel" + oneDesc["suffixe"]).removeClass("fieldnothere"); }
+
+            //if ($.inArray($("#Level" + oneDesc["suffixe"]).val(), ListeLevel) == -1)
+            //    { $("#Level" + oneDesc["suffixe"]).addClass("fieldnothere"); }
+            //else  { $("#Level" + oneDesc["suffixe"]).removeClass("fieldnothere"); }
+
+  
+}
+
+
+
+
+
+
+
+
+
+
+
+
 function Param_Presets_Init(suffixe) {
     
     /*
@@ -1994,7 +2202,7 @@ function Param_Presets_Init(suffixe) {
     })
     }
     */
-    
+    //IMPLEMENT GRIB2 : TO DO !
     $("#param_hu2m"+suffixe).click(function() {
         ParameterPreset("hu2m",suffixe);
         if (suffixe == "") {SmartGribSelect(Adesc);}
@@ -2143,9 +2351,9 @@ function giveme_subzone(suffixe){
     if ($("#subzone").val() == "CIE") {
         subzone = null;           } 
     //Cas des gribs : subzone prohibé !
-    if (suffixe == "" & Adesc["format"] == "grib") {
+    if (suffixe == "" & (Adesc["format"] == "grib1" || Adesc["format"] == "grib2")) {
         subzone = null ;            }
-    if (suffixe == "_cloned" & Bdesc["format"] == "grib") {
+    if (suffixe == "_cloned" & (Bdesc["format"] == "grib1" || Bdesc["format"] == "grib2")) {
         subzone = null ;            }
     return subzone;
 }
@@ -2159,10 +2367,20 @@ function giveme_args_minmax(Onedesc) {
             
             var subzone = giveme_subzone(Onedesc["suffixe"]);
             
-            if (Onedesc["format"] == "grib") {
-                args_minmax_tmp["field"] = giveme_grib_handgrip(Onedesc["suffixe"]);
+            if (Onedesc["format"] == "grib1") {
+                args_minmax_tmp["field"] = giveme_grib1_handgrip(Onedesc["suffixe"]);
                 //Pour la composante V, tout idem sauf indicatorOfParameter
-                args_minmax_tmp["field_v"] = giveme_grib_handgrip(Onedesc["suffixe"]) ;
+                args_minmax_tmp["field_v"] = giveme_grib1_handgrip(Onedesc["suffixe"]) ;
+                try {
+                    args_minmax_tmp["field_v"]["indicatorOfParameter"] = parseInt(GetGribKey("#field_v",0));                    
+                }
+                catch (err) {}
+            }
+            
+            else if (Onedesc["format"] == "grib2") {
+                args_minmax_tmp["field"] = giveme_grib2_handgrip(Onedesc["suffixe"]);
+                //Pour la composante V, tout idem sauf indicatorOfParameter
+                args_minmax_tmp["field_v"] = giveme_grib2_handgrip(Onedesc["suffixe"]) ;
                 try {
                     args_minmax_tmp["field_v"]["indicatorOfParameter"] = parseInt(GetGribKey("#field_v",0));                    
                 }
@@ -2179,26 +2397,13 @@ function giveme_args_minmax(Onedesc) {
             }
 
             //JUST THE LAST ONE FOR THE MOMENT
-            args_minmax_tmp["file"] = Onedesc["local_path"][Onedesc["local_path"].length-1]; //path_data + $("#file").val() ;
+            args_minmax_tmp["file"] = Onedesc["local_path"][Onedesc["local_path"].length-1]; 
             args_minmax_tmp["subzone"] = subzone;
             args_minmax_tmp["FF"] = $("#FF"+Onedesc["suffixe"]).is(':checked');
             
             
             return args_minmax_tmp;
             
-}
-
-
-function giveme_grib_handgrip(suffixe) {
-    
-    handgrip = {}
-    handgrip["indicatorOfParameter"] = parseInt(GetGribKey("#field"+suffixe,0));
-    handgrip["table2Version"] = parseInt(GetGribKey("#field"+suffixe,1));
-    handgrip["level"] = parseInt(GetGribKey("#Level"+suffixe,0));
-    handgrip["typeOfLevel"] = GetGribKey("#TypeOfLevel"+suffixe,0);
-    //console.log ("handgrip min max :" + handgrip);
-    return handgrip;
-    
 }
 
 
@@ -2465,9 +2670,17 @@ function plot2html(targetDiv, previousDiv, response, number) {
 
 function gime_fields_args(ze_args_plot,zeDesc,ze_id,suffixe) {
             
-            if (zeDesc["format"] == "grib") {
-                ze_args_plot["field"][ze_id] = giveme_grib_handgrip(suffixe) ;
-                ze_args_plot["field_v"][ze_id] = giveme_grib_handgrip(suffixe) ;
+            if (zeDesc["format"] == "grib1") {
+                ze_args_plot["field"][ze_id] = giveme_grib1_handgrip(suffixe) ;
+                ze_args_plot["field_v"][ze_id] = giveme_grib1_handgrip(suffixe) ;
+                try {
+                    ze_args_plot["field_v"][ze_id]["indicatorOfParameter"] = parseInt(GetGribKey("#field_v" + suffixe,0));                    
+                }
+                catch (err) {}
+            }
+            else if (zeDesc["format"] == "grib2") {
+                ze_args_plot["field"][ze_id] = giveme_grib2_handgrip(suffixe) ;
+                ze_args_plot["field_v"][ze_id] = giveme_grib2_handgrip(suffixe) ;
                 try {
                     ze_args_plot["field_v"][ze_id]["indicatorOfParameter"] = parseInt(GetGribKey("#field_v" + suffixe,0));                    
                 }

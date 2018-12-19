@@ -132,7 +132,7 @@ $var cssfiles:
 								<tr>
 								    <td width="100px">
 										<label for="suite" id="suite_label">SUITE : </label>
-										<input id="suite" style="width:100px" title="SUITE" class="vortex"></input>
+										<input id="suite" style="width:100px" title="For Vortex xp, can be used as free text for additionnal legend" class="vortex"></input>
 									</td>
 									<td width="100px">
 										<label for="genv" id="genv_label">GENV : </label>
@@ -266,15 +266,15 @@ $var cssfiles:
 							<table>
 								<tr>
 									<td>
-										<label for="field" id="field_label">Field (Param/Table2/Name) : </label>
+										<label for="field" title="GRIB1 : indicatorOfParameter/table2Version/level/typeOfLevel GRIB2 : parameterNumber/name/parameterCategory/shortname/discipline" id="field_label">Field (Param/Table2/Name) : </label>
 										<input id="field" style="width:160px" title="" class="smart_grib"></input>
 									</td>
 									<td>
-										<label for="TypeOfLevel" id="TypeOfLevel_label">TypeOfLevel/Indicator : </label>
+										<label for="TypeOfLevel" title="GRIB1 typeOfLevel/indicatorOfTypeOfLevel  ; GRIB2 : typeOfFirstFixedSurface"  id="TypeOfLevel_label">TypeOfLevel/Indicator : </label>
 										<input id="TypeOfLevel" style="width:160px" title="" class="smart_grib"></input>
 									</td>
 									<td>
-										<label for="Level" id="Level_label">Level : </label>
+										<label for="Level" title="GRIB1 : level ; GRIB2 : level OR scaledValueOfCentralWaveNumber (ISP)" id="Level_label">Level : </label>
 										<input id="Level" style="width:100px" class="smart_grib"></input>
 									</td>
 								</tr>
@@ -538,7 +538,7 @@ $var cssfiles:
 				<button id="overlay" title="Overlay B on top of A" type="button" class="higlight">Overlay A and B</button>
 		</td>
 		<td>
-				<button id="difference" title="Difference A-B, contour A will be used" type="button" class="higlight">Difference B-A</button>
+				<button id="difference" title="Difference B-A, contour A will be used" type="button" class="higlight">Difference B-A</button>
 		</td>
 		<td>
 		  <button id="cloneFileField" type="button" title="Add another file(s) ; by default, A will be cloned (and in memory)">add B</button>
