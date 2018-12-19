@@ -5,7 +5,7 @@
 
 -----------------------------------------------------------
 
-.. autoclass:: D3CommonField
+.. autoclass:: _D3CommonField
    :show-inheritance:
    :members:
    :member-order: alphabetical

@@ -13,6 +13,7 @@ Installation
 .. autodata:: userlocaldir
 .. autodata:: epygram_colormaps
 .. autodata:: epygram_colormaps_scaling
+.. autodata:: epygram_colormaps_scaling_labels
 
 -----------------------------------------------------------
 
