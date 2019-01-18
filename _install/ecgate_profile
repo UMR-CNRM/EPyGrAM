@@ -1,0 +1,8 @@
+
+export PATH=/usr/local/apps/python/2.7.12-01/bin:$PATH
+export LD_LIBRARY_PATH=/usr/local/apps/python/2.7.12-01/lib:$LD_LIBRARY_PATH
+
+# EPyGrAM
+EPYGRAM_INSTALL_DIR=$HOME/.epygram/src
+export PYTHONPATH=$EPYGRAM_INSTALL_DIR:$EPYGRAM_INSTALL_DIR/site:$PYTHONPATH
+export PATH=$PATH:$EPYGRAM_INSTALL_DIR/apptools

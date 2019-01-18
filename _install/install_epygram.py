@@ -10,27 +10,43 @@ from collections import defaultdict
 epygram_repositories = {
     'cnrm':'/home/common/epygram',
     'bullx':'/home/gmap/mrpe/mary/public',
-    'dsidev':'/soprano/home/marp999/epygram'}
+    'dsidev':'/soprano/home/marp999/epygram',
+    'ecmwf_cc':'/home/ms/fr/rm9/public',
+    'ecgate':'/home/ms/fr/rm9/public',}
 vortex_repositories = {
     'cnrm':'/home/common/sync/vortex',
     'bullx':'/home/mf/dp/marp/verolive/vortex',
-    'dsidev':'/soprano/home/marp999/vortex'}
+    'dsidev':'/soprano/home/marp999/vortex',
+    'ecmwf_cc':'/home/ms/fr/sos/vortex',
+    'ecgate':'/home/ms/fr/sos/vortex'}
 userconfigs = defaultdict(lambda:'userconfig_no_arpifs4py.py',  # default
                           cnrm='userconfig_empty.py',
-                          bullx='userconfig_empty.py')
+                          bullx='userconfig_empty.py',
+                          ecmwf_cc='userconfig_empty.py')
+profiles = defaultdict(lambda:'.bash_profile',
+                       ecmwf_cc='.user_profile',
+                       ecgate='.user_profile')
 linkname = 'src'
 vortex_linkname = 'vortex'
 epygram_home = os.path.join(os.environ['HOME'], '.epygram')
 profile = os.path.join(epygram_home, 'profile')
 
-if any([h in os.environ.get('HOSTNAME', '') for h in
+hostname = os.environ.get('HOSTNAME', '')
+if any([hostname.startswith(h) for h in
         ['beaufix', 'prolix']]):
     localhost = 'bullx'
-elif any([h in os.environ.get('HOSTNAME', '') for h in
+elif any([h in hostname for h in
           ['alose', 'pagre', 'orphie', 'rason', 'guppy']]):
     localhost = 'dsidev'
+elif any([hostname.startswith(h) for h in
+          ['cca', 'ccb']]):
+    localhost = 'ecmwf_cc'
+elif any([hostname.startswith(h) for h in
+          ['ecgb',]]):
+    localhost = 'ecgate'
 else:
     localhost = 'cnrm'
+
 epygram_repo = epygram_repositories.get(localhost,
                                         epygram_repositories['cnrm'])
 vortex_repo = vortex_repositories.get(localhost,
@@ -92,14 +108,14 @@ def main(version='',
         shutil.copy(os.path.join(linkname, '_install', ufdf), ufdf)
     # bash_profile
     if update_bash_profile:
-        with io.open(os.path.join(os.environ['HOME'], '.bash_profile'), 'a') as pf:
+        with io.open(os.path.join(os.environ['HOME'], profiles[localhost]), 'a') as pf:
             pf.write('\n#\n')
             pf.write('# epygram & vortex environment\n')
             pf.write('if [ -f {} ]; then\n'.format(profile))
             pf.write('  . {}\n'.format(profile))
             pf.write('fi\n')
     print("Local installation complete in: {}".format(epygram_home))
-    print("To use it, restart session or source {}".format(profile))
+    print("To use it, restart session (if option -b) or source {}".format(profile))
 
 
 if __name__ == '__main__':
