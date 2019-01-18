@@ -365,6 +365,28 @@ class GRIBmessage(RecursiveObject, dict):
         """Setter for array attributes."""
         lowlevelgrib.set_array(self._gid, attribute, value)
 
+    def _set_fid(self, field, grib_edition):
+        if grib_edition == 1:
+            fid = field.fid.get('GRIB1')
+            param_list = ['table2Version', 'indicatorOfParameter']
+            for k in param_list:
+                self[k] = field.fid['GRIB1'][k]
+        else:
+            fid = field.fid.get('GRIB2', field.fid.get('generic', None))
+            assert fid is not None, "No adequate fid (GRIB2, generic) found to write in GRIB."
+            self['tablesVersion'] = fid.get('tablesVersion', config.GRIB_default_tablesVersion)
+            param_list = ['discipline', 'parameterCategory', 'parameterNumber',
+                          'productDefinitionTemplateNumber']
+            template = fid.get('productDefinitionTemplateNumber', 0)
+            that = dict(productDefinitionTemplateNumber=template)
+            if template != 32:
+                that['scaleFactorOfFirstFixedSurface'] = fid.get('scaleFactorOfFirstFixedSurface', 0)
+                if fid.get('typeOfSecondFixedSurface', 255) != 255:
+                    that['scaleFactorOfSecondFixedSurface'] = fid.get('scaleFactorOfSecondFixedSurface', 0)
+            param_list.extend(self.specific_fid_keys_for(that))
+            for k in param_list:
+                self[k] = fid[k]
+
     def _build_msg_from_field(self, field,
                               ordering=config.GRIB_default_ordering,
                               packing=None,
@@ -449,21 +471,7 @@ class GRIBmessage(RecursiveObject, dict):
                 self._gid = self._clone_from_sample(sample)
 
         # part 2 --- parameter
-        if grib_edition == 1:
-            fid = field.fid.get('GRIB1')
-            param_list = ['table2Version', 'indicatorOfParameter']
-            for k in param_list:
-                self[k] = field.fid['GRIB1'][k]
-        else:
-            fid = field.fid.get('GRIB2', field.fid.get('generic', None))
-            assert fid is not None, "No adequate fid (GRIB2, generic) found to write in GRIB."
-            self['tablesVersion'] = fid.get('tablesVersion', config.GRIB_default_tablesVersion)
-            param_list = ['discipline', 'parameterCategory', 'parameterNumber',
-                          'productDefinitionTemplateNumber']
-            template = fid.get('productDefinitionTemplateNumber', 0)
-            param_list.extend(self.specific_fid_keys_for(template))
-            for k in param_list:
-                self[k] = fid[k]
+        self._set_fid(field, grib_edition)
 
         # part 3 --- context
         if grib_edition == 2:
@@ -667,6 +675,8 @@ class GRIBmessage(RecursiveObject, dict):
                 # !!! this should be done but it changes gridType !!!
                 # self['numberOfVerticalCoordinateValues'] = 0
         elif grib_edition == 2:
+            fid = field.fid.get('GRIB2', field.fid.get('generic', None))
+            template = fid.get('productDefinitionTemplateNumber', 0)
             if template != 32:
                 if len(field.geometry.vcoordinate.levels) > 1:
                     raise epygramError("field has more than one level")
@@ -698,6 +708,8 @@ class GRIBmessage(RecursiveObject, dict):
                         self['bottomLevel'] = field.fid['GRIB2'].get('bottomLevel', field.geometry.vcoordinate.levels[0])
                     else:
                         self['bottomLevel'] = field.fid['generic'].get('bottomLevel', field.geometry.vcoordinate.levels[0])
+            # again, for fid may contain keys which may have to overwrite level
+            self._set_fid(field, grib_edition)
 
         # part 6 --- ordering
         if not field.spectral:
@@ -1156,9 +1168,15 @@ class GRIBmessage(RecursiveObject, dict):
         return validity
 
     @classmethod
-    def specific_fid_keys_for(cls, productDefinitionTemplateNumber=0):
+    def specific_fid_keys_for(cls,
+                              productDefinitionTemplateNumber=0,
+                              scaleFactorOfFirstFixedSurface=0,
+                              scaleFactorOfSecondFixedSurface=0):
         """
         Get specific fid keys according to **productDefinitionTemplateNumber**
+        and **scaleFactorOfFirstFixedSurface**
+        and **scaleFactorOfSecondFixedSurface**.
+
         (GRIB2 only).
         """
         if productDefinitionTemplateNumber == 32:
@@ -1174,13 +1192,24 @@ class GRIBmessage(RecursiveObject, dict):
                              ]
         else:
             specific_keys = []
+        if scaleFactorOfFirstFixedSurface != 0:
+            specific_keys.append('scaleFactorOfFirstFixedSurface')
+            specific_keys.append('scaledValueOfFirstFixedSurface')
+        if scaleFactorOfSecondFixedSurface != 0:
+            specific_keys.append('scaleFactorOfSecondFixedSurface')
+            specific_keys.append('scaledValueOfSecondFixedSurface')
         return specific_keys
 
     @classmethod
-    def fid_keys_for(cls, editionNumber, productDefinitionTemplateNumber=0):
+    def fid_keys_for(cls, editionNumber,
+                     productDefinitionTemplateNumber=0,
+                     scaleFactorOfFirstFixedSurface=0,
+                     scaleFactorOfSecondFixedSurface=0):
         """
         Get fid keys according to
-        **editionNumber** and **productDefinitionTemplateNumber**.
+        **editionNumber** and **productDefinitionTemplateNumber**,
+        **scaleFactorOfFirstFixedSurface**
+        and **scaleFactorOfSecondFixedSurface**.
         """
         fid_keys = copy.copy(cls._fid_keys[editionNumber])
         add_keys = []
@@ -1191,9 +1220,13 @@ class GRIBmessage(RecursiveObject, dict):
                            'topLevel',
                            'typeOfSecondFixedSurface',
                            'bottomLevel']
-            add_keys = cls.specific_fid_keys_for(productDefinitionTemplateNumber)
+            add_keys = cls.specific_fid_keys_for(productDefinitionTemplateNumber=productDefinitionTemplateNumber)
         elif productDefinitionTemplateNumber == 8:
-            add_keys = cls.specific_fid_keys_for(productDefinitionTemplateNumber)
+            add_keys = cls.specific_fid_keys_for(productDefinitionTemplateNumber=productDefinitionTemplateNumber)
+        if scaleFactorOfFirstFixedSurface != 0 or scaleFactorOfSecondFixedSurface != 0:
+            add_keys = cls.specific_fid_keys_for(scaleFactorOfFirstFixedSurface=scaleFactorOfFirstFixedSurface,
+                                                 scaleFactorOfSecondFixedSurface=scaleFactorOfSecondFixedSurface)
+            remove_keys = ['level']
         for k in remove_keys:
             fid_keys.remove(k)
         fid_keys.extend(add_keys)
@@ -1201,12 +1234,19 @@ class GRIBmessage(RecursiveObject, dict):
 
     def actual_fid_keys(self):
         """Adjust fid keys to specific grib edition and templates."""
+        template = None
+        scaleFactorOfFirstFixedSurface = 0
+        scaleFactorOfSecondFixedSurface = 0
         if self.grib_edition == 2:
             template = self['productDefinitionTemplateNumber']
-        else:
-            template = None
+            if template != 32:
+                scaleFactorOfFirstFixedSurface = self['scaleFactorOfFirstFixedSurface']
+                if self['typeOfSecondFixedSurface'] != 255:
+                    scaleFactorOfSecondFixedSurface = self['scaleFactorOfSecondFixedSurface']
         return self.fid_keys_for(self.grib_edition,
-                                 template)
+                                 productDefinitionTemplateNumber=template,
+                                 scaleFactorOfFirstFixedSurface=scaleFactorOfFirstFixedSurface,
+                                 scaleFactorOfSecondFixedSurface=scaleFactorOfSecondFixedSurface)
 
     def update(self, E, **F):
         """
