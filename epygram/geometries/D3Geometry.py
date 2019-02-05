@@ -27,7 +27,7 @@ from epygram import epygramError, config
 from epygram.util import (RecursiveObject, degrees_nearest_mod, Angle,
                           separation_line, write_formatted,
                           nearlyEqual, set_map_up, vtk_check_transform,
-                          get_file, as_numpy_array)
+                          get_file, as_numpy_array, moveaxis)
 from .VGeometry import VGeometry
 
 epylog = footprints.loggers.getLogger(__name__)
@@ -1360,7 +1360,7 @@ class D3RectangularGridGeometry(D3Geometry):
         if request == {'n':'1'} and not external_distance:
             result = [(numpy.rint(i0).astype('int'),
                        numpy.rint(j0).astype('int'))]
-            result = numpy.moveaxis(numpy.array(result), -1, 0)
+            result = moveaxis(numpy.array(result), -1, 0)
         else:
             # square: size
             if external_distance:
@@ -1378,7 +1378,7 @@ class D3RectangularGridGeometry(D3Geometry):
             ii = [i_int + di for di in ii]
             jj = [j_int + dj for dj in jj]
             result = [(i, j) for i in ii for j in jj]
-            result = numpy.moveaxis(numpy.array(result), -1, 0)
+            result = moveaxis(numpy.array(result), -1, 0)
 
             # filter: if external distance
             if external_distance:
@@ -1412,7 +1412,7 @@ class D3RectangularGridGeometry(D3Geometry):
                 result = result[0]
         else:
             # check all points in domain
-            for point in numpy.moveaxis(numpy.array(result), 0, -1):
+            for point in moveaxis(numpy.array(result), 0, -1):
                 if not numpy.all(self.point_is_inside_domain_ij(*point)):
                     raise epygramError("one point (" + str(lon) + ", " + str(lat) +
                                        ") too close to field domain borders.")
@@ -1710,7 +1710,7 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
         :param lon: longitude of point in degrees.
         :param lat: latitude of point in degrees.
         """
-        near_point = numpy.moveaxis(self.nearest_points(lon, lat, request={'n':'1'}), 0, -1)
+        near_point = moveaxis(self.nearest_points(lon, lat, request={'n':'1'}), 0, -1)
         return self.resolution_ij(*near_point)
 
     def resolution_ij(self, i, j, position=None):
@@ -4196,7 +4196,7 @@ class D3GaussGeometry(D3Geometry):
           Defaults to self.position_on_horizontal_grid.
         """
         lon, lat = as_numpy_array(lon), as_numpy_array(lat)
-        ij = numpy.moveaxis(self.nearest_points(lon, lat, {'n': '1'}, position), 0, -1).squeeze()
+        ij = moveaxis(self.nearest_points(lon, lat, {'n': '1'}, position), 0, -1).squeeze()
         return (ij[0], ij[1])
 
     def _allocate_colocation_grid(self, compressed=False, as_float=False):

@@ -22,7 +22,8 @@ from epygram import epygramError, config
 from epygram.util import (write_formatted, Angle,
                           degrees_nearest_mod, vtk_check_transform,
                           vtk_modify_grid, vtk_write_grid,
-                          as_numpy_array)
+                          as_numpy_array,
+                          moveaxis)
 from epygram.base import Field, FieldSet, FieldValidity, FieldValidityList, Resource
 from epygram.geometries import D3Geometry, SpectralGeometry
 from epygram.geometries.D3Geometry import D3ProjectedGeometry, D3RectangularGridGeometry
@@ -226,8 +227,8 @@ class _D3CommonField(Field):
             method = interpolation
 
         if method == 'nearest':
-            (ri, rj) = numpy.moveaxis(numpy.array(self.geometry.nearest_points(lon, lat, {'n':'1'},
-                                                  external_distance=external_distance)), 0, -1)
+            (ri, rj) = moveaxis(numpy.array(self.geometry.nearest_points(lon, lat, {'n':'1'},
+                                            external_distance=external_distance)), 0, -1)
             value = self.getvalue_ij(ri, rj, k, t, one=one)
             if neighborinfo:
                 (lon, lat) = self.geometry.ij2ll(ri, rj)

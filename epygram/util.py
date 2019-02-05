@@ -17,7 +17,8 @@ import sys
 import datetime
 import hashlib
 import os
-from six.moves.urllib.request import urlopen
+from six.moves.urllib.request import urlopen  # @UnresolvedImport
+from distutils.version import LooseVersion
 
 from footprints import FootprintBase
 from bronx.graphics.colormapping import add_cmap, get_norm4colorscale
@@ -1141,3 +1142,21 @@ def fmtfid(fmt, fid):
     else:
         fmtfid = fmt
     return fmtfid
+
+
+def moveaxis(a, source, destination):
+    """
+    Calls numpy.moveaxis(), or if numpy version is too old, emulates for simple
+    cases.
+    """
+    # CLEANME: workaround for old installs...
+    if LooseVersion(numpy.__version__) < LooseVersion('1.11.0'):
+        if source == 0 and destination == -1:
+            b = numpy.transpose(a, list(range(len(a.shape))[1:]) + [0])
+        elif source == -1 and destination == 0:
+            b = numpy.transpose(a, [-1] + list(range(len(a.shape))[:-1]))
+        else:
+            raise NotImplementedError('(source, destination) != (0,-1) or (-1,0) with that version of numpy')
+    else:
+        b = numpy.moveaxis(a, source, destination)
+    return b
