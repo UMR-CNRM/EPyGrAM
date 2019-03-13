@@ -1,3 +1,5 @@
+module load gcc  # for scipy.interpolate !! conflict w/ OOPS compilation
+module load openblas  # for scipy.interpolate
 module load python
 
 # ecCodes
