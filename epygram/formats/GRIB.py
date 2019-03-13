@@ -379,7 +379,7 @@ class GRIBmessage(RecursiveObject, dict):
                           'productDefinitionTemplateNumber']
             template = fid.get('productDefinitionTemplateNumber', 0)
             that = dict(productDefinitionTemplateNumber=template)
-            if template != 32:
+            if template not in (32, 33):
                 that['scaleFactorOfFirstFixedSurface'] = fid.get('scaleFactorOfFirstFixedSurface', 0)
                 if fid.get('typeOfSecondFixedSurface', 255) != 255:
                     that['scaleFactorOfSecondFixedSurface'] = fid.get('scaleFactorOfSecondFixedSurface', 0)
@@ -585,7 +585,6 @@ class GRIBmessage(RecursiveObject, dict):
                     elif lat_1 is None and lat_2 is None:
                         lat_0 = lat_0.get('degrees')
                         lat_1 = lat_2 = lat_0
-                    self['LaDInDegrees'] = lat_0
                     self['Latin1InDegrees'] = lat_1
                     self['Latin2InDegrees'] = lat_2
                     if abs(field.geometry.projection['rotation'].get('degrees')) > config.epsilon:
@@ -677,7 +676,7 @@ class GRIBmessage(RecursiveObject, dict):
         elif grib_edition == 2:
             fid = field.fid.get('GRIB2', field.fid.get('generic', None))
             template = fid.get('productDefinitionTemplateNumber', 0)
-            if template != 32:
+            if template not in (32, 33):
                 if len(field.geometry.vcoordinate.levels) > 1:
                     raise epygramError("field has more than one level")
                 self['scaleFactorOfFirstFixedSurface'] = 0
@@ -1179,7 +1178,7 @@ class GRIBmessage(RecursiveObject, dict):
 
         (GRIB2 only).
         """
-        if productDefinitionTemplateNumber == 32:
+        if productDefinitionTemplateNumber in (32, 33):
             specific_keys = ['satelliteSeries',
                              'satelliteNumber',
                              'instrumentType',
@@ -1214,7 +1213,7 @@ class GRIBmessage(RecursiveObject, dict):
         fid_keys = copy.copy(cls._fid_keys[editionNumber])
         add_keys = []
         remove_keys = []
-        if productDefinitionTemplateNumber == 32:
+        if productDefinitionTemplateNumber in (32, 33):
             remove_keys = ['typeOfFirstFixedSurface',
                            'level',
                            'topLevel',
@@ -1239,7 +1238,7 @@ class GRIBmessage(RecursiveObject, dict):
         scaleFactorOfSecondFixedSurface = 0
         if self.grib_edition == 2:
             template = self['productDefinitionTemplateNumber']
-            if template != 32:
+            if template not in (32, 33):
                 scaleFactorOfFirstFixedSurface = self['scaleFactorOfFirstFixedSurface']
                 if self['typeOfSecondFixedSurface'] != 255:
                     scaleFactorOfSecondFixedSurface = self['scaleFactorOfSecondFixedSurface']
@@ -1443,7 +1442,10 @@ class GRIB(FileResource):
         if self.openmode in ('r', 'a'):
             _file = io.open(self.container.abspath, 'rb')
             isgrib = _file.readline()[:4]
-            isgrib = isgrib.decode('utf-8')
+            try:
+                isgrib = isgrib.decode('utf-8')
+            except UnicodeDecodeError:
+                raise IOError("cannot decode this resource as GRIB.")
             _file.close()
             if isgrib != 'GRIB':
                 raise IOError("this resource is not a GRIB one.")
