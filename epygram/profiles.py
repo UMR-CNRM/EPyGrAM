@@ -216,7 +216,11 @@ def mass2fluxpressures(pi, vertical_mean, Ptop=default_Ptop):
     if not isinstance(pi, numpy.ndarray):
         pi = numpy.array(pi)
 
-    pi_tilde = numpy.zeros(pi.shape)
+    if isinstance(pi, numpy.ma.masked_array):
+        pi_tilde = numpy.ma.masked_all(pi.shape)
+        pi_tilde.mask = pi.mask
+    else:
+        pi_tilde = numpy.zeros(pi.shape)
     for k in range(1, L + 1):
         ik = k - 1  # python arranging
         if vertical_mean == 'geometric':
@@ -343,7 +347,11 @@ def pressure2altitude(R, T, vertical_mean,
             alpha[ik] = 1 - pi[ik] / pi_tilde[ik]
 
     # Geopotential
-    Phi = numpy.zeros(T.shape)
+    if isinstance(pi, numpy.ma.masked_array):
+        Phi = numpy.ma.masked_all(T.shape)
+        Phi.mask = pi.mask
+    else:
+        Phi = numpy.zeros(T.shape)
     partialsum = numpy.zeros(T.shape)
     for k in reversed(range(1, L + 1)):
         ik = k - 1  # python arranging

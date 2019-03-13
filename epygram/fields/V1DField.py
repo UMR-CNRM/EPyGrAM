@@ -299,7 +299,9 @@ def plotprofiles(profiles,
                  ema=False,
                  zoom=None,
                  figsize=(6., 9.),
-                 rcparams=None):
+                 rcparams=None,
+                 colors=None,
+                 legend_kwargs=None):
     """
     To plot a series of profiles. Returns a tuple of :mod:`matplotlib`
     (*Figure*, *ax*).
@@ -332,6 +334,10 @@ def plotprofiles(profiles,
     :param rcparams: list of (*args, **kwargs) to be passed to pyplot.rc()
                          defaults to [(('font',), dict(family='serif')),
                                       (('figure',), dict(autolayout=True))]
+    :param colors: list of matplotlib colors on which to iterate to plot each
+                   profile. Cyclic (with varying linestyle) if shorter than the
+                   number of profiles.
+    :param legend_kwargs: kwargs to be passed to matplotlib's legend()
     """
     import matplotlib.pyplot as plt
 
@@ -341,8 +347,9 @@ def plotprofiles(profiles,
     for args, kwargs in rcparams:
         plt.rc(*args, **kwargs)
 
-    colors = ['red', 'blue', 'green', 'orange', 'magenta', 'darkolivegreen',
-              'yellow', 'salmon', 'black']
+    if colors is None:
+        colors = ['red', 'blue', 'green', 'orange', 'magenta', 'darkolivegreen',
+                  'yellow', 'salmon', 'black']
     linestyles = ['-', '--', '-.', ':']
 
     if isinstance(profiles, V1DField):
@@ -430,7 +437,9 @@ def plotprofiles(profiles,
             ax.set_xlim(right=zoom['xmax'])
     if title is not None:
         ax.set_title(title)
-    legend = ax.legend(loc='upper right', shadow=True)
+    if legend_kwargs is None:
+        legend_kwargs = dict(loc='upper right', shadow=True)
+    legend = ax.legend(**legend_kwargs)
     for label in legend.get_texts():
         label.set_fontsize('medium')
     ax.set_xlabel(r'$' + unit + '$')
