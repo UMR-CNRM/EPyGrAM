@@ -92,7 +92,7 @@ def inquire_field_dict(fieldname):
             epylog.info("field '" + fieldname + "' is not referenced in Field_Dict_LFI. Assume its type being a MiscField.")
             matching_field = {'name':fieldname, 'type':'Misc', 'nature':'float', 'dimension':'1'}
 
-        cache_inquire[fieldname] = fd
+        cache_inquire[fieldname] = matching_field
 
     return dict(cache_inquire[fieldname])
 
