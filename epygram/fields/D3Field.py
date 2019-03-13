@@ -1819,7 +1819,7 @@ class _D3CommonField(Field):
                               geometry=self.geometry,
                               spectral_geometry=self.spectral_geometry,
                               validity=FieldValidityList(length=len(self.validity)))
-        if isinstance(other, self.__class__):
+        if isinstance(other, self.__class__) and (self.validity.is_valid() and other.validity.is_valid()):
             if len(self.validity) == 1:
                 if self.validity[0] == other.validity[0]:
                     new_attributes.update(validity=self.validity.deepcopy())
@@ -1871,7 +1871,7 @@ class _D3CommonField(Field):
                               geometry=self.geometry,
                               spectral_geometry=self.spectral_geometry,
                               validity=FieldValidityList(length=len(self.validity)))
-        if isinstance(other, self.__class__):
+        if isinstance(other, self.__class__) and (self.validity.is_valid() and other.validity.is_valid()):
             if len(self.validity) == 1:
                 if self.validity[0] == other.validity[0]:
                     new_attributes.update(validity=self.validity.deepcopy())
@@ -1887,7 +1887,9 @@ class _D3CommonField(Field):
                                     new_attributes.update(validity=validity)
                     else:
                         if self.validity.get() != other.validity.get():
-                            if self.validity.get() < other.validity.get():
+                            if None in (self.validity.get(), other.validity.get()):
+                                validity = FieldValidityList(length=len(self.validity))
+                            elif self.validity.get() < other.validity.get():
                                 validity = other.validity.deepcopy()
                                 validity.set(cumulativeduration=other.validity.get() - self.validity.get(),
                                              statistical_process_on_duration=8)

@@ -952,6 +952,10 @@ class FieldValidity(RecursiveObject):
            statistical_process_on_duration is not None:
             self._statistical_process_on_duration = statistical_process_on_duration
 
+    def is_valid(self):
+        """Check the validity is valid, i.e. not null."""
+        return self.get() is not None
+
 
 class FieldValidityList(RecursiveObject, list):
     """
@@ -1086,6 +1090,10 @@ class FieldValidityList(RecursiveObject, list):
         # We set the different objects
         for i in range(length):
             self[i].set(**{key: value[i] for (key, value) in mykwargs.items()})
+
+    def is_valid(self):
+        """Check the validity is valid, i.e. not null."""
+        return all([self[i].is_valid() for i in range(len(self))])
 
     def what(self, out=sys.stdout, cumulativeduration=True):
         """
