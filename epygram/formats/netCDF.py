@@ -51,6 +51,20 @@ _proj_dict = {'lambert':'lambert_conformal_conic',
 _proj_dict_inv = {v:k for k, v in _proj_dict.items()}
 
 
+def _default_numpy2json(obj):
+    """Helper to encode numpy arrays to json."""
+    if type(obj).__module__ == numpy.__name__:
+        if isinstance(obj, numpy.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, numpy.integer):
+            return int(obj)
+        elif isinstance(obj, numpy.float):
+            return float(obj)
+        else:
+            return obj.item()
+    raise TypeError('Unknown type:', type(obj))
+
+
 class netCDF(FileResource):
     """Class implementing all specificities for netCDF (4) resource format."""
 
@@ -773,6 +787,7 @@ class netCDF(FileResource):
         comment = {}
         for a in variable.ncattrs():
             if a != 'validity':
+                # CLEANME: all these conversions might be useless since the use of _default_numpy2json ?
                 if isinstance(variable.getncattr(a), numpy.float32):  # pb with json and float32
                     comment.update({a:numpy.float64(variable.getncattr(a))})
                 elif isinstance(variable.getncattr(a), numpy.int32):  # pb with json and int32
@@ -786,7 +801,7 @@ class netCDF(FileResource):
                     comment.update({a:numpy.int64(variable.getncattr(a))})
                 else:
                     comment.update({a:variable.getncattr(a)})
-        comment = json.dumps(comment)
+        comment = json.dumps(comment, default=_default_numpy2json)
         if comment != '{}':
             field_kwargs['comment'] = comment
         field = fpx.field(**field_kwargs)
