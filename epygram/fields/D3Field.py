@@ -981,10 +981,16 @@ class _D3CommonField(Field):
         :param minval: lower threshold
         """
         data = self.getdata()
-        if maxval is not None:
-            data[data > maxval] = maxval
-        if minval is not None:
-            data[data < minval] = minval
+        if isinstance(data, numpy.ma.masked_array):
+            if maxval is not None:
+                data.data[data.data > maxval] = maxval
+            if minval is not None:
+                data.data[data.data < minval] = minval
+        else:
+            if maxval is not None:
+                data[data > maxval] = maxval
+            if minval is not None:
+                data[data < minval] = minval
         self.data = data
 
     def resample(self, target_geometry,
