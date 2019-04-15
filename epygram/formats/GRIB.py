@@ -1136,7 +1136,7 @@ class GRIBmessage(RecursiveObject, dict):
             unit = units[self['indicatorOfUnitOfTimeRange']]
             forecastTime_unit = {k:v * self['forecastTime'] for k,v in unit.items()}
             forecastTime = datetime.timedelta(**forecastTime_unit)
-            if self['productDefinitionTemplateNumber'] == 8:
+            if self['productDefinitionTemplateNumber'] in (8, 11):
                 term = datetime.datetime(
                     self['yearOfEndOfOverallTimeInterval'],
                     self['monthOfEndOfOverallTimeInterval'],
