@@ -43,6 +43,9 @@ __all__ = ['FA', 'inquire_field_dict']
 epylog = footprints.loggers.getLogger(__name__)
 _cache_inquire_field_dict = {}
 
+_usual_SPdatasize_for_global_trunc = {'triangular':{1198:719400,
+                                                    1798:1619100}}
+
 
 def find_wind_pair(fieldname):
     """For a wind **fieldname**, find and return the pair."""
@@ -844,7 +847,15 @@ class FA(FileResource):
                     SPdatasize = self.spectral_geometry.etrans_inq(gpdims)[1]
                 elif self.spectral_geometry.space == 'legendre':
                     # Global
-                    SPdatasize = self.spectral_geometry.trans_inq(self.geometry.dimensions)[1]
+                    sizedict = _usual_SPdatasize_for_global_trunc
+                    shape = self.spectral_geometry.truncation['shape']
+                    trunc = self.spectral_geometry.truncation['max']
+                    # SPdatasize may be stored to avoid calling trans_inq ?
+                    if shape in sizedict and trunc in sizedict[shape]:
+                        SPdatasize = sizedict[shape].get(trunc)
+                    else:
+                        # if not, call trans_inq
+                        SPdatasize = self.spectral_geometry.trans_inq(self.geometry.dimensions)[1]
                     SPdatasize *= 2  # complex coefficients
                 datasize = SPdatasize
                 spectral_geometry = self.spectral_geometry
