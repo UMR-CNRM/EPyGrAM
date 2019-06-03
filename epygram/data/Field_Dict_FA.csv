@@ -454,6 +454,8 @@ name:SFX.GWKEY,type:Misc,nature:int,dimension:0
 name:SFX.SOLAR_PANEL,type:Misc,nature:int,dimension:0
 name:SFX.LEVL_OC[0-9][0-9],type:Misc,nature:int,dimension:1
 name:SFX.LEVL_OC[0-9],type:Misc,nature:int,dimension:1
+name:SFX.WRITE_EXT,type:Misc,nature:bool,dimension:0
+name:SFX.SPLIT_PATCH,type:Misc,nature:bool,dimension:0
 name:SFX.L_*,type:Misc,nature:bool,dimension:0
 
 # Surfex 2D Fields
