@@ -25,7 +25,7 @@ from epygram.args_catalog import (add_arg_to_parser,
                                   files_management, fields_management,
                                   misc_options, runtime_options,
                                   operational_options, output_options)
-import grib_utilities
+import griberies
 
 epylog = footprints.loggers.getLogger(__name__)
 fmt_dict = {'grb':'GRIB', 'nc':'netCDF', 'geo':'GeoPoints'}
@@ -189,13 +189,13 @@ class Griber(Converter):
                       Among ('oper', 'dble', 'test', 'research', 'unknown').",
                 optional=True,
                 default='research',
-                values=set(grib_utilities.productionStatusOfProcessedData_dict.keys()),
+                values=set(griberies.tables.productionStatusOfProcessedData_dict.keys()),
                 access='rwx'),
             typeofgeneratingprocess=dict(
-                info="cf. epygram.formats.grib_utilities.typeOfGeneratingProcess_dict.",
+                info="cf. epygram.formats.griberies.tables.typeOfGeneratingProcess_dict.",
                 optional=True,
                 default='Forecast',
-                values=set(grib_utilities.typeOfGeneratingProcess_dict.keys()),
+                values=set(griberies.tables.typeOfGeneratingProcess_dict.keys()),
                 access='rwx'),
             default_packing=dict(
                 info="to specify default packing of fields in GRIB target.",
@@ -243,9 +243,9 @@ class Griber(Converter):
 
         # generate additional keys
         if not isinstance(self.typeofgeneratingprocess, int):
-            typeOfGeneratingProcess = grib_utilities.typeOfGeneratingProcess_dict[self.typeofgeneratingprocess]
+            typeOfGeneratingProcess = griberies.tables.typeOfGeneratingProcess_dict[self.typeofgeneratingprocess]
         other_GRIB_options = {'generatingProcessIdentifier':255,
-                              'productionStatusOfProcessedData':grib_utilities.productionStatusOfProcessedData_dict[self.suite],
+                              'productionStatusOfProcessedData':griberies.tables.productionStatusOfProcessedData_dict[self.suite],
                               'typeOfGeneratingProcess':typeOfGeneratingProcess}
         other_GRIB_options.update(self.other_grib_options)
         # convert

@@ -6,9 +6,7 @@
 
 -----------------------------------------------------------
 
-.. autofunction:: inquire_field_dict
 .. autofunction:: get_generic_fid
-.. autofunction:: find_wind_pair
 
 -----------------------------------------------------------
 
@@ -16,4 +14,3 @@
    :show-inheritance:
    :members:
    :member-order: alphabetical
-

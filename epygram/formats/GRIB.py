@@ -25,8 +25,7 @@ import io
 import footprints
 from footprints import proxy as fpx, FPDict, FPList
 from bronx.meteo.conversion import q2R
-from bronx.syntax.parsing import str2dict
-import grib_utilities
+import griberies
 
 from epygram import config, epygramError, util
 from epygram.base import FieldSet, FieldValidity
@@ -108,9 +107,9 @@ class LowLevelGRIB(object):
         # from path of low_level_api:
         # remove /lib64/pythonX.Y/site-packages/eccodes/__init__.py
         # or /lib64/pythonX.Y/site-packages/grib_api/gribapi.py
-        if len(grib_utilities.get_samples_paths() + grib_utilities.get_definition_paths()) > 0:
-            grib_utilities.complete_grib_paths(install_dir, self.api_name,
-                                               reset=reset)
+        if len(griberies.get_samples_paths() + griberies.get_definition_paths()) > 0:
+            griberies.complete_grib_paths(install_dir, self.api_name,
+                                          reset=reset)
 
     #  BELOW: gribapi str/unicode incompatibility
     def set(self, gid, key, value):
@@ -154,12 +153,6 @@ onetotwo = {1:1,  # ground or water surface
             117:109,  # potential vorticity surface
             }
 twotoone = {v:k for (k, v) in onetotwo.items()}
-
-
-def parse_GRIBstr_todict(strfid):
-    """Parse and return a dict GRIB fid from a string."""
-    fid = str2dict(strfid, try_convert=int)
-    return fid
 
 
 class GRIBmessage(RecursiveObject, dict):
@@ -459,7 +452,7 @@ class GRIBmessage(RecursiveObject, dict):
             self._gid = self._clone_from_file(sample.replace('file:', ''))
         else:
             if all([sample + '.tmpl' not in os.listdir(pth)
-                    for pth in [p for p in grib_utilities.get_samples_paths()
+                    for pth in [p for p in griberies.get_samples_paths()
                                 if (os.path.exists(p) and os.path.isdir(p))]]):  # this sample is not found in samples path
                 if sample + '.tmpl' in os.listdir(config.GRIB_epygram_samples_path):  # but it is in epygram samples
                     fsample = os.path.join(config.GRIB_epygram_samples_path, sample) + '.tmpl'
@@ -520,12 +513,12 @@ class GRIBmessage(RecursiveObject, dict):
                 epylog.warning("geometry has no geoid: assume 'shapeOfTheEarth' = 6.")
                 self['shapeOfTheEarth'] = 6
             else:
-                if all([field.geometry.geoid.get(axis) == grib_utilities.pyproj_geoid_shapes[6][axis]
+                if all([field.geometry.geoid.get(axis) == griberies.tables.pyproj_geoid_shapes[6][axis]
                         for axis in ('a', 'b')]):
                     self['shapeOfTheEarth'] = 6
                 else:
                     found = False
-                    for s, g in grib_utilities.pyproj_geoid_shapes.items():
+                    for s, g in griberies.tables.pyproj_geoid_shapes.items():
                         if s in (0, 2, 4, 5, 6, 8, 9) and field.geometry.geoid == g:
                             self['shapeOfTheEarth'] = s
                             break
@@ -555,6 +548,8 @@ class GRIBmessage(RecursiveObject, dict):
             if field.geometry.rectangular_grid:
                 self['Ni'] = field.geometry.dimensions['X']
                 self['Nj'] = field.geometry.dimensions['Y']
+                if grib_edition == 2:  # if lower than sample, it is not modified by ecCodes !
+                    self['numberOfDataPoints'] = field.geometry.dimensions['X'] * field.geometry.dimensions['Y']
             else:
                 pass  # done below
             # 5.3: type of geometry
@@ -585,6 +580,7 @@ class GRIBmessage(RecursiveObject, dict):
                     elif lat_1 is None and lat_2 is None:
                         lat_0 = lat_0.get('degrees')
                         lat_1 = lat_2 = lat_0
+                    self['LaD'] = int(lat_0 * 1e6)
                     self['Latin1InDegrees'] = lat_1
                     self['Latin2InDegrees'] = lat_2
                     if abs(field.geometry.projection['rotation'].get('degrees')) > config.epsilon:
@@ -898,7 +894,7 @@ class GRIBmessage(RecursiveObject, dict):
         """
         geoid = config.default_geoid
         try:
-            geoid = grib_utilities.pyproj_geoid_shapes[self['shapeOfTheEarth']]
+            geoid = griberies.tables.pyproj_geoid_shapes[self['shapeOfTheEarth']]
         except KeyError:
             if self['shapeOfTheEarth'] == 1:
                 radius = (float(self['scaledValueOfRadiusOfSphericalEarth']) /
@@ -1579,8 +1575,7 @@ class GRIB(FileResource):
         Syntax example: 'shortName':'u+v', or 'indicatorOfParameter':'33+34'
         """
         if isinstance(fieldseed, six.string_types):
-            fieldseed = parse_GRIBstr_todict(fieldseed)
-
+            fieldseed = griberies.parse_GRIBstr_todict(fieldseed)
         seeds = [fieldseed.copy(), fieldseed.copy()]
         for i in (0, 1):
             for k, v in seeds[i].items():
@@ -1592,7 +1587,6 @@ class GRIB(FileResource):
                         seeds[i][k] = v
         Ufid = self.find_fields_in_resource(seeds[0])
         Vfid = self.find_fields_in_resource(seeds[1])
-
         return (sorted(Ufid), sorted(Vfid))
 
     @FileResource._openbeforedelayed
@@ -1689,10 +1683,10 @@ class GRIB(FileResource):
             fieldslist = []
             for s in seed:
                 if isinstance(s, six.string_types):
-                    s = parse_GRIBstr_todict(s)
+                    s = griberies.parse_GRIBstr_todict(s)
                 fieldslist.extend(self.listfields(select=s))
         elif isinstance(seed, six.string_types):
-            fieldslist = self.listfields(select=parse_GRIBstr_todict(seed))
+            fieldslist = self.listfields(select=griberies.parse_GRIBstr_todict(seed))
         else:
             raise epygramError("unknown type for seed: " + str(type(seed)))
         if fieldslist == []:
@@ -1730,8 +1724,7 @@ class GRIB(FileResource):
           *get_info_as_json* as json in field.comment.
         """
         if isinstance(handgrip, six.string_types):
-            handgrip = parse_GRIBstr_todict(handgrip)
-
+            handgrip = griberies.parse_GRIBstr_todict(handgrip)
         matchingfields = self.readfields(handgrip,
                                          getdata=getdata,
                                          footprints_proxy_as_builder=footprints_proxy_as_builder,
@@ -1773,7 +1766,7 @@ class GRIB(FileResource):
         *handgrip* is a dict where you can store all requested GRIB keys...
         """
         if isinstance(handgrip, six.string_types):
-            handgrip = parse_GRIBstr_todict(handgrip)
+            handgrip = griberies.parse_GRIBstr_todict(handgrip)
         matchingfields = FieldSet()
         filtering_keys = [str(k) for k in handgrip.keys()]  # gribapi str/unicode incompatibility
         for i, k in enumerate(filtering_keys):

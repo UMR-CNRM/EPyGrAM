@@ -6,7 +6,6 @@
 """
 Contains some base classes of *epygram*.
 """
-
 from __future__ import print_function, absolute_import, unicode_literals, division
 
 import numpy
@@ -233,6 +232,75 @@ class Field(RecursiveObject, FootprintBase):
             self.setdata(self._data - scalar)
         elif operation == '/':
             self.setdata(self._data / scalar)
+
+    def _masked_data(self, mask_outside=config.mask_outside):
+        """
+        Return data as a masked array.
+
+        :param mask_outside: if None, mask is empty;
+                             else, mask data outside +/- this value
+        """
+        if isinstance(self._data, numpy.ma.masked_array):
+            mdata = self._data
+        else:
+            if mask_outside is not None:
+                mdata = numpy.ma.masked_outside(self._data,
+                                                -mask_outside,
+                                                mask_outside)
+            else:
+                mdata = numpy.ma.masked_array(self._data)
+        return mdata
+
+    def _masked_any(self, other, mask_outside=config.mask_outside):
+        """
+        Get a copy of self data and **other** data, with masked data where any
+        of them is masked.
+
+        :param mask_outside: if None, mask is empty;
+                             else, mask data outside +/- this value
+        """
+        data = self._masked_data(mask_outside)
+        otherdata = other._masked_data(mask_outside)
+        cmask = numpy.logical_or(data.mask, otherdata.mask)
+        data.mask = cmask
+        otherdata.mask = cmask
+        return data, otherdata
+
+    def distance_to(self, other,
+                    commonmask=False,
+                    mask_outside=config.mask_outside):
+        """
+        Compute a distance to another field, as 1. - R(self, other)
+        where R is the correlation coefficient between the 2 fields.
+
+        :param commonmask: if True, compute distance on the subset of point that
+                           are not masked for any of the two fields.
+        :param mask_outside: if None, mask is empty;
+                             else, mask data outside +/- this value
+        """
+        # TODO: treat more complicated cases, where mask is present but commonmask is False,
+        # or not present but to be masked without commonmask...
+        from bronx.syntax.arrays import stretch_array
+        otherdata = other.data
+        selfdata = self.data
+        if commonmask:
+            if not isinstance(selfdata, numpy.ma.masked_array):
+                selfdata = numpy.ma.masked_outside(selfdata,
+                                                   -mask_outside,
+                                                   mask_outside)
+            if not isinstance(otherdata, numpy.ma.masked_array):
+                otherdata = numpy.ma.masked_outside(otherdata,
+                                                    -mask_outside,
+                                                    mask_outside)
+            cmask = numpy.logical_or(selfdata.mask, otherdata.mask)
+            selfdata.mask = cmask
+            otherdata.mask = cmask
+        otherdata = stretch_array(otherdata)
+        selfdata = stretch_array(selfdata)
+        if not commonmask and otherdata.shape != selfdata.shape:
+            raise Exception('inconsistency between masks')
+        r = 1. - numpy.corrcoef(selfdata, otherdata)[0,1]
+        return r
 
     def _check_operands(self, other):
         """
@@ -827,12 +895,11 @@ class FieldValidity(RecursiveObject):
 
         If *asGRIB2code*, returned as a GRIB2 code (cf. GRIB2 table 4.10).
         """
-        import grib_utilities
-
+        import griberies
         if not asGRIB2code and isinstance(self._statistical_process_on_duration, int):
-            out = grib_utilities.statistical_processes.get(self._statistical_process_on_duration, None)
+            out = griberies.tables.statistical_processes.get(self._statistical_process_on_duration, None)
         elif asGRIB2code and isinstance(self._statistical_process_on_duration, six.string_types):
-            out = {v:k for k, v in grib_utilities.statistical_processes.items()}.get(self._statistical_process_on_duration, None)
+            out = {v:k for k, v in griberies.tables.statistical_processes.items()}.get(self._statistical_process_on_duration, None)
         else:
             out = self._statistical_process_on_duration
 

@@ -1,0 +1,87 @@
+######## vapp=arpege ########
+## 4D-var France
+	'arpege-4dvarfr-assim-oper-fc'      = { generatingProcessIdentifier =  12; }
+	'arpege-4dvarfr-assim-dble-fc'      = { generatingProcessIdentifier =  22; }
+	'arpege-4dvarfr-production-oper-fc' = { generatingProcessIdentifier = 211; }
+	'arpege-4dvarfr-production-dble-fc' = { generatingProcessIdentifier = 212; }
+## Arpege Court
+	'arpege-courtfr-production-oper-fc' = { generatingProcessIdentifier =  80; }
+	'arpege-courtfr-production-dble-fc' = { generatingProcessIdentifier = 150; }
+## PEARP
+	{% for kpearp in range(defs.n_members_pearp) %}
+		{% set kpearpstr = '{:03d}'.format(kpearp) %}
+		'arpege-pearp-production-oper-fc_m{{kpearpstr}}' = { generatingProcessIdentifier = 211; subCentre = {{kpearp+100}}; }
+		'arpege-pearp-production-dble-fc_m{{kpearpstr}}' = { generatingProcessIdentifier = 212; subCentre = {{kpearp+100}}; }
+	{% endfor %}
+## CTPINI
+	'arpege-ctpinifr-production-oper-fc' = { generatingProcessIdentifier = 173; }
+
+######## vapp=aladin ########
+## Antilles-Guyane
+	'aladin-antiguy-assim-oper-fc'      = { generatingProcessIdentifier = 215; }
+	'aladin-antiguy-production-oper-fc' = { generatingProcessIdentifier =  15; }
+## N-Caledonie
+	'aladin-caledonie-assim-oper-fc'      = { generatingProcessIdentifier = 215; }
+	'aladin-caledonie-production-oper-fc' = { generatingProcessIdentifier =  15; }
+## IFS
+	'aladin-ifsfr-production-oper-fc' = { generatingProcessIdentifier = 184; }
+## Reunion
+	'aladin-reunion-assim-oper-fc'      = { generatingProcessIdentifier = 215; }
+	'aladin-reunion-assim-dble-fc'      = { generatingProcessIdentifier =  19; }
+	'aladin-reunion-production-oper-fc' = { generatingProcessIdentifier =  15; }
+	'aladin-reunion-production-dble-fc' = { generatingProcessIdentifier = 219; }
+## Polynesie
+	'aladin-polynesie-assim-oper-fc'      = { generatingProcessIdentifier =  15; }
+	'aladin-polynesie-production-oper-fc' = { generatingProcessIdentifier = 215; }
+
+######## vapp=arome ########
+## 3Dvar France
+	'arome-3dvarfr-assim-oper-fc'      = { generatingProcessIdentifier = 213; }
+	'arome-3dvarfr-production-oper-fc' = { generatingProcessIdentifier = 204; }
+	'arome-3dvarfr-assim-dble-fc'      = { generatingProcessIdentifier = 210; }
+	'arome-3dvarfr-production-dble-fc' = { generatingProcessIdentifier = 209; }
+## AROME-PE
+	{% for kpearo in range(defs.n_members_pearo) %}
+		{% set kpearostr = '{:03d}'.format(kpearo) %}
+		'arome-pefrance-production-oper-fc_m{{kpearostr}}' = { generatingProcessIdentifier = 117; subCentre = {{kpearo+100}}; }
+		'arome-pefrance-production-dble-fc_m{{kpearostr}}' = { generatingProcessIdentifier = 119; subCentre = {{kpearo+100}}; }
+	{% endfor %}
+## AROME-PI
+	'arome-pifrance-production-oper-fc' = { generatingProcessIdentifier = 62; indicatorOfUnitOfTimeRange = "15m"; }
+	'arome-pifrance-production-dble-fc' = { generatingProcessIdentifier = 63; indicatorOfUnitOfTimeRange = "15m"; }
+## Pegase
+	'arome-pegase-production-oper-fc' = { generatingProcessIdentifier = 190; }
+## Antilles
+	'arome-antilles-production-oper-fc' = { generatingProcessIdentifier = 121; }
+	'arome-antilles-production-dble-fc' = { generatingProcessIdentifier = 122; }
+## N-Caledonie
+	'arome-caledonie-production-oper-fc' = { generatingProcessIdentifier = 121; }
+	'arome-caledonie-production-dble-fc' = { generatingProcessIdentifier = 122; }
+## Guyane
+	'arome-guyane-production-oper-fc' = { generatingProcessIdentifier = 121; }
+	'arome-guyane-production-dble-fc' = { generatingProcessIdentifier = 122; }
+## Indien
+	'arome-indien-production-oper-fc' = { generatingProcessIdentifier = 121; }
+	'arome-indien-production-dble-fc' = { generatingProcessIdentifier = 122; }
+## Polynesie
+	'arome-polynesie-production-oper-fc' = { generatingProcessIdentifier = 121; }
+	'arome-polynesie-production-dble-fc' = { generatingProcessIdentifier = 122; }
+## IFS
+	'arome-ifsfr-production-oper-fc' = { generatingProcessIdentifier = 254; }
+## Assistances
+	{% for slot in ['assmp1', 'assmp2', 'assms1', 'assms2' ] %}
+		'arome-{{slot}}-production-oper-fc'  = { generatingProcessIdentifier = 204; }
+		'arome-{{slot}}-production-dble-fc'  = { generatingProcessIdentifier = 209; }
+	{% endfor %}
+## Sahel
+	'arome-sahel-production-oper-fc'  = { generatingProcessIdentifier = 204; }
+	'arome-sahel-production-dble-fc'  = { generatingProcessIdentifier = 209; }
+## Commerciaux (sport de 00 à 09 - extérieurs de 10 à 19)
+	{% for kcom in range(defs.n_asscom_slots) %}
+		{% set kcomstr = '{:02d}'.format(kcom) %}
+		'arome-asscom{{kcomstr}}-production-oper-fc' = { generatingProcessIdentifier = 253; subCentre = {{kcomstr}}; }
+		'arome-asscom{{kcomstr}}-production-dble-fc' = { generatingProcessIdentifier = 209; subCentre = 99; }
+	{% endfor %}
+
+####### The default setting: please do not edit bellow this line ########
+	'default' = { generatingProcessIdentifier = 221; }

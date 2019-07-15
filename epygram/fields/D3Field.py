@@ -1709,6 +1709,26 @@ class _D3CommonField(Field):
         else:
             return fig, ax
 
+    def scatter_with(self, other,
+                     over=(None, None),
+                     figsize=None,
+                     mask_outside=config.mask_outside):
+        """
+        Make a scatter plot of self data against other data.
+
+        :param figsize: figure sizes in inches, e.g. (5, 8.5).
+                        Default figsize is config.plotsizes.
+        """
+        for f in (self, other):
+            if f.spectral:
+                f.sp2gp()
+        data, otherdata = self._masked_any(other, mask_outside)
+        otherdata = otherdata.compressed()
+        data = data.compressed()
+        fig, ax = set_figax(*over, figsize=figsize)
+        ax.scatter(data, otherdata)
+        return fig, ax
+
     def global_shift_center(self, longitude_shift):
         """
         Shifts the center of the geometry (and the data accordingly) by

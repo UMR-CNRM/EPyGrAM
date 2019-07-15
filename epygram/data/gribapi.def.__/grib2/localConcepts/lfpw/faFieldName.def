@@ -1,0 +1,32 @@
+# Flux turbulent de vapeur d’eau en surface
+"SURFFL.Q_TURBUL" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 22 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    productDefinitionTemplateNumber = 8 ;
+    typeOfStatisticalProcessing = 1 ;
+    LSTCUM = 1 ;
+}
+
+# Flux turbulent du vent zonal en surface
+"SURFFL.U_TURBUL" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 23 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Flux turbulent du vent méridien en surface
+"SURFFL.V_TURBUL" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 24 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}

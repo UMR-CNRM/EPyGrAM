@@ -21,7 +21,7 @@ inner_packages = [
     'ctypesForFortran',
     'epygram',
     'epyweb',
-    'grib_utilities',
+    'griberies',
     'pyexttiff',
     'userconfig',
     'usevortex',

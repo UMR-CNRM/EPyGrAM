@@ -11,8 +11,7 @@ Module contains:
   - guess the format of an existing resource in a given container;
   - create a Resource instance with a generic function,
     eventually (if already existing) without knowing its format *a priori*;
-  - some catalogs of GRIB numbers
-  - ...
+  - FA field names recognition
 """
 
 from __future__ import print_function, absolute_import, unicode_literals, division
@@ -27,6 +26,8 @@ from bronx.system.unistd import stderr_redirected
 from epygram import config, epygramError, util
 
 __all__ = []
+
+from . import fafields
 
 # Formats loading used to have to follow an order,
 # for common dynamic libraries of different versions.

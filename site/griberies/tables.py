@@ -6,10 +6,7 @@
 """
 Contains equivalences tables for GRIB encoding.
 """
-
 from __future__ import print_function, absolute_import, unicode_literals, division
-
-import os
 
 #: Aliases to *productionStatusOfProcessedData* numbers
 productionStatusOfProcessedData_dict = {'oper':0,
@@ -78,48 +75,3 @@ statistical_processes = {0:'average',
                          10:'summation',
                          11:'standardized anomaly'
                          }
-
-
-def complete_grib_paths(rootdir, api_name, reset=False):
-    """
-    Complete GRIB_SAMPLES_PATH and GRIB_DEFINITION_PATH according to **rootdir**
-    installation path of GRIB API **api_name**.
-
-    :param rootdir: the directory in which is installed the API
-    :param api_name: the name of the GRIB API, among ('eccodes', 'grib_api')
-    :param reset: ignore predefined values of the variables
-
-    Reconstructed path are ``$rootdir$/share/$api_name$/samples``
-    and ``$rootdir$/share/$api_name$/definitions``
-    """
-    # FIXME: seems not to work on Bull: to be exported beforehand ?
-    if api_name == 'grib_api':
-        sp = 'GRIB_SAMPLES_PATH'
-        dp = 'GRIB_DEFINITION_PATH'
-    elif api_name == 'eccodes':
-        sp = 'ECCODES_SAMPLES_PATH'
-        dp = 'ECCODES_DEFINITION_PATH'
-    loc_samples = [os.path.join(rootdir, 'share', api_name, 'samples')]
-    loc_defs = [os.path.join(rootdir, 'share', api_name, 'definitions')]
-    if not reset and os.environ.get(sp, False):
-        loc_samples.append(os.environ.get(sp))
-    if not reset and os.environ.get(dp, False):
-        loc_defs.append(os.environ.get(dp))
-    os.environ[sp] = os.pathsep.join(loc_samples)
-    os.environ[dp] = os.pathsep.join(loc_defs)
-
-
-def _get_paths(obj):
-    paths = os.pathsep.join([os.environ.get('ECCODES_{}_PATH'.format(obj), ''),
-                             os.environ.get('GRIB_{}_PATH'.format(obj), '')])
-    return [p for p in paths.split(os.pathsep) if p not in ('', '.')]
-
-
-def get_samples_paths():
-    """Get the environment-variable-set path to samples"""
-    return _get_paths('SAMPLES')
-
-
-def get_definition_paths():
-    """Get the environment-variable-set path to definitions"""
-    return _get_paths('DEFINITION')

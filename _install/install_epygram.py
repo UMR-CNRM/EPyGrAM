@@ -103,9 +103,12 @@ def main(version='',
     if not os.path.exists('userconfig.py'):
         shutil.copy(os.path.join(linkname, '_install', userconfig),
                     'userconfig.py')
-    ufdf = 'user_Field_Dict_FA.csv'
-    if not os.path.exists(ufdf):
-        shutil.copy(os.path.join(linkname, '_install', ufdf), ufdf)
+    for example in ('sfxflddesc_mod.F90', 'gribapi.def.0'):
+        if not os.path.exists(example):
+            if os.path.isdir(example):
+                shutil.copytree(os.path.join(linkname, '_install', example), example)
+            else:
+                shutil.copy(os.path.join(linkname, '_install', example), example)
     # bash_profile
     if update_bash_profile:
         with io.open(os.path.join(os.environ['HOME'], profiles[localhost]), 'a') as pf:

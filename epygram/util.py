@@ -22,6 +22,7 @@ from distutils.version import LooseVersion
 
 from footprints import FootprintBase
 from bronx.graphics.colormapping import add_cmap, get_norm4colorscale
+from bronx.syntax.decorators import nicedeco
 
 from epygram import config, epygramError
 
@@ -902,10 +903,14 @@ def set_map_up(bm, ax,
         bm.bluemarble(alpha=bluemarble, ax=ax)
     if drawcoastlines:
         bm.drawcoastlines(ax=ax, **drawcoastlines_kwargs)
-    if departments:
-        import json
-        with open(config.installdir + '/data/departments.json', 'r') as dp:
-            depts = json.load(dp)[1]
+    if departments:  # TODO: load only once, and store to the bm object
+        if not hasattr(bm, '_epygram_departments'):
+            import json
+            with open(config.installdir + '/data/departments.json', 'r') as dp:
+                depts = json.load(dp)[1]
+            bm._epygram_departments = depts
+        else:
+            depts = bm._epygram_departments
         for d in range(len(depts)):
             for part in range(len(depts[d])):
                 dlon = depts[d][part][0]
@@ -1160,3 +1165,13 @@ def moveaxis(a, source, destination):
     else:
         b = numpy.moveaxis(a, source, destination)
     return b
+
+
+@nicedeco
+def call_before(mtd, hook_mtd):
+    """Decorator for methods: call method hook_mtd before actually calling method."""
+    def hooked(self, *args, **kwargs):
+        if not self.initialized:
+            getattr(self, hook_mtd)()
+        return mtd(self, *args, **kwargs)
+    return hooked

@@ -24,7 +24,7 @@ from epygram.base import FieldSet, FieldValidityList
 from epygram.resources import FileResource
 from epygram.geometries.VGeometry import (hybridP2pressure, hybridP2altitude,
                                           pressure2altitude)
-from epygram.formats.FA import FA, get_generic_fid, inquire_field_dict
+from epygram.formats.FA import FA, get_generic_fid
 
 __all__ = ['FA3d']
 
@@ -226,7 +226,7 @@ class FA3d(FileResource):
 
         params3D = {}
         for f in self.listfields():
-            info = inquire_field_dict(self._cont[f][0])
+            info = FA.gribdef.FA2GRIB(self._cont[f][0])
             # separate H2D from Misc
             if self._field_type(f) == 'H2D':
                 # separate 3D from 2D
