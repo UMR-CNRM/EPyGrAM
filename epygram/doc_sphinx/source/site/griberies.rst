@@ -6,6 +6,13 @@
 
 -----------------------------------------------------------
 
+.. autoclass:: GribDef
+   :show-inheritance:
+   :members:
+   :member-order: alphabetical
+
+-----------------------------------------------------------
+
 .. autofunction:: complete_grib_paths
 .. autofunction:: set_definition_path
 .. autofunction:: get_samples_paths

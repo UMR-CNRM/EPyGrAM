@@ -1171,7 +1171,6 @@ def moveaxis(a, source, destination):
 def call_before(mtd, hook_mtd):
     """Decorator for methods: call method hook_mtd before actually calling method."""
     def hooked(self, *args, **kwargs):
-        if not self.initialized:
-            getattr(self, hook_mtd)()
+        getattr(self, hook_mtd)()
         return mtd(self, *args, **kwargs)
     return hooked

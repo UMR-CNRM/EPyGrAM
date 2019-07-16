@@ -101,14 +101,18 @@ class LowLevelGRIB(object):
             self.InternalError = eccodes.CodesInternalError
             self.version = eccodes.__version__
 
-    def init_env(self, reset=False):
-        """Ensure grib_api/eccodes variables are consistent with inner library."""
-        install_dir = os.path.sep.join(self.api.__file__.split(os.path.sep)[:-5])
+    @property
+    def installdir(self):
         # from path of low_level_api:
         # remove /lib64/pythonX.Y/site-packages/eccodes/__init__.py
         # or /lib64/pythonX.Y/site-packages/grib_api/gribapi.py
+        realpath = os.path.realpath(self.api.__file__)
+        return os.path.sep.join(realpath.split(os.path.sep)[:-5])
+
+    def init_env(self, reset=False):
+        """Ensure grib_api/eccodes variables are consistent with inner library."""
         if len(griberies.get_samples_paths() + griberies.get_definition_paths()) > 0:
-            griberies.complete_grib_paths(install_dir, self.api_name,
+            griberies.complete_grib_paths(self.install_dir, self.api_name,
                                           reset=reset)
 
     #  BELOW: gribapi str/unicode incompatibility
@@ -138,6 +142,59 @@ class LowLevelGRIB(object):
 
 
 lowlevelgrib = LowLevelGRIB(config.GRIB_lowlevel_api)
+
+
+class NamesGribDef(griberies.GribDef):
+    """Handle *name* and *shortName* GRIB definitions."""
+
+    def __init__(self, actual_init=True, concepts=['name', 'shortName']):
+        super(NamesGribDef, self).__init__(actual_init, concepts)
+
+    def _actual_init(self):
+        """Read definition files."""
+        # get definition paths, from env variable
+        defpaths = griberies.get_definition_paths()
+        # and from gribapi/eccodes install
+        defpaths.append(os.path.join(lowlevelgrib.installdir,
+                                     'share','eccodes','definitions'))
+        for d in defpaths:
+            for grib_edition in ('grib1', 'grib2'):
+                for concept in self._concepts:
+                    self._readConcept(concept, d, grib_edition)
+        self.initialized = True
+
+    def _readConcept(self, concept, directory,
+                     grib_edition=griberies.GribDef.default_grib_edition):
+        pathname = os.path.join(directory, grib_edition, concept + '.def')
+        if os.path.exists(pathname):
+            self.read(pathname, grib_edition)
+
+    def name(self, fid,
+             grib_edition=griberies.GribDef.default_grib_edition,
+             include_comments=False):
+        """
+        'name' equivalence lookup:
+          - if **fid** is a name, get the associated GRIB key/value pairs
+          - if **fid** is a set of GRIB key/value pairs, get the associated name(s)
+
+        :param grib_edition: among ('grib1', 'grib2'), the version of GRIB fid
+        :param include_comments: if a comment is present if grib def, bring it in fid
+        """
+        return self._lookup(fid, 'name', grib_edition, include_comments)
+
+    def shortName(self, fid,
+                  grib_edition=griberies.GribDef.default_grib_edition,
+                  include_comments=False):
+        """
+        'name' equivalence lookup:
+          - if **fid** is a shortName, get the associated GRIB key/value pairs
+          - if **fid** is a set of GRIB key/value pairs, get the associated shortName(s)
+
+        :param grib_edition: among ('grib1', 'grib2'), the version of GRIB fid
+        :param include_comments: if a comment is present if grib def, bring it in fid
+        """
+        return self._lookup(fid, 'shortName', grib_edition, include_comments)
+
 
 # conversion of surface types for geometry purposes only
 onetotwo = {1:1,  # ground or water surface

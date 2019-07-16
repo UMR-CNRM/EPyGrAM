@@ -688,7 +688,7 @@ class Resource(RecursiveObject, FootprintBase):
         """Context enter."""
         return self
 
-    def __exit__(self, t, v, tbk):
+    def __exit__(self, t, v, tbk):  # @UnusedVariables
         """Context exit."""
         self.close()
 

@@ -14,26 +14,11 @@ import re
 import six
 import io
 
-from bronx.syntax.decorators import nicedeco
-
 import griberies
 from epygram import config, epygramError
 
 
-@nicedeco
-def _init_before(mtd):
-    """
-    Decorator for methods: call method actual_init if not initialized before
-    actually calling method.
-    """
-    def initialized(self, *args, **kwargs):
-        if not self.initialized:
-            self.actual_init()
-        return mtd(self, *args, **kwargs)
-    return initialized
-
-
-class FaGribDef(object):
+class FaGribDef(griberies.GribDef):
     """
     Handle FA-related GRIB definition files.
     To add user files:
@@ -43,16 +28,10 @@ class FaGribDef(object):
 
     re_dirname = re.compile('gribapi\.def\.[\d_]+')
     _official_rootdir = os.path.join(config.installdir, 'data')
-    default_grib_edition = 'grib2'
-    concepts = ('faFieldName.def', 'faModelName.def', 'faLevelName.def')
 
-    def __init__(self, actual_init=True):
-        self.tables = {'grib1':{c:{} for c in self.concepts},
-                       'grib2':{c:{} for c in self.concepts}}
-        if actual_init:
-            self.actual_init()
-        else:
-            self.initialized = False
+    def __init__(self, actual_init=True,
+                 concepts=['faFieldName', 'faModelName', 'faLevelName']):
+        super(FaGribDef, self).__init__(actual_init, concepts)
 
     def _find_gribdefs(self, root):
         dirs = []
@@ -63,7 +42,8 @@ class FaGribDef(object):
                     dirs.append(d)
         return dirs
 
-    def actual_init(self):
+    def _actual_init(self):
+        """Read definition files."""
         # official fagribdef
         defpaths = griberies.get_definition_paths()
         defpaths = self._find_gribdefs(self._official_rootdir) + defpaths
@@ -72,18 +52,19 @@ class FaGribDef(object):
         # read gribdef files
         for d in defpaths:
             for grib_edition in ('grib1', 'grib2'):
-                for concept in self.concepts:
+                for concept in self._concepts:
                     self._read_localConcept(concept, d, grib_edition)
         self.initialized = True
 
-    def _read_localConcept(self, concept, directory, grib_edition=default_grib_edition):
-        pathname = os.path.join(directory, grib_edition, 'localConcepts', 'lfpw', concept)
+    def _read_localConcept(self, concept, directory,
+                           grib_edition=griberies.GribDef.default_grib_edition):
+        pathname = os.path.join(directory, grib_edition, 'localConcepts', 'lfpw', concept + '.def')
         if os.path.exists(pathname):
-            self.tables[grib_edition][concept].update(griberies.read_gribdef(pathname))
+            self.read(pathname, grib_edition)
 
-    @_init_before
+    @griberies.init_before
     def FA2GRIB(self, fieldname,
-                grib_edition=default_grib_edition,
+                grib_edition=griberies.GribDef.default_grib_edition,
                 include_comments=False,
                 fatal=False,
                 filter_non_GRIB_keys=True):
@@ -94,24 +75,26 @@ class FaGribDef(object):
         :param include_comments: if a comment is present if grib def, bring it in fid
         :param fatal: if True and fieldname is not retrieved, raise a ValueError;
             else, return a default 255 fid
-        :param filter_non_GRIB_keys: filter out the non-GRIb keys that may be
+        :param filter_non_GRIB_keys: filter out the non-GRIB keys that may be
             present in grib def of field
         """
         _re_altitude = re.compile('(?P<ltype>[A-W]+)(?P<level>\d+)(?P<param>.+)')
-        if fieldname in self.tables[grib_edition]['faFieldName.def']:
-            fid = copy.copy(self.tables[grib_edition]['faFieldName.def'][fieldname])
-        elif fieldname.replace(' ', '_') in self.tables[grib_edition]['faFieldName.def']:
-            fid = copy.copy(self.tables[grib_edition]['faFieldName.def'][fieldname.replace(' ', '_')])
+        if fieldname in self.tables[grib_edition]['faFieldName']:
+            fid = self._get_def(fieldname, 'faFieldName',
+                                grib_edition, include_comments)
+        elif fieldname.replace(' ', '_') in self.tables[grib_edition]['faFieldName']:  # FIXME: ?
+            fid = self._get_def(fieldname.replace(' ', '_'), 'faFieldName',
+                                grib_edition, include_comments)
         else:
             rematch = _re_altitude.match(fieldname)
             if rematch:
-                fid = copy.copy(self.tables[grib_edition]['faLevelName.def'].get(
+                fid = copy.copy(self.tables[grib_edition]['faLevelName'].get(
                     rematch.group('ltype'),
-                    self.tables[grib_edition]['faLevelName.def']['default']))
+                    self.tables[grib_edition]['faLevelName']['default']))
                 fid.update(
-                    self.tables[grib_edition]['faFieldName.def'].get(
+                    self.tables[grib_edition]['faFieldName'].get(
                         rematch.group('param'),
-                        self.tables[grib_edition]['faFieldName.def']['default']))
+                        self.tables[grib_edition]['faFieldName']['default']))
                 level = int(rematch.group('level'))
                 if level == 0:  # formatting issue
                     level = 100000
@@ -122,10 +105,8 @@ class FaGribDef(object):
                 if fatal:
                     raise ValueError("field not found: {}".format(fieldname))
                 else:
-                    fid = self.tables[grib_edition]['faFieldName.def']['default']
-        if not include_comments:
-            if '#comment' in fid:
-                fid.pop('#comment')
+                    fid = self._get_def('default', 'faFieldName',
+                                        grib_edition, include_comments)
         if filter_non_GRIB_keys:
             for k in ('LSTCUM', 'FMULTM', 'FMULTE'):
                 if k in fid:
@@ -136,8 +117,9 @@ class FaGribDef(object):
             fid['productDefinitionTemplateNumber'] = 0
         return fid
 
-    @_init_before
-    def GRIB2FA(self, gribfid, grib_edition=default_grib_edition):
+    @griberies.init_before
+    def GRIB2FA(self, gribfid,
+                grib_edition=griberies.GribDef.default_grib_edition):
         """
         Look for a unique matching field in tables.
         ! WARNING ! the unicity might not be ensured depending on the version
@@ -153,9 +135,9 @@ class FaGribDef(object):
         elif len(matching_fields) > 1:
             raise ValueError("Several fields matching were found. Use method *lookup_GRIB* to refine.")
 
-    @_init_before
+    @griberies.init_before
     def lookup_FA(self, partial_fieldname,
-                  grib_edition=default_grib_edition,
+                  grib_edition=griberies.GribDef.default_grib_edition,
                   include_comments=False):
         """
         Look for all the fields which FA name contain **partial_fieldname**.
@@ -164,7 +146,7 @@ class FaGribDef(object):
         :param include_comments: if a comment is present if grib def, bring it in fid
         """
         fields = {}
-        for f, gribfid in self.tables[grib_edition]['faFieldName.def'].items():
+        for f, gribfid in self.tables[grib_edition]['faFieldName'].items():
             if partial_fieldname in f:
                 fields[f] = gribfid
         if not include_comments:
@@ -172,9 +154,9 @@ class FaGribDef(object):
                 fid.pop('#comment')
         return fields
 
-    @_init_before
+    @griberies.init_before
     def lookup_GRIB(self, partial_fid,
-                    grib_edition=default_grib_edition,
+                    grib_edition=griberies.GribDef.default_grib_edition,
                     include_comments=False):
         """
         Look for all the fields which GRIB fid contain **partial_fid**.
@@ -182,26 +164,12 @@ class FaGribDef(object):
         :param grib_edition: among ('grib1', 'grib2'), the version of GRIB fid
         :param include_comments: if a comment is present if grib def, bring it in fid
         """
-        if isinstance(partial_fid, six.string_types):
-            partial_fid = griberies.parse_GRIBstr_todict(partial_fid)
-        partial_fid
-        fields = {}
-        for f, gribfid in self.tables[grib_edition]['faFieldName.def'].items():
-            if set(partial_fid.keys()).issubset(gribfid.keys()):
-                ok = True
-                for k,v in partial_fid.items():
-                    if gribfid[k] != v:
-                        ok = False
-                        break
-                if ok:
-                    fields[f] = copy.copy(gribfid)
-        if not include_comments:
-            for f, fid in fields.items():
-                fid.pop('#comment')
-        return fields
+        return self._lookup_from_kv(partial_fid, 'faFieldName',
+                                    grib_edition=grib_edition,
+                                    include_comments=include_comments)
 
     def __call__(self, fid,
-                 grib_edition=default_grib_edition,
+                 grib_edition=griberies.GribDef.default_grib_edition,
                  include_comments=False):
         """Call methods FA2GRIB or GRIB2FA depending on nature of **fid**."""
         try:
@@ -240,11 +208,11 @@ class SfxFldDesc_Mod(object):
     def __init__(self, actual_init=True):
         self.table = {}
         if actual_init:
-            self.actual_init()
+            self._actual_init()
         else:
             self.initialized = False
 
-    def actual_init(self):
+    def _actual_init(self):
         """Read official file and, if existing, user local file."""
         # official one
         filename = os.path.join(config.installdir, 'data',
@@ -284,33 +252,36 @@ class SfxFldDesc_Mod(object):
         """Update with a dict of field {fieldname:{}, ...}."""
         self.table.update(field_dict)
 
-    @_init_before
+    @griberies.init_before
     def nature(self, fieldname):
         """Return type of data in field."""
         return self.type2nature[self.table[fieldname]['type'][0]]
 
-    @_init_before
+    @griberies.init_before
     def dim(self, fieldname):
         """Return number of dimensions of field."""
         return int(self.table[fieldname]['type'][1])
 
-    @_init_before
+    @griberies.init_before
     def __getitem__(self, fieldname):
         return self.table[fieldname]
 
-    @_init_before
+    @griberies.init_before
     def get(self, fieldname, default=None):
         return self.table.get(fieldname, default)
 
-    @_init_before
+    @griberies.init_before
     def is_metadata(self, fieldname):
         """True if field is not a H2D field but metadata (Misc)."""
-        if fieldname in self.table and self.table[fieldname]['type'] not in ('X1', 'X2'):
-            return True
+        if fieldname in self.table:
+            if self.table[fieldname]['type'] in ('X1', 'X2'):
+                return False
+            else:
+                return True
         else:
-            return False
+            return None
 
-    @_init_before
+    @griberies.init_before
     def __contains__(self, fieldname):
         return fieldname in self.table
 

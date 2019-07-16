@@ -15,8 +15,22 @@ import io
 import copy
 
 from bronx.syntax.parsing import str2dict
+from bronx.syntax.decorators import nicedeco
 
 from . import tables
+
+
+@nicedeco
+def init_before(mtd):  # TODO: move to bronx decorators ?
+    """
+    Decorator for methods: call method self._actual_init()
+    before actually calling method if not self.initialized.
+    """
+    def initialized(self, *args, **kwargs):
+        if not self.initialized:
+            self._actual_init()
+        return mtd(self, *args, **kwargs)
+    return initialized
 
 
 def complete_grib_paths(rootdir, api_name, reset=False):
@@ -129,3 +143,99 @@ def read_gribdef(filename):
                 elif kvmatch.groupdict().get('real'):
                     dico[field][kvmatch.group('key')] = float(kvmatch.group('real'))
     return dico
+
+
+class GribDef(object):
+
+    default_grib_edition = 'grib2'
+
+    def __init__(self, actual_init=True, concepts=[]):
+        self._concepts = set(concepts)
+        self.tables = {'grib1':{c:{} for c in concepts},
+                       'grib2':{c:{} for c in concepts}}
+        if actual_init:
+            self._actual_init()
+        else:
+            self.initialized = False
+
+    def _actual_init(self):
+        """Read necessary definition files."""
+        pass
+
+    def read(self, filename, grib_edition=None):
+        """Read a grib def concept file, and update or register it."""
+        if grib_edition is None:
+            for g in ('grib1', 'grib2'):
+                if g in filename:
+                    grib_edition = g
+        concept = os.path.basename(filename).replace('.def', '')
+        if concept in self.tables[grib_edition]:
+            self.tables[grib_edition][concept].update(read_gribdef(filename))
+        else:
+            self.tables[grib_edition][concept] = read_gribdef(filename)
+
+    @init_before
+    def _lookup(self, fid, concept,
+                grib_edition=default_grib_edition,
+                include_comments=False):
+        """
+        Concept equivalence lookup:
+          - if **fid** is a **concept** value, get the associated GRIB key/value pairs
+          - if **fid is a set of GRIB key/value pairs, get the associated **concept** value(s)
+
+        :param grib_edition: among ('grib1', 'grib2'), the version of GRIB fid
+        :param include_comments: if a comment is present if grib def, bring it in fid
+        """
+        try:
+            if isinstance(fid, six.string_types):
+                fid = parse_GRIBstr_todict(fid)
+        except SyntaxError:  # fid is a concept value
+            retrieved = self._get_def(fid, concept,
+                                      grib_edition, include_comments)
+        else:  # fid is a GRIB fid
+            retrieved = self._lookup_from_kv(fid, concept,
+                                             grib_edition, include_comments)
+        return retrieved
+
+    @init_before
+    def _get_def(self, fid, concept,
+                 grib_edition=default_grib_edition,
+                 include_comments=False):
+        """
+        Direct access to a grib definition
+
+        :param include_comments: if a comment is present if grib def, bring it in fid
+        """
+        fid = copy.copy(self.tables[grib_edition][concept][fid])
+        if not include_comments:
+            if '#comment' in fid:
+                fid.pop('#comment')
+        return fid
+
+    @init_before
+    def _lookup_from_kv(self, handgrip, concept,
+                        grib_edition=default_grib_edition,
+                        include_comments=False):
+        """
+        Look for all the fields which GRIB def contain **handgrip**,
+        returning them identified by their **concept**.
+
+        :param grib_edition: among ('grib1', 'grib2'), the version of GRIB fid
+        :param include_comments: if a comment is present if grib def, bring it in fid
+        """
+        if isinstance(handgrip, six.string_types):
+            handgrip = parse_GRIBstr_todict(handgrip)
+        fields = {}
+        for f, gribfid in self.tables[grib_edition][concept].items():
+            if set(handgrip.keys()).issubset(gribfid.keys()):
+                ok = True
+                for k,v in handgrip.items():
+                    if gribfid[k] != v:
+                        ok = False
+                        break
+                if ok:
+                    fields[f] = copy.copy(gribfid)
+        if not include_comments:
+            for f, fid in fields.items():
+                fid.pop('#comment')
+        return fields
