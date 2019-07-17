@@ -679,15 +679,15 @@ class FA(FileResource):
                              'levels': self.geometry.vcoordinate.levels}
             field_info = self.gribdef.FA2GRIB(fieldname)
             # change from default (FA header) to actual levels
-            for k in field_info:
-                if k == 'typeOfFirstFixedSurface':
-                    kwargs_vcoord['typeoffirstfixedsurface'] = field_info[k]
-                elif k == 'level':
-                    kwargs_vcoord['levels'] = [field_info[k]]
+            kwargs_vcoord['typeoffirstfixedsurface'] = field_info['typeOfFirstFixedSurface']
+            if 'level' in field_info:
+                kwargs_vcoord['levels'] = [field_info['level']]
+            else:
+                kwargs_vcoord['levels'] = [0]
             if 'scaledValueOfFirstFixedSurface' in field_info:
                 exp = field_info.get('scaleFactorOfFirstFixedSurface', 0)
                 kwargs_vcoord['levels'] = [field_info['scaledValueOfFirstFixedSurface'] * (10 ** -exp)]
-            if kwargs_vcoord['typeoffirstfixedsurface'] != 119:  # hybrid-pressure
+            if field_info['typeOfFirstFixedSurface'] != 119:  # hybrid-pressure
                 kwargs_vcoord.pop('grid', None)
             vcoordinate = fpx.geometry(**kwargs_vcoord)
             # Prepare field dimensions
@@ -726,6 +726,10 @@ class FA(FileResource):
 
             if self.geometry.projected_geometry or self.geometry.name == 'academic':
                 kwargs_geom['projection'] = self.geometry.projection
+            for k,v in kwargs_geom.items():
+                print(k)
+                print(v)
+                print('-----------')
             geometry = fpx.geometry(**kwargs_geom)
 
         # Get data if requested
