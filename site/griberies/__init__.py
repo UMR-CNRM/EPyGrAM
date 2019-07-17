@@ -35,8 +35,8 @@ def init_before(mtd):  # TODO: move to bronx decorators ?
 
 def complete_grib_paths(rootdir, api_name, reset=False):
     """
-    Complete GRIB_SAMPLES_PATH and GRIB_DEFINITION_PATH according to **rootdir**
-    installation path of GRIB API **api_name**.
+    Complete [GRIB|ECCODES]_SAMPLES_PATH and [GRIB|ECCODES]_DEFINITION_PATH
+    according to **rootdir** installation path of GRIB API **api_name**.
 
     :param rootdir: the directory in which is installed the API
     :param api_name: the name of the GRIB API, among ('eccodes', 'grib_api')
@@ -45,19 +45,49 @@ def complete_grib_paths(rootdir, api_name, reset=False):
     Reconstructed path are ``$rootdir$/share/$api_name$/samples``
     and ``$rootdir$/share/$api_name$/definitions``
     """
+    complete_grib_samples_paths(rootdir, api_name, reset=reset)
+    complete_grib_definition_paths(rootdir, api_name, reset=reset)
+
+
+def complete_grib_samples_paths(rootdir, api_name, reset=False):
+    """
+    Complete [GRIB|ECCODES]_SAMPLES_PATH according to **rootdir**
+    installation path of GRIB API **api_name**.
+
+    :param rootdir: the directory in which is installed the API
+    :param api_name: the name of the GRIB API, among ('eccodes', 'grib_api')
+    :param reset: ignore predefined values of the variables
+
+    Reconstructed path is ``$rootdir$/share/$api_name$/samples``
+    """
     if api_name == 'grib_api':
         sp = 'GRIB_SAMPLES_PATH'
-        dp = 'GRIB_DEFINITION_PATH'
     elif api_name == 'eccodes':
         sp = 'ECCODES_SAMPLES_PATH'
-        dp = 'ECCODES_DEFINITION_PATH'
     loc_samples = [os.path.join(rootdir, 'share', api_name, 'samples')]
-    loc_defs = [os.path.join(rootdir, 'share', api_name, 'definitions')]
     if not reset and os.environ.get(sp, False):
         loc_samples.append(os.environ.get(sp))
+    os.environ[sp] = os.pathsep.join(loc_samples)
+
+
+def complete_grib_definition_paths(rootdir, api_name, reset=False):
+    """
+    Complete [GRIB|ECCODES]_DEFINITION_PATH according to **rootdir**
+    installation path of GRIB API **api_name**.
+
+    :param rootdir: the directory in which is installed the API
+    :param api_name: the name of the GRIB API, among ('eccodes', 'grib_api')
+    :param reset: ignore predefined values of the variables
+
+    Reconstructed path are ``$rootdir$/share/$api_name$/definitions``
+    """
+    if api_name == 'grib_api':
+        dp = 'GRIB_DEFINITION_PATH'
+    elif api_name == 'eccodes':
+        dp = 'ECCODES_DEFINITION_PATH'
+    loc_defs = [os.path.join(rootdir, 'share', api_name, 'definitions')]
     if not reset and os.environ.get(dp, False):
         loc_defs.append(os.environ.get(dp))
-    os.environ[sp] = os.pathsep.join(loc_samples)
     os.environ[dp] = os.pathsep.join(loc_defs)
 
 

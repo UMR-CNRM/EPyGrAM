@@ -111,9 +111,11 @@ class LowLevelGRIB(object):
 
     def init_env(self, reset=False):
         """Ensure grib_api/eccodes variables are consistent with inner library."""
-        if len(griberies.get_samples_paths() + griberies.get_definition_paths()) > 0:
-            griberies.complete_grib_paths(self.install_dir, self.api_name,
-                                          reset=reset)
+        griberies.complete_grib_samples_paths(self.install_dir, self.api_name,
+                                              reset=reset)
+        if len(griberies.get_definition_paths()) > 0:
+            griberies.complete_grib_definition_paths(self.install_dir, self.api_name,
+                                                     reset=reset)
 
     #  BELOW: gribapi str/unicode incompatibility
     def set(self, gid, key, value):

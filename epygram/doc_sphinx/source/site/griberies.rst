@@ -14,6 +14,8 @@
 -----------------------------------------------------------
 
 .. autofunction:: complete_grib_paths
+.. autofunction:: complete_grib_samples_paths
+.. autofunction:: complete_grib_definition_paths
 .. autofunction:: set_definition_path
 .. autofunction:: get_samples_paths
 .. autofunction:: get_definition_paths
