@@ -26,8 +26,9 @@ class FaGribDef(griberies.GribDef):
     b) move it under {config.userlocaldir}/{FaGribDef.dirname}
     """
 
-    re_dirname = re.compile('gribapi\.def\.[\d_]+')
+    _re_dirname = re.compile('gribapi\.def\.[\d_]+')
     _official_rootdir = os.path.join(config.installdir, 'data')
+    _non_GRIB_keys = ('LSTCUM', 'FMULTM', 'FMULTE', 'ZLMULT')
 
     def __init__(self, actual_init=True,
                  concepts=['faFieldName', 'faModelName', 'faLevelName']):
@@ -36,7 +37,7 @@ class FaGribDef(griberies.GribDef):
     def _find_gribdefs(self, root):
         dirs = []
         for d in sorted(os.listdir(root)):
-            if self.re_dirname.match(d):
+            if self._re_dirname.match(d):
                 d = os.path.join(root, d)
                 if os.path.isdir(d):
                     dirs.append(d)
@@ -54,17 +55,17 @@ class FaGribDef(griberies.GribDef):
             for grib_edition in ('grib1', 'grib2'):
                 for concept in self._concepts:
                     self._read_localConcept(concept, d, grib_edition)
-        self.initialized = True
+        self._initialized = True
 
     def _read_localConcept(self, concept, directory,
-                           grib_edition=griberies.GribDef.default_grib_edition):
+                           grib_edition=griberies.GribDef._default_grib_edition):
         pathname = os.path.join(directory, grib_edition, 'localConcepts', 'lfpw', concept + '.def')
         if os.path.exists(pathname):
             self.read(pathname, grib_edition)
 
     @griberies.init_before
     def FA2GRIB(self, fieldname,
-                grib_edition=griberies.GribDef.default_grib_edition,
+                grib_edition=griberies.GribDef._default_grib_edition,
                 include_comments=False,
                 fatal=False,
                 filter_non_GRIB_keys=True):
@@ -88,13 +89,12 @@ class FaGribDef(griberies.GribDef):
         else:
             rematch = _re_altitude.match(fieldname)
             if rematch:
-                fid = copy.copy(self.tables[grib_edition]['faLevelName'].get(
-                    rematch.group('ltype'),
-                    self.tables[grib_edition]['faLevelName']['default']))
-                fid.update(
-                    self.tables[grib_edition]['faFieldName'].get(
-                        rematch.group('param'),
-                        self.tables[grib_edition]['faFieldName']['default']))
+                fid = self._get_def(rematch.group('ltype'), 'faLevelName',
+                                    grib_edition, include_comments,
+                                    fatal=False)
+                fid.update(self._get_def(rematch.group('param'), 'faFieldName',
+                                         grib_edition, include_comments,
+                                         fatal=False))
                 level = int(rematch.group('level'))
                 if level == 0:  # formatting issue
                     level = 100000
@@ -108,9 +108,7 @@ class FaGribDef(griberies.GribDef):
                     fid = self._get_def('default', 'faFieldName',
                                         grib_edition, include_comments)
         if filter_non_GRIB_keys:
-            for k in ('LSTCUM', 'FMULTM', 'FMULTE'):
-                if k in fid:
-                    fid.pop(k)
+            fid = self._filter_non_GRIB_keys(fid)
         # productDefinitionTemplateNumber to distinguish between
         # CLSTEMPERATURE and CLSMINI.TEMPERAT / CLSMAXI.TEMPERAT (for instance)
         if 'productDefinitionTemplateNumber' not in fid:
@@ -119,7 +117,7 @@ class FaGribDef(griberies.GribDef):
 
     @griberies.init_before
     def GRIB2FA(self, gribfid,
-                grib_edition=griberies.GribDef.default_grib_edition):
+                grib_edition=griberies.GribDef._default_grib_edition):
         """
         Look for a unique matching field in tables.
         ! WARNING ! the unicity might not be ensured depending on the version
@@ -137,39 +135,48 @@ class FaGribDef(griberies.GribDef):
 
     @griberies.init_before
     def lookup_FA(self, partial_fieldname,
-                  grib_edition=griberies.GribDef.default_grib_edition,
-                  include_comments=False):
+                  grib_edition=griberies.GribDef._default_grib_edition,
+                  include_comments=False,
+                  filter_non_GRIB_keys=True):
         """
         Look for all the fields which FA name contain **partial_fieldname**.
 
         :param grib_edition: among ('grib1', 'grib2'), the version of GRIB fid
         :param include_comments: if a comment is present if grib def, bring it in fid
+        :param filter_non_GRIB_keys: filter out the non-GRIB keys that may be
+            present in grib def of field
         """
         fields = {}
         for f, gribfid in self.tables[grib_edition]['faFieldName'].items():
             if partial_fieldname in f:
                 fields[f] = gribfid
-        if not include_comments:
-            for f, fid in fields.items():
-                fid.pop('#comment')
+        for fid in fields.values():
+            if not include_comments:
+                fid.pop('#comment', None)
+            if filter_non_GRIB_keys:
+                self._filter_non_GRIB_keys(fid)
         return fields
 
     @griberies.init_before
     def lookup_GRIB(self, partial_fid,
-                    grib_edition=griberies.GribDef.default_grib_edition,
-                    include_comments=False):
+                    grib_edition=griberies.GribDef._default_grib_edition,
+                    include_comments=False,
+                    filter_non_GRIB_keys=True):
         """
         Look for all the fields which GRIB fid contain **partial_fid**.
 
         :param grib_edition: among ('grib1', 'grib2'), the version of GRIB fid
         :param include_comments: if a comment is present if grib def, bring it in fid
+        :param filter_non_GRIB_keys: filter out the non-GRIB keys that may be
+            present in grib def of field
         """
         return self._lookup_from_kv(partial_fid, 'faFieldName',
                                     grib_edition=grib_edition,
-                                    include_comments=include_comments)
+                                    include_comments=include_comments,
+                                    filter_non_GRIB_keys=filter_non_GRIB_keys)
 
     def __call__(self, fid,
-                 grib_edition=griberies.GribDef.default_grib_edition,
+                 grib_edition=griberies.GribDef._default_grib_edition,
                  include_comments=False):
         """Call methods FA2GRIB or GRIB2FA depending on nature of **fid**."""
         try:

@@ -102,7 +102,7 @@ class LowLevelGRIB(object):
             self.version = eccodes.__version__
 
     @property
-    def installdir(self):
+    def install_dir(self):
         # from path of low_level_api:
         # remove /lib64/pythonX.Y/site-packages/eccodes/__init__.py
         # or /lib64/pythonX.Y/site-packages/grib_api/gribapi.py
@@ -155,23 +155,24 @@ class NamesGribDef(griberies.GribDef):
         # get definition paths, from env variable
         defpaths = griberies.get_definition_paths()
         # and from gribapi/eccodes install
-        defpaths.append(os.path.join(lowlevelgrib.installdir,
+        defpaths.append(os.path.join(lowlevelgrib.install_dir,
                                      'share','eccodes','definitions'))
         for d in defpaths:
             for grib_edition in ('grib1', 'grib2'):
                 for concept in self._concepts:
                     self._readConcept(concept, d, grib_edition)
-        self.initialized = True
+        self._initialized = True
 
     def _readConcept(self, concept, directory,
-                     grib_edition=griberies.GribDef.default_grib_edition):
+                     grib_edition=griberies.GribDef._default_grib_edition):
         pathname = os.path.join(directory, grib_edition, concept + '.def')
         if os.path.exists(pathname):
             self.read(pathname, grib_edition)
 
     def name(self, fid,
-             grib_edition=griberies.GribDef.default_grib_edition,
-             include_comments=False):
+             grib_edition=griberies.GribDef._default_grib_edition,
+             include_comments=False,
+             filter_non_GRIB_keys=True):
         """
         'name' equivalence lookup:
           - if **fid** is a name, get the associated GRIB key/value pairs
@@ -179,12 +180,18 @@ class NamesGribDef(griberies.GribDef):
 
         :param grib_edition: among ('grib1', 'grib2'), the version of GRIB fid
         :param include_comments: if a comment is present if grib def, bring it in fid
+        :param filter_non_GRIB_keys: filter out the non-GRIB keys that may be
+            present in grib def of field
         """
-        return self._lookup(fid, 'name', grib_edition, include_comments)
+        return self._lookup(fid, 'name',
+                            grib_edition=grib_edition,
+                            include_comments=include_comments,
+                            filter_non_GRIB_keys=filter_non_GRIB_keys)
 
     def shortName(self, fid,
-                  grib_edition=griberies.GribDef.default_grib_edition,
-                  include_comments=False):
+                  grib_edition=griberies.GribDef._default_grib_edition,
+                  include_comments=False,
+                  filter_non_GRIB_keys=True):
         """
         'name' equivalence lookup:
           - if **fid** is a shortName, get the associated GRIB key/value pairs
@@ -192,8 +199,13 @@ class NamesGribDef(griberies.GribDef):
 
         :param grib_edition: among ('grib1', 'grib2'), the version of GRIB fid
         :param include_comments: if a comment is present if grib def, bring it in fid
+        :param filter_non_GRIB_keys: filter out the non-GRIB keys that may be
+            present in grib def of field
         """
-        return self._lookup(fid, 'shortName', grib_edition, include_comments)
+        return self._lookup(fid, 'shortName',
+                            grib_edition=grib_edition,
+                            include_comments=include_comments,
+                            filter_non_GRIB_keys=filter_non_GRIB_keys)
 
 
 # conversion of surface types for geometry purposes only

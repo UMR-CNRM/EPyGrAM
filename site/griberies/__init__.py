@@ -27,7 +27,7 @@ def init_before(mtd):  # TODO: move to bronx decorators ?
     before actually calling method if not self.initialized.
     """
     def initialized(self, *args, **kwargs):
-        if not self.initialized:
+        if not self._initialized:
             self._actual_init()
         return mtd(self, *args, **kwargs)
     return initialized
@@ -147,7 +147,8 @@ def read_gribdef(filename):
 
 class GribDef(object):
 
-    default_grib_edition = 'grib2'
+    _default_grib_edition = 'grib2'
+    _non_GRIB_keys = []
 
     def __init__(self, actual_init=True, concepts=[]):
         self._concepts = set(concepts)
@@ -156,7 +157,7 @@ class GribDef(object):
         if actual_init:
             self._actual_init()
         else:
-            self.initialized = False
+            self._initialized = False
 
     def _actual_init(self):
         """Read necessary definition files."""
@@ -174,10 +175,19 @@ class GribDef(object):
         else:
             self.tables[grib_edition][concept] = read_gribdef(filename)
 
+    @classmethod
+    def _filter_non_GRIB_keys(cls, fid):
+        """Some keys are to be filtered out from gribdef."""
+        for k in cls._non_GRIB_keys:
+            if k in fid:
+                fid.pop(k)
+        return fid
+
     @init_before
     def _lookup(self, fid, concept,
-                grib_edition=default_grib_edition,
-                include_comments=False):
+                grib_edition=_default_grib_edition,
+                include_comments=False,
+                filter_non_GRIB_keys=True):
         """
         Concept equivalence lookup:
           - if **fid** is a **concept** value, get the associated GRIB key/value pairs
@@ -185,43 +195,66 @@ class GribDef(object):
 
         :param grib_edition: among ('grib1', 'grib2'), the version of GRIB fid
         :param include_comments: if a comment is present if grib def, bring it in fid
+        :param filter_non_GRIB_keys: filter out the non-GRIB keys that may be
+            present in grib def of field
         """
         try:
             if isinstance(fid, six.string_types):
                 fid = parse_GRIBstr_todict(fid)
         except SyntaxError:  # fid is a concept value
             retrieved = self._get_def(fid, concept,
-                                      grib_edition, include_comments)
+                                      grib_edition=grib_edition,
+                                      include_comments=include_comments,
+                                      filter_non_GRIB_keys=filter_non_GRIB_keys)
         else:  # fid is a GRIB fid
             retrieved = self._lookup_from_kv(fid, concept,
-                                             grib_edition, include_comments)
+                                             grib_edition=grib_edition,
+                                             include_comments=include_comments,
+                                             filter_non_GRIB_keys=filter_non_GRIB_keys)
         return retrieved
 
     @init_before
     def _get_def(self, fid, concept,
-                 grib_edition=default_grib_edition,
-                 include_comments=False):
+                 grib_edition=_default_grib_edition,
+                 include_comments=False,
+                 fatal=True,
+                 filter_non_GRIB_keys=True):
         """
         Direct access to a grib definition
 
         :param include_comments: if a comment is present if grib def, bring it in fid
+        :param fatal: if True and fieldname is not retrieved, raise a ValueError;
+            else, get 'default' instead of fieldname
+        :param filter_non_GRIB_keys: filter out the non-GRIB keys that may be
+            present in grib def of field
         """
-        fid = copy.copy(self.tables[grib_edition][concept][fid])
+        if fid in self.tables[grib_edition][concept]:
+            fid = copy.copy(self.tables[grib_edition][concept][fid])
+        else:
+            if fatal:
+                raise KeyError('{} not found'.format(fid))
+            else:
+                fid = copy.copy(self.tables[grib_edition][concept]['default'])
         if not include_comments:
             if '#comment' in fid:
-                fid.pop('#comment')
+                fid.pop('#comment', None)
+        if filter_non_GRIB_keys:
+            self._filter_non_GRIB_keys(fid)
         return fid
 
     @init_before
     def _lookup_from_kv(self, handgrip, concept,
-                        grib_edition=default_grib_edition,
-                        include_comments=False):
+                        grib_edition=_default_grib_edition,
+                        include_comments=False,
+                        filter_non_GRIB_keys=True):
         """
         Look for all the fields which GRIB def contain **handgrip**,
         returning them identified by their **concept**.
 
         :param grib_edition: among ('grib1', 'grib2'), the version of GRIB fid
         :param include_comments: if a comment is present if grib def, bring it in fid
+        :param filter_non_GRIB_keys: filter out the non-GRIB keys that may be
+            present in grib def of field
         """
         if isinstance(handgrip, six.string_types):
             handgrip = parse_GRIBstr_todict(handgrip)
@@ -235,7 +268,9 @@ class GribDef(object):
                         break
                 if ok:
                     fields[f] = copy.copy(gribfid)
-        if not include_comments:
-            for f, fid in fields.items():
-                fid.pop('#comment')
+        for fid in fields.values():
+            if not include_comments:
+                fid.pop('#comment', None)
+            if filter_non_GRIB_keys:
+                self._filter_non_GRIB_keys(fid)
         return fields
