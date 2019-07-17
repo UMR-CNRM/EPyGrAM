@@ -217,7 +217,8 @@ class GribDef(object):
     def _lookup(self, fid, concept,
                 grib_edition=_default_grib_edition,
                 include_comments=False,
-                filter_non_GRIB_keys=True):
+                filter_non_GRIB_keys=True,
+                exact=False):
         """
         Concept equivalence lookup:
           - if **fid** is a **concept** value, get the associated GRIB key/value pairs
@@ -227,15 +228,21 @@ class GribDef(object):
         :param include_comments: if a comment is present if grib def, bring it in fid
         :param filter_non_GRIB_keys: filter out the non-GRIB keys that may be
             present in grib def of field
+        :param exact: when **fid** is a concept value,
+            - if exact=True, return only the grib def which concept value
+            matches exactly **fid**
+            - if exact=False, return all the grib def which concept value
+            contains **fid**
         """
         try:
             if isinstance(fid, six.string_types):
                 fid = parse_GRIBstr_todict(fid)
         except SyntaxError:  # fid is a concept value
-            retrieved = self._get_def(fid, concept,
-                                      grib_edition=grib_edition,
-                                      include_comments=include_comments,
-                                      filter_non_GRIB_keys=filter_non_GRIB_keys)
+            retrieved = self._lookup_from_conceptvalue(fid, concept,
+                                                       grib_edition=grib_edition,
+                                                       include_comments=include_comments,
+                                                       filter_non_GRIB_keys=filter_non_GRIB_keys,
+                                                       exact=exact)
         else:  # fid is a GRIB fid
             retrieved = self._lookup_from_kv(fid, concept,
                                              grib_edition=grib_edition,
@@ -271,6 +278,50 @@ class GribDef(object):
         if filter_non_GRIB_keys:
             self._filter_non_GRIB_keys(fid)
         return fid
+
+    def _lookup_from_conceptvalue(self, fid, concept,
+                                  grib_edition=_default_grib_edition,
+                                  include_comments=False,
+                                  filter_non_GRIB_keys=True,
+                                  exact=False):
+        """
+        Look for all the fields which **concept** value contain **fid**.
+
+        :param grib_edition: among ('grib1', 'grib2'), the version of GRIB fid
+        :param include_comments: if a comment is present if grib def, bring it in fid
+        :param filter_non_GRIB_keys: filter out the non-GRIB keys that may be
+            present in grib def of field
+        :param exact: when **fid** is a concept value,
+            - if exact=True, return only the grib def which concept value
+            matches exactly **fid**
+            - if exact=False, return all the grib def which concept value
+            contains **fid**
+        """
+        fields = {}
+        try:  # first try to get it as exact
+            gribfid = self._get_def(fid, concept,
+                                    grib_edition=grib_edition,
+                                    include_comments=include_comments,
+                                    fatal=True,
+                                    filter_non_GRIB_keys=filter_non_GRIB_keys)
+        except KeyError:
+            pass  # field was not found as such; might be partial => finally
+        else:
+            fields[fid] = gribfid
+        finally:
+            if not exact:  # complete with all that contains fid
+                for f, gribfid in self.tables[grib_edition][concept].items():
+                    if fid in f:
+                        fields[f] = gribfid
+                for gribfid in fields.values():
+                    if not include_comments:
+                        gribfid.pop('#comment', None)
+                    if filter_non_GRIB_keys:
+                        self._filter_non_GRIB_keys(gribfid)
+            else:
+                if len(fields) == 1:
+                    fields = fields[list(fields.keys())[0]]
+        return fields
 
     @init_before
     def _lookup_from_kv(self, handgrip, concept,

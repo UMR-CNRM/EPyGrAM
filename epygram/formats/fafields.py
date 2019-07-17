@@ -9,7 +9,6 @@ FA fields utilities
 from __future__ import print_function, absolute_import, unicode_literals, division
 
 import os
-import copy
 import re
 import six
 import io
@@ -147,14 +146,25 @@ class FaGribDef(griberies.GribDef):
             present in grib def of field
         """
         fields = {}
-        for f, gribfid in self.tables[grib_edition]['faFieldName'].items():
-            if partial_fieldname in f:
-                fields[f] = gribfid
-        for fid in fields.values():
-            if not include_comments:
-                fid.pop('#comment', None)
-            if filter_non_GRIB_keys:
-                self._filter_non_GRIB_keys(fid)
+        try:  # first try to get it as an altitude one
+            gribfid = self.FA2GRIB(partial_fieldname,
+                                   grib_edition=grib_edition,
+                                   include_comments=include_comments,
+                                   fatal=True,
+                                   filter_non_GRIB_keys=filter_non_GRIB_keys)
+        except ValueError:
+            pass  # field was not found as such; might be partial => finally
+        else:
+            fields[partial_fieldname] = gribfid
+        finally:
+            for f, gribfid in self.tables[grib_edition]['faFieldName'].items():
+                if partial_fieldname in f:
+                    fields[f] = gribfid
+            for fid in fields.values():
+                if not include_comments:
+                    fid.pop('#comment', None)
+                if filter_non_GRIB_keys:
+                    self._filter_non_GRIB_keys(fid)
         return fields
 
     @griberies.init_before

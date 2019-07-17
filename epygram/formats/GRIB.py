@@ -149,7 +149,10 @@ lowlevelgrib = LowLevelGRIB(config.GRIB_lowlevel_api)
 class NamesGribDef(griberies.GribDef):
     """Handle *name* and *shortName* GRIB definitions."""
 
-    def __init__(self, actual_init=True, concepts=['name', 'shortName']):
+    _non_GRIB_keys = ['is_uerra']
+
+    def __init__(self, actual_init=True,
+                 concepts=['name', 'shortName', 'cfName', 'cfVarName']):
         super(NamesGribDef, self).__init__(actual_init, concepts)
 
     def _actual_init(self):
@@ -174,41 +177,77 @@ class NamesGribDef(griberies.GribDef):
     def name(self, fid,
              grib_edition=griberies.GribDef._default_grib_edition,
              include_comments=False,
-             filter_non_GRIB_keys=True):
+             filter_non_GRIB_keys=True,
+             exact=True):
         """
         'name' equivalence lookup:
           - if **fid** is a name, get the associated GRIB key/value pairs
           - if **fid** is a set of GRIB key/value pairs, get the associated name(s)
 
-        :param grib_edition: among ('grib1', 'grib2'), the version of GRIB fid
-        :param include_comments: if a comment is present if grib def, bring it in fid
-        :param filter_non_GRIB_keys: filter out the non-GRIB keys that may be
-            present in grib def of field
+        Cf. method _lookup() for other optional arguments.
         """
         return self._lookup(fid, 'name',
                             grib_edition=grib_edition,
                             include_comments=include_comments,
-                            filter_non_GRIB_keys=filter_non_GRIB_keys)
+                            filter_non_GRIB_keys=filter_non_GRIB_keys,
+                            exact=exact)
 
     def shortName(self, fid,
                   grib_edition=griberies.GribDef._default_grib_edition,
                   include_comments=False,
-                  filter_non_GRIB_keys=True):
+                  filter_non_GRIB_keys=True,
+                  exact=True):
         """
         'name' equivalence lookup:
           - if **fid** is a shortName, get the associated GRIB key/value pairs
           - if **fid** is a set of GRIB key/value pairs, get the associated shortName(s)
 
-        :param grib_edition: among ('grib1', 'grib2'), the version of GRIB fid
-        :param include_comments: if a comment is present if grib def, bring it in fid
-        :param filter_non_GRIB_keys: filter out the non-GRIB keys that may be
-            present in grib def of field
+        Cf. method _lookup() for other optional arguments.
         """
         return self._lookup(fid, 'shortName',
                             grib_edition=grib_edition,
                             include_comments=include_comments,
-                            filter_non_GRIB_keys=filter_non_GRIB_keys)
+                            filter_non_GRIB_keys=filter_non_GRIB_keys,
+                            exact=exact)
 
+    def cfName(self, fid,
+               grib_edition=griberies.GribDef._default_grib_edition,
+               include_comments=False,
+               filter_non_GRIB_keys=True,
+               exact=True):
+        """
+        'name' equivalence lookup:
+          - if **fid** is a cfName, get the associated GRIB key/value pairs
+          - if **fid** is a set of GRIB key/value pairs, get the associated cfName(s)
+
+        Cf. method _lookup() for other optional arguments.
+        """
+        return self._lookup(fid, 'cfName',
+                            grib_edition=grib_edition,
+                            include_comments=include_comments,
+                            filter_non_GRIB_keys=filter_non_GRIB_keys,
+                            exact=exact)
+
+    def cfVarName(self, fid,
+                  grib_edition=griberies.GribDef._default_grib_edition,
+                  include_comments=False,
+                  filter_non_GRIB_keys=True,
+                  exact=True):
+        """
+        'name' equivalence lookup:
+          - if **fid** is a cfVarName, get the associated GRIB key/value pairs
+          - if **fid** is a set of GRIB key/value pairs, get the associated cfVarName(s)
+
+        Cf. method _lookup() for other optional arguments.
+        """
+        return self._lookup(fid, 'cfVarName',
+                            grib_edition=grib_edition,
+                            include_comments=include_comments,
+                            filter_non_GRIB_keys=filter_non_GRIB_keys,
+                            exact=exact)
+
+
+namesgribdef = NamesGribDef(actual_init=False)
 
 # conversion of surface types for geometry purposes only
 onetotwo = {1:1,  # ground or water surface
@@ -659,7 +698,7 @@ class GRIBmessage(RecursiveObject, dict):
                     elif lat_1 is None and lat_2 is None:
                         lat_0 = lat_0.get('degrees')
                         lat_1 = lat_2 = lat_0
-                    self['LaD'] = int(lat_0 * 1e6)
+                    self['LaD'] = int(lat_0 * 1e6)  # LaDInDegrees sometimes caused errors
                     self['Latin1InDegrees'] = lat_1
                     self['Latin2InDegrees'] = lat_2
                     if abs(field.geometry.projection['rotation'].get('degrees')) > config.epsilon:
