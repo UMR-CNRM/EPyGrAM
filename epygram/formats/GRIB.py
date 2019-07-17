@@ -451,6 +451,25 @@ class GRIBmessage(RecursiveObject, dict):
             for k in param_list:
                 self[k] = fid[k]
 
+    @classmethod
+    def _default_sample(cls, field, grib_edition, required_packingType=None):
+        """
+        Get default sample, according in order to:
+        1/ spectralness
+        2/ model levels
+        3/ packing
+        """
+        sample = config.GRIB_default_sample[grib_edition]
+        if field.spectral:
+            sample = 'sh_ml_grib' + str(grib_edition)
+        elif grib_edition == 1 and field.geometry.vcoordinate.typeoffirstfixedsurface == 119:
+                sample = 'reduced_rotated_gg_ml_grib1'
+        elif required_packingType is not None:
+            guess_sample = 'GRIB{}_{}'.format(str(grib_edition), required_packingType)  # an epygram sample with this packing
+            if guess_sample + '.tmpl' in os.listdir(config.GRIB_epygram_samples_path):  # sample is available with this packing
+                sample = guess_sample
+        return sample
+
     def _build_msg_from_field(self, field,
                               ordering=config.GRIB_default_ordering,
                               packing=None,
@@ -501,23 +520,12 @@ class GRIBmessage(RecursiveObject, dict):
         # ... to determine sample
         if sample is None:
             # try to get an appropriate sample, or a default one
-            if required_packingType is None:
-                if field.spectral:
-                    sample = 'sh_ml_grib' + str(grib_edition)
-                else:
-                    sample = config.GRIB_default_sample[grib_edition]
-            else:
-                # if 'gauss' in field.geometry.name:
-                #    sample = 'gg_sfc_grib' + str(grib_edition)
-                # else:
-                sample = 'GRIB{}_{}'.format(str(grib_edition),required_packingType)  # an epygram sample with this packing
-                if sample + '.tmpl' not in os.listdir(config.GRIB_epygram_samples_path):  # sample not available with this packing
-                    sample = config.GRIB_default_sample[grib_edition]  # take the default one
+            sample = self._default_sample(field, grib_edition, required_packingType)
         # reset packing "on the fly" if field is uniform
         if field.max() - field.min() < config.epsilon:
             packing = {'packingType':'grid_simple'}
             required_packingType = packing['packingType']
-            sample = 'GRIB{}_{}'.format(str(grib_edition),required_packingType)
+            sample = self._default_sample(field, grib_edition, required_packingType)
         # clone from sample
         if sample.startswith('file:'):
             self._gid = self._clone_from_file(sample.replace('file:', ''))
