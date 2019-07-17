@@ -1301,7 +1301,7 @@ class GRIBmessage(RecursiveObject, dict):
         elif productDefinitionTemplateNumber == 8:
             specific_keys = ['lengthOfTimeRange',
                              # 'indicatorOfUnitForTimeRange',  # FIXME: pb with eccodes index
-                             # 'typeOfStatisticalProcessing',  # FIXME: pb with eccodes index
+                             'typeOfStatisticalProcessing',  # FIXME: pb with eccodes index
                              ]
         else:
             specific_keys = []
