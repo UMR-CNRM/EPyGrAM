@@ -44,13 +44,14 @@ class FaGribDef(griberies.GribDef):
 
     def _actual_init(self):
         """Read definition files."""
-        # official fagribdef
+        # first, those specified by env var
         defpaths = griberies.get_definition_paths()
+        # then those embarked with epygram
         defpaths = self._find_gribdefs(self._official_rootdir) + defpaths
         # complete with local user definitions, if existing
-        defpaths.extend(self._find_gribdefs(config.userlocaldir))
+        defpaths = self._find_gribdefs(config.userlocaldir) + defpaths
         # read gribdef files
-        for d in defpaths:
+        for d in defpaths[::-1]:
             for grib_edition in ('grib1', 'grib2'):
                 for concept in self._concepts:
                     self._read_localConcept(concept, d, grib_edition)
@@ -97,6 +98,8 @@ class FaGribDef(griberies.GribDef):
                 level = int(rematch.group('level'))
                 if level == 0:  # formatting issue
                     level = 100000
+                fid['scaleFactorOfFirstFixedSurface'] = 0
+                fid['scaledValueOfFirstFixedSurface'] = level
                 if rematch.group('ltype') == 'P':
                     level /= 100
                 fid['level'] = level
@@ -107,7 +110,7 @@ class FaGribDef(griberies.GribDef):
                     fid = self._get_def('default', 'faFieldName',
                                         grib_edition, include_comments)
         if filter_non_GRIB_keys:
-            fid = self._filter_non_GRIB_keys(fid)
+            self._filter_non_GRIB_keys(fid)
         # productDefinitionTemplateNumber to distinguish between
         # CLSTEMPERATURE and CLSMINI.TEMPERAT / CLSMAXI.TEMPERAT (for instance)
         if 'productDefinitionTemplateNumber' not in fid:
@@ -184,19 +187,6 @@ class FaGribDef(griberies.GribDef):
                                     grib_edition=grib_edition,
                                     include_comments=include_comments,
                                     filter_non_GRIB_keys=filter_non_GRIB_keys)
-
-    def __call__(self, fid,
-                 grib_edition=griberies.GribDef._default_grib_edition,
-                 include_comments=False):
-        """Call methods FA2GRIB or GRIB2FA depending on nature of **fid**."""
-        try:
-            if isinstance(fid, six.string_types):
-                fid = griberies.parse_GRIBstr_todict(fid)
-        except SyntaxError:  # fid is a FA fieldname
-            convfid = self.FA2GRIB(fid, grib_edition, include_comments)
-        else:  # fid is a GRIB fid
-            convfid = self.GRIB2FA(fid, grib_edition, include_comments)
-        return convfid
 
     def __contains__(self, fid):
         try:

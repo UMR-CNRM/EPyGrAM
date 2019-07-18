@@ -160,9 +160,11 @@ class NamesGribDef(griberies.GribDef):
         # get definition paths, from env variable
         defpaths = griberies.get_definition_paths()
         # and from gribapi/eccodes install
-        defpaths.append(os.path.join(lowlevelgrib.install_dir,
-                                     'share','eccodes','definitions'))
-        for d in defpaths:
+        libpath = os.path.join(lowlevelgrib.install_dir,
+                               'share', lowlevelgrib.api_name, 'definitions')
+        if libpath not in defpaths:
+            defpaths.append(libpath)
+        for d in defpaths[::-1]:
             for grib_edition in ('grib1', 'grib2'):
                 for concept in self._concepts:
                     self._readConcept(concept, d, grib_edition)

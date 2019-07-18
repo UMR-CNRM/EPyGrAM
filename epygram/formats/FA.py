@@ -726,10 +726,6 @@ class FA(FileResource):
 
             if self.geometry.projected_geometry or self.geometry.name == 'academic':
                 kwargs_geom['projection'] = self.geometry.projection
-            for k,v in kwargs_geom.items():
-                print(k)
-                print(v)
-                print('-----------')
             geometry = fpx.geometry(**kwargs_geom)
 
         # Get data if requested

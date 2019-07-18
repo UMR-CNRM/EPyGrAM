@@ -208,10 +208,11 @@ class GribDef(object):
     @classmethod
     def _filter_non_GRIB_keys(cls, fid):
         """Some keys are to be filtered out from gribdef."""
+        filtered_out = {}
         for k in cls._non_GRIB_keys:
             if k in fid:
-                fid.pop(k)
-        return fid
+                filtered_out[k] = fid.pop(k)
+        return filtered_out
 
     @init_before
     def _lookup(self, fid, concept,
