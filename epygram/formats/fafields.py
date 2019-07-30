@@ -109,6 +109,7 @@ class FaGribDef(griberies.GribDef):
                 else:
                     fid = self._get_def('default', 'faFieldName',
                                         grib_edition, include_comments)
+                    fid.setdefault('typeOfFirstFixedSurface', 255)
         if filter_non_GRIB_keys:
             self._filter_non_GRIB_keys(fid)
         # productDefinitionTemplateNumber to distinguish between
@@ -217,7 +218,7 @@ class SfxFldDesc_Mod(object):
         if actual_init:
             self._actual_init()
         else:
-            self.initialized = False
+            self._initialized = False
 
     def _actual_init(self):
         """Read official file and, if existing, user local file."""
@@ -230,7 +231,7 @@ class SfxFldDesc_Mod(object):
                                        self._fortran_sourcename)
         if os.path.exists(user_sfxflddesc):
             self.read(user_sfxflddesc)
-        self.initialized = True
+        self._initialized = True
 
     def read(self, filename):
         """Parse a sfxflddesc_mod.F90 file."""

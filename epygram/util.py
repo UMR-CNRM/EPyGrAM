@@ -94,64 +94,16 @@ class RecursiveObject(object):
         Test of equality by recursion on the object's attributes,
         with a **tolerance**.
         """
-        def comp_float(float1, float2):
-            # tolerance for floats
-            return nearlyEqual(float1, float2, tolerance)
-
-        def comp_array(array1, array2):
-            if tolerance == 0.:
-                return numpy.all(array1 == array2)
-            else:
-                if (array1.dtype == array2.dtype and
-                    array1.dtype in [numpy.dtype(d)
-                                     for d in ['float16', 'float32', 'float64']]):
-                    # tolerance for floats
-                    return numpy.all(nearlyEqualArray(array1, array2, tolerance))
-                else:
-                    return numpy.all(array1 == array2)
-
-        def comp_dict(dict1, dict2):
-            if set(dict1.keys()) == set(dict2.keys()):
-                ok = True
-                for k in dict1.keys():
-                    if not comp(dict1[k], dict2[k]):
-                        ok = False
-                        break
-                return ok
-            else:
-                return False
-
-        def comp_list(list1, list2):
-            if len(list1) != len(list2):
-                return False
-            else:
-                ok = True
-                for i in range(len(list1)):
-                    if not comp(list1[i], list2[i]):
-                        ok = False
-                        break
-                return ok
-
-        def comp(obj1, obj2):
-            if isinstance(obj1, float) and isinstance(obj2, float):
-                return comp_float(obj1, obj2)
-            elif isinstance(obj1, numpy.ndarray) and isinstance(obj2, numpy.ndarray):
-                return comp_array(obj1, obj2)
-            elif isinstance(obj1, dict) and isinstance(obj2, dict):
-                return comp_dict(obj1, obj2)
-            elif isinstance(obj1, list) and isinstance(obj2, list):
-                return comp_list(obj1, obj2)
-            else:
-                return obj1 == obj2
-
         if self.__class__ == other.__class__ and \
            set(self.__dict__.keys()) == set(other.__dict__.keys()):
             ok = True
             for attr in self.__dict__.keys():
-                if attr in ('_puredict', '_observer'):
-                    pass
+                if attr in ('_puredict', '_observer'):  # footprints special attributes
+                    continue
                 else:
-                    if not comp(self.__dict__[attr], other.__dict__[attr]):
+                    if not Comparator.are_equal(self.__dict__[attr],
+                                                other.__dict__[attr],
+                                                tolerance):
                         ok = False
                         break
         else:
@@ -165,6 +117,113 @@ class RecursiveObject(object):
     def deepcopy(self):
         """Returns a deepcopy of the object."""
         return copy.deepcopy(self)
+
+    def recursive_diff(self, other):
+        """Recursively list what differs from **other**."""
+        if not self.__eq__(other):
+            diff = {}
+            if self.__class__ == other.__class__ and \
+               set(self.__dict__.keys()) == set(other.__dict__.keys()):
+                for attr in self.__dict__.keys():
+                    if attr in ('_puredict', '_observer'):  # footprints special attributes
+                        continue
+                    else:
+                        if not Comparator.are_equal(self.__dict__[attr],
+                                                    other.__dict__[attr]):
+                            if all([isinstance(obj, RecursiveObject)
+                                    for obj in [self.__dict__[attr],
+                                                other.__dict__[attr]]]):
+                                diff[attr] = self.__dict__[attr].diff(other.__dict__[attr])
+                            else:
+                                diff[attr] = Comparator.diff(self.__dict__[attr],
+                                                             other.__dict__[attr])
+            return diff
+
+
+class Comparator(object):
+    """Helper to recursively compare objects."""
+
+    @classmethod
+    def _float_are_equal(cls, float1, float2, tolerance):
+        # tolerance for floats
+        return nearlyEqual(float1, float2, tolerance)
+
+    @classmethod
+    def _array_are_equal(cls, array1, array2, tolerance):
+        if tolerance == 0.:
+            return numpy.all(array1 == array2)
+        else:
+            if (array1.dtype == array2.dtype and
+                array1.dtype in [numpy.dtype(d)
+                                 for d in ['float16', 'float32', 'float64']]):
+                # tolerance for floats
+                return numpy.all(nearlyEqualArray(array1, array2, tolerance))
+            else:
+                return numpy.all(array1 == array2)
+
+    @classmethod
+    def _dict_are_equal(cls, dict1, dict2):
+        if set(dict1.keys()) == set(dict2.keys()):
+            ok = True
+            for k in dict1.keys():
+                if not cls.are_equal(dict1[k], dict2[k]):
+                    ok = False
+                    break
+            return ok
+        else:
+            return False
+
+    @classmethod
+    def _dict_diff(cls, dict1, dict2):
+        if not cls.are_equal(dict1, dict2):
+            diff = {}
+            if set(dict1.keys()) == set(dict2.keys()):
+                for k in dict1.keys():
+                    if not cls.are_equal(dict1[k], dict2[k]):
+                        diff[k] = cls.diff(dict1[k], dict2[k])
+            else:
+                diff = (str(dict1), str(dict2))
+        else:
+            diff = None
+        return diff
+
+    @classmethod
+    def _list_are_equal(cls, list1, list2):
+        if len(list1) != len(list2):
+            return False
+        else:
+            ok = True
+            for i in range(len(list1)):
+                if not cls.are_equal(list1[i], list2[i]):
+                    ok = False
+                    break
+            return ok
+
+    @classmethod
+    def are_equal(cls, obj1, obj2, tolerance=0.):
+        """Checks equality of objects."""
+        if isinstance(obj1, float) and isinstance(obj2, float):
+            return cls._float_are_equal(obj1, obj2, tolerance)
+        elif isinstance(obj1, numpy.ndarray) and isinstance(obj2, numpy.ndarray):
+            return cls._array_are_equal(obj1, obj2, tolerance)
+        elif isinstance(obj1, dict) and isinstance(obj2, dict):
+            return cls._dict_are_equal(obj1, obj2)
+        elif isinstance(obj1, list) and isinstance(obj2, list):
+            return cls._list_are_equal(obj1, obj2)
+        else:
+            try:
+                return obj1.__eq__(obj2)
+            except AttributeError:
+                return obj1 == obj2
+
+    @classmethod
+    def diff(cls, obj1, obj2):
+        """Inspect differences between objects."""
+        if not cls.are_equal(obj1, obj2):
+            if isinstance(obj1, dict) and isinstance(obj2, dict):
+                return cls._dict_diff(obj1, obj2)
+            else:
+                return (obj1, obj2)
 
 
 class Angle(RecursiveObject):
@@ -214,7 +273,7 @@ class Angle(RecursiveObject):
         Redefinition because of dynamism of buffering new computed values...
         """
         if not isinstance(other, Angle):
-            raise ValueError("cannot compare instances of different classes.")
+            return False
         if abs(self.get('degrees') -
                degrees_nearest_mod(other.get('degrees'),
                                    self.get('degrees'))) <= config.epsilon:

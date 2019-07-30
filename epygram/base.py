@@ -149,6 +149,13 @@ class Field(RecursiveObject, FootprintBase):
                                        config.mask_outside)
         return float(numpy.sqrt((data ** 2).mean()))
 
+    def absmean(self, **kwargs):
+        """Returns the mean of absolute value of data."""
+        data = numpy.ma.masked_outside(self.getdata(**kwargs),
+                                       - config.mask_outside,
+                                       config.mask_outside)
+        return float(numpy.abs(data).mean())
+
     def nonzero(self, **kwargs):
         """
         Returns the number of non-zero values (whose absolute
@@ -233,9 +240,42 @@ class Field(RecursiveObject, FootprintBase):
         elif operation == '/':
             self.setdata(self._data / scalar)
 
+    def compare_to(self, other):
+        """
+        Compare a field to another one, with several criteria:
+
+        - bias: average of errors distribution
+        - std: standard deviation of errors distribution
+        - errmax: maximum absolute error
+        - common_mask: indicate whether fields have the same mask or not;
+          beware that above statistics apply only to commonly unmasked data
+
+        :return ({bias, std, errmax}, common_mask)
+        """
+        selfdata = self._masked_data()
+        otherdata = self._masked_data()
+        common_mask = not numpy.any(numpy.logical_xor(selfdata.mask, otherdata.mask))
+        diff = self - other
+        return ({'bias':diff.mean(),
+                 'std':diff.std(),
+                 'errmax':max(abs(diff.min()), abs(diff.max()))},
+                common_mask)
+
+    def normalized_comparison(self, ref):
+        """
+        Compare field to a reference, with prior normalization (by reference
+        magnitude) of both fields.
+        Hence the figures of comparison can be interpretated as percentages.
+        """
+        refmin = ref.min()
+        refmax = ref.max()
+        normalizedself = (self - refmin).__div__(refmax - refmin)  # FIXME: why not classical operators ?
+        normalizedref = (ref - refmin).__div__(refmax - refmin)
+        return normalizedself.compare_to(normalizedref)
+
     def _masked_data(self, mask_outside=config.mask_outside):
         """
-        Return data as a masked array.
+        Return self field data as a masked array.
 
         :param mask_outside: if None, mask is empty;
                              else, mask data outside +/- this value
@@ -266,12 +306,11 @@ class Field(RecursiveObject, FootprintBase):
         otherdata.mask = cmask
         return data, otherdata
 
-    def distance_to(self, other,
+    def correlation(self, other,
                     commonmask=False,
                     mask_outside=config.mask_outside):
         """
-        Compute a distance to another field, as 1. - R(self, other)
-        where R is the correlation coefficient between the 2 fields.
+        Compute a correlation coefficient R to another field.
 
         :param commonmask: if True, compute distance on the subset of point that
                            are not masked for any of the two fields.
@@ -299,7 +338,7 @@ class Field(RecursiveObject, FootprintBase):
         selfdata = stretch_array(selfdata)
         if not commonmask and otherdata.shape != selfdata.shape:
             raise Exception('inconsistency between masks')
-        r = 1. - numpy.corrcoef(selfdata, otherdata)[0,1]
+        r = numpy.corrcoef(selfdata, otherdata)[0,1]
         return r
 
     def _check_operands(self, other):
@@ -1104,6 +1143,24 @@ class FieldValidityList(RecursiveObject, list):
     def __getslice__(self, start, end):  # deprecated but not for some builtins such as list...
         result = super(FieldValidityList, self).__getitem__(slice(start, end))
         return FieldValidityList(result)
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__) and len(self) == len(other):
+            return all([v == other[i] for i,v in enumerate(self)])
+        else:
+            return False
+
+    def __hash__(self):
+        # known issue __eq__/__hash__ must be defined both or none, else inheritance is broken
+        return object.__hash__(self)
+
+    def recursive_diff(self, other):
+        """Recursively list what differs from **other**."""
+        if self != other:
+            if not isinstance(other, self.__class__) or len(self) != len(other):
+                return (str(self), str(other))
+            else:
+                return [v.recursive_diff(other[i]) for i,v in enumerate(self)]
 
     def term(self, one=True, **kwargs):
         """This method returns the terms of all the validities"""
