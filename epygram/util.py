@@ -548,7 +548,7 @@ def load_cmap(cmap):
     config.usercolormaps.
     """
     import matplotlib.pyplot as plt
-    if cmap not in plt.colormaps():
+    if cmap not in plt.colormaps() and cmap in config.colormaps:
         with open(config.colormaps[cmap], 'r') as ocm:
             add_cmap(cmap, ocm)
 
@@ -773,6 +773,66 @@ def add_meridians_and_parallels_to(bm,
             bm.drawmeridians([0], ax=ax, **drawgreenwich_kwargs)
 
 
+def auto_meridians_parallels(geometry,
+                             meridians='auto',
+                             parallels='auto'):
+    """
+    Compute meridians and parallels.
+
+    *meridians* and *parallels* enable to fine-tune the choice of lines to
+    plot, with either:
+      - 'auto': automatic scaling to the basemap extents
+      - 'default': range(0,360,10) and range(-90,90,10)
+      - a list of values
+      - a grid step, e.g. 5 to plot each 5 degree.
+      - None: no one is plot
+    """
+    def Delta2delta(Delta):
+        if Delta <= 10:
+            delta = 1
+        elif 10 < Delta <= 30:
+            delta = 5
+        elif 30 < Delta <= 180:
+            delta = 10
+        else:
+            delta = 20
+        return delta
+
+    # meridians    # TODO: stereopol : all ! + parallels enough ?
+    if meridians == 'default' or (meridians == 'auto' and
+                                  ('gauss' in geometry.name or
+                                   geometry.name == 'polar_stereographic')):
+        meridians = numpy.arange(0, 370, 10)
+    elif meridians == 'auto' or isinstance(meridians, int) or isinstance(meridians, float):
+        minmax = geometry.minmax_ll()
+        if meridians == 'auto':
+            delta_lon = Delta2delta(minmax['lonmax'] - minmax['lonmin'])
+        else:
+            delta_lon = float(meridians)
+        lonmin = minmax['lonmin'] - minmax['lonmin'] % delta_lon
+        lonmax = minmax['lonmax'] - minmax['lonmax'] % delta_lon + 2 * delta_lon
+        meridians = numpy.arange(lonmin, lonmax, delta_lon)
+        if max(meridians > 180.):
+            meridians = meridians - 180.  # FIXME: cartopy does not plot meridians > 180°
+    elif meridians is None:
+        meridians = []
+    # parallels
+    if parallels == 'default' or ('gauss' in geometry.name and parallels == 'auto'):
+        parallels = numpy.arange(-90, 90, 10)
+    elif parallels == 'auto' or isinstance(parallels, int) or isinstance(parallels, float):
+        minmax = geometry.minmax_ll()
+        if parallels == 'auto':
+            delta_lat = Delta2delta(minmax['latmax'] - minmax['latmin'])
+        else:
+            delta_lat = float(parallels)
+        latmin = minmax['latmin'] - minmax['latmin'] % delta_lat
+        latmax = minmax['latmax'] - minmax['latmax'] % delta_lat + 2 * delta_lat
+        parallels = numpy.arange(latmin, latmax, delta_lat)
+    elif parallels is None:
+        parallels = []
+    return list(meridians), list(parallels)
+
+
 def nearlyEqual(a, b, epsilon=config.epsilon):
     """
     Function to compare floats
@@ -962,10 +1022,10 @@ def set_map_up(bm, ax,
         bm.bluemarble(alpha=bluemarble, ax=ax)
     if drawcoastlines:
         bm.drawcoastlines(ax=ax, **drawcoastlines_kwargs)
-    if departments:  # TODO: load only once, and store to the bm object
+    if departments:
         if not hasattr(bm, '_epygram_departments'):
             import json
-            with open(config.installdir + '/data/departments.json', 'r') as dp:
+            with open(config.installdir + '/data/french_departments.json', 'r') as dp:
                 depts = json.load(dp)[1]
             bm._epygram_departments = depts
         else:

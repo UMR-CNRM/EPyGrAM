@@ -679,7 +679,7 @@ class FA(FileResource):
                              'levels': self.geometry.vcoordinate.levels}
             field_info = self.gribdef.FA2GRIB(fieldname)
             # change from default (FA header) to actual levels
-            kwargs_vcoord['typeoffirstfixedsurface'] = field_info['typeOfFirstFixedSurface']
+            kwargs_vcoord['typeoffirstfixedsurface'] = field_info.get('typeOfFirstFixedSurface', 0)
             if 'level' in field_info:
                 kwargs_vcoord['levels'] = [field_info['level']]
             else:
@@ -687,7 +687,7 @@ class FA(FileResource):
             if 'scaledValueOfFirstFixedSurface' in field_info:
                 exp = field_info.get('scaleFactorOfFirstFixedSurface', 0)
                 kwargs_vcoord['levels'] = [field_info['scaledValueOfFirstFixedSurface'] * (10 ** -exp)]
-            if field_info['typeOfFirstFixedSurface'] != 119:  # hybrid-pressure
+            if kwargs_vcoord['typeoffirstfixedsurface'] != 119:  # hybrid-pressure
                 kwargs_vcoord.pop('grid', None)
             vcoordinate = fpx.geometry(**kwargs_vcoord)
             # Prepare field dimensions
