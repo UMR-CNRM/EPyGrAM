@@ -75,3 +75,8 @@ statistical_processes = {0:'average',
                          10:'summation',
                          11:'standardized anomaly'
                          }
+
+# Equivalence between typeOf[First|Second]FixedSurface and abbreviation in samples
+typeoffixedsurface2sample = {119:'ml',
+                             100:'pl',
+                             1:'sfc'}

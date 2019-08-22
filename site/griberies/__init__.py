@@ -17,7 +17,7 @@ import copy
 from bronx.syntax.parsing import str2dict
 from bronx.syntax.decorators import nicedeco
 
-from . import tables
+from . import tables, defaults
 
 
 @nicedeco

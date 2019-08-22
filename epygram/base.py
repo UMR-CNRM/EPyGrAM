@@ -46,6 +46,10 @@ class Field(RecursiveObject, FootprintBase):
             comment=dict(
                 optional=True,
                 access='rwd'),
+            misc_metadata=dict(
+                type=FPDict,
+                optional=True,
+                access='rwd'),
             units=dict(
                 optional=True,
                 access='rwd',
@@ -852,7 +856,8 @@ class FieldValidity(RecursiveObject):
                  basis=None,
                  term=None,
                  cumulativeduration=None,
-                 statistical_process_on_duration=None):
+                 statistical_process_on_duration=None,
+                 statistical_time_increment=None):
         """
         Constructor.
 
@@ -861,19 +866,22 @@ class FieldValidity(RecursiveObject):
         :param term: has to be of type datetime.timedelta;
         :param cumulativeduration: has to be of type datetime.timedelta;
         :param statistical_process_on_duration: kind of statistical process
-                                                that runs over the cumulative
-                                                duration.
+            that runs over the cumulative duration.
+        :param statistical_time_increment: time step over used for statistical
+            process.
         """
         self._basis = None
         self._date_time = None
         self._cumulativeduration = None
         self._statistical_process_on_duration = None
+        self._statistical_time_increment = None
 
         kwargs = dict(date_time=date_time,
                       basis=basis,
                       term=term,
                       cumulativeduration=cumulativeduration,
-                      statistical_process_on_duration=statistical_process_on_duration)
+                      statistical_process_on_duration=statistical_process_on_duration,
+                      statistical_time_increment=statistical_time_increment)
         if not (date_time is None and basis is None and term is None):
             self.set(**kwargs)
 
@@ -924,7 +932,6 @@ class FieldValidity(RecursiveObject):
             raise NotImplementedError("fmt=" + fmt + " option for " +
                                       self.__class__.__name__ +
                                       ".cumulativeduration().")
-
         return out
 
     def statistical_process_on_duration(self, asGRIB2code=False):
@@ -941,7 +948,30 @@ class FieldValidity(RecursiveObject):
             out = {v:k for k, v in griberies.tables.statistical_processes.items()}.get(self._statistical_process_on_duration, None)
         else:
             out = self._statistical_process_on_duration
+        return out
 
+    def statistical_time_increment(self, fmt=None):
+        """
+        This method returns the statistical_time_increment,
+        i.e. the time step used for statistical process over cumulative
+        duration.
+
+        By default, it is returned as a :class:`datetime.timedelta`;
+        otherwise, *fmt* argument can specify the desired return format.
+
+        Coded versions of *fmt*: 'IntHours', 'IntSeconds', and that's all for
+        now...
+        """
+        if fmt is None:
+            out = self._statistical_time_increment
+        elif fmt == 'IntHours':
+            out = int(self._statistical_time_increment.total_seconds() // 3600)
+        elif fmt == 'IntSeconds':
+            out = int(self._statistical_time_increment.total_seconds())
+        else:
+            raise NotImplementedError("fmt=" + fmt + " option for " +
+                                      self.__class__.__name__ +
+                                      ".statistical_time_increment().")
         return out
 
     def get(self, fmt=None):
@@ -967,7 +997,6 @@ class FieldValidity(RecursiveObject):
         else:
             raise NotImplementedError("fmt=" + fmt + " option for " +
                                       self.__class__.__name__ + ".get().")
-
         return out
 
     def getbasis(self, fmt=None):
@@ -993,7 +1022,6 @@ class FieldValidity(RecursiveObject):
         else:
             raise NotImplementedError("fmt=" + fmt + " option for " +
                                       self.__class__.__name__ + ".getbasis().")
-
         return out
 
     def set(self,
@@ -1001,7 +1029,8 @@ class FieldValidity(RecursiveObject):
             basis=None,
             term=None,
             cumulativeduration=None,
-            statistical_process_on_duration=None):
+            statistical_process_on_duration=None,
+            statistical_time_increment=None):
         """
         Sets validity and basis according to arguments.
         A consistency check is done if the three arguments are provided
@@ -1015,6 +1044,8 @@ class FieldValidity(RecursiveObject):
         :param statistical_process_on_duration: kind of statistical process
             that runs over the cumulative duration.
             Cf. GRIB2 typeOfStatisticalProcessing
+        :param statistical_time_increment: time step over used for statistical
+            process.
         """
         if isinstance(date_time, datetime.datetime):
             self._date_time = date_time
@@ -1032,6 +1063,10 @@ class FieldValidity(RecursiveObject):
         if cumulativeduration is not None and\
            not isinstance(cumulativeduration, datetime.timedelta):
             raise epygramError("argument 'cumulativeduration' must be of" +
+                               " type datetime.timedelta")
+        if statistical_time_increment is not None and\
+           not isinstance(statistical_time_increment, datetime.timedelta):
+            raise epygramError("argument 'statistical_time_increment' must be of" +
                                " type datetime.timedelta")
 
         if isinstance(term, datetime.timedelta):
@@ -1057,6 +1092,8 @@ class FieldValidity(RecursiveObject):
         if self._cumulativeduration is not None and \
            statistical_process_on_duration is not None:
             self._statistical_process_on_duration = statistical_process_on_duration
+        if statistical_time_increment is not None:
+            self._statistical_time_increment = statistical_time_increment
 
     def is_valid(self):
         """Check the validity is valid, i.e. not null."""
@@ -1178,6 +1215,12 @@ class FieldValidityList(RecursiveObject, list):
         """This method returns the statistical process on duration of all the validities."""
         length = len(self)
         result = [self[i].statistical_process_on_duration(**kwargs) for i in range(length)]
+        return result[0] if (one and length == 1) else result
+
+    def statistical_time_increment(self, one=True, **kwargs):
+        """This method returns the statistical_time_increment of all the validities."""
+        length = len(self)
+        result = [self[i].statistical_time_increment(**kwargs) for i in range(length)]
         return result[0] if (one and length == 1) else result
 
     def get(self, one=True, **kwargs):

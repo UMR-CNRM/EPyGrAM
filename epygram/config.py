@@ -127,41 +127,8 @@ GeoPoints_col_width = 12
 
 #: GRIB lowlevel API library to be used, among ('eccodes', 'grib_api', 'gribapi')
 GRIB_lowlevel_api = 'eccodes'
-#: GRIB default edition (1 or 2)
-GRIB_default_edition = 2
-#: GRIB_default tablesVersion
-GRIB_default_tablesVersion = 14  # Nov. 2014 // 15 = May 2015
-#: GRIB default sample (possibility to use others)
-GRIB_default_sample = {i:'GRIB{}_grid_second_order'.format(i) for i in (1, 2)}
-# GRIB_default_sample = {i:'GRIB' + str(i) for i in (1, 2)}
-#: GRIB default production parameters -- write mode
-GRIB_default_production_parameters = {'centre':85,  # Météo-France
-                                      'generatingProcessIdentifier':254,  # last before 255=missing
-                                      'productionStatusOfProcessedData':2,  # research/test
-                                      'typeOfProcessedData':2,  # Analysis and forecast products
-                                      'typeOfGeneratingProcess':2,  # Forecast
-                                      }
-#: GRIB default ordering of data
-GRIB_default_ordering = {'iScansNegatively':0,
-                         'jScansPositively':0,
-                         'jPointsAreConsecutive':0}
-#: GRIB default packing -- write mode.
-#: recommended packing types for GRIB2:
-#: (by increasing packing efficiency // decreasing speed performance)
-#: - grid_jpeg (15% // 100%)
-#: - grid_second_order (19% // 42%)
-#: - grid_simple (38% // 22%)
-#: - grid_ieee (100% // 12%)
-GRIB_default_packing = {1:{'packingType':'grid_second_order',
-                           # 'complexPacking':1,
-                           # 'boustrophedonicOrdering':0,
-                           'bitsPerValue':16,
-                           # 'additionalFlagPresent':1,
-                           },
-                        2:{'packingType':'grid_second_order',
-                           'bitsPerValue':12,
-                           }
-                        }
+#: GRIB default production centre -- write mode
+GRIB_default_centre = 85  # Météo-France
 #: GRIB samples from epygram (treated as clone from file)
 GRIB_epygram_samples_path = installdir + '/data/grib_samples'
 #: satellites local GRIB2 encoding
@@ -269,7 +236,7 @@ hide_footprints_warnings = True
 prevent_swapping_legendre = 0.75
 #: Use footprints.proxy builder to generate a field.
 #: True: more flexible, False: faster
-footprints_proxy_as_builder = True  # TODO: remove this, less useful since fasttrack ?
+footprints_proxy_as_builder = False  # TODO: remove this, less useful since fasttrack ?
 #: Vector graphical symbol
 vector_symbol = 'barbs'
 #: Default quality for figures
