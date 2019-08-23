@@ -476,6 +476,7 @@ class _H2DCartopyPlot(object):
         Plot field with **cartopy**.
 
         Figure settings:
+
         :param fig: any existing figure to be used for the plot.
             A matplotlib *figure* is a frame containing eventually several
             subplots (axes).
@@ -490,6 +491,7 @@ class _H2DCartopyPlot(object):
         :param title: title for the plot. Default is field identifier.
 
         Geometry settings:
+
         :param projection: a cartopy.crs projection to be used for plot.
             Defaults to the field.geometry.default_cartopy_CRS()
         :param subzone: [LAM fields only] among ('C', 'CI'), plots the data
@@ -499,7 +501,8 @@ class _H2DCartopyPlot(object):
         :param focus_extent: force to focus the map boundaries to the field
             extent. Overrides **set_global**.
 
-        Graphical settings
+        Graphical settings:
+
         :param plot_method: choice of the matplotlib plotting function to be
             used, among ('contourf', 'contour', 'scatter', 'pcolormesh').
         :param minmax: defines the min and max values for the plot colorbar.
@@ -515,7 +518,8 @@ class _H2DCartopyPlot(object):
         :param clabel_kw: kwargs to be passed to matplotlib's ax.clabel().
             Only for plot_method = 'contour'.
 
-        Cartography settings
+        Cartography settings:
+
         :param meridians: enable to fine-tune the choice of lines to
             plot, with either:
               - 'auto': automatic scaling to the basemap extents
@@ -537,6 +541,7 @@ class _H2DCartopyPlot(object):
             Warning: not consistent with natural_earth_features !
 
         Colormap settings:
+
         :param colormap: name of the ``matplotlib`` colormap to use (or an
             ``epygram`` one, or a user-defined one, cf.
             config.usercolormaps).
@@ -549,6 +554,7 @@ class _H2DCartopyPlot(object):
             colormap name.
 
         Colorbar settings:
+
         :param colorbar: if *False*, hide colorbar the plot; else, defines the
             colorbar position, among ('bottom', 'right'). Defaults to 'right'.
         :param colorbar_over: an optional existing ax to plot the colorbar on.
@@ -640,9 +646,9 @@ class _H2DCartopyPlot(object):
 
 class _H2DBasemapPlot(object):
     """
-    Plugin for H2DField for plotting with Basemap.
-
     .. deprecated:: 1.3.9
+
+    Plugin for H2DField for plotting with Basemap.
     """
 
     def basemap_plot(self,
