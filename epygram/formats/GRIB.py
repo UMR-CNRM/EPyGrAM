@@ -422,10 +422,12 @@ class GRIBmessage(RecursiveObject, dict):
             packing/ordering.
 
         GRIB1
+
         :param ordering: flattening of 2D data
         :param packing: options of packing and compression in GRIB (dict).
 
         GRIB2 (new way)
+
         :param interpret_comment: set additional key/values taken from
             field.comment (interpreted as json)
         :param set_misc_metadata: set additional key/values taken from
@@ -1514,6 +1516,8 @@ class GRIBmessage(RecursiveObject, dict):
                 footprints_proxy_as_builder=config.footprints_proxy_as_builder,
                 get_info_as_json=None):
         """
+        .. deprecated:: 1.3.9
+
         Returns an :class:`epygram.base.Field` made out from the GRIB message.
 
         :param getdata: if *False*, only metadata are read, the field do not
@@ -1522,8 +1526,6 @@ class GRIBmessage(RecursiveObject, dict):
           to build fields.
         :param get_info_as_json: if not **None**, writes the keys given in
           *get_info_as_json* as json in field.comment.
-
-        ..deprecated:: 1.3.9
         """
         if footprints_proxy_as_builder:
             builder = fpx.field
@@ -2447,10 +2449,10 @@ class GRIB(FileResource):
             in the meta-data only.
         :param footprints_proxy_as_builder: if True, uses footprints.proxy
             to build fields. True decreases performance.
-            ..deprecated:: 1.3.9
+            .. deprecated:: 1.3.9
         :param get_info_as_json: if not None, writes the keys given in
             *get_info_as_json* as json in field.comment.
-            ..deprecated:: 1.3.9
+            .. deprecated:: 1.3.9
         :param read_misc_metadata: read the specified keys, and store it in
             field.misc_metadata
         """
@@ -2494,10 +2496,10 @@ class GRIB(FileResource):
             in the meta-data only.
         :param footprints_proxy_as_builder: if True, uses footprints.proxy
             to build fields. True decreases performance.
-            ..deprecated:: 1.3.9
+            .. deprecated:: 1.3.9
         :param get_info_as_json: if not None, writes the keys given in
             *get_info_as_json* as json in field.comment.
-            ..deprecated:: 1.3.9
+            .. deprecated:: 1.3.9
         :param read_misc_metadata: read the specified keys, and store it in
             field.misc_metadata
         """

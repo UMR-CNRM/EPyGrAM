@@ -13,6 +13,9 @@
 
 -----------------------------------------------------------
 
+functions
+---------
+
 .. autofunction:: complete_grib_paths
 .. autofunction:: complete_grib_samples_paths
 .. autofunction:: complete_grib_definition_paths
@@ -24,7 +27,24 @@
 
 -----------------------------------------------------------
 
+tables
+------
+
 .. autodata:: griberies.tables.productionStatusOfProcessedData_dict
 .. autodata:: griberies.tables.typeOfGeneratingProcess_dict
 .. autodata:: griberies.tables.pyproj_geoid_shapes
 .. autodata:: griberies.tables.statistical_processes
+.. autodata:: griberies.tables.typeoffixedsurface2sample
+
+-----------------------------------------------------------
+
+defaults
+--------
+
+.. autodata:: griberies.defaults.GRIB2_keyvalue
+.. autodata:: griberies.defaults.GRIB2_metadata_to_embark
+
+.. autodata:: griberies.defaults.GRIB1_sample
+.. autodata:: griberies.defaults.GRIB1_packing
+.. autodata:: griberies.defaults.GRIB1_ordering
+.. autodata:: griberies.defaults.GRIB1_keyvalue

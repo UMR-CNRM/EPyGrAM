@@ -64,12 +64,7 @@ GRIB
 ....
 
 .. autodata:: GRIB_lowlevel_api
-.. autodata:: GRIB_default_edition
-.. autodata:: GRIB_default_tablesVersion
-.. autodata:: GRIB_default_sample
-.. autodata:: GRIB_default_production_parameters
-.. autodata:: GRIB_default_ordering
-.. autodata:: GRIB_default_packing
+.. autodata:: GRIB_default_centre
 .. autodata:: GRIB_epygram_samples_path
 .. autodata:: satellites_local_GRIB2
 .. autodata:: sensors_local_GRIB2
