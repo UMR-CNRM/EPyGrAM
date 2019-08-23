@@ -464,6 +464,19 @@ class D3Geometry(RecursiveObject, FootprintBase):
         self.vcoordinate = vc_self
         return result
 
+    def cartopy_CRS_reproject(self, lons, lats, projection=None):
+        """Reproject lons/lats onto a cartopy CRS projection coordinates."""
+        from cartopy import crs as ccrs
+        if projection is None:
+            projection = self.default_cartopy_CRS()
+        if isinstance(lons, (float, int)):
+            lons = [lons]
+            lats = [lats]
+        tmp = projection.transform_points(ccrs.PlateCarree(),
+                                          numpy.array(lons),
+                                          numpy.array(lats))
+        return tmp[..., 0], tmp[..., 1]
+
 ###################
 # PRE-APPLICATIVE #
 ###################
@@ -1203,6 +1216,20 @@ class D3RectangularGridGeometry(D3Geometry):
             corners[c] = self.ij2ll(i, j, position)
         return corners
 
+    def minmax_ll(self, subzone=None):
+        """Return min/max of lon/lat."""
+        (imin, jmin) = self.gimme_corners_ij(subzone)['ll']
+        (imax, jmax) = self.gimme_corners_ij(subzone)['ur']
+        border = [(imin, j) for j in range(jmin, jmax + 1)] + \
+                 [(imax, j) for j in range(jmin, jmax + 1)] + \
+                 [(i, jmin) for i in range(imin, imax + 1)] + \
+                 [(i, jmax) for i in range(imin, imax + 1)]
+        ilist, jlist = list(zip(*border))
+        (lons, lats) = self.ij2ll(numpy.array(ilist),
+                                  numpy.array(jlist))
+        return {'lonmin':lons.min(), 'lonmax':lons.max(),
+                'latmin':lats.min(), 'latmax':lats.max()}
+
     def point_is_inside_domain_ll(self, lon, lat,
                                   margin=-0.1,
                                   subzone=None,
@@ -1419,6 +1446,34 @@ class D3RectangularGridGeometry(D3Geometry):
             if squeeze:
                 result = result.squeeze()
         return result
+
+    def default_cartopy_CRS(self):
+        """
+        Create a cartopy.crs appropriate to the Geometry.
+
+        By default, a PlateCarree (if the domain gets close to a pole)
+        or a Miller projection is returned.
+        """
+        from cartopy import crs as ccrs
+        (lons, lats) = self.get_lonlat_grid()
+        if lons.ndim == 1:
+            lonmax = lons[:].max()
+            lonmin = lons[:].min()
+        else:
+            lonmax = lons[:, -1].max()
+            lonmin = lons[:, 0].min()
+        if lats.ndim == 1:
+            latmax = lats[:].max()
+            latmin = lats[:].min()
+        else:
+            latmax = lats[-1, :].max()
+            latmin = lats[0, :].min()
+        center_lon = (lonmax - lonmin) / 2.
+        if latmin <= -80.0 or latmax >= 84.0:
+            crs = ccrs.PlateCarree(center_lon)
+        else:
+            crs = ccrs.Mercator(center_lon)
+        return crs
 
     def _what_grid_dimensions(self, out=sys.stdout,
                               arpifs_var_names=False,
@@ -1724,8 +1779,12 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
         i, j = as_numpy_array(i), as_numpy_array(j)
         assert len(i) == len(j), "Both coordinates must have the same length"
         result = numpy.zeros(len(i))
+        #s(stretch_array(lons).shape)
         for k in range(len(i)):
-            dist = self.distance((lons[j[k], i[k]], lats[j[k], i[k]]), (lons.flatten(), lats.flatten()))
+            dist = self.distance((lons[j[k], i[k]], lats[j[k], i[k]]),
+                                 (stretch_array(lons), stretch_array(lats)))
+            #dist = self.distance((ones * lons[j[k], i[k]], ones * lats[j[k], i[k]]),
+            #                     (lons.flatten(), lats.flatten()))
             result[k] = dist[dist != 0].min()
         return result.squeeze()
 
@@ -2151,6 +2210,15 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
     def azimuth(self, end1, end2):
         """Same as plane_azimuth in this geometry."""
         return self.plane_azimuth(end1, end2)
+
+    def default_cartopy_CRS(self):
+        """
+        Create a cartopy.crs appropriate to the Geometry.
+
+        In this case, cartopy is not used but raw matplotlib,
+        so returned CRS is None.
+        """
+        return None
 
     def _what_position(self, out=sys.stdout):
         """
@@ -3064,6 +3132,8 @@ class D3RotLLGeometry(D3RegLLGeometry):
                             ax=ax)
         return b
 
+    # TODO: def default_cartopy_CRS(self):
+
     def _what_grid(self, out=sys.stdout):
         """
         Writes in file a summary of the grid of the field.
@@ -3602,6 +3672,8 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         projection (if available). This is designed to avoid explicit handling
         of deep horizontal geometry attributes.
 
+        .. deprecated:: 1.3.9
+
         :param gisquality: defines the quality of GIS contours, cf. Basemap doc.
           Possible values (by increasing quality): 'c', 'l', 'i', 'h', 'f'.
         :param subzone: defines the LAM subzone to be included, in LAM case,
@@ -3621,7 +3693,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
           on matplotlib.pyplot.gca()
         """
         from mpl_toolkits.basemap import Basemap
-
+        epylog.info("The 'make_basemap' method is deprecated, please use 'default_cartopy_CRS'")
         if zoom is not None:
             if specificproj not in [None, 'cyl', 'merc']:
                 raise epygramError("projection can only be cyl/merc in zoom mode.")
@@ -3764,6 +3836,49 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                 raise epygramError('unknown **specificproj**: ' + str(specificproj))
 
         return b
+
+    def default_cartopy_CRS(self):
+        """
+        Create a cartopy.crs appropriate to the Geometry.
+        """
+        from cartopy import crs as ccrs
+        if self.name == 'lambert':
+            if self.secant_projection:
+                lat_0 = (self.projection['secant_lat1'].get('degrees') +
+                         self.projection['secant_lat2'].get('degrees')) / 2.
+                secant_lats = (self.projection['secant_lat1'].get('degrees'),
+                               self.projection['secant_lat2'].get('degrees'))
+            else:
+                lat_0 = self.projection['reference_lat'].get('degrees')
+                secant_lats = (lat_0, lat_0)
+            crs = ccrs.LambertConformal(
+                central_longitude=self.projection['reference_lon'].get('degrees'),
+                central_latitude=lat_0,
+                standard_parallels=secant_lats)
+        elif self.name == 'mercator':
+            if self.secant_projection:
+                lat = 'secant_lat'
+            else:
+                lat = 'reference_lat'
+            crs = ccrs.Mercator(
+                central_longitude=self._center_lon.get('degrees'),
+                latitude_true_scale=self.projection[lat].get('degrees'))
+        elif self.name == 'polar_stereographic':
+            if self.secant_projection:
+                lat = 'secant_lat'
+            else:
+                lat = 'reference_lat'
+            crs = ccrs.Stereographic(
+                central_latitude=numpy.copysign(90., self.projection[lat].get('degrees')),
+                central_longitude=self.projection['reference_lon'].get('degrees'),
+                true_scale_latitude=self.projection[lat].get('degrees'))
+        elif self.name == 'space_view':
+            crs = ccrs.Geostationary(
+                central_longitude=self.projection['satellite_lon'].get('degrees'),
+                satellite_height=self.projection['satellite_height'].get('degrees'))
+        else:
+            raise epygramError("Projection name unknown.")
+        return crs
 
     def linspace(self, end1, end2, num):
         """
@@ -4208,7 +4323,6 @@ class D3GaussGeometry(D3Geometry):
         :param compressed: if True, return 1D arrays, else 2D masked arrays.
         :param as_float: if True, return arrays with dtype float64, else int64.
         """
-
         Jmax = self.dimensions['lat_number']
         Imax = self.dimensions['lon_number_by_lat']
         igrid = []
@@ -4226,7 +4340,6 @@ class D3GaussGeometry(D3Geometry):
         if not compressed:
             igrid = self.reshape_data(igrid)
             jgrid = self.reshape_data(jgrid)
-
         return (igrid, jgrid)
 
     def _clear_buffered_gauss_grid(self):
@@ -4260,7 +4373,7 @@ class D3GaussGeometry(D3Geometry):
                       d4=True requires nb_validities > 0
         :param nb_validities: number of validities represented in data values
         """
-        # !!! **useless enables the method to receive arguments specific to
+        # !!! **_ enables the method to receive arguments specific to
         #     other geometries but useless here ! Do not remove.
         if hasattr(self, '_buffered_gauss_grid') and \
            self._buffered_gauss_grid.get('filled'):
@@ -4517,6 +4630,18 @@ class D3GaussGeometry(D3Geometry):
                             ax=ax)
 
         return b
+
+    def default_cartopy_CRS(self):
+        """
+        Create a cartopy.crs appropriate to the Geometry.
+        """
+        from cartopy import crs as ccrs
+        if 'rotated' in self.name:
+            lon_0 = self.grid['pole_lon'].get('degrees')
+        else:
+            lon_0 = 0.
+        crs = ccrs.Mollweide(central_longitude=lon_0)
+        return crs
 
     def resolution_ll(self, lon, lat):
         """

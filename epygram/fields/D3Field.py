@@ -1065,7 +1065,7 @@ class _D3CommonField(Field):
             if 'gauss' in self.geometry.name:
                 # gauss grid case
                 resolution = self.geometry.resolution_j(self.geometry.dimensions['lat_number'] - 1)
-            elif self.geometry.name == 'regular_lonlat':
+            elif self.geometry.name in ('regular_lonlat', 'unstructured'):
                 resolution = self.geometry.resolution_ij(self.geometry.dimensions['X'] / 2,
                                                          self.geometry.dimensions['Y'] / 2)
             else:

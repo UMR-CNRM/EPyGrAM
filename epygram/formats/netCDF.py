@@ -47,7 +47,8 @@ _typeoffirstfixedsurface_short_dict_inv = {v:k for k, v in _typeoffirstfixedsurf
 
 _proj_dict = {'lambert':'lambert_conformal_conic',
               'mercator':'mercator',
-              'polar_stereographic':'polar_stereographic'}
+              'polar_stereographic':'polar_stereographic',
+              'space_view':'vertical_perspective'}
 _proj_dict_inv = {v:k for k, v in _proj_dict.items()}
 
 
@@ -530,9 +531,19 @@ class netCDF(FileResource):
                                                                               'mercator',
                                                                               'polar_stereographic',
                                                                               'latitude_longitude') or
-                 'gauss' in self._variables[variable.grid_mapping].grid_mapping_name.lower())):
+                 'gauss' in self._variables[variable.grid_mapping].grid_mapping_name.lower()) or
+                (variable.grid_mapping == 'GeosCoordinateSystem' and
+                  'geos' in self._variables
+                  and hasattr(self._variables['geos'], 'grid_mapping_name')
+                  and self._variables['geos'].grid_mapping_name == 'vertical_perspective') and False):
                 # geometry described as "grid_mapping" meta-data
-                gm = variable.grid_mapping
+                if (variable.grid_mapping == 'GeosCoordinateSystem' and
+                    'geos' in self._variables
+                    and hasattr(self._variables['geos'], 'grid_mapping_name')
+                    and self._variables['geos'].grid_mapping_name == 'vertical_perspective'):
+                    gm = 'geos'
+                else:
+                    gm = variable.grid_mapping
                 grid_mapping = self._variables[gm]
                 if hasattr(grid_mapping, 'ellipsoid'):
                     kwargs_geom['geoid'] = {'ellps':grid_mapping.ellipsoid}
@@ -549,8 +560,11 @@ class netCDF(FileResource):
                     kwargs_geom['geoid'] = config.default_geoid
                 if hasattr(grid_mapping, 'position_on_horizontal_grid'):
                     kwargs_geom['position_on_horizontal_grid'] = grid_mapping.position_on_horizontal_grid
-                if grid_mapping.grid_mapping_name in ('lambert_conformal_conic', 'mercator', 'polar_stereographic'):
-                    if (hasattr(self._variables[variable.grid_mapping], 'x_resolution') or
+                if grid_mapping.grid_mapping_name in ('lambert_conformal_conic',
+                                                      'mercator',
+                                                      'polar_stereographic',
+                                                      'vertical_perspective'):
+                    if (hasattr(grid_mapping, 'x_resolution') or
                         not behaviour.get('grid_is_lonlat', False)):
                         # if resolution is either in grid_mapping attributes or in the grid itself
                         kwargs_geom['name'] = _proj_dict_inv[grid_mapping.grid_mapping_name]
@@ -559,7 +573,7 @@ class netCDF(FileResource):
                             Yresolution = grid_mapping.y_resolution
                         else:
                             Xgrid, Ygrid = find_grid_in_variables()
-                            if behaviour.get('H1D_is_H2D_unstructured', False):
+                            if 1 in Xgrid.shape and behaviour.get('H1D_is_H2D_unstructured', False):
                                 raise epygramError('unable to retrieve both X_resolution and Y_resolution from a 1D list of points.')
                             else:
                                 Xresolution = abs(Xgrid[0, 0] - Xgrid[0, 1])
@@ -661,6 +675,38 @@ class netCDF(FileResource):
                                             x_0=-dx, y_0=-dy,
                                             **kwargs_geom['geoid'])
                             ll00 = p(-fe, -fn, inverse=True)
+                            del p
+                            grid['input_lon'] = Angle(ll00[0], 'degrees')
+                            grid['input_lat'] = Angle(ll00[1], 'degrees')
+                            grid['input_position'] = (0, 0)
+                        elif kwargs_geom['name'] == 'space_view':
+                            kwargs_geom['projection'] = {'reference_lon':Angle(grid_mapping.longitude_of_central_meridian, 'degrees'),
+                                                         'rotation':Angle(0., 'degrees')}
+                            if hasattr(grid_mapping, 'rotation'):
+                                kwargs_geom['projection']['rotation'] = Angle(grid_mapping.rotation, 'degrees')
+                            r = grid_mapping.latitude_of_projection_origin
+                            kwargs_geom['projection']['satellite_lat'] = Angle(r, 'degrees')
+                            kwargs_geom['projection']['satellite_lon'] = Angle(grid_mapping.longitude_of_central_meridian, 'degrees')
+                            kwargs_geom['projection']['satellite_height'] = grid_mapping.height_above_earth
+                            fe = grid_mapping.false_easting
+                            fn = grid_mapping.false_northing
+                            reference_lat = grid_mapping.standard_parallel
+
+                            # compute x_0, y_0...
+                            p = pyproj.Proj(proj='geos',
+                                            lon_0=kwargs_geom['projection']['reference_lon'].get('degrees'),
+                                            h=kwargs_geom['projection']['satellite_height'],
+                                            **kwargs_geom['geoid'])
+                            dx, dy = p(kwargs_geom['projection']['reference_lon'].get('degrees'),
+                                       reference_lat)
+                            # ... for getting center coords from false_easting, false_northing
+                            p = pyproj.Proj(proj='geos',
+                                            lon_0=kwargs_geom['projection']['reference_lon'].get('degrees'),
+                                            h=kwargs_geom['projection']['satellite_height'],
+                                            x_0=-dx, y_0=-dy,
+                                            **kwargs_geom['geoid'])
+                            ll00 = p(-fe, -fn, inverse=True)
+                            print(ll00)
                             del p
                             grid['input_lon'] = Angle(ll00[0], 'degrees')
                             grid['input_lat'] = Angle(ll00[1], 'degrees')

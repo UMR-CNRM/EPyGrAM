@@ -35,11 +35,12 @@ class FaGribDef(griberies.GribDef):
 
     def _find_gribdefs(self, root):
         dirs = []
-        for d in sorted(os.listdir(root)):
-            if self._re_dirname.match(d):
-                d = os.path.join(root, d)
-                if os.path.isdir(d):
-                    dirs.append(d)
+        if os.path.exists(root) and os.path.isdir(root):
+            for d in sorted(os.listdir(root)):
+                if self._re_dirname.match(d):
+                    d = os.path.join(root, d)
+                    if os.path.isdir(d):
+                        dirs.append(d)
         return dirs
 
     def _actual_init(self):
