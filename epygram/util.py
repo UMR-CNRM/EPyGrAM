@@ -21,10 +21,15 @@ from six.moves.urllib.request import urlopen  # @UnresolvedImport
 from distutils.version import LooseVersion
 
 from footprints import FootprintBase
-from bronx.graphics.colormapping import add_cmap, get_norm4colorscale
+from bronx.graphics.colormapping import (add_cmap,
+                                         get_norm4colorscale,
+                                         register_colormap_from_json)
 from bronx.syntax.decorators import nicedeco
+from bronx.fancies import loggers
 
-from epygram import config, epygramError
+from . import config, epygramError
+
+epylog = loggers.getLogger(__name__)
 
 
 class RecursiveObject(object):
@@ -546,11 +551,17 @@ def load_cmap(cmap):
     Reads and registers the epygram-or-user-colormap called *cmap*,
     which must be either in config.epygram_colormaps or
     config.usercolormaps.
+
+    Works with both old-way (.cmap) and new way (.json).
     """
     import matplotlib.pyplot as plt
     if cmap not in plt.colormaps() and cmap in config.colormaps:
-        with open(config.colormaps[cmap], 'r') as ocm:
-            add_cmap(cmap, ocm)
+        filename = config.colormaps[cmap]
+        if filename.endswith('.json'):
+            return register_colormap_from_json(filename)
+        else:
+            with open(filename, 'r') as ocm:
+                add_cmap(cmap, ocm)
 
 
 formatting_default_widths = (50, 20)
@@ -860,6 +871,8 @@ nearlyEqualArray.__doc__ = "Vector version of nearlyEqual()."
 
 def scale_colormap(cmap, max_val=None):
     """
+    .. deprecated:: 1.3.9
+
     Creates a matplotlib.colors.BoundaryNorm object tuned for scaled colormaps,
     i.e. discrete, irregular colorshades.
 

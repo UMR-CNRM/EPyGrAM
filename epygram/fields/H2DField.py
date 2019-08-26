@@ -47,13 +47,9 @@ class _H2DCartopyPlot(object):
                             set_global):
         """Consistently set figure, ax and projection."""
         import matplotlib.pyplot as plt
-        if rcparams is None:
-            rcparams = [(('font',), dict(family='serif')), ]
         for args, kwargs in rcparams:
             plt.rc(*args, **kwargs)
         # fig, ax, proj
-        if figsize is None:
-            figsize = config.plotsizes
         if fig is None:
             assert ax is None, "Cannot specify an **ax** without a **fig**."
             if projection is None:
@@ -290,27 +286,27 @@ class _H2DCartopyPlot(object):
                             center_cmap_on_0,
                             contourcolor):
         """Set colors settings."""
+        import matplotlib.pyplot as plt
         from matplotlib.colors import cnames
         from bronx.graphics import colormapping
-        util.load_cmap(colormap)
-        if colormap in config.epygram_colormaps_scaling_labels:
-            colormaphelper = colormapping.CenteredColormapHelper(
-                colormap,
-                fixed_colorcenters=config.epygram_colormaps_scaling_labels[colormap])
-        elif colormap in config.epygram_colormaps_scaling:
-            colormaphelper = colormapping.ColormapHelper(
-                colormap,
-                fixed_colorbounds=config.epygram_colormaps_scaling[colormap])
+        if colormap not in plt.colormaps() and colormap in config.colormaps:
+            cmapfile = config.colormaps[colormap]
+            if cmapfile.endswith('.json'):
+                colormaphelper = colormapping.get_ColormapHelper_fromfile(cmapfile)
+            elif cmapfile.endswith('.json'):
+                # deprecated
+                msg = ' '.join(["the use of '.cmap' user colormaps is deprecated,",
+                                "and not possible with cartoplot();",
+                                "move to json format, using epygram.moves.cmap2json()"])
+                raise epygramError(msg)
         else:
-            colormaphelper = colormapping.ColormapHelper(
-                colormap,
-                fixed_colorbounds=colorbounds)
-        plot_kwargs = colormaphelper.kwargs_for_plot((m, M), center_cmap_on_0)
-        if plot_method not in ('scatter', 'pcolormesh'):
-            plot_kwargs['levels'] = colormaphelper.colorbounds(minmax=(m, M),
-                                                               number=colorsnumber,
-                                                               step=colorstep)
-        ticks = colormaphelper.ticks((m, M))
+            colormaphelper = colormapping.ColormapHelper(colormap,
+                                                         explicit_colorbounds=colorbounds)
+        plot_kwargs = colormaphelper.kwargs_for_plot(plot_method,
+                                                     (m, M),
+                                                     center_cmap_on_0,
+                                                     number=colorsnumber,
+                                                     step=colorstep)
         if plot_method == 'contour':
             if contourcolor in cnames or contourcolor[0] == '#':
                 colormap = None
@@ -320,7 +316,7 @@ class _H2DCartopyPlot(object):
                 contourcolor = None
             plot_kwargs.update(colors=contourcolor,
                                cmap=colormap)
-        return plot_kwargs, ticks
+        return plot_kwargs, colormaphelper
 
     def _cartoplot_actualplot(self,
                               ax,
@@ -368,10 +364,6 @@ class _H2DCartopyPlot(object):
             if not self.geometry.rectangular_grid or self.geometry.dimensions['Y'] == 1:
                 pf = ax.tricontour(x, y, data,
                                    **plot_kwargs)
-                epylog.warning(" ".join(["There is a remaining bug in",
-                                         "plotting data from non-rectangular",
-                                         "grids in basemap, cf.",
-                                         "https://github.com/matplotlib/basemap/issues/265"]))
             else:
                 pf = ax.contour(x, y, data,
                                 **plot_kwargs)
@@ -393,11 +385,15 @@ class _H2DCartopyPlot(object):
                             colorbar,
                             colorbar_over,
                             colorbar_ax_kw,
-                            colorbar_ticks,
-                            minmax_along_colorbar):
+                            colormap_helper,
+                            minmax_along_colorbar,
+                            m, M,
+                            colorsnumber,
+                            colorstep):
         """Add colorbar."""
         import matplotlib.pyplot as plt
         from mpl_toolkits.axes_grid1 import make_axes_locatable
+        # position of colorbar
         if colorbar_over is None:
             if colorbar_ax_kw is None:
                 colorbar_ax_kw = dict(size="5%", pad=0.2)
@@ -407,10 +403,19 @@ class _H2DCartopyPlot(object):
         else:
             cax = colorbar_over
         orientation = 'vertical' if colorbar in ('right', 'left') else 'horizontal'
+        # ticks
+        ticks_label = colormap_helper.ticks_label((m, M),
+                                                  number=colorsnumber,
+                                                  step=colorstep)
+        ticks_position = colormap_helper.ticks_position((m, M),
+                                                        number=colorsnumber,
+                                                        step=colorstep)
         cb = plt.colorbar(pf,
                           orientation=orientation,
-                          ticks=colorbar_ticks,
+                          ticks=ticks_position,
                           cax=cax)
+        if ticks_label != ticks_position:
+            cax.set_yticklabels(ticks_label)
         if minmax_along_colorbar:
             cb.set_label(minmax_along_colorbar)
 
@@ -420,7 +425,9 @@ class _H2DCartopyPlot(object):
                         uniformvalue):
         """Set legend text: title and others."""
         if title is None:
-            ax.set_title("\n".join([str(self.fid[sorted(self.fid.keys())[0]]),
+            fid = self.fid.get('short',
+                               self.fid[sorted(self.fid.keys())[0]])
+            ax.set_title("\n".join([str(fid),
                                     str(self.validity.get())]))
         else:
             ax.set_title(title)
@@ -435,14 +442,14 @@ class _H2DCartopyPlot(object):
                   # figure
                   fig=None,
                   ax=None,
-                  figsize=None,
-                  rcparams=None,
+                  figsize=config.plotsizes,
+                  rcparams=config.default_rcparams,
                   title=None,
                   # geometry
                   projection=None,
                   subzone=None,
                   set_global=False,
-                  focus_extent=False,
+                  focus_extent=True,
                   # graphical settings
                   plot_method='contourf',
                   minmax=None,
@@ -497,9 +504,10 @@ class _H2DCartopyPlot(object):
         :param subzone: [LAM fields only] among ('C', 'CI'), plots the data
             resp. on the C or C+I zone.
             Default is no subzone, i.e. the whole field.
-        :param set_global: call cartopy GeoAxes.set_global()
+        :param set_global: call cartopy GeoAxes.set_global().
+            Overrides **focus_extent**.
         :param focus_extent: force to focus the map boundaries to the field
-            extent. Overrides **set_global**.
+            extent. Otherwise, let matplotlib decide of the map boundaries.
 
         Graphical settings:
 
@@ -605,17 +613,18 @@ class _H2DCartopyPlot(object):
         x, y, data = self._cartoplot_shape(x, y,
                                            data,
                                            plot_method)
-        if focus_extent:
-            ax.set_extent([x.min(), x.max(), y.min(), y.max()], crs=projection)
+        if focus_extent and not set_global:
+            ax.set_extent([x.min(), x.max(), y.min(), y.max()],
+                          crs=projection)
         # 7/ colormapping
-        plot_kwargs, colorbar_ticks = self._cartoplot_colormap(pmin, pmax,
-                                                               colormap,
-                                                               colorbounds,
-                                                               plot_method,
-                                                               colorsnumber,
-                                                               colorstep,
-                                                               center_cmap_on_0,
-                                                               contourcolor)
+        plot_kwargs, colormap_helper = self._cartoplot_colormap(pmin, pmax,
+                                                                colormap,
+                                                                colorbounds,
+                                                                plot_method,
+                                                                colorsnumber,
+                                                                colorstep,
+                                                                center_cmap_on_0,
+                                                                contourcolor)
         # 8/ plot
         plot = self._cartoplot_actualplot(ax,
                                           x, y, data,
@@ -634,8 +643,11 @@ class _H2DCartopyPlot(object):
                                      colorbar,
                                      colorbar_over,
                                      colorbar_ax_kw,
-                                     colorbar_ticks,
-                                     minmax_along_colorbar)
+                                     colormap_helper,
+                                     minmax_along_colorbar,
+                                     pmin, pmax,
+                                     colorsnumber,
+                                     colorstep)
         # 10/ texts
         self._cartoplot_text(ax, title, uniform, uniformvalue)
         return fig, ax

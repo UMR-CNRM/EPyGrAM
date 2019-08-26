@@ -109,6 +109,7 @@ Options
 .. autodata:: init_at_import
 .. autodata:: silent_guess_format
 .. autodata:: margin_points_within_Czone
+.. autodata:: default_rcparams
 
 -----------------------------------------------------------
 
@@ -125,6 +126,4 @@ Colormaps
 See :ref:`Colormaps <epy-colormaps>` for illustration of the EPyGrAM colormaps.
 
 .. autodata:: colormaps
-.. autodata:: colormaps_scaling
 .. autodata:: usercolormaps
-.. autodata:: usercolormaps_scaling

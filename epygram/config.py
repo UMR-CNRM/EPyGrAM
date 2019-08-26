@@ -28,15 +28,17 @@ home = os.getenv('HOME')
 #: User customization directory
 userlocaldir = os.path.join(home, '.epygram')
 #: epygram Colormaps
-epygram_colormaps = {'aspect':os.path.join(installdir, 'data', 'colormaps', 'aspect.cmap'),
-                     'gaspect':os.path.join(installdir, 'data', 'colormaps', 'gaspect.cmap'),
-                     'radar':os.path.join(installdir, 'data', 'colormaps', 'radar.cmap'),
-                     'rr1h':os.path.join(installdir, 'data', 'colormaps', 'rr1h.cmap'),
-                     'rr6h':os.path.join(installdir, 'data', 'colormaps', 'rr24h.cmap'),
-                     'rr24h':os.path.join(installdir, 'data', 'colormaps', 'rr24h.cmap'),
-                     'ptype':os.path.join(installdir, 'data', 'colormaps', 'ptype.cmap'),
-                     'ptype0':os.path.join(installdir, 'data', 'colormaps', 'ptype0.cmap'),
+epygram_colormaps = {'aspect':os.path.join(installdir, 'data', 'colormaps', 'aspect.json'),
+                     'gaspect':os.path.join(installdir, 'data', 'colormaps', 'gaspect.json'),
+                     'radar':os.path.join(installdir, 'data', 'colormaps', 'radar.json'),
+                     'rr1h':os.path.join(installdir, 'data', 'colormaps', 'rr1h.json'),
+                     'rr6h':os.path.join(installdir, 'data', 'colormaps', 'rr6h.json'),
+                     'rr24h':os.path.join(installdir, 'data', 'colormaps', 'rr24h.json'),
+                     'ptype':os.path.join(installdir, 'data', 'colormaps', 'ptype.json'),
+                     'ptype0':os.path.join(installdir, 'data', 'colormaps', 'ptype0.json'),
                      }
+# CLEANME: 1.4.0 ?
+#: .. deprecated:: 1.3.9
 #: epygram colormaps scalings
 epygram_colormaps_scaling = {'radar':[0., 0.1, 1., 3., 5., 7., 10., 15., 20., 30., 50., 70., 100., 150., 300.],
                              'rr1h':[0., 0.2, 0.5, 1, 1.5, 2., 4., 10., 25., 50., 100., 300.],
@@ -47,6 +49,8 @@ epygram_colormaps_scaling = {'radar':[0., 0.1, 1., 3., 5., 7., 10., 15., 20., 30
                              'ptype0':[0., 0.1, 1.1, 3.1, 5.1, 6.1, 7.1, 8.1, 9.1, 10.1, 11.1, 12.1,
                                        193.1, 201.1, 205.1, 206.1, 207.1, 213.1],
                              }
+# CLEANME: 1.4.0 ?
+#: .. deprecated:: 1.3.9
 #: epygram colormaps scalings labels
 epygram_colormaps_scaling_labels = {'ptype':[int(l) for l in epygram_colormaps_scaling['ptype'][1:]],
                                     'ptype0':[int(l) for l in epygram_colormaps_scaling['ptype0'][1:]]
@@ -236,7 +240,7 @@ hide_footprints_warnings = True
 prevent_swapping_legendre = 0.75
 #: Use footprints.proxy builder to generate a field.
 #: True: more flexible, False: faster
-footprints_proxy_as_builder = False  # TODO: remove this, less useful since fasttrack ?
+footprints_proxy_as_builder = False  # CLEANME: remove this, less useful since fasttrack ?
 #: Vector graphical symbol
 vector_symbol = 'barbs'
 #: Default quality for figures
@@ -254,6 +258,8 @@ init_at_import = False
 silent_guess_format = False
 #: Number or margin within C-zone to generate a lonlat-included domain
 margin_points_within_Czone = 3
+#: Defaults for matplotlib rcparams
+default_rcparams = [(('font',), dict(family='serif')), ]
 
 
 # USER CUSTOMIZATION #
@@ -271,8 +277,11 @@ usermodules = []
 #: e.g. {'aspect', '/home/mary/.epygram/aspect.cmap'}.
 usercolormaps = {}
 # usercolormaps_scaling should also remain empty here
+# CLEANME: 1.4.0 ?
+#: .. deprecated:: 1.3.9
 #: In userconfig, this should be a dict whose keys are the colormap name and
-#: values the bounds of the steps between colors, e.g. cf. epygram_colormaps_scaling
+#: values the bounds of the steps between colors,
+#: e.g. cf. epygram_colormaps_scaling
 usercolormaps_scaling = {}
 
 
@@ -286,6 +295,8 @@ if os.path.exists(os.path.join(userlocaldir, 'userconfig.py')):
 colormaps = {}
 colormaps.update(epygram_colormaps)
 colormaps.update(usercolormaps)
+# CLEANME: 1.4.0 ?
+#: .. deprecated:: 1.3.9
 #: colormaps_scaling gathers epygram and user colormaps_scaling
 colormaps_scaling = {}
 colormaps_scaling.update(epygram_colormaps_scaling)

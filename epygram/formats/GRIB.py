@@ -2475,6 +2475,8 @@ class GRIB(FileResource):
         elif len(filtered_matchingfields) == 0:
             raise epygramError("inconsistency in *handgrip*; check again" +
                                " values and types of values")
+        else:
+            filtered_matchingfields[0].fid['short'] = handgrip
         return filtered_matchingfields[0]
 
     @FileResource._openbeforedelayed
