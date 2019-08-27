@@ -692,7 +692,7 @@ class FA(FileResource):
             vcoordinate = fpx.geometry(**kwargs_vcoord)
             # Prepare field dimensions
             spectral = encoding['spectral']
-            if spectral:
+            if spectral and self.spectral_geometry is not None:
                 if 'fourier' in self.spectral_geometry.space:
                     # LAM
                     gpdims = copy.deepcopy(self.geometry.dimensions)
