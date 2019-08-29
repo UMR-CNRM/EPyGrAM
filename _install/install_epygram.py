@@ -4,6 +4,7 @@ from __future__ import print_function, unicode_literals
 import os
 import shutil
 import io
+import re
 import argparse
 from collections import defaultdict
 import sys
@@ -61,6 +62,13 @@ _install_profile = localhost + '_profile'
 _vortex_install_profile = 'vortex_profile'
 
 
+def _version_():
+    realpath = os.path.realpath(__file__)
+    epygramversion = realpath.split(os.path.sep)[-3]
+    version = re.match('EPyGrAM-?(.+)', epygramversion).group(1)
+    return version
+
+
 def main(version='',
          fromdir=epygram_repo,
          update_epygram_profile=False,
@@ -111,10 +119,11 @@ def main(version='',
                     'userconfig.py')
     for example in ('sfxflddesc_mod.F90', 'gribapi.def.0'):
         if not os.path.exists(example):
-            if os.path.isdir(example):
-                shutil.copytree(os.path.join(linkname, '_install', example), example)
+            source = os.path.join(linkname, '_install', example)
+            if os.path.isdir(source):
+                shutil.copytree(source, example)
             else:
-                shutil.copy(os.path.join(linkname, '_install', example), example)
+                shutil.copy(source, example)
     # bash_profile
     if update_bash_profile:
         with io.open(os.path.join(os.environ['HOME'], profiles[localhost]), 'a') as pf:
@@ -148,7 +157,7 @@ if __name__ == '__main__':
                         help=' '.join(['version to be linked, within available'
                                        'versions in --from directory']),
                         required=False,
-                        default='')
+                        default=_version_())
     parser.add_argument('-f', '--from',
                         help=' '.join(['absolute path to directory in which to',
                                        'find the required version, defaults to',
