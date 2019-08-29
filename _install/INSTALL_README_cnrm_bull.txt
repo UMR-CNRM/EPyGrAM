@@ -3,13 +3,16 @@ EPyGrAM installation:
 
 A. automatic installation:
 
-execute "install_epygram.py -b -e"
+execute "install_epygram.py -b -e --link_eccodes"
+(install_epygram.py -h to choose options)
 
 B. manual installation:
 
 1.1 create directory $HOME/.epygram if necessary
-1.2 copy user_Field_Dict_FA.csv and userconfig.py into $HOME/.epygram/
-    (optional, for customization possibilities) 
+1.2 (optional) user customization: copy
+  - userconfig_empty.py into $HOME/.epygram/userconfig.py
+  - sfxflddesc_mod.F90 into $HOME/.epygram/sfxflddesc_mod.F90
+  - gribapi.def.0/ into $HOME/.epygram/gribapi.def.0/
 1.3 (symbolically) link /home/common/epygram/EPyGrAM with linkname "src"
     in directory $HOME/.epygram/
 
