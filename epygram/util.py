@@ -22,12 +22,12 @@ from distutils.version import LooseVersion
 
 from footprints import FootprintBase
 from bronx.graphics.colormapping import (add_cmap,
-                                         get_norm4colorscale,
-                                         register_colormap_from_json)
+                                         get_norm4colorscale)
 from bronx.syntax.decorators import nicedeco
 from bronx.fancies import loggers
 
 from . import config, epygramError
+from .colormapping import register_colormap_from_json
 
 epylog = loggers.getLogger(__name__)
 
@@ -560,9 +560,14 @@ def load_cmap(cmap):
         if filename.endswith('.json'):
             return register_colormap_from_json(filename)
         else:
+            epylog.warning(_deprecated_cmap)
             with open(filename, 'r') as ocm:
                 add_cmap(cmap, ocm)
 
+
+_deprecated_cmap = ' '.join(["the use of '.cmap' user colormaps is deprecated,",
+                             "(and not possible with cartoplot());",
+                             "move to json format, using epygram.moves.cmap2json()"])
 
 formatting_default_widths = (50, 20)
 separation_line = '{:-^{width}}'.format('', width=sum(formatting_default_widths) + 1) + '\n'

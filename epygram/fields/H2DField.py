@@ -288,17 +288,14 @@ class _H2DCartopyPlot(object):
         """Set colors settings."""
         import matplotlib.pyplot as plt
         from matplotlib.colors import cnames
-        from bronx.graphics import colormapping
+        from epygram import colormapping
         if colormap not in plt.colormaps() and colormap in config.colormaps:
             cmapfile = config.colormaps[colormap]
             if cmapfile.endswith('.json'):
                 colormaphelper = colormapping.get_ColormapHelper_fromfile(cmapfile)
-            elif cmapfile.endswith('.json'):
+            elif cmapfile.endswith('.cmap'):
                 # deprecated
-                msg = ' '.join(["the use of '.cmap' user colormaps is deprecated,",
-                                "and not possible with cartoplot();",
-                                "move to json format, using epygram.moves.cmap2json()"])
-                raise epygramError(msg)
+                raise epygramError(util._deprecated_cmap)
         else:
             colormaphelper = colormapping.ColormapHelper(colormap,
                                                          explicit_colorbounds=colorbounds)
