@@ -372,6 +372,7 @@ class MyPlot(object):
                     if current_basemap is None:
                         print('Actually niou pickle !')
                         if monzoom is not None:
+                            pass
                             field = field.extract_zoom(monzoom)
                         current_basemap = field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
                                                                           subzone=myplot_args["subzone"],
@@ -387,8 +388,7 @@ class MyPlot(object):
                         # On réutilise le cache
 
                     myplot = make_my_plot(resource, field, cle, champ, champ_v, FF, vecteurs,
-                                          current_basemap, figax, vectors_subsampling,
-                                          myplot_args)
+                                          current_basemap, figax, vectors_subsampling, myplot_args, monzoom=monzoom)
 
                     if getcode:
                         zecode = util.print_code(myplot_args, current_basemap, figax)
@@ -512,8 +512,7 @@ class MyPlotOverlay(object):
                     # On ne le calcule que pour la 1ere itération de la boucle
 
                 myplot_1 = make_my_plot(resource, field, "A", champ, champ_v, FF, vecteurs,
-                                        current_basemap, figax, vectors_subsampling,
-                                        myplot_args)
+                                        current_basemap, figax, vectors_subsampling, myplot_args, monzoom=monzoom)
 
                 resource.close()
 
@@ -530,8 +529,7 @@ class MyPlotOverlay(object):
                     field = check_for_operation(operation["B"], field)
 
                 myplot = make_my_plot(resource, field, "B", champ, champ_v, FF, vecteurs,
-                                      None, myplot_1, vectors_subsampling,
-                                      myplot_args)
+                                      None, myplot_1, vectors_subsampling, myplot_args, monzoom=monzoom)
 
                 try:
                     myunikname = os.path.basename(fichier) + "." + ".".join("=".join((str(k), str(v))) for k, v in champ[cle].items())
