@@ -112,7 +112,7 @@ class FaGribDef(griberies.GribDef):
                                         grib_edition, include_comments)
                     fid.setdefault('typeOfFirstFixedSurface', 255)
         if filter_non_GRIB_keys:
-            self._filter_non_GRIB_keys(fid)
+            fid = self._filter_non_GRIB_keys(fid)
         # productDefinitionTemplateNumber to distinguish between
         # CLSTEMPERATURE and CLSMINI.TEMPERAT / CLSMAXI.TEMPERAT (for instance)
         if 'productDefinitionTemplateNumber' not in fid:
@@ -165,11 +165,11 @@ class FaGribDef(griberies.GribDef):
             for f, gribfid in self.tables[grib_edition]['faFieldName'].items():
                 if partial_fieldname in f:
                     fields[f] = gribfid
-            for fid in fields.values():
+            for k, fid in fields.items():
                 if not include_comments:
                     fid.pop('#comment', None)
                 if filter_non_GRIB_keys:
-                    self._filter_non_GRIB_keys(fid)
+                    fields[k] = self._filter_non_GRIB_keys(fid)
         return fields
 
     @griberies.init_before

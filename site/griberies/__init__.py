@@ -208,10 +208,10 @@ class GribDef(object):
     @classmethod
     def _filter_non_GRIB_keys(cls, fid):
         """Some keys are to be filtered out from gribdef."""
-        filtered_out = {}
+        filtered_out = copy.copy(fid)
         for k in cls._non_GRIB_keys:
             if k in fid:
-                filtered_out[k] = fid.pop(k)
+                filtered_out.pop(k)
         return filtered_out
 
     @init_before
@@ -277,7 +277,7 @@ class GribDef(object):
             if '#comment' in fid:
                 fid.pop('#comment', None)
         if filter_non_GRIB_keys:
-            self._filter_non_GRIB_keys(fid)
+            fid = self._filter_non_GRIB_keys(fid)
         return fid
 
     def _lookup_from_conceptvalue(self, fid, concept,
@@ -318,7 +318,7 @@ class GribDef(object):
                     if not include_comments:
                         gribfid.pop('#comment', None)
                     if filter_non_GRIB_keys:
-                        self._filter_non_GRIB_keys(gribfid)
+                        gribfid = self._filter_non_GRIB_keys(gribfid)
             else:
                 if len(fields) == 1:
                     fields = fields[list(fields.keys())[0]]
@@ -350,9 +350,9 @@ class GribDef(object):
                         break
                 if ok:
                     fields[f] = copy.copy(gribfid)
-        for fid in fields.values():
+        for k, fid in fields.items():
             if not include_comments:
                 fid.pop('#comment', None)
             if filter_non_GRIB_keys:
-                self._filter_non_GRIB_keys(fid)
+                fields[k] = self._filter_non_GRIB_keys(fid)
         return fields
