@@ -1602,7 +1602,7 @@ class GRIBmessage(RecursiveObject, dict):
 
     def _read_misc(self, read_misc_metadata):
         """Read specified additional keys."""
-        misc_metadata = {}
+        misc_metadata = FPDict({})
         for k in read_misc_metadata:
             misc_metadata[k] = self.get(k)
         return misc_metadata
@@ -2476,7 +2476,7 @@ class GRIB(FileResource):
             raise epygramError("inconsistency in *handgrip*; check again" +
                                " values and types of values")
         else:
-            filtered_matchingfields[0].fid['short'] = handgrip
+            filtered_matchingfields[0].fid['short'] = FPDict(handgrip)
         return filtered_matchingfields[0]
 
     @FileResource._openbeforedelayed
