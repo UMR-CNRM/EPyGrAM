@@ -606,10 +606,10 @@ def write_formatted_fields(dest, label, value=None,
         dest.write(line)
 
 
-def write_formatted_dict(dest, fid):
+def write_formatted_dict(dest, fid, sort_function=sorted):
     name = fid.pop('name')
     dest.write('name: ' + name + '\n')
-    for k in sorted(fid.keys()):
+    for k in sort_function(fid.keys()):
         dest.write('  ' + str(k) + ': ' + str(fid[k]) + '\n')
 
 

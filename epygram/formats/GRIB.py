@@ -268,6 +268,27 @@ onetotwo = {1:1,  # ground or water surface
 twotoone = {v:k for (k, v) in onetotwo.items()}
 
 
+def sorted_GRIB2_fid(fid):
+    allsorted = copy.copy(GRIBmessage._fid_keys[2])
+    allsorted.insert(allsorted.index('topLevel') + 1,
+                     'scaledValueOfFirstFixedSurface')
+    allsorted.insert(allsorted.index('topLevel') + 2,
+                     'scaleFactorOfFirstFixedSurface')
+    allsorted.insert(allsorted.index('bottomLevel') + 1,
+                     'scaledValueOfSecondFixedSurface')
+    allsorted.insert(allsorted.index('topLevel') + 2,
+                     'scaleFactorOfSecondFixedSurface')
+    allsorted.append('lengthOfTimeRange')
+    allsorted.append('indicatorOfUnitForTimeRange')
+    allsorted.append('typeOfStatisticalProcessing')
+    allsorted.extend(GRIBmessage._satellite_imagery_keys)
+    _sorted = []
+    for k in allsorted:
+        if k in fid:
+            _sorted.append(k)
+    return _sorted
+
+
 class GRIBmessage(RecursiveObject, dict):
     """
     Class implementing a GRIB message as an object.
@@ -284,12 +305,12 @@ class GRIBmessage(RecursiveObject, dict):
                     'bottomLevel',
                     'editionNumber',
                     'table2Version'],
-                 2:['name',
+                 2:['editionNumber',
+                    'name',
                     'shortName',
                     'discipline',
                     'parameterCategory',
                     'parameterNumber',
-                    'editionNumber',
                     'typeOfFirstFixedSurface',
                     'level',
                     'topLevel',
@@ -297,7 +318,11 @@ class GRIBmessage(RecursiveObject, dict):
                     'bottomLevel',
                     'tablesVersion',
                     'productDefinitionTemplateNumber']}
-
+    _satellite_imagery_keys = ['satelliteSeries',
+                               'satelliteNumber',
+                               'instrumentType',
+                               'scaleFactorOfCentralWaveNumber',
+                               'scaledValueOfCentralWaveNumber']
     # Class methods ------------------------------------------------------------
 
     @classmethod
@@ -313,11 +338,7 @@ class GRIBmessage(RecursiveObject, dict):
         (GRIB2 only).
         """
         if productDefinitionTemplateNumber in (32, 33):
-            specific_keys = ['satelliteSeries',
-                             'satelliteNumber',
-                             'instrumentType',
-                             'scaleFactorOfCentralWaveNumber',
-                             'scaledValueOfCentralWaveNumber']
+            specific_keys = cls._satellite_imagery_keys
         elif productDefinitionTemplateNumber == 8:
             specific_keys = ['lengthOfTimeRange',
                              # 'indicatorOfUnitForTimeRange',  # FIXME: pb with eccodes index
@@ -2867,7 +2888,7 @@ class GRIB(FileResource):
         out.write("### LIST OF FIELDS ###\n")
         out.write("######################\n")
         listoffields = self.listfields()
-        out.write("Number: " + str(len(listoffields)) + "\n")
+        out.write("There are: {} fields in this file.\n".format(len(listoffields)))
         if mode in ('what', 'ls', 'mars'):
             out.write(separation_line)
             while True:
@@ -2897,6 +2918,14 @@ class GRIB(FileResource):
                 out.write('--------------------' + '\n')
         else:
             out.write(separation_line)
+            n = 0
             for f in listoffields:
-                write_formatted_dict(out, f)
+                n += 1
+                out.write('{:-^50}\n'.format(' Message: {:<4d} '.format(n)))
+                for k in sorted_GRIB2_fid(f):
+                    v = f[k]
+                    if v != 'unknown':
+                        if isinstance(v, six.string_types):
+                            v = "'{}'".format(v)
+                        out.write('{}: {},\n'.format(k, v))
         out.write(separation_line)
