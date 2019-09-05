@@ -2569,6 +2569,11 @@ class GRIB(FileResource):
         """
         if not isinstance(field, H2DField):
             raise NotImplementedError("'field' argument other than a H2DField.")
+        if 'generic' in field.fid and 'GRIB2' not in field.fid and 'GRIB1' not in field.fid:
+            field.fid['GRIB2'] = field.fid['generic']
+            remove_fid = True
+        else:
+            remove_fid = False
         m = GRIBmessage(('field', field),
                         ordering=ordering,
                         packing=packing,
@@ -2577,6 +2582,8 @@ class GRIB(FileResource):
                         other_GRIB_options=other_GRIB_options,
                         interpret_comment=interpret_comment)
         m.write_to_file(self._file)
+        if remove_fid:
+            del field.fid['GRIB2']
 
     def extractprofile(self, handgrip, lon=None, lat=None,
                        geometry=None,
