@@ -358,7 +358,24 @@ class GribDef(object):
         return fields
 
     @init_before
-    def known_values_for(self, key, concept=None, grib_edition=_default_grib_edition):
+    def known_names_for_concept(self, concept,
+                                grib_edition=_default_grib_edition):
+        """Get sorted list of names for **concept**."""
+        return sorted(self.tables[grib_edition][concept].keys())
+
+    @init_before
+    def known_names(self, grib_edition=_default_grib_edition):
+        """Get sorted list of names for all concepts."""
+        all_names = {}
+        concepts = list(self.tables[grib_edition].keys())
+        for c in concepts:
+            all_names[c] = self.known_names_for_concept(c, grib_edition)
+        return all_names
+
+    @init_before
+    def known_values_for(self, key,
+                         concept=None,
+                         grib_edition=_default_grib_edition):
         """Get list of all values present throughout the GribDef for **key**."""
         if concept is None:
             concepts = list(self.tables[grib_edition].keys())
@@ -371,8 +388,9 @@ class GribDef(object):
                     values.add(gribfid[key])
         return sorted(values)
 
-    @init_before
-    def known_values(self, concept=None, grib_edition=_default_grib_edition):
+    def known_values(self,
+                     concept=None,
+                     grib_edition=_default_grib_edition):
         """Get list of all values present throughout the GribDef for all keys."""
         values = {}
         for key in self._allkeys(grib_edition):
