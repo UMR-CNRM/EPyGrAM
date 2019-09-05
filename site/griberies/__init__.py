@@ -356,3 +356,37 @@ class GribDef(object):
             if filter_non_GRIB_keys:
                 fields[k] = self._filter_non_GRIB_keys(fid)
         return fields
+
+    @init_before
+    def known_values_for(self, key, concept=None, grib_edition=_default_grib_edition):
+        """Get list of all values present throughout the GribDef for **key**."""
+        if concept is None:
+            concepts = list(self.tables[grib_edition].keys())
+        else:
+            concepts = [concept]
+        values = set()
+        for c in concepts:
+            for gribfid in self.tables[grib_edition][c].values():
+                if key in gribfid:
+                    values.add(gribfid[key])
+        return sorted(values)
+
+    @init_before
+    def known_values(self, concept=None, grib_edition=_default_grib_edition):
+        """Get list of all values present throughout the GribDef for all keys."""
+        values = {}
+        for key in self._allkeys(grib_edition):
+            values[key] = self.known_values_for(key, concept, grib_edition)
+        return values
+
+    @init_before
+    def _allkeys(self, grib_edition=_default_grib_edition):
+        """Get set of all keys present throughout the GribDef."""
+        all_keys = set()
+        concepts = list(self.tables[grib_edition].keys())
+        for c in concepts:
+            for gribfid in self.tables[grib_edition][c].values():
+                all_keys.update(set(gribfid.keys()))
+        if '#comment' in all_keys:
+            all_keys.remove('#comment')
+        return all_keys
