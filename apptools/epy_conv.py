@@ -201,7 +201,7 @@ class Griber(Converter):
                 info="to specify default packing of fields in GRIB target.",
                 type=FPDict,
                 optional=True,
-                default=FPDict(epygram.config.GRIB_default_packing[2]),
+                default=FPDict(griberies.defaults.GRIB2_keyvalue[5]),
                 access='rwx'),
             specific_packing=dict(
                 info="to specify packing of specific fields, with regards to \
@@ -501,7 +501,7 @@ if __name__ == '__main__':
     if args.GRIB2_packing is not None:
         default_packing = str2dict(args.GRIB2_packing, try_convert=int)
     else:
-        default_packing = epygram.config.GRIB_default_packing[2]
+        default_packing = griberies.defaults.GRIB2_keyvalue[5]
     if args.GRIB_other_options is not None:
         other_GRIB_options = str2dict(args.GRIB_other_options, try_convert=int)
     else:

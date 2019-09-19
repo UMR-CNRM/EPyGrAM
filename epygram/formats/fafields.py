@@ -208,7 +208,7 @@ class FaGribDef(griberies.GribDef):
 
 class SfxFldDesc_Mod(object):
     """Handle fields catalog from sfxflddesc.F90 source file."""
-    _pattern = re.compile('"\.(?P<name>[\w\d%]+)\.+(?P<gridtype>\d)\.{2}(?P<type>\w\d)\.{2}(?P<comment>.+)\.{2}(?P<mask>.{20})\.{2}",(&|/)')
+    _pattern = re.compile('"\.(?P<name>[\w\d%]+)\.+(?P<gridtype>\d)\.{2}(?P<type>\w\d)\.{2}(?P<comment>.+)\.{2}(?P<mask>.{20})\.{2}",? ?(&|/)')
     _unit = re.compile('(?P<comment>.*)\((?P<unit>.+)\)')
     _fortran_sourcename = 'sfxflddesc_mod.F90'
     type2nature = {'X':'float', 'L':'bool', 'C':'str', 'N':'int', 'Y':'float',

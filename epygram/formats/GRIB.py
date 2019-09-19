@@ -2236,7 +2236,8 @@ class GRIB(FileResource):
         """Counts the number of messages in file."""
         return lowlevelgrib.count_in_file(self._file)
 
-    def listfields(self, onlykey=None, select=None, complete=False):
+    def listfields(self, onlykey=None, select=None, complete=False,
+                   additional_keys=[]):
         """
         Returns a list containing the GRIB identifiers of all the fields of the
         resource.
@@ -2246,11 +2247,10 @@ class GRIB(FileResource):
         :param select: can be specified as a dict(key=value) to restrain
           the list of fields to those that match the key:value pairs.
         :param complete: list fields with their natural fid + generic one.
+        :param additional_keys: add given keys in fids
         """
         if select is not None:
-            additional_keys = list(select.keys())
-        else:
-            additional_keys = []
+            additional_keys = list(select.keys()) + additional_keys
         fidlist = super(GRIB, self).listfields(additional_keys=additional_keys)
         if select is not None:
             fidlist = [f for f in fidlist if all([f[k] == select[k] for k in select.keys()])]
