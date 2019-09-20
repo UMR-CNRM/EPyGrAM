@@ -310,10 +310,13 @@ class FA(FileResource):
         If field is unknown, supposed to be a H2D.
         """
         ftype = 'H2D'  # default
-        if fieldname not in cls.gribdef:
+        if fieldname not in cls.gribdef:  # if field in gribdef: H2D
             if fieldname in cls.sfxflddesc:
                 if cls.sfxflddesc.is_metadata(fieldname):
                     ftype = cls.sfxflddesc.get(fieldname).get('type')
+            else:
+                if cls.sfxflddesc.is_metadata(fieldname):
+                    ftype = '?'
         return ftype
 
     def __init__(self, *args, **kwargs):
@@ -1500,7 +1503,7 @@ class FA(FileResource):
         except RuntimeError:
             exist = False
         if exist:
-            ftype = 'H2D'
+            ftype = 'H2D'  # because fanion fails or answers False for meta-fields
         else:
             ftype = self.field_type(fieldname)
         return ftype

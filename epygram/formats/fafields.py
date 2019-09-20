@@ -287,6 +287,8 @@ class SfxFldDesc_Mod(object):
                 return False
             else:
                 return True
+        elif '_FBUF_' in fieldname:
+            return True
         else:
             return None
 
