@@ -18,7 +18,7 @@ arguments.
 from __future__ import print_function, absolute_import, unicode_literals, division
 
 from epygram import config
-import grib_utilities
+import griberies
 import multiprocessing
 
 
@@ -850,7 +850,7 @@ operational_options = {
     'typeOfGeneratingProcess':[
         '-g', '--typeOfGeneratingProcess',
         dict(help="GRIB's type of generating process.",
-             choices=list(grib_utilities.typeOfGeneratingProcess_dict.keys()),
+             choices=list(griberies.tables.typeOfGeneratingProcess_dict.keys()),
              default='Forecast')],
     'numod':[
         '-N', '--NUMOD',

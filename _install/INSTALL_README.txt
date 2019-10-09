@@ -14,8 +14,10 @@ EPyGrAM installation:
 
 
 2.1 create directory $HOME/.epygram if necessary
-2.2 copy user_Field_Dict_FA.csv and userconfig.py into $HOME/.epygram/
-    (optional, for customization possibilities)
+2.2 (optional) user customization: copy
+  - userconfig_empty.py into $HOME/.epygram/userconfig.py
+  - sfxflddesc_mod.F90 into $HOME/.epygram/sfxflddesc_mod.F90
+  - gribapi.def.0/ into $HOME/.epygram/gribapi.def.0/
 
 
 3. source $HOME/.bash_profile or open a new terminal

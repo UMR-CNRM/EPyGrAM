@@ -1,0 +1,36 @@
+# Niveaux modele pour MOCAGE
+'L' = {
+  parameterCategory                                  =             255;
+  parameterNumber                                    =             255;
+  scaleFactorOfFirstFixedSurface                     =               0;
+  scaledValueOfFirstFixedSurface                     =               0;
+  typeOfFirstFixedSurface                            =             119;
+  typeOfSecondFixedSurface                           =             255;
+}
+# Champs de surface (flux) MOCAGE
+'EM' = {
+  parameterCategory                                  =             255;
+  parameterNumber                                    =             255;
+  scaleFactorOfFirstFixedSurface                     =               0;
+  scaledValueOfFirstFixedSurface                     =               0;
+  typeOfFirstFixedSurface                            =             119;
+  typeOfSecondFixedSurface                           =             255;
+}
+# Champs de surface (flux) MOCAGE
+'DV' = {
+  parameterCategory                                  =             255;
+  parameterNumber                                    =             255;
+  scaleFactorOfFirstFixedSurface                     =               0;
+  scaledValueOfFirstFixedSurface                     =               0;
+  typeOfFirstFixedSurface                            =             119;
+  typeOfSecondFixedSurface                           =             255;
+}
+# Champs de surface (flux) MOCAGE
+'SF' = {
+  parameterCategory                                  =             255;
+  parameterNumber                                    =             255;
+  scaleFactorOfFirstFixedSurface                     =               0;
+  scaledValueOfFirstFixedSurface                     =               0;
+  typeOfFirstFixedSurface                            =             119;
+  typeOfSecondFixedSurface                           =             255;
+}

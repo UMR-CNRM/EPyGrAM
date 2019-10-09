@@ -6,7 +6,6 @@
 """
 Contains some base classes of *epygram*.
 """
-
 from __future__ import print_function, absolute_import, unicode_literals, division
 
 import numpy
@@ -45,6 +44,10 @@ class Field(RecursiveObject, FootprintBase):
                 type=FPDict,
                 access='rwx'),
             comment=dict(
+                optional=True,
+                access='rwd'),
+            misc_metadata=dict(
+                type=FPDict,
                 optional=True,
                 access='rwd'),
             units=dict(
@@ -150,6 +153,13 @@ class Field(RecursiveObject, FootprintBase):
                                        config.mask_outside)
         return float(numpy.sqrt((data ** 2).mean()))
 
+    def absmean(self, **kwargs):
+        """Returns the mean of absolute value of data."""
+        data = numpy.ma.masked_outside(self.getdata(**kwargs),
+                                       - config.mask_outside,
+                                       config.mask_outside)
+        return float(numpy.abs(data).mean())
+
     def nonzero(self, **kwargs):
         """
         Returns the number of non-zero values (whose absolute
@@ -233,6 +243,107 @@ class Field(RecursiveObject, FootprintBase):
             self.setdata(self._data - scalar)
         elif operation == '/':
             self.setdata(self._data / scalar)
+
+    def compare_to(self, other):
+        """
+        Compare a field to another one, with several criteria:
+
+        - bias: average of errors distribution
+        - std: standard deviation of errors distribution
+        - errmax: maximum absolute error
+        - common_mask: indicate whether fields have the same mask or not;
+          beware that above statistics apply only to commonly unmasked data
+
+        :return ({bias, std, errmax}, common_mask)
+        """
+        selfdata = self._masked_data()
+        otherdata = self._masked_data()
+        common_mask = not numpy.any(numpy.logical_xor(selfdata.mask, otherdata.mask))
+        diff = self - other
+        return ({'bias':diff.mean(),
+                 'std':diff.std(),
+                 'errmax':max(abs(diff.min()), abs(diff.max()))},
+                common_mask)
+
+    def normalized_comparison(self, ref):
+        """
+        Compare field to a reference, with prior normalization (by reference
+        magnitude) of both fields.
+        Hence the figures of comparison can be interpretated as percentages.
+        """
+        refmin = ref.min()
+        refmax = ref.max()
+        normalizedself = (self - refmin).__div__(refmax - refmin)  # FIXME: why not classical operators ?
+        normalizedref = (ref - refmin).__div__(refmax - refmin)
+        return normalizedself.compare_to(normalizedref)
+
+    def _masked_data(self, mask_outside=config.mask_outside):
+        """
+        Return self field data as a masked array.
+
+        :param mask_outside: if None, mask is empty;
+                             else, mask data outside +/- this value
+        """
+        if isinstance(self._data, numpy.ma.masked_array):
+            mdata = self._data
+        else:
+            if mask_outside is not None:
+                mdata = numpy.ma.masked_outside(self._data,
+                                                -mask_outside,
+                                                mask_outside)
+            else:
+                mdata = numpy.ma.masked_array(self._data)
+        return mdata
+
+    def _masked_any(self, other, mask_outside=config.mask_outside):
+        """
+        Get a copy of self data and **other** data, with masked data where any
+        of them is masked.
+
+        :param mask_outside: if None, mask is empty;
+                             else, mask data outside +/- this value
+        """
+        data = self._masked_data(mask_outside)
+        otherdata = other._masked_data(mask_outside)
+        cmask = numpy.logical_or(data.mask, otherdata.mask)
+        data.mask = cmask
+        otherdata.mask = cmask
+        return data, otherdata
+
+    def correlation(self, other,
+                    commonmask=False,
+                    mask_outside=config.mask_outside):
+        """
+        Compute a correlation coefficient R to another field.
+
+        :param commonmask: if True, compute distance on the subset of point that
+                           are not masked for any of the two fields.
+        :param mask_outside: if None, mask is empty;
+                             else, mask data outside +/- this value
+        """
+        # TODO: treat more complicated cases, where mask is present but commonmask is False,
+        # or not present but to be masked without commonmask...
+        from bronx.syntax.arrays import stretch_array
+        otherdata = other.data
+        selfdata = self.data
+        if commonmask:
+            if not isinstance(selfdata, numpy.ma.masked_array):
+                selfdata = numpy.ma.masked_outside(selfdata,
+                                                   -mask_outside,
+                                                   mask_outside)
+            if not isinstance(otherdata, numpy.ma.masked_array):
+                otherdata = numpy.ma.masked_outside(otherdata,
+                                                    -mask_outside,
+                                                    mask_outside)
+            cmask = numpy.logical_or(selfdata.mask, otherdata.mask)
+            selfdata.mask = cmask
+            otherdata.mask = cmask
+        otherdata = stretch_array(otherdata)
+        selfdata = stretch_array(selfdata)
+        if not commonmask and otherdata.shape != selfdata.shape:
+            raise Exception('inconsistency between masks')
+        r = numpy.corrcoef(selfdata, otherdata)[0,1]
+        return r
 
     def _check_operands(self, other):
         """
@@ -620,7 +731,7 @@ class Resource(RecursiveObject, FootprintBase):
         """Context enter."""
         return self
 
-    def __exit__(self, t, v, tbk):
+    def __exit__(self, t, v, tbk):  # @UnusedVariables
         """Context exit."""
         self.close()
 
@@ -745,7 +856,8 @@ class FieldValidity(RecursiveObject):
                  basis=None,
                  term=None,
                  cumulativeduration=None,
-                 statistical_process_on_duration=None):
+                 statistical_process_on_duration=None,
+                 statistical_time_increment=None):
         """
         Constructor.
 
@@ -754,19 +866,22 @@ class FieldValidity(RecursiveObject):
         :param term: has to be of type datetime.timedelta;
         :param cumulativeduration: has to be of type datetime.timedelta;
         :param statistical_process_on_duration: kind of statistical process
-                                                that runs over the cumulative
-                                                duration.
+            that runs over the cumulative duration.
+        :param statistical_time_increment: time step over used for statistical
+            process.
         """
         self._basis = None
         self._date_time = None
         self._cumulativeduration = None
         self._statistical_process_on_duration = None
+        self._statistical_time_increment = None
 
         kwargs = dict(date_time=date_time,
                       basis=basis,
                       term=term,
                       cumulativeduration=cumulativeduration,
-                      statistical_process_on_duration=statistical_process_on_duration)
+                      statistical_process_on_duration=statistical_process_on_duration,
+                      statistical_time_increment=statistical_time_increment)
         if not (date_time is None and basis is None and term is None):
             self.set(**kwargs)
 
@@ -817,7 +932,6 @@ class FieldValidity(RecursiveObject):
             raise NotImplementedError("fmt=" + fmt + " option for " +
                                       self.__class__.__name__ +
                                       ".cumulativeduration().")
-
         return out
 
     def statistical_process_on_duration(self, asGRIB2code=False):
@@ -827,15 +941,37 @@ class FieldValidity(RecursiveObject):
 
         If *asGRIB2code*, returned as a GRIB2 code (cf. GRIB2 table 4.10).
         """
-        import grib_utilities
-
+        import griberies
         if not asGRIB2code and isinstance(self._statistical_process_on_duration, int):
-            out = grib_utilities.statistical_processes.get(self._statistical_process_on_duration, None)
+            out = griberies.tables.statistical_processes.get(self._statistical_process_on_duration, None)
         elif asGRIB2code and isinstance(self._statistical_process_on_duration, six.string_types):
-            out = {v:k for k, v in grib_utilities.statistical_processes.items()}.get(self._statistical_process_on_duration, None)
+            out = {v:k for k, v in griberies.tables.statistical_processes.items()}.get(self._statistical_process_on_duration, None)
         else:
             out = self._statistical_process_on_duration
+        return out
 
+    def statistical_time_increment(self, fmt=None):
+        """
+        This method returns the statistical_time_increment,
+        i.e. the time step used for statistical process over cumulative
+        duration.
+
+        By default, it is returned as a :class:`datetime.timedelta`;
+        otherwise, *fmt* argument can specify the desired return format.
+
+        Coded versions of *fmt*: 'IntHours', 'IntSeconds', and that's all for
+        now...
+        """
+        if fmt is None:
+            out = self._statistical_time_increment
+        elif fmt == 'IntHours':
+            out = int(self._statistical_time_increment.total_seconds() // 3600)
+        elif fmt == 'IntSeconds':
+            out = int(self._statistical_time_increment.total_seconds())
+        else:
+            raise NotImplementedError("fmt=" + fmt + " option for " +
+                                      self.__class__.__name__ +
+                                      ".statistical_time_increment().")
         return out
 
     def get(self, fmt=None):
@@ -861,7 +997,6 @@ class FieldValidity(RecursiveObject):
         else:
             raise NotImplementedError("fmt=" + fmt + " option for " +
                                       self.__class__.__name__ + ".get().")
-
         return out
 
     def getbasis(self, fmt=None):
@@ -887,7 +1022,6 @@ class FieldValidity(RecursiveObject):
         else:
             raise NotImplementedError("fmt=" + fmt + " option for " +
                                       self.__class__.__name__ + ".getbasis().")
-
         return out
 
     def set(self,
@@ -895,7 +1029,8 @@ class FieldValidity(RecursiveObject):
             basis=None,
             term=None,
             cumulativeduration=None,
-            statistical_process_on_duration=None):
+            statistical_process_on_duration=None,
+            statistical_time_increment=None):
         """
         Sets validity and basis according to arguments.
         A consistency check is done if the three arguments are provided
@@ -909,6 +1044,8 @@ class FieldValidity(RecursiveObject):
         :param statistical_process_on_duration: kind of statistical process
             that runs over the cumulative duration.
             Cf. GRIB2 typeOfStatisticalProcessing
+        :param statistical_time_increment: time step over used for statistical
+            process.
         """
         if isinstance(date_time, datetime.datetime):
             self._date_time = date_time
@@ -926,6 +1063,10 @@ class FieldValidity(RecursiveObject):
         if cumulativeduration is not None and\
            not isinstance(cumulativeduration, datetime.timedelta):
             raise epygramError("argument 'cumulativeduration' must be of" +
+                               " type datetime.timedelta")
+        if statistical_time_increment is not None and\
+           not isinstance(statistical_time_increment, datetime.timedelta):
+            raise epygramError("argument 'statistical_time_increment' must be of" +
                                " type datetime.timedelta")
 
         if isinstance(term, datetime.timedelta):
@@ -951,6 +1092,8 @@ class FieldValidity(RecursiveObject):
         if self._cumulativeduration is not None and \
            statistical_process_on_duration is not None:
             self._statistical_process_on_duration = statistical_process_on_duration
+        if statistical_time_increment is not None:
+            self._statistical_time_increment = statistical_time_increment
 
     def is_valid(self):
         """Check the validity is valid, i.e. not null."""
@@ -1038,6 +1181,24 @@ class FieldValidityList(RecursiveObject, list):
         result = super(FieldValidityList, self).__getitem__(slice(start, end))
         return FieldValidityList(result)
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__) and len(self) == len(other):
+            return all([v == other[i] for i,v in enumerate(self)])
+        else:
+            return False
+
+    def __hash__(self):
+        # known issue __eq__/__hash__ must be defined both or none, else inheritance is broken
+        return object.__hash__(self)
+
+    def recursive_diff(self, other):
+        """Recursively list what differs from **other**."""
+        if self != other:
+            if not isinstance(other, self.__class__) or len(self) != len(other):
+                return (str(self), str(other))
+            else:
+                return [v.recursive_diff(other[i]) for i,v in enumerate(self)]
+
     def term(self, one=True, **kwargs):
         """This method returns the terms of all the validities"""
         length = len(self)
@@ -1054,6 +1215,12 @@ class FieldValidityList(RecursiveObject, list):
         """This method returns the statistical process on duration of all the validities."""
         length = len(self)
         result = [self[i].statistical_process_on_duration(**kwargs) for i in range(length)]
+        return result[0] if (one and length == 1) else result
+
+    def statistical_time_increment(self, one=True, **kwargs):
+        """This method returns the statistical_time_increment of all the validities."""
+        length = len(self)
+        result = [self[i].statistical_time_increment(**kwargs) for i in range(length)]
         return result[0] if (one and length == 1) else result
 
     def get(self, one=True, **kwargs):

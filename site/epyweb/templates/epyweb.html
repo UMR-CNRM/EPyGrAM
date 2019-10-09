@@ -96,6 +96,7 @@ $var cssfiles:
 								<optgroup label="Arome France">
 									<option value="AromeFranceForecastGrib">Forecast (grib)</option>
 									<option value="AromeFranceForecastFA">Forecast (historic)</option>
+									<option value="AromeIfsForecastGrib">IFS Forecast (grib)</option>
 								</optgroup>
 								<optgroup label="Ensembles">
 								    <option value="PearpGrib">Pearp (grib)</option>
@@ -149,13 +150,13 @@ $var cssfiles:
 							<label for="vortex_preset_providers">Presets</label>
 							<select id="vortex_preset_providers">
 								<option value="ClearAll">None</option>
-								<optgroup label="DSI">
-									<option value="DsiShell">DSI Shell</option>
+								<optgroup label="VORTEX">
 									<option value="DsiVortex">DSI Vortex</option>
-								</optgroup>
-								<optgroup label="Olive">
-									<option value="OlivePerl">Olive Perl</option>
 									<option value="OliveVortex">Olive Vortex</option>
+								</optgroup>
+								<optgroup label="Antiquites">
+									<option value="DsiShell">DSI Shell</option>
+									<option value="OlivePerl">Olive Perl</option>
 								</optgroup>
 							</select>
 						</fieldset>
@@ -270,7 +271,7 @@ $var cssfiles:
 										<input id="field" style="width:160px" title="" class="smart_grib"></input>
 									</td>
 									<td>
-										<label for="TypeOfLevel" title="GRIB1 typeOfLevel/indicatorOfTypeOfLevel  ; GRIB2 : typeOfFirstFixedSurface"  id="TypeOfLevel_label">TypeOfLevel/Indicator : </label>
+										<label for="TypeOfLevel" title="GRIB1 typeOfLevel/indicatorOfTypeOfLevel  ; GRIB2 : typeOfFirstFixedSurface/typeOfStatisticalProcessing"  id="TypeOfLevel_label">TypeOfLevel/Stats : </label>
 										<input id="TypeOfLevel" style="width:160px" title="" class="smart_grib"></input>
 									</td>
 									<td>
@@ -535,7 +536,7 @@ $var cssfiles:
   		  </td>
 
 		<td>
-				<button id="overlay" title="Overlay B on top of A" type="button" class="higlight">Overlay A and B</button>
+				<button id="overlay" title="Overlay B on top of A" type="button" class="higlight">Overlay B over A</button>
 		</td>
 		<td>
 				<button id="difference" title="Difference B-A, contour A will be used" type="button" class="higlight">Difference B-A</button>
@@ -595,6 +596,8 @@ $var cssfiles:
 								<option value="Antilles">Antilles</option>
 								<option value="Reunion">La Reunion</option>
 								<option value="Tahiti">Tahiti</option>
+								<option value="NlleCaledonie">Nlle Calédonie</option>
+								<option value="Guyane">Guyane</option>
 							</select>
 					</div>
 					<!-- Close widget-->

@@ -14,7 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import string
 
-from bronx.graphics.colormapping import add_cmap
+from bronx.graphics.colormapping import register_colormap_from_json
 
 import epygram
 
@@ -45,8 +45,7 @@ with open(template_rst, 'r') as t:
 figures = ''
 for cmap in sorted(epygram.config.colormaps.keys()):
     if cmap not in plt.colormaps():
-        with open(epygram.config.colormaps[cmap], 'r') as ocm:
-            add_cmap(cmap, ocm)
+        register_colormap_from_json(epygram.config.colormaps[cmap])
     fig = plot_cmap(cmap)
     path_a = os.path.join(doc_root, 'html')
     path_b = os.path.join('_images', 'colormaps')

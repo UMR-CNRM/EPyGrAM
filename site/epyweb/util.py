@@ -187,8 +187,7 @@ def arg2date(myarg):
 
 
 def make_my_plot(resource, field, cle, champ, champ_v, FF, vecteurs,
-                 use_basemap, over, vectors_subsampling,
-                 myplot_args):
+                 use_basemap, over, vectors_subsampling, myplot_args, monzoom = None):
     """
     Generic method for plotting (ok for plot, plot_both, overlay, but not for diff).
     """
@@ -217,6 +216,10 @@ def make_my_plot(resource, field, cle, champ, champ_v, FF, vecteurs,
         field_v = resource.readfield(champ_v[cle])
         if field_v.spectral:
             field_v.sp2gp()
+        if monzoom is not None:
+            #pass
+            #field = field.extract_zoom(monzoom)
+            field_v = field_v.extract_zoom(monzoom)
         vectwind = epygram.fields.make_vector_field(field,
                                                     field_v)
         if FF[cle]:

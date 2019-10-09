@@ -1065,7 +1065,7 @@ class _D3CommonField(Field):
             if 'gauss' in self.geometry.name:
                 # gauss grid case
                 resolution = self.geometry.resolution_j(self.geometry.dimensions['lat_number'] - 1)
-            elif self.geometry.name == 'regular_lonlat':
+            elif self.geometry.name in ('regular_lonlat', 'unstructured'):
                 resolution = self.geometry.resolution_ij(self.geometry.dimensions['X'] / 2,
                                                          self.geometry.dimensions['Y'] / 2)
             else:
@@ -1708,6 +1708,26 @@ class _D3CommonField(Field):
             return fig, ax, n, bins, patches
         else:
             return fig, ax
+
+    def scatter_with(self, other,
+                     over=(None, None),
+                     figsize=None,
+                     mask_outside=config.mask_outside):
+        """
+        Make a scatter plot of self data against other data.
+
+        :param figsize: figure sizes in inches, e.g. (5, 8.5).
+                        Default figsize is config.plotsizes.
+        """
+        for f in (self, other):
+            if f.spectral:
+                f.sp2gp()
+        data, otherdata = self._masked_any(other, mask_outside)
+        otherdata = otherdata.compressed()
+        data = data.compressed()
+        fig, ax = set_figax(*over, figsize=figsize)
+        ax.scatter(data, otherdata)
+        return fig, ax
 
     def global_shift_center(self, longitude_shift):
         """

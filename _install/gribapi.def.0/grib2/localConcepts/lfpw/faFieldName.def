@@ -1,0 +1,13 @@
+# example
+"MON_NOUVEAU_SUPER_CHAMP" = {
+    discipline = 255 ;
+    parameterCategory = 255 ;
+    parameterNumber = 255 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    typeOfStatisticalProcessing = 2 ;
+    indicatorOfUnitForTimeRange = 0 ;
+    lengthOfTimeRange = 15 ;
+}

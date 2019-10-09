@@ -46,6 +46,13 @@ class H2DGeometry(D3Geometry):
             raise epygramError("H2DGeometry must have only one level.")
         super(H2DGeometry, self)._consistency_check()
 
+    def _GRIB2_sample(self, prefix):
+        """Build GRIB2 sample name."""
+        from griberies.tables import typeoffixedsurface2sample as levels
+        return '_'.join([prefix,
+                         levels[self.vcoordinate.typeoffirstfixedsurface],
+                         'grib2'])
+
 
 class H2DRectangularGridGeometry(H2DGeometry, D3RectangularGridGeometry):
     """
@@ -64,6 +71,13 @@ class H2DRectangularGridGeometry(H2DGeometry, D3RectangularGridGeometry):
                               'regular_lonlat', 'academic', 'unstructured']))
         )
     )
+
+    def suggested_GRIB2_sample(self, spectral=False):
+        if not spectral:
+            # return self._GRIB2_sample(regular_ll')
+            return 'GRIB2'
+        else:
+            return self._GRIB2_sample('sh')
 
 
 class H2DUnstructuredGeometry(H2DRectangularGridGeometry, D3UnstructuredGeometry):
@@ -156,3 +170,9 @@ class H2DGaussGeometry(H2DGeometry, D3GaussGeometry):
                 values=set(['rotated_reduced_gauss', 'reduced_gauss', 'regular_gauss'])),
         )
     )
+
+    def suggested_GRIB2_sample(self, spectral=False):
+        prefix = {'rotated_reduced_gauss':'reduced_rotated_gg',
+                  'reduced_gauss':'reduced_gg',
+                  'regular_gauss':'regular_gg'}[self.name]
+        return self._GRIB2_sample('sh' if spectral else prefix)

@@ -1,6 +1,0 @@
-,
-overwrite
-#name:S[0-9][0-9][0-9]MYFIELD1,type:H2D,typeOfFirstFixedSurface:119,discipline:0,parameterCategory:6,parameterNumber:255
-#name:SURF_5M_MYFIELD2,type:H2D,typeOfFirstFixedSurface:1,level:5,discipline:0,parameterCategory:2,parameterNumber:255
-#name:MYFIELD3,type:Misc,nature:int,dimension:1
-#name:MY*FIELD4,type:Misc,nature:int,dimension:0

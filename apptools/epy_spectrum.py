@@ -302,7 +302,7 @@ def main(filename,
                                      smooth_string(p),
                                      suffix,
                                      output])
-            spectraplots[p].savefig(filename, dpi=figures_dpi)
+            spectraplots[p][0].savefig(filename, dpi=figures_dpi)
 
 
 if __name__ == '__main__':

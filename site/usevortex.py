@@ -354,7 +354,7 @@ def extractor(vortex_description,
                     fld.sp2gp()
                 if points_fields[f].get('reproject_wind_on_lonlat', True):
                     try:
-                        d, other = epygram.formats.FA.find_wind_pair(f)
+                        d, other = epygram.formats.fafields.find_wind_pair(f)
                     except epygram.epygramError:
                         pass
                     else:

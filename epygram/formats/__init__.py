@@ -11,8 +11,7 @@ Module contains:
   - guess the format of an existing resource in a given container;
   - create a Resource instance with a generic function,
     eventually (if already existing) without knowing its format *a priori*;
-  - some catalogs of GRIB numbers
-  - ...
+  - FA field names recognition
 """
 
 from __future__ import print_function, absolute_import, unicode_literals, division
@@ -27,6 +26,8 @@ from bronx.system.unistd import stderr_redirected
 from epygram import config, epygramError, util
 
 __all__ = []
+
+from . import fafields
 
 # Formats loading used to have to follow an order,
 # for common dynamic libraries of different versions.
@@ -124,6 +125,21 @@ def fid_converter(initial_fid, initial_fmt, target_fmt,
                                    for k in sorted(initial_fid.keys())])
         else:
             target_fid = str(initial_fid).replace(' ', '').replace("'", "").replace("{", "_")
+            """
+            FIXME: doesn't work
+            try:
+                from .GRIB import namesgribdef
+                fid = copy.copy(initial_fid)
+                fid.pop('name', None)
+                fid.pop('shortName', None)
+                fid.pop('editionNumber', None)
+                fid.pop('tablesVersion', None)
+                cfVarName = namesgribdef.cfVarName(fid,
+                                                   'grib{}'.format(initial_fid['editionNumber']))
+                if len(cfVarName) == 1:
+                    target_fid = list(cfVarName.keys())[0]
+            except Exception:
+                pass"""
     else:
         raise NotImplementedError("this kind of conversion.")
 

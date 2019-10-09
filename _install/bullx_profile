@@ -2,9 +2,6 @@
 #module load openblas  # for scipy.interpolate !! and perturbs results of model
 module load python
 
-# ecCodes
-export PYTHONPATH=/home/gmap/mrpe/mary/public/eccodes_python:$PYTHONPATH
-
 # EPyGrAM
 EPYGRAM_INSTALL_DIR=$HOME/.epygram/src
 export PYTHONPATH=$EPYGRAM_INSTALL_DIR:$EPYGRAM_INSTALL_DIR/site:$PYTHONPATH

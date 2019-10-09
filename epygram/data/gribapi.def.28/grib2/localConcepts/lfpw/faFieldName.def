@@ -1,0 +1,2887 @@
+# Total Cloud Fraction
+"CLOUD_FRACTI" = {
+    discipline = 0 ;
+    parameterCategory = 6 ;
+    parameterNumber = 32 ;
+    tablesVersion = 15 ;
+}
+
+# Liquid water cloud specific content
+"CLOUD_WATER" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 83 ;
+    tablesVersion = 15 ;
+}
+
+# "Zonal component of 180 min gust wind (maximum between two outputs)"
+"CLSU.RAF180M.XFU" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 23 ;
+    productDefinitionTemplateNumber = 8 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaledValueOfFirstFixedSurface = 10 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 103 ;
+    typeOfStatisticalProcessing = 2 ;
+    indicatorOfUnitForTimeRange = 1 ;
+    lengthOfTimeRange = 3 ;
+    LSTCUM=2;
+}
+
+# "Meridional component of 180 min gust wind (maximum between two outputs)"
+"CLSV.RAF180M.XFU" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 24 ;
+    productDefinitionTemplateNumber = 8 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaledValueOfFirstFixedSurface = 10 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 103 ;
+    typeOfStatisticalProcessing = 2 ;
+    indicatorOfUnitForTimeRange = 1 ;
+    lengthOfTimeRange = 3 ;
+    LSTCUM=2;
+}
+
+# "Zonal component of 60 min gust wind (maximum between two outputs)"
+"CLSU.RAF60M.XFU" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 23 ;
+    productDefinitionTemplateNumber = 8 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaledValueOfFirstFixedSurface = 10 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 103 ;
+    typeOfStatisticalProcessing = 2 ;
+    indicatorOfUnitForTimeRange = 1 ;
+    lengthOfTimeRange = 1 ;
+    LSTCUM=2;
+}
+
+# "Meridional component of 60 min gust wind (maximum between two outputs)"
+"CLSV.RAF60M.XFU" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 24 ;
+    productDefinitionTemplateNumber = 8 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaledValueOfFirstFixedSurface = 10 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 103 ;
+    typeOfStatisticalProcessing = 2 ;
+    indicatorOfUnitForTimeRange = 1 ;
+    lengthOfTimeRange = 1 ;
+    LSTCUM=2;
+}
+
+# Stream function
+"FONC.COURANT" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 4 ;
+    tablesVersion = 15 ;
+}
+
+# Velocity potential
+"POT.VITESSE" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 5 ;
+    tablesVersion = 15 ;
+}
+
+# TOA Short-wave radiation flux
+"SOMMRAYT.SOLAIRE" = {
+    discipline = 0 ;
+    parameterCategory = 4 ;
+    parameterNumber = 9 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 8 ;
+    typeOfSecondFixedSurface = 255 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# TOA Long-wave radiation flux
+"SOMMRAYT.TERREST" = {
+    discipline = 0 ;
+    parameterCategory = 5 ;
+    parameterNumber = 5 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 8 ;
+    typeOfSecondFixedSurface = 255 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# CUMULATED TURBULENT FLUX OF U-MOMEMTUM
+"SURFTENS.TURB.ZO" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 38 ;
+    tablesVersion = 15 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# CUMULATED TURBULENT FLUX OF V-MOMEMTUM
+"SURFTENS.TURB.ME" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 37 ;
+    tablesVersion = 15 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Flux de rayonnement solaire (Visible) par ciel clair
+"RAYT_SOL_CL" = {
+    discipline = 0 ;
+    parameterCategory = 4 ;
+    parameterNumber = 11 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# V component of neutral wind at 10 m (diagnostic)
+"CLSVENTNEUTRE.V" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 1 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaledValueOfFirstFixedSurface = 10 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 103 ;
+}
+
+# "Filtred ln(Ps) FILTERS FOR THE MONITORING OF THE COUPLING UPDATES"
+"CUF1PRESSURE" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 2 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# "Filtred ln(Ps) FILTERS FOR THE MONITORING OF THE COUPLING UPDATES"
+"CUF2PRESSURE" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 3 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Cumulated flux of 3D precipitations (rain + snow + graupel) for MOCAGE
+"INPRRTOT3D" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 52 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfStatisticalProcessing = 1 ;
+    LSTCUM = 1 ;
+}
+
+# difference between real and hydrostatic pressure
+"PRESS.DEPART" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 4 ;
+    tablesVersion = 15 ;
+}
+
+# Climatology relative deep soil wetness
+"PROFPROP.RMAX.EA" = {
+    discipline = 2 ;
+    parameterCategory = 193 ;
+    parameterNumber = 0 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 177 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Deep soil cumulated run-off of water
+"PROFRUISSELLEMEN" = {
+    discipline = 2 ;
+    parameterCategory = 0 ;
+    parameterNumber = 5 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 177 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# Deep soil run-off of water
+"PROFXRUISSELLEME" = {
+    discipline = 2 ;
+    parameterCategory = 193 ;
+    parameterNumber = 1 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 177 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Flux de rayonnement thermique (IR) par ciel clair
+"RAYT_THER_CL" = {
+    discipline = 0 ;
+    parameterCategory = 5 ;
+    parameterNumber = 6 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Climatology relaxation relative deep soil wetness
+"RELAPROP.RMAX.EA" = {
+    discipline = 2 ;
+    parameterCategory = 193 ;
+    parameterNumber = 2 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 177 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Deep soil relaxation temperature
+"RELATEMPERATURE" = {
+    discipline = 2 ;
+    parameterCategory = 193 ;
+    parameterNumber = 3 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 177 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# "TOA Short-wave radiation flux (integrated since the start of the run)"
+"SOMMFLU.RAY.SOLA" = {
+    discipline = 0 ;
+    parameterCategory = 4 ;
+    parameterNumber = 9 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 8 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# "TOA Long-wave radiation flux (integrated since the start of the run)"
+"SOMMFLU.RAY.THER" = {
+    discipline = 0 ;
+    parameterCategory = 5 ;
+    parameterNumber = 5 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 8 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# surface geopotentiel (spectral field)
+"SPECSURFGEOPOTEN" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 5 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# sunshine duration without nebulosity
+"SUNSHI._DURATION" = {
+    discipline = 0 ;
+    parameterCategory = 6 ;
+    parameterNumber = 24 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# First ozone profile “A”
+"SURFA.OF.OZONE" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 6 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Contenu en aérosols de type désertiques
+"SURFAEROS.DESERT" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 9 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Contenu en aérosols de type urbains
+"SURFAEROS.LAND" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 10 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Contenu en aérosols de type maritimes
+"SURFAEROS.SEA" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 11 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Contenu en aérosols de type “suie”
+"SURFAEROS.SOOT" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 12 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# TOTAL ALBEDO USED DURING THE FORECAST
+"SURFALBEDO_HISTO" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 13 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Albédo de la neige
+"SURFALBEDO_NEIGE" = {
+    discipline = 0 ;
+    parameterCategory = 19 ;
+    parameterNumber = 19 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Albédo “complémentaire”
+"SURFALBEDO.COMPL" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 14 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Albédo du sol nu
+"SURFALBEDO.SOLNU" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 15 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Albédo de la végétation
+"SURFALBEDO.VEG" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 16 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Second ozone profile “B”
+"SURFB.OF.OZONE" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 7 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Third ozone profile “C”
+"SURFC.OF.OZONE" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# CUMULATED TURBULENT FLUX OF ENTHALPY (OR DRY STATIC ENERGY)
+"SURFCFU.CT.TURBU" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 17 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# cumulated turbulent flux of specific humidity
+"SURFCFU.Q.TURBUL" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 18 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# cumulated heat flux from surface to deep soil
+"SURFCHAL._DS_SOL" = {
+    discipline = 2 ;
+    parameterCategory = 193 ;
+    parameterNumber = 4 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 177 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# Densité de la neige en surface
+"SURFDENSIT.NEIGE" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 61 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 177 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# surface direct normal irradiance flux
+"SURFDIR_NORM_IRR" = {
+    discipline = 0 ;
+    parameterCategory = 4 ;
+    parameterNumber = 13 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Cumulated deep soil water flux
+"SURFEAU_DANS_SOL" = {
+    discipline = 2 ;
+    parameterCategory = 193 ;
+    parameterNumber = 5 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 177 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# Emissivité en surface
+"SURFEMISSIVITE" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 19 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Epaisseur maximale du sol
+"SURFEPAI.SOL.MAX" = {
+    discipline = 2 ;
+    parameterCategory = 3 ;
+    parameterNumber = 194 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 177 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Epaisseur du sol
+"SURFEPAIS.SOL" = {
+    discipline = 2 ;
+    parameterCategory = 3 ;
+    parameterNumber = 27 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 177 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Ecart type du géopotentiel en surface
+"SURFET.GEOPOTENT" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 20 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# TURBULENT FLUX OF ENTHALPY (OR DRY STATIC ENERGY)
+"SURFFL.CT_TURBUL" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 21 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Flux turbulent de vapeur d’eau en surface
+"SURFFL.Q__TURBUL" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 22 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    productDefinitionTemplateNumber = 8 ;
+    typeOfStatisticalProcessing = 1 ;
+    LSTCUM = 1 ;
+}
+
+# Flux turbulent du vent zonal en surface
+"SURFFL.U__TURBUL" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 23 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Flux turbulent du vent méridien en surface
+"SURFFL.V__TURBUL" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 24 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# cumulated water flux corresponding to surface snow melt
+"SURFFONTE_NEIGE" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 16 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# Geopotential (g z) at surface
+"SURFGEOPOTENTIEL" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 4 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Longueur de rugosité thermique fois g (“g z0”)
+"SURFGZ0.THERM" = {
+    discipline = 2 ;
+    parameterCategory = 193 ;
+    parameterNumber = 6 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Indice folliaire
+"SURFIND.FOLIAIRE" = {
+    discipline = 2 ;
+    parameterCategory = 0 ;
+    parameterNumber = 28 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Indice Terre(1) ou Mer (0) pour la surface
+"SURFIND.TERREMER" = {
+    discipline = 2 ;
+    parameterCategory = 0 ;
+    parameterNumber = 0 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Indice de végétation dominante
+"SURFIND.VEG.DOMI" = {
+    discipline = 2 ;
+    parameterCategory = 193 ;
+    parameterNumber = 7 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Proportion d’argile en surface
+"SURFPROP.ARGILE" = {
+    discipline = 2 ;
+    parameterCategory = 193 ;
+    parameterNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Climatology relative surface soil wetness
+"SURFPROP.RMAX.EA" = {
+    discipline = 2 ;
+    parameterCategory = 193 ;
+    parameterNumber = 0 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Proportion de sable en surface
+"SURFPROP.SABLE" = {
+    discipline = 2 ;
+    parameterCategory = 193 ;
+    parameterNumber = 9 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Proportion de terre en surface
+"SURFPROP.TERRE" = {
+    discipline = 2 ;
+    parameterCategory = 193 ;
+    parameterNumber = 10 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Proportion de zone urbaine en surface
+"SURFPROP.URBANIS" = {
+    discipline = 2 ;
+    parameterCategory = 193 ;
+    parameterNumber = 11 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Proportion maximale de végétation en surface
+"SURFPROP.VEG.MAX" = {
+    discipline = 2 ;
+    parameterCategory = 193 ;
+    parameterNumber = 13 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 2 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Proportion de végétation en surface
+"SURFPROP.VEGETAT" = {
+    discipline = 2 ;
+    parameterCategory = 193 ;
+    parameterNumber = 12 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Surface solar radiation
+"SURFRAYT.SOLAIRE" = {
+    discipline = 0 ;
+    parameterCategory = 4 ;
+    parameterNumber = 9 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    typeOfStatisticalProcessing = 1 ;
+    LSTCUM = 1 ;
+}
+
+# Surface thermal radiation
+"SURFRAYT.TERREST" = {
+    discipline = 0 ;
+    parameterCategory = 5 ;
+    parameterNumber = 5 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    typeOfStatisticalProcessing = 1 ;
+    LSTCUM = 1 ;
+}
+
+# Resistance to evapotranspiration
+"SURFRES.EVAPOTRA" = {
+    discipline = 2 ;
+    parameterCategory = 0 ;
+    parameterNumber = 6 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Réservoir intermédiaire d’eau en surface
+"SURFRESERV.INTER" = {
+    discipline = 2 ;
+    parameterCategory = 193 ;
+    parameterNumber = 14 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# Résistance stomatique minimale
+"SURFRESI.STO.MIN" = {
+    discipline = 2 ;
+    parameterCategory = 0 ;
+    parameterNumber = 16 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Ruissellement de l’eau en surface
+"SURFRUISSELLEMEN" = {
+    discipline = 2 ;
+    parameterCategory = 0 ;
+    parameterNumber = 5 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# Cumulated V-Gravity-Wave Stress
+"SURFTENS.DMOG.ME" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 17 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Cumulated U-Gravity-Wave Stress
+"SURFTENS.DMOG.ZO" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 16 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Filtered duration of precipitations
+"SURFTIME.PREC.TO" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 25 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Valeur de l’anisotropie du géopotentiel en surface
+"SURFVAR.GEOP.ANI" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 24 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Direction de l’anisotropie du géopotentiel en surface
+"SURFVAR.GEOP.DIR" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 26 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Heat flux from surface to deep soil
+"SURFXCHAL._DS_SO" = {
+    discipline = 2 ;
+    parameterCategory = 193 ;
+    parameterNumber = 4 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 177 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Instantateous deep soil water flux
+"SURFXEAU_DANS_SO" = {
+    discipline = 2 ;
+    parameterCategory = 193 ;
+    parameterNumber = 5 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 177 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# water vapour flux over liquid water (or wet soil)
+"SURFXFLU.MEVAP.E" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 27 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# Instantateous flux of melting of snow
+"SURFXFONTE_NEIGE" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 16 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Instantateous run-off flux
+"SURFXRUISSELLEME" = {
+    discipline = 2 ;
+    parameterCategory = 0 ;
+    parameterNumber = 5 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Surface roughness (times g)
+"SURFZ0.FOIS.G" = {
+    discipline = 2 ;
+    parameterCategory = 193 ;
+    parameterNumber = 15 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Roughness length of the bare surface (times g)
+"SURFZ0REL.FOIS.G" = {
+    discipline = 2 ;
+    parameterCategory = 193 ;
+    parameterNumber = 16 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Roughness length for vegetation (times g)
+"SURFZ0VEG.FOIS.G" = {
+    discipline = 2 ;
+    parameterCategory = 193 ;
+    parameterNumber = 17 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Top parallel solar flux
+"TOPRAYT_DIR_SOM" = {
+    discipline = 0 ;
+    parameterCategory = 4 ;
+    parameterNumber = 4 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 8 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# vertical divergence
+"VERTIC.DIVER" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 28 ;
+    tablesVersion = 15 ;
+}
+
+# "Convective rain (integrated since the start of the run)"
+"SURFPREC.EAU.CON" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 76 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# "Large-scale rain (integrated since the start of the run)"
+"SURFPREC.EAU.GEC" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 77 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# cumulated latent heat flux at surface over water
+"SURFFLU.LAT.MEVA" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 29 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# cumulated latent heat flux at surface level over snow
+"SURFFLU.LAT.MSUB" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 30 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# "Convective snow (integrated since the start of the run)"
+"SURFPREC.NEI.CON" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 55 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# "Large-scale snow (integrated since the start of the run)"
+"SURFPREC.NEI.GEC" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 56 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# Albédo (total) de la surface
+"SURFALBEDO" = {
+    discipline = 0 ;
+    parameterCategory = 19 ;
+    parameterNumber = 1 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# "CAPE computed in the deep convection Scheme"
+"SURFCAPE.MOD.XFU" = {
+    discipline = 0 ;
+    parameterCategory = 7 ;
+    parameterNumber = 199 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 10 ;
+    typeOfSecondFixedSurface = 255 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+}
+
+# Ice cloud specific content
+"ICE_CRYSTAL" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 84 ;
+    tablesVersion = 15 ;
+}
+
+# "Ice cloud specific content Seen by the radiation scheme"
+"RAD_SOLID_" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 84 ;
+    tablesVersion = 15 ;
+}
+
+"SOLID_WATER" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 84 ;
+    tablesVersion = 15 ;
+}
+
+"LIQUID_WATER" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 83 ;
+    tablesVersion = 15 ;
+}
+
+
+
+# "Ice cloud specific content Seen by the radiation scheme"
+"RAD_SOLID_WA" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 84 ;
+    tablesVersion = 15 ;
+}
+
+# Graupel specific content (precip) in cloud
+"GRAUPEL" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 201 ;
+    tablesVersion = 15 ;
+}
+
+# Rain specific content (precip) in cloud
+"RAIN" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 85 ;
+    tablesVersion = 15 ;
+}
+
+# Snow specific content (precip) in cloud
+"SNOW" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 86 ;
+    tablesVersion = 15 ;
+}
+
+# "Liquid water cloud specific content Seen by the radiation scheme"
+"RAD_LIQUID" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 83 ;
+    tablesVersion = 15 ;
+}
+
+
+# "Liquid water cloud specific content Seen by the radiation scheme"
+"RAD_LIQUID_W" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 83 ;
+    tablesVersion = 15 ;
+}
+
+# "Diagnostic of hail content (for the given time step)"
+"SURFDIAGHAIL" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 199 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# "“Total rain” surface precipitation (subgrid + convective values) (integrated since the start of the run)"
+"SURFACCPLUIE" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 65 ;
+    tablesVersion = 15 ;
+    productDefinitionTemplateNumber = 8 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# Dissipation rate of the TKE equation
+"EDR" = {
+    discipline = 0 ;
+    parameterCategory = 19 ;
+    parameterNumber = 199 ;
+    tablesVersion = 15 ;
+}
+
+# Flux d’évaporation en surface sur eau liquide
+"SURFFLU.MEVAP.EA" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 31 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Flux d’évaporation en surface sur glace
+"SURFFLU.MSUBL.NE" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 32 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    productDefinitionTemplateNumber = 8 ;
+    LSTCUM = 1 ;
+}
+
+# "Downward lunar radiation flux at the surface (integrated since the start of the run)"
+"SURFRAYT.LUNE.DE" = {
+    discipline = 0 ;
+    parameterCategory = 4 ;
+    parameterNumber = 197 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# "Sensible heat flux at the surface (integrated since the start of the run)"
+"SURFFLU.CHA.SENS" = {
+    discipline = 0 ;
+    parameterCategory = 0 ;
+    parameterNumber = 11 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# "Short-wave radiation flux (integrated since the start of the run)"
+"SURFFLU.RAY.SOLA" = {
+    discipline = 0 ;
+    parameterCategory = 4 ;
+    parameterNumber = 9 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# Downward short-wave radiation flux at surface
+"SURFRAYT_SOLA_DE" = {
+    discipline = 0 ;
+    parameterCategory = 4 ;
+    parameterNumber = 7 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# (integrated since the start of the run) parrallel flux
+"SURFRAYT_DIR_SUR" = {
+    discipline = 0 ;
+    parameterCategory = 4 ;
+    parameterNumber = 198 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# "Long-wave radiation flux (integrated since the start of the run)"
+"SURFFLU.RAY.THER" = {
+    discipline = 0 ;
+    parameterCategory = 5 ;
+    parameterNumber = 5 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# "Downward long-wave radiation flux at The surface (integrated since the start of the run)"
+"SURFRAYT_THER_DE" = {
+    discipline = 0 ;
+    parameterCategory = 5 ;
+    parameterNumber = 3 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# "Graupel surface precipitation (integrated since the start of the run)"
+"SURFACCGRAUPEL" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 75 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# Depth of the boundary layer
+"CLPMHAUT.MOD.XFU" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 18 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# "Diagnostic value at 2 m of the relative humidity "
+"CLSHUMI.RELATIVE" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 1 ;
+    scaledValueOfFirstFixedSurface = 2 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 103 ;
+    FMULTE = 2 ;
+}
+
+# "Maximum value of the 2-m-diagnostic Relative humidity"
+"CLSMAXI.HUMI.REL" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 1 ;
+    productDefinitionTemplateNumber = 8 ;
+    scaledValueOfFirstFixedSurface = 2 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 103 ;
+    typeOfStatisticalProcessing = 2 ;
+}
+
+# "Minimum value of the 2-m-diagnostic Relative humidity"
+"CLSMINI.HUMI.REL" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 1 ;
+    productDefinitionTemplateNumber = 8 ;
+    scaledValueOfFirstFixedSurface = 2 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 103 ;
+    typeOfStatisticalProcessing = 3 ;
+}
+
+# "The vertical mean (over the boundary Layer) of the moisture convergence"
+"CLPMOCON.MOD.XFU" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 26 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Low-levels Cloudiness
+"ATMONEBUL.BASSE" = {
+    discipline = 0 ;
+    parameterCategory = 6 ;
+    parameterNumber = 3 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    typeOfSecondFixedSurface = 255 ;
+    FMULTE = 2 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# Low-levels Cloudiness
+"SURFNEBUL.BASSE" = {
+    discipline = 0 ;
+    parameterCategory = 6 ;
+    parameterNumber = 3 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfSecondFixedSurface = 255 ;
+    FMULTE = 2 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Convective-levels Cloudiness
+"ATMONEBUL.CONVEC" = {
+    discipline = 0 ;
+    parameterCategory = 6 ;
+    parameterNumber = 2 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    typeOfSecondFixedSurface = 255 ;
+    FMULTE = 2 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# Convective-levels Cloudiness
+"SURFNEBUL.CONVEC" = {
+    discipline = 0 ;
+    parameterCategory = 6 ;
+    parameterNumber = 2 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfSecondFixedSurface = 255 ;
+    FMULTE = 2 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# High-levels Cloudiness
+"ATMONEBUL.HAUTE" = {
+    discipline = 0 ;
+    parameterCategory = 6 ;
+    parameterNumber = 5 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    typeOfSecondFixedSurface = 255 ;
+    FMULTE = 2 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# High-levels Cloudiness
+"SURFNEBUL.HAUTE" = {
+    discipline = 0 ;
+    parameterCategory = 6 ;
+    parameterNumber = 5 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfSecondFixedSurface = 255 ;
+    FMULTE = 2 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Mid-levels Cloudiness
+"ATMONEBUL.MOYENN" = {
+    discipline = 0 ;
+    parameterCategory = 6 ;
+    parameterNumber = 4 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    typeOfSecondFixedSurface = 255 ;
+    FMULTE = 2 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# Mid-levels Cloudiness
+"SURFNEBUL.MOYENN" = {
+    discipline = 0 ;
+    parameterCategory = 6 ;
+    parameterNumber = 4 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfSecondFixedSurface = 255 ;
+    FMULTE = 2 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Total (all-levels) Cloudiness
+"ATMONEBUL.TOTALE" = {
+    discipline = 0 ;
+    parameterCategory = 6 ;
+    parameterNumber = 1 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfSecondFixedSurface = 255 ;
+    typeOfStatisticalProcessing = 1 ;
+    FMULTE = 2 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# Total (all-levels) Cloudiness
+"SURFNEBUL.TOTALE" = {
+    discipline = 0 ;
+    parameterCategory = 6 ;
+    parameterNumber = 1 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfSecondFixedSurface = 255 ;
+    FMULTE = 2 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+}
+
+# "“Total snow” surface precipitation (subgrid + convective values) (integrated since the start of the run)"
+"SURFACCNEIGE" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 66 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# Surface pressure
+"SURFPRESSION" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 0 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# U component of neutral wind at 10 m (diagnostic)
+"CLSVENTNEUTRE.U" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 0 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaledValueOfFirstFixedSurface = 10 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 103 ;
+}
+
+# "Diagnostic value at 2 m of the specific Water vapour "
+"CLSHUMI.SPECIFIQ" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 0 ;
+    scaledValueOfFirstFixedSurface = 2 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 103 ;
+}
+
+# Water vapour specific content
+"HUMI.SPECIFI" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 0 ;
+    tablesVersion = 15 ;
+}
+
+# Surface ice content in soil
+"SURFRESERV.GLACE" = {
+    discipline = 2 ;
+    parameterCategory = 3 ;
+    parameterNumber = 192 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Surface ice content in soil
+"PROFRESERV.GLACE" = {
+    discipline = 2 ;
+    parameterCategory = 3 ;
+    parameterNumber = 192 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 106 ;
+    scaledValueOfFirstFixedSurface = 250 ;
+    scaleFactorOfFirstFixedSurface = 2 ;
+}
+
+# Surface water content in soil
+"SURFRESERV.EAU" = {
+    discipline = 2 ;
+    parameterCategory = 3 ;
+    parameterNumber = 193 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Surface water content in soil
+"PROFRESERV.EAU" = {
+    discipline = 2 ;
+    parameterCategory = 3 ;
+    parameterNumber = 193 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 106 ;
+    scaledValueOfFirstFixedSurface = 250 ;
+    scaleFactorOfFirstFixedSurface = 2 ;
+}
+
+# Equivalent height of water for snow at surface
+"SURFRESERV.NEIGE" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 60 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Surface temperature
+"SURFTEMPERATURE" = {
+    discipline = 0 ;
+    parameterCategory = 0 ;
+    parameterNumber = 0 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Temperature
+"TEMPERATURE" = {
+    discipline = 0 ;
+    parameterCategory = 0 ;
+    parameterNumber = 0 ;
+    tablesVersion = 15 ;
+}
+
+# Diagnostic value at 2 m of Temperature
+"CLSTEMPERATURE" = {
+    discipline = 0 ;
+    parameterCategory = 0 ;
+    parameterNumber = 0 ;
+    scaledValueOfFirstFixedSurface = 2 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 103 ;
+}
+
+# deep soil temperature
+"PROFTEMPERATURE" = {
+    discipline = 2 ;
+    parameterCategory = 3 ;
+    parameterNumber = 18 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 106 ;
+    scaledValueOfFirstFixedSurface = 10 ;
+    scaleFactorOfFirstFixedSurface = 2 ;
+    typeOfSecondFixedSurface = 255 ;
+}
+
+# Turbulent kinetic energy
+"TKE" = {
+    discipline = 0 ;
+    parameterCategory = 19 ;
+    parameterNumber = 11 ;
+    tablesVersion = 15 ;
+}
+
+# "Maximum value of the 2-m-diagnostic Temperature"
+"CLSMAXI.TEMPERAT" = {
+    discipline = 0 ;
+    parameterCategory = 0 ;
+    parameterNumber = 0 ;
+    productDefinitionTemplateNumber = 8 ;
+    scaledValueOfFirstFixedSurface = 2 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 103 ;
+    typeOfStatisticalProcessing = 2 ;
+}
+
+# "Minimum value of the 2-m-diagnostic Temperature"
+"CLSMINI.TEMPERAT" = {
+    discipline = 0 ;
+    parameterCategory = 0 ;
+    parameterNumber = 0 ;
+    productDefinitionTemplateNumber = 8 ;
+    scaledValueOfFirstFixedSurface = 2 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 103 ;
+    typeOfStatisticalProcessing = 3 ;
+}
+
+# U component of wind
+"WIND.U.PHYS" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 2 ;
+    tablesVersion = 15 ;
+}
+
+# "zonal component of the horizontal wind At 10 m"
+"CLSVENT.ZONAL" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 2 ;
+    scaledValueOfFirstFixedSurface = 10 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 103 ;
+}
+
+# "Zonal component of 10 m gust wind (maximum between two outputs)"
+"CLSU.RAF.MOD.XFU" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 23 ;
+    productDefinitionTemplateNumber = 8 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaledValueOfFirstFixedSurface = 10 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 103 ;
+    typeOfStatisticalProcessing = 2 ;
+    indicatorOfUnitForTimeRange = 1 ;
+    lengthOfTimeRange = 1 ;
+    LSTCUM=2;
+}
+
+# V component of wind
+"WIND.V.PHYS" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 3 ;
+    tablesVersion = 15 ;
+}
+
+# "meridional component of the horizontal wind At 10 m"
+"CLSVENT.MERIDIEN" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 3 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaledValueOfFirstFixedSurface = 10 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 103 ;
+}
+
+# "Meridional component of 10 m gust wind (maximum between two outputs)"
+"CLSV.RAF.MOD.XFU" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 24 ;
+    productDefinitionTemplateNumber = 8 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaledValueOfFirstFixedSurface = 10 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 103 ;
+    typeOfStatisticalProcessing = 2 ;
+    indicatorOfUnitForTimeRange = 1 ;
+    lengthOfTimeRange = 1 ;
+    LSTCUM=2;
+}
+
+# Instantateous surface graupel flux
+"SURFINSGRAUPEL" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 75 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Instantateous surface snow flux
+"SURFINSNEIGE" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 66 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Instantateous surface rain flux
+"SURFINSPLUIE" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 65 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Surface fux of theta’w (used in the model PERLE)
+"THETAPWP_FLUX" = {
+    discipline = 0 ;
+    parameterCategory = 193 ;
+    parameterNumber = 33 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+"default" = {
+    discipline = 255 ;
+    parameterCategory = 255 ;
+    parameterNumber = 255 ;
+    tablesVersion = 15 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Total Cloud Fraction
+"CLOUD_FRAC" = {
+    discipline = 0 ;
+    parameterCategory = 6 ;
+    parameterNumber = 32 ;
+    tablesVersion = 15 ;
+}
+
+# Liquid water cloud specific content
+"CLOUD_WATE" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 83 ;
+    tablesVersion = 15 ;
+}
+
+# Altitude
+"ISOT_ALTIT" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 6 ;
+    scaleFactorOfFirstFixedSurface = 2 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 197 ;
+}
+
+# "Altitude of the surface of equal Theta’w = 273,15 K (0 C)"
+"SURFISOTPW0.MALT" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 6 ;
+    scaleFactorOfFirstFixedSurface = 2 ;
+    scaledValueOfFirstFixedSurface = 27315 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 198 ;
+}
+
+# "Altitude of the surface of equal Theta’w = 274,15 K (+1 C)"
+"SURFISOTPW1.MALT" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 6 ;
+    scaleFactorOfFirstFixedSurface = 2 ;
+    scaledValueOfFirstFixedSurface = 27415 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 198 ;
+}
+
+# "Altitude of the surface of equal Theta’w = 274,65 K (+1.5 C)"
+"SURFISOTPW2.MALT" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 6 ;
+    scaleFactorOfFirstFixedSurface = 2 ;
+    scaledValueOfFirstFixedSurface = 27465 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 198 ;
+}
+
+# Température de brillance Meteosat7 Canal 1
+"C001_METEOSAT_07" = {
+    discipline = 0 ;
+    level = 64 ;
+    parameterCategory = 5 ;
+    parameterNumber = 7 ;
+    productDefinitionTemplateNumber = 32 ;
+    tablesVersion = 15 ;
+    typeOfGeneratingProcess = 2 ;
+    NB=1 ;
+    scaledValueOfCentralWaveNumber=156250 ;
+    scaleFactorOfCentralWaveNumber=0 ;
+}
+
+# Température de brillance GOES11 Canal 2
+"C002_GOES_11_IMA" = {
+    discipline = 0 ;
+    level = 67 ;
+    parameterCategory = 5 ;
+    parameterNumber = 7 ;
+    productDefinitionTemplateNumber = 32 ;
+    tablesVersion = 15 ;
+    NB=1 ;
+    scaledValueOfCentralWaveNumber=14925373 ;
+    scaleFactorOfCentralWaveNumber=2 ;
+}
+
+# Température de brillance GOES12 Canal 2
+"C002_GOES_12_IMA" = {
+    discipline = 0 ;
+    level = 67 ;
+    parameterCategory = 5 ;
+    parameterNumber = 7 ;
+    productDefinitionTemplateNumber = 32 ;
+    tablesVersion = 15 ;
+    typeOfGeneratingProcess = 2 ;
+    NB=1 ;
+    scaledValueOfCentralWaveNumber=14925373 ;
+    scaleFactorOfCentralWaveNumber=2 ;
+}
+
+# Température de brillance Meteosat7 Canal 2
+"C002_METEOSAT_07" = {
+    discipline = 0 ;
+    level = 115 ;
+    parameterCategory = 5 ;
+    parameterNumber = 7 ;
+    productDefinitionTemplateNumber = 32 ;
+    tablesVersion = 15 ;
+    typeOfGeneratingProcess = 2 ;
+    NB=1 ;
+    scaledValueOfCentralWaveNumber=8695652 ;
+    scaleFactorOfCentralWaveNumber=2 ;
+}
+
+# Température de brillance Meteosat9 Canal 2
+"C002_METEOSAT_09" = {
+    discipline = 0 ;
+    level = 62 ;
+    parameterCategory = 5 ;
+    parameterNumber = 7 ;
+    productDefinitionTemplateNumber = 32 ;
+    tablesVersion = 15 ;
+    typeOfGeneratingProcess = 2 ;
+    NB=1 ;
+    scaledValueOfCentralWaveNumber=16129032 ;
+    scaleFactorOfCentralWaveNumber=2 ;
+}
+
+# Température de brillance MTSAT1 Canal 2
+"C002_MTSAT_01_IM" = {
+    discipline = 0 ;
+    level = 107 ;
+    parameterCategory = 5 ;
+    parameterNumber = 7 ;
+    productDefinitionTemplateNumber = 32 ;
+    tablesVersion = 15 ;
+    typeOfGeneratingProcess = 2 ;
+    NB=1 ;
+    scaledValueOfCentralWaveNumber=9345794 ;
+    scaleFactorOfCentralWaveNumber=2 ;
+}
+
+# Température de brillance GOES11 Canal 3
+"C003_GOES_11_IMA" = {
+    discipline = 0 ;
+    level = 107 ;
+    parameterCategory = 5 ;
+    parameterNumber = 7 ;
+    productDefinitionTemplateNumber = 32 ;
+    tablesVersion = 15 ;
+    typeOfGeneratingProcess = 2 ;
+    NB=1 ;
+    scaledValueOfCentralWaveNumber=9345794 ;
+    scaleFactorOfCentralWaveNumber=2 ;
+}
+
+# Température de brillance GOES12 Canal 3
+"C003_GOES_12_IMA" = {
+    discipline = 0 ;
+    level = 107 ;
+    parameterCategory = 5 ;
+    parameterNumber = 7 ;
+    productDefinitionTemplateNumber = 32 ;
+    tablesVersion = 15 ;
+    typeOfGeneratingProcess = 2 ;
+    NB=1 ;
+    scaledValueOfCentralWaveNumber=9345794 ;
+    scaleFactorOfCentralWaveNumber=2 ;
+}
+
+# Température de brillance MTSAT1 Canal 3
+"C003_MTSAT_01_IM" = {
+    discipline = 0 ;
+    level = 67 ;
+    parameterCategory = 5 ;
+    parameterNumber = 7 ;
+    productDefinitionTemplateNumber = 32 ;
+    tablesVersion = 15 ;
+    typeOfGeneratingProcess = 2 ;
+    NB=1 ;
+    scaledValueOfCentralWaveNumber=14925373 ;
+    scaleFactorOfCentralWaveNumber=2 ;
+}
+
+# Température de brillance Meteosat9 Canal 3
+"C006_METEOSAT_09" = {
+    discipline = 0 ;
+    level = 108 ;
+    parameterCategory = 5 ;
+    parameterNumber = 7 ;
+    productDefinitionTemplateNumber = 32 ;
+    tablesVersion = 15 ;
+    typeOfGeneratingProcess = 2 ;
+    NB=1 ;
+    scaledValueOfCentralWaveNumber=9259259 ;
+    scaleFactorOfCentralWaveNumber=2 ;
+}
+
+# "The MUCAPE (the Most Unstable CAPE For the first 3000 m above ground)"
+"SURFCAPE.POS.F00" = {
+    discipline = 0 ;
+    parameterCategory = 7 ;
+    parameterNumber = 6 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfSecondFixedSurface = 103 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaledValueOfSecondFixedSurface = 3000 ;
+    scaleFactorOfSecondFixedSurface = 0 ;
+}
+
+# Ice cloud specific content
+"ICE_CRYSTA" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 84 ;
+    tablesVersion = 15 ;
+}
+
+# Integrated water vapour
+"SURFTOT.WAT.VAPO" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 64 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Density of moist air
+"HUMID_DENS" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 10 ;
+    tablesVersion = 15 ;
+}
+
+# Density of moist air
+"HUMID_DENSI" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 10 ;
+    tablesVersion = 15 ;
+}
+
+# Relative divergence
+"DIVERGENCE" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 13 ;
+    tablesVersion = 15 ;
+}
+
+# "Evaporation flux at surface (integrated since the start of the run)"
+"SURFFLU.MTOTA.NE" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 6 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# "Latent heat flux at the surface (integrated since the start of the run)"
+"SURFFLU.LAT.MTOT" = {
+    discipline = 0 ;
+    parameterCategory = 0 ;
+    parameterNumber = 10 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# "Clear-sky short-wave radiation flux at the surface (integrated since the start of the run)"
+"SURFRAYT_SOL_CL" = {
+    discipline = 0 ;
+    parameterCategory = 4 ;
+    parameterNumber = 11 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# "Clear-sky long-wave radiation flux at The surface (integrated since the start of the run)"
+"SURFRAYT_THER_CL" = {
+    discipline = 0 ;
+    parameterCategory = 5 ;
+    parameterNumber = 6 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# "Hail surface precipitation (integrated since the start of the run)"
+"SURFACCGRELE" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 73 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# Relative humidity
+"HUMI_RELAT" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 1 ;
+    tablesVersion = 15 ;
+    FMULTE = 2 ;
+}
+
+# Relative humidity
+"HUMI_RELATI" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 1 ;
+    tablesVersion = 15 ;
+    FMULTE = 2 ;
+}
+
+# "Geopotentiel en surface divisé par 9.80665 = 1 / 0.101972 ??"
+"INTSURFGEOPOTENT" = {
+    FMULTM = 10197162;
+    FMULTE = -8;
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 6 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Mean Sea Level Pressure
+"MSLPRESSURE" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 1 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 101 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Pressure
+"PRESSURE" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 0 ;
+    tablesVersion = 15 ;
+}
+
+# "Mean Sea Level Pressure (non-hydrostatic value)"
+"MSL_NHPRESSURE" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 1 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 101 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# "Atmospheric pressure reduced to the mean Sea level by using the standard atmosphere"
+"QNHPRESSURE" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 11 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 101 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Radar reflectivity
+"SIM_REFLEC" = {
+    discipline = 0 ;
+    parameterCategory = 16 ;
+    parameterNumber = 192 ;
+    tablesVersion = 15 ;
+}
+
+# Maximum of Radar Reflectivity
+"SURFREFLECT.MAX" = {
+    discipline = 0 ;
+    parameterCategory = 16 ;
+    parameterNumber = 193 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# Temperature
+"TEMPERATUR" = {
+    discipline = 0 ;
+    parameterCategory = 0 ;
+    parameterNumber = 0 ;
+    tablesVersion = 15 ;
+}
+
+# Absolute Vorticity
+"ABS_VORTIC" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 10 ;
+    tablesVersion = 15 ;
+}
+
+# Absolute Vorticity
+"ABS_VORTICIT" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 10 ;
+    tablesVersion = 15 ;
+}
+
+# Potential temperature
+"TEMPE_POTENT" = {
+    discipline = 0 ;
+    parameterCategory = 0 ;
+    parameterNumber = 2 ;
+    tablesVersion = 15 ;
+}
+
+# Virtual potential temperature
+"THETA_VIRT" = {
+    discipline = 0 ;
+    parameterCategory = 0 ;
+    parameterNumber = 15 ;
+    tablesVersion = 15 ;
+}
+
+# Potential vorticity
+"POT_VORTIC" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 14 ;
+    tablesVersion = 15 ;
+}
+
+# Wet-bulb potential temperature
+"THETA_PRIM" = {
+    discipline = 0 ;
+    parameterCategory = 0 ;
+    parameterNumber = 3 ;
+    tablesVersion = 15 ;
+}
+
+# zonal component of the horizontal wind
+"VENT_ZONAL" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 2 ;
+    tablesVersion = 15 ;
+}
+
+# "Zonal component of 15 mn gust wind (maximum between two outputs)"
+"CLSU.RAF15M.XFU" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 23 ;
+    productDefinitionTemplateNumber = 8 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaledValueOfFirstFixedSurface = 10 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 103 ;
+    typeOfStatisticalProcessing = 2 ;
+    indicatorOfUnitForTimeRange = 0 ;
+    lengthOfTimeRange = 15 ;
+    LSTCUM=2;
+}
+
+# "Zonal component of 360 mn gust wind (maximum between two outputs)"
+"CLSU.RAF360M.XFU" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 23 ;
+    productDefinitionTemplateNumber = 8 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaledValueOfFirstFixedSurface = 10 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 103 ;
+    typeOfStatisticalProcessing = 2 ;
+    indicatorOfUnitForTimeRange = 1 ;
+    lengthOfTimeRange = 6 ;
+    LSTCUM=2;
+}
+
+# "Zonal component of surface wind stress (integrated since the start of the run)"
+"SURFTENS.TOTA.ZO" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 38 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# meridional component of the horizontal wind
+"VENT_MERID" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 3 ;
+    tablesVersion = 15 ;
+}
+
+# meridional component of the horizontal wind
+"VENT_MERIDI" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 3 ;
+    tablesVersion = 15 ;
+}
+
+# meridional component of the horizontal wind
+"VENT_MERIDIE" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 3 ;
+    tablesVersion = 15 ;
+}
+
+# "Meridional component of 15 mn gust wind (maximum between two outputs)"
+"CLSV.RAF15M.XFU" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 24 ;
+    productDefinitionTemplateNumber = 8 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaledValueOfFirstFixedSurface = 10 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 103 ;
+    typeOfStatisticalProcessing = 2 ;
+    indicatorOfUnitForTimeRange = 0 ;
+    lengthOfTimeRange = 15 ;
+    LSTCUM=2;
+}
+
+# "Meridional component of 360 mn gust wind (maximum between two outputs)"
+"CLSV.RAF360M.XFU" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 24 ;
+    productDefinitionTemplateNumber = 8 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaledValueOfFirstFixedSurface = 10 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 103 ;
+    typeOfStatisticalProcessing = 2 ;
+    indicatorOfUnitForTimeRange = 1 ;
+    lengthOfTimeRange = 6 ;
+    LSTCUM=2;
+}
+
+# "Meridional component of surface wind stress (integrated since the start of the run)"
+"SURFTENS.TOTA.ME" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 37 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
+
+# "vertical component of the wind in pressure Coordinate"
+"VITESSE_VE" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 8 ;
+    tablesVersion = 15 ;
+}
+
+# vertical component of the wind
+"VERT.VELOC" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 9 ;
+    tablesVersion = 15 ;
+}
+
+"VERT.VELOCIT" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 9 ;
+    tablesVersion = 15 ;
+}
+
+# Geopotential (g z)
+"GEOPOTENTI" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 4 ;
+    tablesVersion = 15 ;
+}
+
+# Geopotential (g z)
+"GEOPOTENTIEL" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 4 ;
+    tablesVersion = 15 ;
+}
+
+# The vertical mean (over the boundary Layer) of the moisture convergence
+"P50000SURFMOCON" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 26 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+# Temperature de brillance Meteosat8 Canal 2
+"C002_METEOSAT_08" = {
+    discipline = 0 ;
+    level = 62 ;
+    parameterCategory = 5 ;
+    parameterNumber = 7 ;
+    productDefinitionTemplateNumber = 32 ;
+    tablesVersion = 15 ;
+    typeOfGeneratingProcess = 2 ;
+    NB=1 ;
+    scaledValueOfCentralWaveNumber=16129032 ;
+    scaleFactorOfCentralWaveNumber=2 ;
+}
+
+# Temperature de brillance Meteosat11 Canal 2
+"C002_METEOSAT_11" = {
+    discipline = 0 ;
+    level = 62 ;
+    parameterCategory = 5 ;
+    parameterNumber = 7 ;
+    productDefinitionTemplateNumber = 32 ;
+    tablesVersion = 15 ;
+    typeOfGeneratingProcess = 2 ;
+    NB=1 ;
+    scaledValueOfCentralWaveNumber=16129032 ;
+    scaleFactorOfCentralWaveNumber=2 ;
+}
+
+# Temperature de brillance Himawari Canal 2
+"C002_HIMAWARI_08" = {
+    discipline = 0 ;
+    level = 62 ;
+    parameterCategory = 5 ;
+    parameterNumber = 7 ;
+    productDefinitionTemplateNumber = 32 ;
+    tablesVersion = 15 ;
+    typeOfGeneratingProcess = 2 ;
+    NB=1 ;
+    scaledValueOfCentralWaveNumber=16129032 ;
+    scaleFactorOfCentralWaveNumber=2 ;
+}
+
+# TempÃ©rature de brillance GOES16 Canal 2
+"C002_GOES_16_ABI" = {
+    discipline = 0 ;
+    level = 62 ;
+    parameterCategory = 5 ;
+    parameterNumber = 7 ;
+    productDefinitionTemplateNumber = 32 ;
+    tablesVersion = 15 ;
+    typeOfGeneratingProcess = 2 ;
+    NB=1 ;
+    scaledValueOfCentralWaveNumber=16129032 ;
+    scaleFactorOfCentralWaveNumber=2 ;
+}
+
+# Temperature de brillance GOES17 Canal 2
+"C002_GOES_17_ABI" = {
+    discipline = 0 ;
+    level = 62 ;
+    parameterCategory = 5 ;
+    parameterNumber = 7 ;
+    productDefinitionTemplateNumber = 32 ;
+    tablesVersion = 15 ;
+    typeOfGeneratingProcess = 2 ;
+    NB=1 ;
+    scaledValueOfCentralWaveNumber=16129032 ;
+    scaleFactorOfCentralWaveNumber=2 ;
+}
+
+# Temperature de brillance Meteosat8 Canal 6
+"C006_METEOSAT_08" = {
+    discipline = 0 ;
+    level = 108 ;
+    parameterCategory = 5 ;
+    parameterNumber = 7 ;
+    productDefinitionTemplateNumber = 32 ;
+    tablesVersion = 15 ;
+    typeOfGeneratingProcess = 2 ;
+    NB=1 ;
+    scaledValueOfCentralWaveNumber=9259259 ;
+    scaleFactorOfCentralWaveNumber=2 ;
+}
+
+# Temperature de brillance Meteosat11 Canal 6
+"C006_METEOSAT_11" = {
+    discipline = 0 ;
+    level = 108 ;
+    parameterCategory = 5 ;
+    parameterNumber = 7 ;
+    productDefinitionTemplateNumber = 32 ;
+    tablesVersion = 15 ;
+    typeOfGeneratingProcess = 2 ;
+    NB=1 ;
+    scaledValueOfCentralWaveNumber=9259259 ;
+    scaleFactorOfCentralWaveNumber=2 ;
+}
+
+# Temperature de brillance Himawari Canal 7
+"C007_HIMAWARI_08" = {
+    discipline = 0 ;
+    level = 104 ;
+    parameterCategory = 5 ;
+    parameterNumber = 7 ;
+    productDefinitionTemplateNumber = 32 ;
+    tablesVersion = 15 ;
+    typeOfGeneratingProcess = 2 ;
+    NB=1 ;
+    scaledValueOfCentralWaveNumber=96153846 ;
+    scaleFactorOfCentralWaveNumber=3 ;
+}
+
+# Temperature de brillance GOES16 Canal 7
+"C007_GOES_16_ABI" = {
+    discipline = 0 ;
+    level = 104 ;
+    parameterCategory = 5 ;
+    parameterNumber = 7 ;
+    productDefinitionTemplateNumber = 32 ;
+    tablesVersion = 15 ;
+    typeOfGeneratingProcess = 2 ;
+    NB=1 ;
+    scaledValueOfCentralWaveNumber=96153846 ;
+    scaleFactorOfCentralWaveNumber=3 ;
+}
+
+# Temperature de brillance GOES17 Canal 7
+"C007_GOES_17_ABI" = {
+    discipline = 0 ;
+    level = 104 ;
+    parameterCategory = 5 ;
+    parameterNumber = 7 ;
+    productDefinitionTemplateNumber = 32 ;
+    tablesVersion = 15 ;
+    typeOfGeneratingProcess = 2 ;
+    NB=1 ;
+    scaledValueOfCentralWaveNumber=96153846 ;
+    scaleFactorOfCentralWaveNumber=3 ;
+}
+
+# Summit of convective clouds
+"CLPTOPCONV.MOD.XFU" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 0 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 12 ;
+    scaledValueOfFirstFixedSurface = 0;
+}
+
+"CLPTOPCONV.MOD.X" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 0 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 12 ;
+    scaledValueOfFirstFixedSurface = 0;
+}
+
+# Radar reflectivity in dbZ
+"REFLEC_DBZ" = {
+    discipline = 0 ;
+    parameterCategory = 16 ;
+    parameterNumber = 4 ;
+    tablesVersion = 15 ;
+}
+
+# Maximum of Radar Reflectivity
+"REFLECT_DBZ.MAX" = {
+    discipline = 0 ;
+    parameterCategory = 16 ;
+    parameterNumber = 4 ;
+    productDefinitionTemplateNumber = 15 ;
+    statisticalProcess = 2 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+# Maximum of Radar Reflectivity ensemble forecast
+"REFL_DBZ.MAX.ENS" = {
+    discipline = 0 ;
+    parameterCategory = 16 ;
+    parameterNumber = 195;
+    productDefinitionTemplateNumber = 1 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
+# EchoTop at 18 dBZ
+"ECHOTOP" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 0 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 25;
+    scaledValueOfFirstFixedSurface = 18;
+    level = 18;
+}
+
+# "minimum visibility for a period"
+"CLSVISIN_180" = {
+    discipline = 0 ;
+    parameterCategory = 19 ;
+    parameterNumber = 0 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    typeOfStatisticalProcessing = 3 ;
+    indicatorOfUnitForTimeRange = 1 ;
+    lengthOfTimeRange = 3 ;
+    LSTCUM=2;
+}
+
+# "minimum visibility because of precipitations for a period"
+"CLSVISIHYDN180" = {
+    discipline = 0 ;
+    parameterCategory = 19 ;
+    parameterNumber = 201 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    typeOfStatisticalProcessing = 3 ;
+    indicatorOfUnitForTimeRange = 1 ;
+    lengthOfTimeRange = 3 ;
+    LSTCUM=2;
+}
+
+# "maximum cloud water content for a period"
+"CLD_WX_180M" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 83 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfStatisticalProcessing = 2 ;
+    indicatorOfUnitForTimeRange = 1 ;
+    lengthOfTimeRange = 3 ;
+    typeOfFirstFixedSurface = 1;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM=2;
+}
+
+
+# "minimum visibility for a period"
+"CLSVISIN_60" = {
+    discipline = 0 ;
+    parameterCategory = 19 ;
+    parameterNumber = 0 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    typeOfStatisticalProcessing = 3 ;
+    indicatorOfUnitForTimeRange = 1 ;
+    lengthOfTimeRange = 1 ;
+    LSTCUM=2;
+}
+
+# "minimum visibility because of precipitations for a period"
+"CLSVISIHYDN60" = {
+    discipline = 0 ;
+    parameterCategory = 19 ;
+    parameterNumber = 201 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    typeOfStatisticalProcessing = 3 ;
+    indicatorOfUnitForTimeRange = 1 ;
+    lengthOfTimeRange = 1 ;
+    LSTCUM=2;
+}
+
+# "maximum cloud water content for a period"
+"CLD_WX_60M" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 83 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfStatisticalProcessing = 2 ;
+    indicatorOfUnitForTimeRange = 1 ;
+    lengthOfTimeRange = 1 ;
+    typeOfFirstFixedSurface = 1;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM=2;
+}
+# "minimum visibility for a period"
+"CLSVISIN_15" = {
+    discipline = 0 ;
+    parameterCategory = 19 ;
+    parameterNumber = 0 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    typeOfStatisticalProcessing = 3 ;
+    indicatorOfUnitForTimeRange = 0 ;
+    lengthOfTimeRange = 15 ;
+    LSTCUM=2;
+}
+
+# "minimum visibility because of precipitations for a period"
+"CLSVISIHYDN15" = {
+    discipline = 0 ;
+    parameterCategory = 19 ;
+    parameterNumber = 201 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    typeOfStatisticalProcessing = 3 ;
+    indicatorOfUnitForTimeRange = 0 ;
+    lengthOfTimeRange = 15 ;
+    LSTCUM=2;
+}
+
+# "maximum cloud water content for a period"
+"CLD_WX_15M" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 83 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfStatisticalProcessing = 2 ;
+    indicatorOfUnitForTimeRange = 0 ;
+    lengthOfTimeRange = 15 ;
+    typeOfFirstFixedSurface = 1;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM=2;
+}
+# precipitation type
+"CLSPTYPE_15M" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 19 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    typeOfStatisticalProcessing = 0 ;
+    indicatorOfUnitForTimeRange = 0 ;
+    lengthOfTimeRange = 15 ;
+    LSTCUM=2;
+}
+# more severe precipitation type
+"CLSPTYPESEV_15M" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 19 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    typeOfStatisticalProcessing = 2 ;
+    indicatorOfUnitForTimeRange = 0 ;
+    lengthOfTimeRange = 15 ;
+    LSTCUM=2;
+}
+# precipitation type
+"CLSPTYPE_60M" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 19 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    typeOfStatisticalProcessing = 0 ;
+    indicatorOfUnitForTimeRange = 1 ;
+    lengthOfTimeRange = 1 ;
+    LSTCUM=2;
+}
+# more severe precipitation type
+"CLSPTYPESEV_60M" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 19 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    typeOfStatisticalProcessing = 2 ;
+    indicatorOfUnitForTimeRange = 1 ;
+    lengthOfTimeRange = 1 ;
+    LSTCUM=2;
+}
+# precipitation type
+"CLSPTYPE_180M" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 19 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    typeOfStatisticalProcessing = 0 ;
+    indicatorOfUnitForTimeRange = 1 ;
+    lengthOfTimeRange = 3 ;
+    LSTCUM=2;
+}
+# more severe precipitation type
+"CLSPTYPESEV_180M" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 19 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    typeOfStatisticalProcessing = 2 ;
+    indicatorOfUnitForTimeRange = 1 ;
+    lengthOfTimeRange = 3 ;
+    LSTCUM=2;
+}
+# precipitation type
+"CLSPTYPE_60M" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 19 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfStatisticalProcessing = 0 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    indicatorOfUnitForTimeRange = 1 ;
+    lengthOfTimeRange = 1 ;
+    LSTCUM=2;
+}
+# more severe precipitation type
+"CLSPTYPESEV_60M" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 19 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    typeOfStatisticalProcessing = 2 ;
+    indicatorOfUnitForTimeRange = 1 ;
+    lengthOfTimeRange = 1 ;
+    LSTCUM=2;
+}
+# precipitation type
+"CLSPTYPE_15M" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 19 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    typeOfStatisticalProcessing = 0 ;
+    indicatorOfUnitForTimeRange = 0 ;
+    lengthOfTimeRange = 15 ;
+    LSTCUM=2;
+}
+# more severe precipitation type
+"CLSPTYPESEV_15M" = {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 19 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    typeOfStatisticalProcessing = 2 ;
+    indicatorOfUnitForTimeRange = 0 ;
+    lengthOfTimeRange = 15 ;
+    LSTCUM=2;
+}
+#WETBT
+"TPRIM_W"= {
+    discipline = 0 ;
+    parameterCategory = 0 ;
+    parameterNumber = 27 ;
+    tablesVersion = 15 ;
+}
+#WETBT at 2m
+"CLSTPRIM_W"= {
+    discipline = 0 ;
+    parameterCategory = 0 ;
+    parameterNumber = 27 ;
+    scaledValueOfFirstFixedSurface = 2 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 103 ;
+}
+
+
