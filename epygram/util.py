@@ -1255,11 +1255,17 @@ def vtk_check_transform(rendering, current_typeoffirstfixedsurface, hCoord, z_fa
     return conf['hCoord'], conf['z_factor'], conf['offset']
 
 
-def vtk_write_grid(grid, filename):
+def vtk_write_grid(grid, filename, version='XML', binary=True,
+                   compression='ZLib', compression_level=5):
     """
     Writes a grid into a file
     :param grid: a vtk grid
     :param filename: filename to save in
+    :param version: must be 'legacy' or 'XML'
+    :param binary: True (default) for a binary file
+    :param compression: must be None, 'LZ4' or 'ZLib'
+                        only used for binary XML
+    :param compression_level: between 1 and 9 (only for XML binary files Zlib-compressed)
     """
     import vtk  # @UnresolvedImport
     if not isinstance(grid, (vtk.vtkUnstructuredGrid,
@@ -1267,12 +1273,41 @@ def vtk_write_grid(grid, filename):
         grid_test = grid.GetOutput()
     else:
         grid_test = grid
-    if isinstance(grid_test, vtk.vtkUnstructuredGrid):
-        writer = vtk.vtkUnstructuredGridWriter()
-    elif isinstance(grid_test, vtk.vtkStructuredGrid):
-        writer = vtk.vtkStructuredGridWriter()
+    if version == 'legacy':
+        if isinstance(grid_test, vtk.vtkUnstructuredGrid):
+            writer = vtk.vtkUnstructuredGridWriter()
+        elif isinstance(grid_test, vtk.vtkStructuredGrid):
+            writer = vtk.vtkStructuredGridWriter()
+        else:
+            raise epygramError('Unknown grid type: ' + str(grid.__class__))
+        if binary:
+            writer.SetFileTypeToBinary()
+        else:
+            writer.SetFileTypeToASCII()
+    elif version == 'XML':
+        if isinstance(grid_test, vtk.vtkUnstructuredGrid):
+            writer = vtk.vtkXMLUnstructuredGridWriter()
+        elif isinstance(grid_test, vtk.vtkStructuredGrid):
+            writer = vtk.vtkXMLStructuredGridWriter()
+        else:
+            raise epygramError('Unknown grid type: ' + str(grid.__class__))
+        if binary:
+            writer.SetDataModeToBinary()
+            if compression == 'LZ4':
+                writer.SetCompressorTypeToLZ4()
+            elif compression == 'ZLib':
+                writer.SetCompressorTypeToZLib()
+                writer.GetCompressor().SetCompressionLevel(compression_level)
+            #elif compression == 'LZMA':
+            #    writer.SetCompressorTypeToLZMA()
+            elif compression is None:
+                writer.SetCompressorTypeToNone()
+            else:
+                raise epygramError('Unknown compression: ' + str(compression))
+        else:
+            writer.SetDataModeToAscii()
     else:
-        raise epygramError('Unknown grid type: ' + str(grid.__class__))
+        raise epygramError('Unknown vtk file version: ' + str(version))
     writer.SetFileName(filename)
     if not isinstance(grid, (vtk.vtkUnstructuredGrid,
                              vtk.vtkStructuredGrid)):

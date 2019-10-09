@@ -313,7 +313,9 @@ class _D3CommonField(Field):
         return copy.copy(value)
 
     def as_vtkGrid(self, hCoord, grid_type, z_factor, offset,
-                   filename=None, name='scalar', grid=None):
+                   filename=None, name='scalar', grid=None,
+                   version='XML', binary=True, compression='ZLib',
+                   compression_level=5):
         """
         Returns a vtkStructuredGrid filled with the field
         :param hCoord: 'll': horizontal coordinates are the lon/lat values
@@ -332,6 +334,11 @@ class _D3CommonField(Field):
         :param filename: if not None, resulting grid will be written into filename
         :param name: name to give to the scalar array (useful with the grid option)
         :param grid: if grid is not None, the method will add the data to it.
+        :param version: must be 'legacy' or 'XML', used with filename
+        :param binary: True (default) for a binary file, used with filename
+        :param compression: must be None, 'LZ4' or 'ZLib'
+                            only used for binary XML
+        :param compression_level: between 1 and 9, only used for binary XML Zlib-compressed
 
         If grid_type is 'sgrid_point', the result is the grid; otherwise
         the result is the function is the last filter used.
@@ -362,7 +369,8 @@ class _D3CommonField(Field):
         grid = vtk_modify_grid(grid, grid_type, datamin=data.min())
 
         if filename is not None:
-            vtk_write_grid(grid, filename)
+            vtk_write_grid(grid, filename, version=version, binary=binary,
+                           compression=compression, compression_level=compression_level)
         return grid
 
     def as_lists(self, order='C', subzone=None):
