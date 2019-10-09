@@ -625,7 +625,7 @@ class _D3CommonField(Field):
         elif self.geometry.vcoordinate.typeoffirstfixedsurface == 118:
             kwargs_vcoord['grid'] = copy.copy(self.geometry.vcoordinate.grid)
             kwargs_vcoord['levels'] = copy.copy(self.geometry.vcoordinate.levels)
-            k_index = range(len(kwargs_vcoord['levels']))
+            k_index = list(range(len(kwargs_vcoord['levels'])))
             # Suppression of levels above or under physical domain
             if exclude_extralevels:
                 for ilevel, level in enumerate(list(kwargs_vcoord['levels'])):

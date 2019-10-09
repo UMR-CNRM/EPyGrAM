@@ -677,7 +677,7 @@ class DiagnosticsResource(Resource):
                         readfid = f
                         break
                 field = self.readfield(readfid, getdata=getdata)
-                for fmt in field.fid.keys():
+                for fmt in list(field.fid.keys()):
                     field.fid.pop(fmt)
                 field.fid[self.format] = dict(level=fid['level'], typeOfFirstFixedSurface=100, **fid_P)
                 field.fid['generic'] = dict(level=fid['level'], typeOfFirstFixedSurface=100, **fid_P)
@@ -718,7 +718,7 @@ class DiagnosticsResource(Resource):
                     T.setdata(T.getdata() * (constants.P0 / P.getdata()) ** (constants.Rd / constants.Cpd))
                 myfid_Theta = fid.copy()
                 myfid_Theta.update(fid_Theta)
-                for fmt in T.fid.keys():
+                for fmt in list(T.fid.keys()):
                     T.fid.pop(fmt)
                 T.fid[self.format] = myfid_Theta
                 T.fid['generic'] = myfid_Theta
@@ -749,7 +749,7 @@ class DiagnosticsResource(Resource):
                     theta.setdata(theta.getdata() * (1 + qv.getdata() * constants.Rv / constants.Rd - qt.getdata()))
                 myfid_ThetaV = fid.copy()
                 myfid_ThetaV.update(fid_ThetaV)
-                for fmt in theta.fid.keys():
+                for fmt in list(theta.fid.keys()):
                     theta.fid.pop(fmt)
                 theta.fid[self.format] = myfid_ThetaV
                 theta.fid['generic'] = myfid_ThetaV
@@ -776,7 +776,7 @@ class DiagnosticsResource(Resource):
                     Theta.setdata(Theta.getdata() * (P.getdata() / constants.P0) ** (constants.Rd / constants.Cpd))
                 myfid_Theta = fid.copy()
                 myfid_Theta.update(fid_T)
-                for fmt in Theta.fid.keys():
+                for fmt in list(Theta.fid.keys()):
                     Theta.fid.pop(fmt)
                 Theta.fid[self.format] = myfid_Theta
                 Theta.fid['generic'] = myfid_Theta
@@ -840,7 +840,7 @@ class DiagnosticsResource(Resource):
                     qv.setdata(qt)
                 myfid_qt = fid.copy()
                 myfid_qt.update(fid_qt)
-                for fmt in qv.fid.keys():
+                for fmt in list(qv.fid.keys()):
                     qv.fid.pop(fmt)
                 qv.fid[self.format] = myfid_qt
                 qv.fid['generic'] = myfid_qt
@@ -905,7 +905,7 @@ class DiagnosticsResource(Resource):
                     rv.setdata(qt)
                 myfid_qt = fid.copy()
                 myfid_qt.update(fid_qt)
-                for fmt in rv.fid.keys():
+                for fmt in list(rv.fid.keys()):
                     rv.fid.pop(fmt)
                 rv.fid[self.format] = myfid_qt
                 rv.fid['generic'] = myfid_qt
@@ -927,7 +927,7 @@ class DiagnosticsResource(Resource):
                     qt.setdata(r.getdata() * (1. - qt.getdata()))
                 myfid_Theta = fid.copy()
                 myfid_Theta.update(fid_q)
-                for fmt in qt.fid.keys():
+                for fmt in list(qt.fid.keys()):
                     qt.fid.pop(fmt)
                 qt.fid[self.format] = myfid_Theta
                 qt.fid['generic'] = myfid_Theta
@@ -1024,7 +1024,7 @@ class DiagnosticsResource(Resource):
                     qv.setdata(R)
                 myfid_R = fid.copy()
                 myfid_R.update(fid_R)
-                for fmt in qv.fid.keys():
+                for fmt in list(qv.fid.keys()):
                     qv.fid.pop(fmt)
                 qv.fid[self.format] = myfid_R
                 qv.fid['generic'] = myfid_R
@@ -1068,7 +1068,7 @@ class DiagnosticsResource(Resource):
                     U.setdata(numpy.sqrt(U.getdata()))
                 myfid_ff = fid.copy()
                 myfid_ff.update(fid_ff)
-                for fmt in U.fid.keys():
+                for fmt in list(U.fid.keys()):
                     U.fid.pop(fmt)
                 U.fid[self.format] = myfid_ff
                 U.fid['generic'] = myfid_ff

@@ -455,8 +455,8 @@ def get_file(url, filename, authorize_cache=True, subst=None):
 
     if authorize_cache and config.internet_cache_dir is not None:
         # Corresponding file name in cache
-        url_hash = md5(url)
-        actual_url_hash = md5(actual_url)
+        url_hash = md5(url.encode('UTF8'))
+        actual_url_hash = md5(actual_url.encode('UTF8'))
         if url_hash != actual_url_hash:
             directory = os.path.join(config.internet_cache_dir,
                                      url_hash)
@@ -985,7 +985,10 @@ def vtk_write_png(rendering, filename, resolution_increase=1, enable_alpha=True)
     import vtk  # @UnresolvedImport
     windowToImageFilter = vtk.vtkWindowToImageFilter()
     windowToImageFilter.SetInput(rendering['window'])
-    windowToImageFilter.SetMagnification(resolution_increase)
+    try:
+        windowToImageFilter.SetScale(resolution_increase, resolution_increase)
+    except AttributeError:
+        windowToImageFilter.SetMagnification(resolution_increase)
     if enable_alpha:
         windowToImageFilter.SetInputBufferTypeToRGBA()  # also record the alpha (transparency) channel
     # windowToImageFilter.ReadFrontBufferOff() #Do not know what this means but we get bad images when uncomented
@@ -996,7 +999,8 @@ def vtk_write_png(rendering, filename, resolution_increase=1, enable_alpha=True)
     PNGWriter.Write()
 
 
-def vtk_set_window(background_color, window_size, hide_axes=False, offscreen=False):
+def vtk_set_window(background_color, window_size, hide_axes=False, offscreen=False,
+                   interactor_style=None):
     """
     This function creates a simple vtk environment and returns
     a dictionary holding the different objects created
@@ -1006,6 +1010,8 @@ def vtk_set_window(background_color, window_size, hide_axes=False, offscreen=Fal
     :param offscreen: True to hide window (useful when we only
                       want to produce png file instead of
                       interactively viewing the window)
+    :param interactor_style: interactor style class to use (defaults
+                             to vtkInteractorStyleTrackball)
     """
     import vtk  # @UnresolvedImport
 
@@ -1018,7 +1024,11 @@ def vtk_set_window(background_color, window_size, hide_axes=False, offscreen=Fal
     else:
         renderInteractor = vtk.vtkRenderWindowInteractor()
         renderInteractor.SetRenderWindow(renderWin)
-        style = vtk.vtkInteractorStyleTrackballCamera()
+        if interactor_style is None:
+            style = vtk.vtkInteractorStyleTrackballCamera()
+        else:
+            style = interactor_style()
+        result['interactorStyle'] = style
         renderInteractor.SetInteractorStyle(style)
 
         def exitCheck(obj, event):
@@ -1063,6 +1073,7 @@ def vtk_print_text_in_window(rendering, text, pos, fontsize=20, color='Black'):
     textActor.GetTextProperty().SetFontSize(fontsize)
     textActor.GetTextProperty().SetColor(vtk.vtkNamedColors().GetColor3d(color))
     rendering['renderer'].AddActor2D(textActor)
+    return textActor
 
 
 def vtk_check_transform(rendering, current_typeoffirstfixedsurface, hCoord, z_factor, offset):
@@ -1109,14 +1120,23 @@ def vtk_write_grid(grid, filename):
     :param filename: filename to save in
     """
     import vtk  # @UnresolvedImport
-    if isinstance(grid, vtk.vtkUnstructuredGrid):
+    if not isinstance(grid, (vtk.vtkUnstructuredGrid,
+                             vtk.vtkStructuredGrid)):
+        grid_test = grid.GetOutput()
+    else:
+        grid_test = grid
+    if isinstance(grid_test, vtk.vtkUnstructuredGrid):
         writer = vtk.vtkUnstructuredGridWriter()
-    elif isinstance(grid, vtk.vtkStructuredGrid):
+    elif isinstance(grid_test, vtk.vtkStructuredGrid):
         writer = vtk.vtkStructuredGridWriter()
     else:
-        epygramError('Unknown grid type')
+        raise epygramError('Unknown grid type: ' + str(grid.__class__))
     writer.SetFileName(filename)
-    writer.SetInputData(grid)
+    if not isinstance(grid, (vtk.vtkUnstructuredGrid,
+                             vtk.vtkStructuredGrid)):
+        writer.SetInputConnection(grid.GetOutputPort())
+    else:
+        writer.SetInputData(grid)
     writer.Write()
 
 
