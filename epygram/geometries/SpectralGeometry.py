@@ -123,6 +123,10 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
         )
     )
 
+    # in order to avoid calling etrans_inq for large truncations
+    _usual_SPdatasize_for_global_trunc = {'triangular':{1198:719400,
+                                                        1798:1619100}}
+
     def __init__(self, *args, **kwargs):
         super(SpectralGeometry, self).__init__(*args, **kwargs)
         if os.name == 'posix':
@@ -158,6 +162,12 @@ class SpectralGeometry(RecursiveObject, FootprintBase):
     def _prevent_limited_stack(self):
         if (self.space == 'legendre' and self.truncation['max'] > 1200):
             epylog.warning('Caution: large Legendre truncation may need very large stacksize !')
+
+    def legendre_known_spectraldata_size(self):
+        """In order to avoid calling trans_inq for large truncations."""
+        if self.truncation['shape'] in self._usual_SPdatasize_for_global_trunc:
+            return self._usual_SPdatasize_for_global_trunc.get(
+                self.truncation['shape']).get(self.truncation['max'], None)
 
     def trans_inq(self, gpdims):
         """

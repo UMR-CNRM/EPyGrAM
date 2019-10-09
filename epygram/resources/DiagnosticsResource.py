@@ -1079,7 +1079,8 @@ class DiagnosticsResource(Resource):
         """
         Helper method that returns information to deal with hybrid-P coordinates
         """
-        fid_Ps = {'discipline':0, 'parameterCategory':3, 'parameterNumber':25, 'typeOfFirstFixedSurface':1, 'productDefinitionTemplateNumber':0}
+        fid_Ps = [{'discipline':0, 'parameterCategory':3, 'parameterNumber':25, 'typeOfFirstFixedSurface':1, 'productDefinitionTemplateNumber':0},
+                  {'discipline':0, 'parameterCategory':3, 'parameterNumber':0, 'typeOfFirstFixedSurface':1, 'productDefinitionTemplateNumber':0}]
 
         fid_for_vcoord = None
         if 'hybridP' not in self._cache:
@@ -1090,11 +1091,13 @@ class DiagnosticsResource(Resource):
                 B = [level[1]['Bi'] for level in hybridP_geometry.grid['gridlevels']][1:]
                 if not len(A) == len(B):
                     raise ValueError("A, B must have the same size.")
-                try:
-                    fid_Ps = self.find_fields_in_resource(fid_Ps)
-                except:
-                    fid_Ps = None
-                if fid_Ps is None:
+                for fid in fid_Ps:
+                    try:
+                        fid_Ps_complete = self.find_fields_in_resource(fid_Ps)
+                        break
+                    except:
+                        fid_Ps_complete = None
+                if fid_Ps_complete is None:
                     result = None
                 else:
                     field_3d = len(hybridP_geometry.levels) > 1  # True if the first field on hybrid-P level is 3D
@@ -1120,7 +1123,7 @@ class DiagnosticsResource(Resource):
                to compute half-levels from full-levels, or inverse: 'geometric' or 'arithmetic'
         """
         self._diag_checks(fids, dolist)
-        fid_Ps = {'discipline':0, 'parameterCategory':3, 'parameterNumber':25, 'typeOfFirstFixedSurface':1, 'productDefinitionTemplateNumber':0}
+        fid_Ps = {'discipline':0, 'parameterCategory':3, 'parameterNumber':0, 'typeOfFirstFixedSurface':1, 'productDefinitionTemplateNumber':0}
         fid_P = {'discipline':0, 'parameterCategory':3, 'parameterNumber':0, 'productDefinitionTemplateNumber':0}
         option_pos = self.options.get('pos_P_from_sigma', 'mass')
         option_vertical_mean = self.options.get('vertical_mean_P_from_sigma', None)
@@ -1149,6 +1152,7 @@ class DiagnosticsResource(Resource):
                 Ps.sp2gp()
             if getdata and Ps.getdata().flatten()[0] < 100:
                 # Ps contains lnsp and not sp
+                # This is a workaround for a bug in FA
                 Ps.setdata(numpy.exp(Ps.getdata()))
             if getdata:
                 pressure = hybridP2pressure(hybridP['vgeometry'], Ps.getdata(), option_vertical_mean,
@@ -1320,6 +1324,12 @@ class DiagnosticsAROMEResource(DiagnosticsResource):
         )
     )
 
+    def diag_equiv_model_terrain_height(self, *args, **kwargs):
+        equiv = ({'discipline':0, 'parameterCategory':193, 'parameterNumber':5, 'typeOfFirstFixedSurface':1},
+                 {'discipline':0, 'parameterCategory':3, 'parameterNumber':4, 'typeOfFirstFixedSurface':1},
+                 True, 1, None)  # Always equivalent, no factor
+        return self._diag_equivalence(equiv, *args, **kwargs)
+    
     def diag_Hgeopot_from_T_q(self, fids=[], dolist=False, getdata=True):
         """
         Computes Z on hybrid-P levels
@@ -1332,7 +1342,7 @@ class DiagnosticsAROMEResource(DiagnosticsResource):
         - approx_R is used, see. diag_R_from_q
         """
         self._diag_checks(fids, dolist)
-        fid_Ps = {'discipline':0, 'parameterCategory':3, 'parameterNumber':25, 'typeOfFirstFixedSurface':1, 'productDefinitionTemplateNumber':0}
+        fid_Ps = {'discipline':0, 'parameterCategory':3, 'parameterNumber':0, 'typeOfFirstFixedSurface':1, 'productDefinitionTemplateNumber':0}
         fid_T = {'discipline':0, 'parameterCategory':0, 'parameterNumber':0, 'typeOfFirstFixedSurface':119, 'productDefinitionTemplateNumber':0}
         fid_Pdep = {'discipline':0, 'parameterCategory':3, 'parameterNumber':8, 'typeOfFirstFixedSurface':119, 'productDefinitionTemplateNumber':0}
         fid_R = {'discipline':0, 'parameterCategory':1, 'parameterNumber':254, 'typeOfFirstFixedSurface': 119, 'productDefinitionTemplateNumber':0}
@@ -1371,6 +1381,7 @@ class DiagnosticsAROMEResource(DiagnosticsResource):
                         Ps.sp2gp()
                     if Ps.getdata().flatten()[0] < 100:
                         # Ps contains lnsp and not sp
+                        # This is a workaround for a bug in FA
                         Ps.setdata(numpy.exp(Ps.getdata()))
 
                     # Pressure on mass levels

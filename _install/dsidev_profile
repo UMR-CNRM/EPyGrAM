@@ -1,6 +1,3 @@
-# ecCodes
-export PYTHONPATH=/usr/local/sopra/eccodes/lib64/python2.6/site-packages:$PYTHONPATH
-
 # EPyGrAM
 EPYGRAM_INSTALL_DIR=$HOME/.epygram/src
 export PYTHONPATH=$EPYGRAM_INSTALL_DIR:$EPYGRAM_INSTALL_DIR/site:$PYTHONPATH

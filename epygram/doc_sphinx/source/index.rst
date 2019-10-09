@@ -8,8 +8,21 @@ The ``epygram`` library package is a set of Python classes and functions
 designed to handle meteorological fields in Python, as well as interfacing
 their storage in various usual (or not) data formats.
 
-Contents:
----------
+--------------------------------------------------------------------------------
+
+Technical documentation:
+------------------------
+
+.. toctree::
+   :maxdepth: 1
+
+   The epygram Library <library/index>
+   External, side modules <site/index>
+
+Un peu de blabla:
+-----------------
+
+(sorry, all this needs a bit of reorganization... soon)
 
 .. toctree::
    :maxdepth: 1
@@ -18,14 +31,17 @@ Contents:
    Distribution <distribution>
    Some examples <examples>
    Tutorial <tutorial/index>
-   The epygram Library <library/index>
-   External, side modules <site/index>
    FAQ
    AppTools <apptools>
    Gallery (use-cases) <gallery/index>
    Colormaps <cmaps>
 
+Annexes
+-------
+
 :download:`The epygram cheatsheet <_static/cheatsheet.pdf>`
+
+--------------------------------------------------------------------------------
 
 Indices and tables
 ==================

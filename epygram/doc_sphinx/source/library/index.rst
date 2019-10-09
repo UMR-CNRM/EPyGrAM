@@ -24,6 +24,7 @@ Modules
    :maxdepth: 1
 
    util
+   moves
    base
    containers
    

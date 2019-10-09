@@ -16,11 +16,17 @@
 \pagenumbering{gobble}
 
 %opening
-\title{\texttt{epygram-1.3.3} \textit{cheatsheet}}
+%\title{\texttt{epygram-1.3.8} \textit{cheatsheet}}
 \date{\vspace{-1.5cm}}
 \begin{document}
 
-\maketitle
+\huge
+\begin{center}
+\texttt{epygram-1.3.8} \textit{cheatsheet}
+\end{center}
+\normalsize
+%\maketitle
+
 Please refer to the complete HTML documention for description of the arguments and options of each method.\\
 
 \rowcolors{2}{gray!25}{white}
@@ -99,6 +105,7 @@ $~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~$"MV")}& a \textit{meta} "\textbf{M}ulti\t
 \rowcolor{gray!50}
 \multicolumn{2}{|c|}{\textbf{Fields data representation}}\\
 \hline
+\texttt{fig, ax = f.cartoplot()} & plot the field (w/ cartopy) and get back the underlying \texttt{matplotlib} figure and axis\\
 \texttt{fig, ax = f.plotfield()} & plot the field and get back the underlying \texttt{matplotlib} figure and axis\\
 \texttt{fig, ax = f.histogram()} & compute and plot a data histogram\\
 \texttt{spectrum = f.dctspectrum()} & compute a DCT spectrum of data\\
@@ -155,7 +162,7 @@ $~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~$"MV")}& a \textit{meta} "\textbf{M}ulti\t
 \texttt{g.distance((lon1, lat1), (lon2, lat2))} & compute the distance between two points\\
 \texttt{g.linspace((lon1, lat1), (lon2, lat2), N)} & compute a series of N linearly spaced points between two ends\\
 \texttt{g.azimuth((lon1, lat1), (lon2, lat2))} & compute an azimuth from one point to another\\
-\texttt{g.make\_basemap()} & compute a \texttt{Basemap} object used to map geographical coordinates to a \texttt{Matplotlib} axis plotting coordinates\\
+\texttt{g.default\_cartopy\_CRS()} & compute a \texttt{cartopy} CRS object, used to map geographical coordinates to a \texttt{Matplotlib} axis plotting coordinates\\
 \texttt{g.nearest\_points(lon, lat, request=dict(n="2*2"))} & get the points of the grid nearest to (lon, lat)\\
 \texttt{g.ij2ll(), g.ll2ij()} & conversion methods between (i, j) indexes of the grid and (lon, lat) coordinates\\
 \texttt{g.map\_factor(*position)} & get the map factor at given position (depend on the geometry)\\

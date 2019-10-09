@@ -19,7 +19,7 @@ import os
 import resource
 import numpy as np
 
-import grib_utilities
+import griberies
 import ctypesForFortran
 
 _libs4py = "libs4py.so"  # local name in the directory
@@ -165,7 +165,7 @@ def init_env(omp_num_threads=None,
         os.environ['FA4PY_MUTE'] = '1'
     # ensure grib_api/eccodes variables are consistent with inner library
     if ensure_consistent_GRIB_paths:
-        if len(grib_utilities.get_samples_paths() + grib_utilities.get_definition_paths()) > 0:
+        if len(griberies.get_samples_paths() + griberies.get_definition_paths()) > 0:
             _GRIB_samples_path_from_dynamic_gribapi(shared_objects_library,
                                                     reset=ignore_gribenv_paths)
 
@@ -183,4 +183,4 @@ def _GRIB_samples_path_from_dynamic_gribapi(lib, reset=False):
             if match:
                 libs_grib_api[match.group(1)] = match.group(2)
     for l in set(libs_grib_api.values()):
-        grib_utilities.complete_grib_paths(l, apilib, reset=reset)
+        griberies.complete_grib_paths(l, apilib, reset=reset)

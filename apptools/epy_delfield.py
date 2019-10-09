@@ -16,6 +16,7 @@ from epygram import epylog, epygramError
 from epygram.args_catalog import (add_arg_to_parser,
                                   files_management, fields_management,
                                   runtime_options)
+import griberies
 
 
 def main(filename, fieldseed,
@@ -80,35 +81,18 @@ def main(filename, fieldseed,
                 printstatus(n, numfields)
                 n += 1
             if source.format == 'GRIB':
-                options = [k[0] for k in epygram.config.GRIB_default_packing[1]] + \
-                          [k[0] for k in epygram.config.GRIB_default_packing[2]]
-                options.extend(list(epygram.config.GRIB_default_ordering.keys()))
-                options.append('centre')
-                options = {'get_info_as_json':options}
+                read_misc_metadata = set(griberies.defaults.GRIB1_packing.keys())
+                read_misc_metadata.update(set(griberies.defaults.GRIB2_keyvalue[5].keys()))
+                read_misc_metadata.update(set(griberies.defaults.GRIB1_ordering.keys()))
+                read_misc_metadata.add('centre')
+                options = {'read_misc_metadata':list(read_misc_metadata)}
             else:
                 options = {}
             field = source.readfield(f, **options)
             if source.format == 'FA':
                 options = {'compression':source.fieldscompression.get(f, None)}
             elif source.format == 'GRIB':
-                grib_edition = field.fid.get('GRIB1', field.fid)['editionNumber']
-                import json
-                options = json.loads(field.comment)
-                for k, v in options.items():
-                    if isinstance(k, unicode):
-                        del options[k]
-                        k = str(k)
-                    if isinstance(v, unicode):
-                        options[k] = str(v)
-                    else:
-                        options[k] = v
-                options = {'sample':'file:' + source.container.abspath,
-                           'packing':{k:options.pop(k, v) for (k, v) in
-                                      epygram.config.GRIB_default_packing[grib_edition].items()},
-                           'ordering':{k:options.pop(k, v) for (k, v) in
-                                       epygram.config.GRIB_default_ordering.items()},
-                           'other_GRIB_options':options
-                           }
+                options = {'sample':'file:' + source.container.abspath}
             output.writefield(field, **options)
 # end of main() ###############################################################
 

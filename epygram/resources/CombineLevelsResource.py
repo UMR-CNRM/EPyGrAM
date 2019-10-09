@@ -102,15 +102,19 @@ class CombineLevelsResource(Resource):
             original_fid = fid[fmtfid(self.resource.format, fid)]
             generic_fid = copy.deepcopy(fid['generic'])
             level = generic_fid.pop('level', None)  # we suppress level from generic_fid
+            scaledValueOfFirstFixedSurface  = generic_fid.pop('scaledValueOfFirstFixedSurface', None)
             hashable_generic_fid = tuple([(k, generic_fid[k]) for k in sorted(generic_fid.keys())])
             if hashable_generic_fid not in result:
                 result[hashable_generic_fid] = {'original_fids':[], 'generic':None}
-            result[hashable_generic_fid]['original_fids'].append((original_fid, level))
+            result[hashable_generic_fid]['original_fids'].append((original_fid, level, scaledValueOfFirstFixedSurface))
             result[hashable_generic_fid]['generic'] = generic_fid
         # For fields present on only one layer, we put again the level in the generic fid
         for k, v in result.items():
-            if len(v['original_fids']) == 1 and v['original_fids'][0][1] is not None:
-                v['generic']['level'] = v['original_fids'][0][1]
+            if len(v['original_fids']) == 1:
+                if v['original_fids'][0][1] is not None:
+                    v['generic']['level'] = v['original_fids'][0][1]
+                if v['original_fids'][0][2] is not None:
+                    v['generic']['scaledValueOfFirstFixedSurface'] = v['original_fids'][0][2]
         return result
 
     def listfields(self, onlykey=None, select=None, complete=False):

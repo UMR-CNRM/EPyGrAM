@@ -4,8 +4,10 @@ from __future__ import print_function, unicode_literals
 import os
 import shutil
 import io
+import re
 import argparse
 from collections import defaultdict
+import sys
 
 epygram_repositories = {
     'cnrm':'/home/common/epygram',
@@ -19,6 +21,10 @@ vortex_repositories = {
     'dsidev':'/soprano/home/marp999/vortex',
     'ecmwf_cc':'/home/ms/fr/sos/vortex',
     'ecgate':'/home/ms/fr/sos/vortex'}
+py2_eccodes_installdir = {
+    'cnrm':'/home/common/epygram/ext/eccodes/lib64/python2.7/site-packages',
+    'bullx':'/opt/softs/libraries/ICC16.1.150/eccodes-2.7.0-b80884e7ca77a8f8ead5b4b1a2bd9011448b961e/lib/python2.7/site-packages',
+    'dsidev':'/usr/local/sopra/eccodes/lib64/python2.6/site-packages'}
 userconfigs = defaultdict(lambda:'userconfig_no_arpifs4py.py',  # default
                           cnrm='userconfig_empty.py',
                           bullx='userconfig_empty.py',
@@ -56,13 +62,21 @@ _install_profile = localhost + '_profile'
 _vortex_install_profile = 'vortex_profile'
 
 
+def _version_():
+    realpath = os.path.realpath(__file__)
+    epygramversion = realpath.split(os.path.sep)[-3]
+    version = re.match('EPyGrAM-?(.+)', epygramversion).group(1)
+    return version
+
+
 def main(version='',
          fromdir=epygram_repo,
          update_epygram_profile=False,
          update_bash_profile=False,
          install_vortex=True,
          vortex_version='olive',
-         vortex_from=vortex_repo):
+         vortex_from=vortex_repo,
+         link_eccodes=False):
     """
     Link to **version** from **fromdir**, copy adequate profile and
     make .bash_profile source it.
@@ -103,9 +117,13 @@ def main(version='',
     if not os.path.exists('userconfig.py'):
         shutil.copy(os.path.join(linkname, '_install', userconfig),
                     'userconfig.py')
-    ufdf = 'user_Field_Dict_FA.csv'
-    if not os.path.exists(ufdf):
-        shutil.copy(os.path.join(linkname, '_install', ufdf), ufdf)
+    for example in ('sfxflddesc_mod.F90', 'gribapi.def.0'):
+        if not os.path.exists(example):
+            source = os.path.join(linkname, '_install', example)
+            if os.path.isdir(source):
+                shutil.copytree(source, example)
+            else:
+                shutil.copy(source, example)
     # bash_profile
     if update_bash_profile:
         with io.open(os.path.join(os.environ['HOME'], profiles[localhost]), 'a') as pf:
@@ -114,6 +132,21 @@ def main(version='',
             pf.write('if [ -f {} ]; then\n'.format(profile))
             pf.write('  . {}\n'.format(profile))
             pf.write('fi\n')
+    # eccodes
+    if link_eccodes and sys.version_info.major == 2:
+        linkdir = os.path.join(os.environ['HOME'],
+                               '.local/lib/python2.7/site-packages')
+        targetdir = py2_eccodes_installdir.get(localhost, None)
+        if targetdir is None:
+            raise NotImplementedError("eccodes linking on this kind of platform: {}".format(localhost))
+        if not os.path.exists(linkdir):
+            os.makedirs(linkdir)
+        for lib in ('eccodes', 'gribapi'):
+            link = os.path.join(linkdir, lib)
+            if not os.path.exists(link):
+                os.symlink(os.path.join(targetdir, lib), link)
+            else:
+                print("!!! Link eccodes failed: link already exists: {}".format(link))
     print("Local installation complete in: {}".format(epygram_home))
     print("To use it, restart session (if option -b) or source {}".format(profile))
 
@@ -124,7 +157,7 @@ if __name__ == '__main__':
                         help=' '.join(['version to be linked, within available'
                                        'versions in --from directory']),
                         required=False,
-                        default='')
+                        default=_version_())
     parser.add_argument('-f', '--from',
                         help=' '.join(['absolute path to directory in which to',
                                        'find the required version, defaults to',
@@ -150,10 +183,15 @@ if __name__ == '__main__':
                         dest='vortex_version',
                         required=False,
                         default='olive')
+    parser.add_argument('--link_eccodes',
+                        help='link eccodes python2 interface installation in .local (CNRM workstations and Bullx only)',
+                        action='store_true',
+                        default=False)
     args = parser.parse_args()
     main(args.version_to_be_linked,
          fromdir=args.fromdir,
          update_epygram_profile=args.epygram_profile,
          update_bash_profile=args.bash_profile,
          install_vortex=args.install_vortex,
-         vortex_version=args.vortex_version)
+         vortex_version=args.vortex_version,
+         link_eccodes=args.link_eccodes)

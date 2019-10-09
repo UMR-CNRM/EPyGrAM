@@ -5,10 +5,7 @@
 # http://www.cecill.info
 """
 Contains the class for FA format.
-
-Plus a function to guess a field type given its name.
 """
-
 from __future__ import print_function, absolute_import, unicode_literals, division
 
 import datetime
@@ -19,10 +16,10 @@ import math
 import re
 import sys
 import six
+import io
 
 import footprints
 from footprints import FPDict, FPList, proxy as fpx
-from bronx.datagrip.misc import read_dict_in_CSV
 from bronx.meteo.conversion import q2R
 from bronx.syntax.arrays import stretch_array
 
@@ -37,146 +34,26 @@ from epygram.geometries import (D3Geometry, SpectralGeometry,
 from epygram.geometries.VGeometry import (hybridP2pressure, hybridP2altitude,
                                           pressure2altitude)
 from epygram.fields import MiscField, H2DField
+from epygram.formats.fafields import FaGribDef, SfxFldDesc_Mod
 
-__all__ = ['FA', 'inquire_field_dict']
+__all__ = []
 
 epylog = footprints.loggers.getLogger(__name__)
-_cache_inquire_field_dict = {}
-
-
-def find_wind_pair(fieldname):
-    """For a wind **fieldname**, find and return the pair."""
-    pairs = {'U':'V', 'V':'U',
-             'ZONAL':'MERIDIEN', 'MERIDIEN':'ZONAL', 'MERID':'ZONAL'}
-    patterns = ['S\d+WIND\.(?P<d>[U,V])\.PHYS',
-                '[P,H,V]\d+VENT_(?P<d>(ZONAL)|(MERID)|(MERIDIEN))',
-                'CLSVENTNEUTRE.(?P<d>[U,V])',
-                'CLSVENT.(?P<d>(ZONAL)|(MERIDIEN))',
-                'CLS(?P<d>[U,V]).RAF.MOD.XFU']
-    axes = {'U':'x', 'ZONAL':'x',
-            'V':'y', 'MERIDIEN':'y', 'MERID':'y'}
-    pair = None
-    for pattern in patterns:
-        re_ok = re.match(pattern, fieldname)
-        if re_ok:
-            pair = (axes[pairs[re_ok.group(1)]],
-                    fieldname.replace(re_ok.group('d'),
-                                      pairs[re_ok.group('d')]))
-            break
-    if pair is None:
-        raise epygramError('not a wind field')
-    else:
-        return pair
-
-
-def inquire_field_dict(fieldname, defaults_to_Misc=True):
-    """
-    Returns the info contained in the FA _field_dict for the requested
-    **fieldname**.
-    """
-    if FA._field_dict == []:
-        FA._read_field_dict(FA.CSV_field_dictionaries['default'])
-        if os.path.exists(FA.CSV_field_dictionaries['user']):
-            FA._read_field_dict(FA.CSV_field_dictionaries['user'])
-
-    if fieldname not in _cache_inquire_field_dict:
-        matching_field = None
-        for fd in FA._field_dict:
-            dictitem = fd['name']
-            pattern = re.subn('\.', r'\.', dictitem)[0]  # protect '.'
-            pattern = pattern.replace('?', '.')  # change unix '?' to python '.'
-            pattern = pattern.replace('*', '.*')  # change unix '*' to python '.*'
-            pattern += '(?!.)'
-            if re.match(pattern, fieldname):
-                matching_field = fd
-                break
-        _cache_inquire_field_dict[fieldname] = matching_field
-    else:
-        matching_field = _cache_inquire_field_dict[fieldname]
-
-    if matching_field is None and defaults_to_Misc:
-        epylog.info("field '" + fieldname + "' is not referenced in" +
-                    " Field_Dict_FA. Assume its type being a MiscField.")
-        matching_field = {'name':fieldname, 'type':'Misc',
-                          'nature':'float', 'dimension':'1'}
-    elif matching_field is not None:
-        matching_field = copy.deepcopy(matching_field)
-    return matching_field
-
-
-def _complete_generic_fid_from_name(generic_fid, fieldname):
-    """Complete a **generic_fid** with information of **fieldname**."""
-    # 'level'
-    if generic_fid.get('typeOfFirstFixedSurface', False):
-        if 'level' not in generic_fid:
-            if generic_fid['typeOfFirstFixedSurface'] == 119:  # hybrid-pressure
-                generic_fid['level'] = int(fieldname[1:4])
-            elif generic_fid['typeOfFirstFixedSurface'] == 100:  # isobaric (P)
-                level = int(fieldname[1:6])
-                if level == 0:  # problem linked to number of digits
-                    level = 100000
-                generic_fid['level'] = level / 100.  # hPa
-            elif generic_fid['typeOfFirstFixedSurface'] == 103:  # height
-                try:
-                    generic_fid['level'] = int(fieldname[1:6])
-                except ValueError:
-                    generic_fid['level'] = 255
-            elif generic_fid['typeOfFirstFixedSurface'] == 109:  # PV
-                generic_fid['level'] = float(fieldname[1:4]) / 10.  # to handle PVU
-            elif generic_fid['typeOfFirstFixedSurface'] == 20:  # T
-                if fieldname[0:2] == 'KT':
-                    generic_fid['level'] = int(fieldname[2:5])
-                elif fieldname[0:2] == 'T':
-                    generic_fid['level'] = int(fieldname[1:4])
-            else:
-                generic_fid['level'] = 0
-    else:
-        generic_fid['typeOfFirstFixedSurface'] = 255
-        generic_fid['level'] = 0
-    # ISP
-    if fieldname[0] == 'C':
-        if any([sat in fieldname for sat in ['METEOSAT', 'GOES', 'MTSAT']]):
-            channel = int(fieldname[1:4])
-            # C{ccc}_METEOSAT_{ss}
-            sat = 'METEOSAT'
-            if sat in fieldname:
-                satnum = int(fieldname.strip()[-2:])
-                satellite = sat + str(satnum)
-                if satnum <= 7:
-                    sensor = 'MVIRI'
-                else:
-                    sensor = 'SEVIRI'
-            # C{ccc}_GOES_{ss}_IMA
-            sat = 'GOES'
-            if sat in fieldname:
-                satnum = int(fieldname.strip()[10:12])
-                satellite = sat + str(satnum)
-                sensor = 'IMAGER'
-            # C{ccc}_GOES_{ss}_IMA
-            sat = 'MTSAT'
-            if sat in fieldname:
-                satnum = int(fieldname.strip()[11:13])
-                satellite = sat + str(satnum)
-                sensor = 'IMAGER'
-            # category=satellite, number=sensor, level=channel
-            generic_fid['parameterCategory'] = config.satellites_local_GRIB2[satellite]
-            generic_fid['parameterNumber'] = config.sensors_local_GRIB2[sensor]
-            generic_fid['level'] = channel
-    # productDefinitionTemplateNumber to distinguish between
-    # CLSTEMPERATURE and CLSMINI.TEMPERAT / CLSMAXI.TEMPERAT (for instance)
-    if 'productDefinitionTemplateNumber' not in generic_fid:
-        generic_fid['productDefinitionTemplateNumber'] = 0
-    return generic_fid
 
 
 def get_generic_fid(fieldname):
-    """Return a generic fid from **fieldname** (via Field Dict)."""
-    fid = inquire_field_dict(fieldname)
-    if fid.get('type') != 'Misc':
-        fid = _complete_generic_fid_from_name(fid, fieldname)
-    fid.pop('type')
-    fid.pop('name')
-
+    """Return a generic fid from **fieldname** (via FaGribDef)."""
+    try:
+        fid = FA.gribdef.FA2GRIB(fieldname,
+                                 include_comments=False,
+                                 fatal=True)
+    except ValueError:  # not found
+        if FA.sfxflddesc.is_metadata(fieldname):
+            raise
+        else:
+            fid = FA.gribdef.FA2GRIB(fieldname,
+                                     include_comments=False,
+                                     fatal=False)
     return fid
 
 
@@ -413,13 +290,11 @@ class FA(FileResource):
         )
     )
 
-    # the Field Dictionary gathers info about fields nature
-    CSV_field_dictionaries = config.FA_field_dictionaries_csv
-    # syntax: _field_dict = [{'name':'fieldname1', 'type':'...', ...},
-    #                        {'name':'fieldname2', 'type':'...', ...}, ...]
-    _field_dict = []
     # reference pressure coefficient for converting hybrid A coefficients in FA
     reference_pressure = config.FA_default_reference_pressure
+    # FA fields dicts
+    gribdef = FaGribDef(actual_init=False)
+    sfxflddesc = SfxFldDesc_Mod(actual_init=False)
 
     @classmethod
     def _FAsoft_init(cls):
@@ -428,50 +303,32 @@ class FA(FileResource):
                                        wfa.get_facst()))
 
     @classmethod
-    def _read_field_dict(cls, fd_abspath):
-        """Reads the CSV fields dictionary of the format."""
-        field_dict, file_priority = read_dict_in_CSV(fd_abspath)
-        if file_priority == 'main':
-            cls._field_dict = field_dict
-        elif file_priority == 'underwrite':
-            for fd in field_dict:
-                found = False
-                for cfd in cls._field_dict:
-                    if fd['name'] == cfd['name']:
-                        found = True
-                        break
-                if not found:
-                    cls._field_dict.append(fd)
-        elif file_priority == 'overwrite':
-            for cfd in cls._field_dict:
-                found = False
-                for fd in field_dict:
-                    if fd['name'] == cfd['name']:
-                        found = True
-                        break
-                if not found:
-                    field_dict.append(cfd)
-            cls._field_dict = field_dict
+    def field_type(cls, fieldname):
+        """
+        Get field type, either 'H2D' or the meta-data types registered in
+        cls.sfxflddesc
+        If field is unknown, supposed to be a H2D.
+        """
+        ftype = 'H2D'  # default
+        if fieldname not in cls.gribdef:  # if field in gribdef: H2D
+            if fieldname in cls.sfxflddesc:
+                if cls.sfxflddesc.is_metadata(fieldname):
+                    ftype = cls.sfxflddesc.get(fieldname).get('type')
+            else:
+                if cls.sfxflddesc.is_metadata(fieldname):
+                    ftype = '?'
+        return ftype
 
     def __init__(self, *args, **kwargs):
         self.isopen = False
-        # At creation of the first FA, initialize FA._field_dict
-        if self._field_dict == []:
-            self._read_field_dict(self.CSV_field_dictionaries['default'])
-            if os.path.exists(self.CSV_field_dictionaries['user']):
-                self._read_field_dict(self.CSV_field_dictionaries['user'])
-
         super(FA, self).__init__(*args, **kwargs)
-
         # Initialization of FA software (if necessary):
         if not hasattr(self, '_FAsoftware_cst'):
             self._FAsoft_init()
         self.fieldscompression = {}
-
+        self._cache_find_re_in_list = {}
         if not self.fmtdelayedopen:
             self.open()
-
-        self._cache_find_re_in_list = {}
 
     def open(self,
              geometry=None,
@@ -602,7 +459,7 @@ class FA(FileResource):
             tmplist = self.listfields()
             for f in tmplist:
                 if fieldtypeslist == [] or\
-                   self._field_type(f) in fieldtypeslist:
+                   self._field_type_from_file(f) in fieldtypeslist:
                     fieldslist.append(f)
         elif isinstance(seed, six.string_types):
             h = (hash(seed), hash(tuple(self.listfields())))
@@ -611,7 +468,7 @@ class FA(FileResource):
             tmplist = self._cache_find_re_in_list[h]
             for f in tmplist:
                 if fieldtypeslist == [] or\
-                   self._field_type(f) in fieldtypeslist:
+                   self._field_type_from_file(f) in fieldtypeslist:
                     fieldslist.append(f)
         elif isinstance(seed, list):
             tmplist = []
@@ -622,7 +479,7 @@ class FA(FileResource):
                 tmplist += self._cache_find_re_in_list[h]
             for f in tmplist:
                 if fieldtypeslist == [] or\
-                   self._field_type(f) in fieldtypeslist:
+                   self._field_type_from_file(f) in fieldtypeslist:
                     fieldslist.append(f)
         if fieldslist == []:
             raise epygramError("no field matching: " + str(seed) +
@@ -708,9 +565,9 @@ class FA(FileResource):
 
         params3D = {}
         for f in self.listfields():
-            info = inquire_field_dict(f)
+            info = self.gribdef.FA2GRIB(f)
             # separate H2D from Misc
-            if self._field_type(f) == 'H2D':
+            if self._field_type_from_file(f) == 'H2D':
                 # separate 3D from 2D
                 if info['typeOfFirstFixedSurface'] in (119, 100, 103, 109, 20):
                     re_ok = re_3D.match(f)
@@ -807,14 +664,13 @@ class FA(FileResource):
                                                          str(fieldname),
                                                          "not found in resource."])
         # Get field info
-        ftype = self._field_type(fieldname)
-        field_info = inquire_field_dict(fieldname)
+        ftype = self._field_type_from_file(fieldname)
         if footprints_proxy_as_builder:
             builder = fpx.field
         else:
             if ftype == 'H2D':
                 builder = H2DField
-            elif ftype == 'Misc':
+            else:
                 builder = MiscField
         if ftype == 'H2D':
             encoding = self.fieldencoding(fieldname, update_fieldscompression=True)
@@ -824,19 +680,22 @@ class FA(FileResource):
                              'position_on_grid': self.geometry.vcoordinate.position_on_grid,
                              'grid': self.geometry.vcoordinate.grid,
                              'levels': self.geometry.vcoordinate.levels}
-            field_info = _complete_generic_fid_from_name(field_info, fieldname)
-            for k in field_info:
-                if k == 'typeOfFirstFixedSurface':
-                    kwargs_vcoord['typeoffirstfixedsurface'] = field_info[k]
-                elif k == 'level':
-                    kwargs_vcoord['levels'] = [field_info[k]]
-
+            field_info = self.gribdef.FA2GRIB(fieldname)
+            # change from default (FA header) to actual levels
+            kwargs_vcoord['typeoffirstfixedsurface'] = field_info.get('typeOfFirstFixedSurface', 0)
+            if 'level' in field_info:
+                kwargs_vcoord['levels'] = [field_info['level']]
+            else:
+                kwargs_vcoord['levels'] = [0]
+            if 'scaledValueOfFirstFixedSurface' in field_info:
+                exp = field_info.get('scaleFactorOfFirstFixedSurface', 0)
+                kwargs_vcoord['levels'] = [field_info['scaledValueOfFirstFixedSurface'] * (10 ** -exp)]
             if kwargs_vcoord['typeoffirstfixedsurface'] != 119:  # hybrid-pressure
                 kwargs_vcoord.pop('grid', None)
             vcoordinate = fpx.geometry(**kwargs_vcoord)
             # Prepare field dimensions
             spectral = encoding['spectral']
-            if spectral:
+            if spectral and self.spectral_geometry is not None:
                 if 'fourier' in self.spectral_geometry.space:
                     # LAM
                     gpdims = copy.deepcopy(self.geometry.dimensions)
@@ -844,7 +703,11 @@ class FA(FileResource):
                     SPdatasize = self.spectral_geometry.etrans_inq(gpdims)[1]
                 elif self.spectral_geometry.space == 'legendre':
                     # Global
-                    SPdatasize = self.spectral_geometry.trans_inq(self.geometry.dimensions)[1]
+                    # SPdatasize may be stored to avoid calling trans_inq ?
+                    SPdatasize = self.spectral_geometry.legendre_known_spectraldata_size()
+                    if SPdatasize is None:
+                        # if not, call trans_inq
+                        SPdatasize = self.spectral_geometry.trans_inq(self.geometry.dimensions)[1]
                     SPdatasize *= 2  # complex coefficients
                 datasize = SPdatasize
                 spectral_geometry = self.spectral_geometry
@@ -870,39 +733,41 @@ class FA(FileResource):
 
         # Get data if requested
         if getdata:
-            if ftype == 'Misc':
+            if ftype != 'H2D':
+                nature = self.sfxflddesc.nature(fieldname)
+                dim = self.sfxflddesc.dim(fieldname)
                 field_length = wlfi.wlfinfo(self._unit, fieldname)[0]
                 data = wfa.wfalais(self._unit, fieldname, field_length)
-                if field_info['dimension'] == 0:
-                    if field_info['nature'] == 'int':
+                if dim == 0:
+                    if nature == 'int':
                         dataOut = data.view('int64')[0]
-                    elif field_info['nature'] == 'str':
+                    elif nature == 'str':
                         dataInt = data.view('int64')
                         dataOut = ""
                         for num in dataInt:
                             dataOut += chr(num)
-                    elif field_info['nature'] == 'bool':
+                    elif nature == 'bool':
                         dataOut = bool(data.view('int64')[0])
-                    elif field_info['nature'] == 'float':
+                    elif nature == 'float':
                         dataOut = data[0]
                     else:
-                        raise NotImplementedError("reading of datatype " +
-                                                  field_info['nature'] + ".")
+                        raise NotImplementedError("reading of datatype: " +
+                                                  nature + ".")
                 else:
                     # copy is necessary for garbage collector
-                    if field_info['nature'] == 'int':
+                    if nature == 'int':
                         dataOut = numpy.copy(data.view('int64')[:])
-                    elif field_info['nature'] == 'float':
+                    elif nature == 'float':
                         dataOut = numpy.copy(data)
-                    elif field_info['nature'] == 'str':
-                        raise NotImplementedError("reading of datatype " +
-                                                  field_info['nature'] + " array.")
+                    elif nature == 'str':
+                        raise NotImplementedError("reading of datatype: " +
+                                                  nature + " array.")
                         dataOut = numpy.copy(data)
-                    elif field_info['nature'] == 'bool':
+                    elif nature == 'bool':
                         dataOut = numpy.copy(data.view('bool')[:])
                     else:
-                        raise NotImplementedError("reading of datatype " +
-                                                  field_info['nature'] + " array.")
+                        raise NotImplementedError("reading of datatype: " +
+                                                  nature + " array.")
                 data = dataOut
             elif ftype == 'H2D':
                 if config.spectral_coeff_order == 'model':
@@ -932,7 +797,7 @@ class FA(FileResource):
                                          term=self.validity.term())
             else:
                 validity = self.validity.deepcopy()
-                validity.set(statistical_process_on_duration=inquire_field_dict(fieldname).get('typeOfStatisticalProcessing', None))
+                validity.set(statistical_process_on_duration=self.gribdef.FA2GRIB(fieldname).get('typeOfStatisticalProcessing', None))
             # MOCAGE surface fields: different terms can be stored in one file !
             if all([config.FA_allow_MOCAGE_multivalidities,
                     fieldname[0:2] in ('SF', 'EM', 'DV'),
@@ -1500,7 +1365,7 @@ class FA(FileResource):
         :param sortfields: **True** if the fields have to be sorted by type.
         """
         for f in self.listfields():
-            if self._field_type(f) == 'H2D':
+            if self._field_type_from_file(f) == 'H2D':
                 first_H2DField = f
                 break
         if len(self.listfields()) == 0:
@@ -1555,7 +1420,7 @@ class FA(FileResource):
                                    compressionline)
         out.write(separation_line)
         for f in listoffields:
-            if details is not None and self._field_type(f) == 'H2D':
+            if details is not None and self._field_type_from_file(f) == 'H2D':
                 encoding = self.fieldencoding(f)
                 if details == 'spectral':
                     write_formatted_fields(out, f, encoding['spectral'])
@@ -1628,8 +1493,8 @@ class FA(FileResource):
             out.write('KDATEF\n')
             out.write(str(KDATEF) + '\n')
 
-    def _field_type(self, fieldname):
-        """Return type of the field, based on FANION or FA_Field_Dict."""
+    def _field_type_from_file(self, fieldname):
+        """Return type of the field, based on FANION or FA field dict."""
         try:
             exist = wfa.wfanion(self._unit,
                                 fieldname[0:4],
@@ -1638,13 +1503,9 @@ class FA(FileResource):
         except RuntimeError:
             exist = False
         if exist:
-            ftype = 'H2D'
+            ftype = 'H2D'  # because fanion fails or answers False for meta-fields
         else:
-            ftype = 'Misc'
-        # enable field dict to overspecify
-        type_from_fd = inquire_field_dict(fieldname, defaults_to_Misc=False)
-        if type_from_fd is not None:
-            ftype = type_from_fd['type']
+            ftype = self.field_type(fieldname)
         return ftype
 
     def _read_geometry(self):

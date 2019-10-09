@@ -64,12 +64,7 @@ GRIB
 ....
 
 .. autodata:: GRIB_lowlevel_api
-.. autodata:: GRIB_default_edition
-.. autodata:: GRIB_default_tablesVersion
-.. autodata:: GRIB_default_sample
-.. autodata:: GRIB_default_production_parameters
-.. autodata:: GRIB_default_ordering
-.. autodata:: GRIB_default_packing
+.. autodata:: GRIB_default_centre
 .. autodata:: GRIB_epygram_samples_path
 .. autodata:: satellites_local_GRIB2
 .. autodata:: sensors_local_GRIB2
@@ -114,6 +109,7 @@ Options
 .. autodata:: init_at_import
 .. autodata:: silent_guess_format
 .. autodata:: margin_points_within_Czone
+.. autodata:: default_rcparams
 
 -----------------------------------------------------------
 
@@ -130,6 +126,4 @@ Colormaps
 See :ref:`Colormaps <epy-colormaps>` for illustration of the EPyGrAM colormaps.
 
 .. autodata:: colormaps
-.. autodata:: colormaps_scaling
 .. autodata:: usercolormaps
-.. autodata:: usercolormaps_scaling
