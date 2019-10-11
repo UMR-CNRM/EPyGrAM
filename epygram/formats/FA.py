@@ -800,7 +800,7 @@ class FA(FileResource):
         fid = {self.format:fieldname}
         if ftype == 'H2D':
             # Create H2D field
-            fid['generic'] = FPDict(get_generic_fid(fieldname))
+            fid['generic'] = FPDict(self._hook_generic_fids(fieldname, get_generic_fid(fieldname)))
             cumul = field_info.get('productDefinitionTemplateNumber', None)
             if cumul is None or cumul == 0:
                 validity = FieldValidity(basis=self.validity.getbasis(),
