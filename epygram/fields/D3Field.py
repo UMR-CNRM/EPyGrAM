@@ -827,7 +827,7 @@ class _D3CommonField(Field):
                         'latmax':zoom['latmax'] + dy}
             imin, jmin = self.geometry.ll2ij(zoom['lonmin'], zoom['latmin'])
             imax, jmax = self.geometry.ll2ij(zoom['lonmax'], zoom['latmax'])
-            if imin >= imax:
+            if imin > imax:
                 gridmin = self.geometry.gimme_corners_ll()['ll'][0]
                 diff_lonmin = (gridmin - degrees_nearest_mod(zoom['lonmin'],
                                                              gridmin))
@@ -836,6 +836,9 @@ class _D3CommonField(Field):
                 shifted_self = self.deepcopy()
                 shifted_self.global_shift_center(-shift)
                 return shifted_self.extract_zoom(zoom)
+            elif imin == imax:  # means 360deg wide
+                imin = 0
+                imax = self.geometry.dimensions['X'] - 1
             imin = max(int(numpy.ceil(imin)),
                        0)
             imax = min(int(numpy.floor(imax)),
