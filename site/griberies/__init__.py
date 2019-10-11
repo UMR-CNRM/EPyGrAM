@@ -13,11 +13,23 @@ import os
 import re
 import io
 import copy
+import subprocess
 
 from bronx.syntax.parsing import str2dict
 from bronx.syntax.decorators import nicedeco
 
 from . import tables, defaults
+
+
+def get_eccodes_from_ldconfig():
+    """Get eccodes install directory from ldconfig."""
+    out = str(subprocess.check_output(['/sbin/ldconfig', '-p']))
+    out_split = out.split(r'\n' if six.PY3 else str('\n'))
+    libs_eccodes = [lib for lib in out_split if str('libeccodes.so') in lib]
+    paths = [lib.split('=>')[1].strip() for lib in libs_eccodes]
+    dirs = set([os.path.sep.join(lib.split(os.path.sep)[:-2]) for lib in paths])
+    assert len(dirs) == 1, "More than one 'libeccodes.so' has been found"
+    return dirs.pop()
 
 
 @nicedeco

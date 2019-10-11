@@ -104,18 +104,24 @@ class LowLevelGRIB(object):
 
     @property
     def install_dir(self):
-        # from path of low_level_api:
-        # remove /lib64/pythonX.Y/site-packages/eccodes/__init__.py
-        # or /lib64/pythonX.Y/site-packages/grib_api/gribapi.py
-        realpath = os.path.realpath(self.api.__file__)
-        return os.path.sep.join(realpath.split(os.path.sep)[:-5])
+        if six.PY2:
+            # from path of low_level_api:
+            # remove /lib64/pythonX.Y/site-packages/eccodes/__init__.py
+            # or /lib64/pythonX.Y/site-packages/grib_api/gribapi.py
+            realpath = os.path.realpath(self.api.__file__)
+            install_dir = os.path.sep.join(realpath.split(os.path.sep)[:-5])
+        else:
+            install_dir = griberies.get_eccodes_from_ldconfig()
+        return install_dir
 
     def init_env(self, reset=False):
         """Ensure grib_api/eccodes variables are consistent with inner library."""
-        griberies.complete_grib_samples_paths(self.install_dir, self.api_name,
+        griberies.complete_grib_samples_paths(self.install_dir,
+                                              self.api_name,
                                               reset=reset)
         if len(griberies.get_definition_paths()) > 0:
-            griberies.complete_grib_definition_paths(self.install_dir, self.api_name,
+            griberies.complete_grib_definition_paths(self.install_dir,
+                                                     self.api_name,
                                                      reset=reset)
 
     #  BELOW: gribapi str/unicode incompatibility
@@ -543,9 +549,11 @@ class GRIBmessage(RecursiveObject, dict):
             # first, transfer options
             other_GRIB_options = copy.copy(other_GRIB_options)
             if packing is not None:
-                other_GRIB_options.update(packing)
+                for k,v in packing.items():
+                    other_GRIB_options.setdefault(k,v)
             if ordering is not None:
-                other_GRIB_options.update(ordering)
+                for k,v in ordering.items():
+                    other_GRIB_options.setdefault(k,v)
             self._GRIB2_set(field, sample,
                             interpret_comment=interpret_comment,
                             set_misc_metadata=set_misc_metadata,
@@ -662,18 +670,23 @@ class GRIBmessage(RecursiveObject, dict):
             # clone from file
             self._gid = self._clone_from_file(sample.replace('file:', ''))
         else:
-            # or from actual, local or official sample
-            if all([sample + '.tmpl' not in os.listdir(pth)
-                    for pth in [p for p in griberies.get_samples_paths()
-                                if (os.path.exists(p) and os.path.isdir(p))]]):  # this sample is not found in samples path
-                if sample + '.tmpl' in os.listdir(config.GRIB_epygram_samples_path):  # but it is in epygram samples
+            try:
+                self._gid = self._clone_from_sample(sample)
+            except Exception:
+                # sample not genuinely found by eccodes:
+                if sample + '.tmpl' in os.listdir(config.GRIB_epygram_samples_path):
+                    # try in epygram samples
                     fsample = os.path.join(config.GRIB_epygram_samples_path, sample) + '.tmpl'
                     self._gid = self._clone_from_file(fsample)  # clone it from file
                 else:
-                    raise epygramError('sample {} not found; check {} environment variable'.
-                                       format(sample, lowlevelgrib.samples_path_var))
-            else:
-                self._gid = self._clone_from_sample(sample)
+                    # or try manually exploring other paths from SAMPLES_PATH
+                    for d in griberies.get_samples_paths():
+                        fsample = os.path.join(d, sample) + '.tmpl'
+                        try:
+                            self._gid = self._clone_from_file(fsample)
+                        except Exception:
+                            raise epygramError('sample {} not found; check {} environment variable'.
+                                               format(sample, lowlevelgrib.samples_path_var))
         # interpret comment
         if interpret_comment and field.comment is not None:
             comment_options = json.loads(field.comment)
@@ -907,8 +920,8 @@ class GRIBmessage(RecursiveObject, dict):
             self.set_from(k, [other_GRIB_options,
                               griberies.defaults.GRIB2_keyvalue[3]])
         ordering_str = 'ordering: {}={}, {}={}'.format('iScansNegatively',
-                                                       self['jScansPositively'],
-                                                       'iScansNegatively',
+                                                       self['iScansNegatively'],
+                                                       'jScansPositively',
                                                        self['jScansPositively'])
         if geometry.rectangular_grid:
             corners = geometry.gimme_corners_ll()
