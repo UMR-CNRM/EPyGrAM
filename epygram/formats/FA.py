@@ -486,7 +486,8 @@ class FA(FileResource):
                                " was found in resource " +
                                self.container.abspath)
         if generic:
-            fieldslist = [(f, get_generic_fid(f)) for f in fieldslist]
+            fieldslist = [(f, self._hook_generic_fids(f, get_generic_fid(f)))
+                          for f in fieldslist]
 
         return fieldslist
 
@@ -517,9 +518,18 @@ class FA(FileResource):
             # 8th field added by P.Marguinaud, DATX-DES-DONNEES, to store dates
             # with 1-second precision, from cy40t1 onwards.
         if complete:
-            return [{'FA':f, 'generic':get_generic_fid(f)} for f in fieldslist]
-        else:
-            return fieldslist
+            fieldslist = [{'FA':f, 'generic':get_generic_fid(f)} for f in fieldslist]
+            for f in fieldslist:
+                f['generic'] = self._hook_generic_fids(f['FA'], f['generic'])
+        return fieldslist
+
+    def _hook_generic_fids(self, fid, generic_fid):
+        if fid == 'SURFPRESSION':
+            # ! hint: SURFPRESSION might be ln(sp) or sp.
+            # One way to discriminate is spectralness: spectral SURFPRESSION must be ln(sp)
+            if self.fieldencoding(fid)['spectral']:
+                generic_fid['parameterNumber'] = 25  # sp = 0 // ln(sp) = 25
+        return generic_fid
 
     def split_UV(self, fieldseed):
         """
