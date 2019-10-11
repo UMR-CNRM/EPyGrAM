@@ -1084,7 +1084,9 @@ class DiagnosticsResource(Resource):
 
         fid_for_vcoord = None
         if 'hybridP' not in self._cache:
-            fid_for_vcoord = [fid[self.resource.format] for fid in self.resource.listfields(complete=True) if fid['generic'].get('typeOfFirstFixedSurface', 255) == 119]
+            fid_for_vcoord = [fid[self.resource.format] for fid in self.resource.listfields(complete=True)
+                              if (fid['generic'].get('typeOfFirstFixedSurface', 255) == 119 and
+                                  fid['generic'].get('parameterNumber', 255) != 255)] #to be able to read it from a CombineLevels resource
             if len(fid_for_vcoord) != 0:
                 hybridP_geometry = self.resource.readfield(fid_for_vcoord[0], getdata=False).geometry.vcoordinate
                 A = [level[1]['Ai'] for level in hybridP_geometry.grid['gridlevels']][1:]

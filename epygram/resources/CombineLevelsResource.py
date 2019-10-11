@@ -190,7 +190,8 @@ class CombineLevelsResource(Resource):
                 raise epygramError("Internal error....")
             if 'parameterNumber' not in fid or fid['parameterNumber'] == 255:
                 # We do not join levels when parameterNumber is not known
-                for original_fid in cont[found]['original_fid']:
+                print("readfields", handgrip)
+                for original_fid in cont[found]['original_fids']:
                     field = self.resource.readfield(original_fid[0], getdata=getdata)
                     field.fid[self.format] = fid
                     fieldset.append(field)
