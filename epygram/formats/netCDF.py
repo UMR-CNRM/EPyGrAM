@@ -1044,7 +1044,7 @@ class netCDF(FileResource):
             tgrid = behaviour.get('T_grid', tgrid)
             if len(field.validity) > 1 or behaviour.get('force_a_T_dimension', False):
                 _, _status = check_or_add_variable(tgrid, float, T)
-                dims.append(tgrid)
+                dims.append(T)  # FIXME: T instead of tgrid ?
             else:
                 _, _status = check_or_add_variable(tgrid, float)
             datetime0 = field.validity[0].getbasis().isoformat(sep=str(' '))

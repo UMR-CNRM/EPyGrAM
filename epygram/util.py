@@ -88,7 +88,7 @@ class RecursiveObject(object):
         return self.tolerant_equal(other, tolerance=0.)
 
     def __ne__(self, other):
-        return not self == other
+        return not self.__eq__(other)
 
     def __hash__(self):
         # known issue __eq__/__hash__ must be defined both or none, else inheritance is broken
@@ -216,10 +216,12 @@ class Comparator(object):
         elif isinstance(obj1, list) and isinstance(obj2, list):
             return cls._list_are_equal(obj1, obj2)
         else:
-            try:
+            return obj1 == obj2
+            # CLEANME: why did I do that ?
+            """try:
                 return obj1.__eq__(obj2)
             except AttributeError:
-                return obj1 == obj2
+                return obj1 == obj2"""
 
     @classmethod
     def diff(cls, obj1, obj2):
