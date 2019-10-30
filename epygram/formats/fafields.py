@@ -262,14 +262,26 @@ class SfxFldDesc_Mod(object):
         self.table.update(field_dict)
 
     @griberies.init_before
-    def nature(self, fieldname):
+    def nature(self, fieldname, default=None):
         """Return type of data in field."""
-        return self.type2nature[self.table[fieldname]['type'][0]]
+        try:
+            return self.type2nature[self.table[fieldname]['type'][0]]
+        except KeyError:
+            if default is None:
+                raise
+            else:
+                return default
 
     @griberies.init_before
-    def dim(self, fieldname):
+    def dim(self, fieldname, default=None):
         """Return number of dimensions of field."""
-        return int(self.table[fieldname]['type'][1])
+        try:
+            return int(self.table[fieldname]['type'][1])
+        except KeyError:
+            if default is None:
+                raise
+            else:
+                return default
 
     @griberies.init_before
     def __getitem__(self, fieldname):

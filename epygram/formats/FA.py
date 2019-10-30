@@ -744,8 +744,8 @@ class FA(FileResource):
         # Get data if requested
         if getdata:
             if ftype != 'H2D':
-                nature = self.sfxflddesc.nature(fieldname)
-                dim = self.sfxflddesc.dim(fieldname)
+                nature = self.sfxflddesc.nature(fieldname, 'int')
+                dim = self.sfxflddesc.dim(fieldname, 1)
                 field_length = wlfi.wlfinfo(self._unit, fieldname)[0]
                 data = wfa.wfalais(self._unit, fieldname, field_length)
                 if dim == 0:
@@ -800,7 +800,7 @@ class FA(FileResource):
         fid = {self.format:fieldname}
         if ftype == 'H2D':
             # Create H2D field
-            fid['generic'] = FPDict(self._hook_generic_fids(fieldname, get_generic_fid(fieldname)))
+            fid['generic'] = FPDict(get_generic_fid(fieldname))
             cumul = field_info.get('productDefinitionTemplateNumber', None)
             if cumul is None or cumul == 0:
                 validity = FieldValidity(basis=self.validity.getbasis(),
@@ -830,7 +830,7 @@ class FA(FileResource):
                                                           'lats':jgrid,
                                                           'filled':False}
                 field.geometry._buffered_gauss_grid = self.geometry._buffered_gauss_grid
-        elif ftype == 'Misc':
+        else:
             # Create Misc field
             fid['generic'] = FPDict()
             field = builder(fid=fid)
@@ -1512,10 +1512,9 @@ class FA(FileResource):
                                 fieldname[4:])[0]
         except RuntimeError:
             exist = False
-        if exist:
+        ftype = self.field_type(fieldname)
+        if exist and ftype == '?':
             ftype = 'H2D'  # because fanion fails or answers False for meta-fields
-        else:
-            ftype = self.field_type(fieldname)
         return ftype
 
     def _read_geometry(self):
