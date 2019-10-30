@@ -111,7 +111,10 @@ class LowLevelGRIB(object):
             realpath = os.path.realpath(self.api.__file__)
             install_dir = os.path.sep.join(realpath.split(os.path.sep)[:-5])
         else:
-            install_dir = griberies.get_eccodes_from_ldconfig()
+            if 'ECCODES_DIR' in os.environ:
+                install_dir = os.environ['ECCODES_DIR']
+            else:
+                install_dir = griberies.get_eccodes_from_ldconfig()
         return install_dir
 
     def init_env(self, reset=False):

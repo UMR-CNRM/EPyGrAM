@@ -378,14 +378,12 @@ def ctypesForFortranFactory(solib):
                                   stderr=subprocess.PIPE).stdout.readlines()
     compiler = set()
     for line in ldd_output:
-        if line.strip().startswith(b'libifport.so'):
-            compiler.add('ifort')
         if line.strip().startswith(b'libgfortran.so'):
             compiler.add('gfortran')
+        if line.strip().startswith(b'libifport.so'):
+            compiler.add('ifort')
     if len(compiler) == 0:
         raise IOError("Don't know which compiler was used to build the shared library")
-    if len(compiler) > 1:
-        raise IOError("Several compilers seem to be used to build the shared library")
     true, false = {'ifort': (-1, 0),
                    'gfortran': (1, 0)}[compiler.pop()]
 
