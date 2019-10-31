@@ -761,8 +761,8 @@ class FA(FileResource):
                     elif nature == 'float':
                         dataOut = data[0]
                     else:
-                        raise NotImplementedError("reading of datatype: " +
-                                                  nature + ".")
+                        raise NotImplementedError("field={}, reading of datatype: {}".format(
+                            fieldname, nature))
                 else:
                     # copy is necessary for garbage collector
                     if nature == 'int':
@@ -776,8 +776,8 @@ class FA(FileResource):
                     elif nature == 'bool':
                         dataOut = numpy.copy(data.view('bool')[:])
                     else:
-                        raise NotImplementedError("reading of datatype: " +
-                                                  nature + " array.")
+                        raise NotImplementedError("field={}, reading of datatype: {} array".format(
+                            fieldname, nature))
                 data = dataOut
             elif ftype == 'H2D':
                 if config.spectral_coeff_order == 'model':

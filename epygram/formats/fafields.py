@@ -212,7 +212,7 @@ class SfxFldDesc_Mod(object):
     _unit = re.compile('(?P<comment>.*)\((?P<unit>.+)\)')
     _fortran_sourcename = 'sfxflddesc_mod.F90'
     type2nature = {'X':'float', 'L':'bool', 'C':'str', 'N':'int', 'Y':'float',
-                   'T':'?T?'}
+                   'T':'int'}  # FIXME: T: ask Ph. Marguinaud
 
     def __init__(self, actual_init=True):
         self.table = {}
