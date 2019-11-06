@@ -501,6 +501,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
         """
         import matplotlib.pyplot as plt
         plt.rc('font', family='serif')
+        epylog.warning("DEPRECATED: the plotgeometry() method uses basemap, which is deprecated !")  # FIXME: ?
         fig, ax = set_figax(*kwargs.get('over', (None, None)),
                             figsize=kwargs.get('figsize', config.plotsizes))
         if self.name == 'academic':

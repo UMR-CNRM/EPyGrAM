@@ -1028,6 +1028,7 @@ def set_map_up(bm, ax,
                drawequator_kwargs=None,
                drawgreenwich_kwargs=None):
     """Cf. :meth:`H2DField.plotfield` documentation."""
+    epylog.warning("DEPRECATED: the basemap package is deprecated")
     if drawmapboundary_kwargs is None:
         drawmapboundary_kwargs = dict(fill_color='lightskyblue')
     if fillcontinents_kwargs is None:
