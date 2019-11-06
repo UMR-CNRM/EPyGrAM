@@ -302,50 +302,57 @@ def summary(geometry):
 def plot_geometry(geometry,
                   lonlat_included=None,
                   out=None,
-                  gisquality='i',
-                  bluemarble=0.0,
                   background=True,
-                  departments=False):
+                  departments=False,
+                  **_):
     """
     Plot the built geometry, along with lonlat included domain if given.
 
     :param lonlat_included: parameters of the lonlat domain to plot
     :param out: filename (.png) if not None (else interactive pyplot.show())
-    :param gisquality: quality of coastlines and countries boundaries.
-    :param bluemarble: if >0., displays NASA's "blue marble" as background with
-                       given transparency.
     :param background: if True, set a background color to continents and oceans.
     :param departments: if True, adds the french departments on map (instead
                          of countries).
     """
+    import cartopy.crs as ccrs
+    import cartopy.feature as cfeature
     # plot
     CIEdomain = build_CIE_field(geometry)
     sat_height = geometry.distance(geometry.gimme_corners_ll()['ll'],
-                                   geometry.gimme_corners_ll()['ur']) / 1000
-    bm = CIEdomain.geometry.make_basemap(specificproj=('nsper', {'sat_height':sat_height * 3}))
-    fig, ax = CIEdomain.plotfield(use_basemap=bm,
-                                  levelsnumber=6,
+                                   geometry.gimme_corners_ll()['ur'])
+    center = geometry.getcenter()
+    projection = ccrs.NearsidePerspective(central_longitude=center[0].get('degrees'),
+                                          central_latitude=center[1].get('degrees'),
+                                          satellite_height=sat_height)
+    if background:
+        cartopy_features = [cfeature.LAND, cfeature.OCEAN,
+                            cfeature.LAKES, cfeature.RIVERS]
+    else:
+        cartopy_features = []
+    fig, ax = CIEdomain.cartoplot(projection=projection,
+                                  colorsnumber=6,
                                   minmax=[-1.0, 3.0],
                                   colorbar=False,
                                   title='Domain: C+I+E',
                                   meridians=None,
                                   parallels=None,
-                                  gisquality=gisquality,
-                                  bluemarble=bluemarble,
-                                  background=background,
-                                  departments=departments)
+                                  cartopy_features=cartopy_features,
+                                  epygram_departments=departments,
+                                  set_global=True)
     if lonlat_included is not None:
         ll_domain = build_lonlat_field(lonlat_included)
-        ll_domain.plotfield(over=(fig, ax),
-                            use_basemap=bm,
-                            graphicmode='contourlines',
-                            title='Domain: C+I+E \n Red contour: required lon/lat',
-                            levelsnumber=2,
-                            contourcolor='red',
-                            contourwidth=2,
+        ll_domain.cartoplot(fig=fig,
+                            ax=ax,
+                            projection=projection,
+                            plot_method='contour',
+                            title='Domain: C+I+E \n Blue contour: required lon/lat',
+                            colorsnumber=2,
+                            contourcolor='blue',
+                            contour_kw=dict(contourwidth=4,),
                             contourlabel=False,
-                            gisquality=gisquality,
-                            departments=departments)
+                            set_global=True,
+                            meridians=None,
+                            parallels=None)
     if out is not None:
         fig.savefig(out, bbox_inches='tight')
     else:

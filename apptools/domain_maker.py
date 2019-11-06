@@ -12,7 +12,6 @@ import epygram
 from epygram import epylog
 from epygram.geometries import domain_making as dm
 
-import matplotlib.pyplot as plt
 from epygram.args_catalog import (add_arg_to_parser,
                                   domain_maker_options,
                                   runtime_options,
@@ -22,9 +21,7 @@ from epygram.args_catalog import (add_arg_to_parser,
 def main(mode,
          display=True,
          maximize_CI_in_E=False,
-         gisquality='i',
          french_depts=False,
-         bluemarble=0.0,
          background=True):
     """
     Domain maker.
@@ -34,17 +31,17 @@ def main(mode,
     :param display: if False, deactivates the display of domain.
     :param maximize_CI_in_E: boolean deciding to force the E-zone to be at its
                              minimum.
-    :param gisquality: quality of coastlines and countries boundaries.
     :param french_depts: draws french departments instead of countries boundaries.
-    :param bluemarble: if >0., displays NASA's "blue marble" as background with
-                       given transparency.
     :param background: if True, set a background color to continents and oceans.
     """
 
     print("################")
     print("# DOMAIN MAKER #")
     print("################")
-
+    if epygram.config.noninteractive_backend and epygram.config.default_graphical_output:
+        out = 'domain_maker.out.' + epygram.config.default_graphical_output
+    else:
+        out = None
     if mode == 'center_dims':
         defaults = {'Iwidth':None,
                     'tilting':0.0,
@@ -76,12 +73,9 @@ def main(mode,
                 print("Plot domain...")
                 dm.output.plot_geometry(geometry,
                                         lonlat_included=ll_boundaries,
-                                        out=None,
-                                        gisquality=gisquality,
+                                        out=out,
                                         departments=french_depts,
-                                        bluemarble=bluemarble,
                                         background=background)
-
             # retry ?
             retry = raw_input("Do you want to modify something ? [n] ")
             if retry in ('yes', 'y', 'Y'):
@@ -104,33 +98,12 @@ def main(mode,
             print(dm.output.summary(geometry))
             if display:
                 # plot
-                CIEdomain = dm.build.build_CIE_field(geometry)
                 print("Plot domain...")
-                bm = CIEdomain.geometry.make_basemap(specificproj=('nsper', {'sat_height':5000}))
-                fig, ax = CIEdomain.plotfield(use_basemap=bm,
-                                              levelsnumber=6,
-                                              minmax=[-1.0, 3.0],
-                                              colorbar=False,
-                                              gisquality=gisquality,
-                                              departments=french_depts,
-                                              bluemarble=bluemarble,
-                                              background=background)
-                lldomain = dm.build.build_lonlat_field(defaults, fid={'lon/lat':'included'})
-                lldomain.plotfield(over=(fig, ax),
-                                   use_basemap=bm,
-                                   graphicmode='contourlines',
-                                   title='Domain: C+I+E \n Red contour: required lon/lat',
-                                   levelsnumber=2,
-                                   contourcolor='red',
-                                   contourwidth=2,
-                                   contourlabel=False,
-                                   gisquality=gisquality,
-                                   departments=french_depts)
-                if epygram.config.noninteractive_backend and epygram.config.default_graphical_output:
-                    fig.savefig('domain_maker.out.' + epygram.config.default_graphical_output)
-                else:
-                    plt.show()
-
+                dm.output.plot_geometry(geometry,
+                                        lonlat_included=defaults,
+                                        out=out,
+                                        departments=french_depts,
+                                        background=background)
             # retry ?
             retry = raw_input("Do you want to modify something ? [n] ")
             if retry in ('yes', 'y', 'Y'):
@@ -157,10 +130,8 @@ if __name__ == '__main__':
     add_arg_to_parser(parser, domain_maker_options['no_display'])
     add_arg_to_parser(parser, domain_maker_options['maximize_CI_in_E'])
     add_arg_to_parser(parser, runtime_options['verbose'])
-    add_arg_to_parser(parser, graphical_options['gis_quality'])
     add_arg_to_parser(parser, graphical_options['french_departments'])
-    add_arg_to_parser(parser, graphical_options['bluemarble'], default=1.0)
-    add_arg_to_parser(parser, graphical_options['background'])
+    add_arg_to_parser(parser, graphical_options['background'], default=True)
 
     args = parser.parse_args()
 
@@ -176,7 +147,5 @@ if __name__ == '__main__':
     main(args.mode,
          display=not args.no_display,
          maximize_CI_in_E=args.maximize_CI_in_E,
-         gisquality=args.gisquality,
          french_depts=args.depts,
-         bluemarble=args.bluemarble,
          background=args.background)
