@@ -29,6 +29,9 @@ class _H2DCartopyPlot(object):
     Plugin for H2DField for plotting with Cartopy.
     """
     # defaults arguments for cartopy plots
+    default_NEfeatures = [dict(category='cultural',
+                               name='admin_0_countries',
+                               facecolor='none'),]
     default_scatter_kw = {'s':20,
                           'marker':',',
                           'linewidths':0}
@@ -38,13 +41,13 @@ class _H2DCartopyPlot(object):
                             'linewidth':1,
                             'linestyle':'--'}
 
-    def _cartoplot_fig_init(self,
-                            fig,
-                            ax,
-                            projection,
-                            figsize,
-                            rcparams,
-                            set_global):
+    def cartoplot_fig_init(self,
+                           fig=None,
+                           ax=None,
+                           projection=None,
+                           figsize=config.plotsizes,
+                           rcparams=config.default_rcparams,
+                           set_global=False):
         """Consistently set figure, ax and projection."""
         import matplotlib.pyplot as plt
         for args, kwargs in rcparams:
@@ -72,22 +75,23 @@ class _H2DCartopyPlot(object):
             ax.set_global()
         return fig, ax, projection
 
-    def _cartoplot_background(self,
-                              # fig,
-                              ax,
-                              projection,
-                              cartopy_features,
-                              natural_earth_features,
-                              meridians,
-                              parallels,
-                              gridlines_kw,
-                              epygram_departments):
+    @classmethod
+    def cartoplot_background(cls,
+                             geometry,
+                             ax,
+                             projection,
+                             cartopy_features=[],
+                             natural_earth_features=default_NEfeatures,
+                             meridians='auto',
+                             parallels='auto',
+                             gridlines_kw=None,
+                             epygram_departments=False):
         """Set cartography features, such as borders, coastlines, meridians and parallels..."""
         import cartopy.crs as ccrs
         import cartopy.feature as cfeature
         from cartopy.mpl.gridliner import (LATITUDE_FORMATTER,
                                            LONGITUDE_FORMATTER)
-        if 'gauss' in self.geometry.name:
+        if 'gauss' in geometry.name:
             default_scale = '110m'
         else:
             default_scale = '50m'
@@ -99,11 +103,11 @@ class _H2DCartopyPlot(object):
                 f['scale'] = default_scale
             ax.add_feature(cfeature.NaturalEarthFeature(**f))
         # meridians and parallels
-        meridians, parallels = util.auto_meridians_parallels(self.geometry,
+        meridians, parallels = util.auto_meridians_parallels(geometry,
                                                              meridians,
                                                              parallels)
         if gridlines_kw is None:
-            gridlines_kw = copy.copy(self.default_gridlines_kw)
+            gridlines_kw = copy.copy(cls.default_gridlines_kw)
         if (meridians, parallels) != ([], []):
             if not isinstance(projection, (ccrs.PlateCarree, ccrs.Mercator)):
                 # only these projections have labels available in cartopy
@@ -471,9 +475,7 @@ class _H2DCartopyPlot(object):
                   parallels='auto',
                   gridlines_kw=None,
                   cartopy_features=[],
-                  natural_earth_features=[dict(category='cultural',
-                                               name='admin_0_countries',
-                                               facecolor='none'),],
+                  natural_earth_features=default_NEfeatures,
                   epygram_departments=False,
                   # colormapping
                   colormap='plasma',
@@ -592,21 +594,22 @@ class _H2DCartopyPlot(object):
             else:
                 plot_method = 'contourf'
         # 1/ geometry and figure
-        fig, ax, projection = self._cartoplot_fig_init(fig,
-                                                       ax,
-                                                       projection,
-                                                       figsize,
-                                                       rcparams,
-                                                       set_global)
+        fig, ax, projection = self.cartoplot_fig_init(fig,
+                                                      ax,
+                                                      projection,
+                                                      figsize,
+                                                      rcparams,
+                                                      set_global)
         # 2/ background
-        self._cartoplot_background(ax,
-                                   projection,
-                                   cartopy_features,
-                                   natural_earth_features,
-                                   meridians,
-                                   parallels,
-                                   gridlines_kw,
-                                   epygram_departments)
+        self.cartoplot_background(self.geometry,
+                                  ax,
+                                  projection,
+                                  cartopy_features,
+                                  natural_earth_features,
+                                  meridians,
+                                  parallels,
+                                  gridlines_kw,
+                                  epygram_departments)
         # 3/ get data to plot
         if self.spectral:
             self.sp2gp()
@@ -652,21 +655,21 @@ class _H2DCartopyPlot(object):
                                                                 contourcolor)
         if plot_method is not None:
             # 8/ plot
-            plot = self._cartoplot_actualplot(ax,
-                                              x, y,
-                                              data,
-                                              plot_method,
-                                              plot_kwargs,
-                                              uniform,
-                                              colormap,
-                                              scatter_kw,
-                                              contour_kw,
-                                              contourlabel,
-                                              clabel_kw)
+            elements = self._cartoplot_actualplot(ax,
+                                                  x, y,
+                                                  data,
+                                                  plot_method,
+                                                  plot_kwargs,
+                                                  uniform,
+                                                  colormap,
+                                                  scatter_kw,
+                                                  contour_kw,
+                                                  contourlabel,
+                                                  clabel_kw)
             # 9/ colorbar
             if colorbar and plot_method != 'contour':
                 self._cartoplot_colorbar(ax,
-                                         plot,
+                                         elements,
                                          colorbar,
                                          colorbar_over,
                                          colorbar_ax_kw,

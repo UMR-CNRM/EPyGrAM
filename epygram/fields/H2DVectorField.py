@@ -34,18 +34,18 @@ class _H2DVectorCartopyPlot(object):
                 module.operation_with_other('*', self.geometry.map_factor_field())
             else:
                 epylog.warning('check carefully *map_factor_correction* w.r.t. dilatation_coef')
-        fig, ax, projection = module._cartoplot_fig_init(module_cartoplot_kwargs.pop('fig', None),
-                                                         module_cartoplot_kwargs.pop('ax', None),
-                                                         module_cartoplot_kwargs.pop('projection', None),
-                                                         module_cartoplot_kwargs.pop('figsize', config.plotsizes),
-                                                         module_cartoplot_kwargs.pop('rcparams', config.default_rcparams),
-                                                         # get: to be passed to cartoplot()
-                                                         module_cartoplot_kwargs.get('set_global'))
+        fig, ax, projection = module.cartoplot_fig_init(module_cartoplot_kwargs.pop('fig', None),
+                                                        module_cartoplot_kwargs.pop('ax', None),
+                                                        module_cartoplot_kwargs.pop('projection', None),
+                                                        module_cartoplot_kwargs.pop('figsize', config.plotsizes),
+                                                        module_cartoplot_kwargs.pop('rcparams', config.default_rcparams),
+                                                        # get: to be passed to cartoplot()
+                                                        module_cartoplot_kwargs.get('set_global'))
         fig, ax = module.cartoplot(fig=fig,
                                    ax=ax,
                                    projection=projection,
                                    **module_cartoplot_kwargs)
-        return fig, ax, projection
+        return fig, ax
 
     def _cartoplot_mask(self,
                         mask_threshold,
@@ -131,20 +131,21 @@ class _H2DVectorCartopyPlot(object):
         if vector_plot_method == 'quiver':
             if vector_plot_kwargs is None:
                 vector_plot_kwargs = dict()
-            ax.quiver(lons, lats, u, v, transform=ccrs.PlateCarree(),
-                      **vector_plot_kwargs)
+            elements = ax.quiver(lons, lats, u, v, transform=ccrs.PlateCarree(),
+                                 **vector_plot_kwargs)
         elif vector_plot_method == 'barbs':
             if vector_plot_kwargs is None:
                 vector_plot_kwargs = dict()
-            ax.barbs(lons, lats, u, v, transform=ccrs.PlateCarree(),
-                     **vector_plot_kwargs)
+            elements = ax.barbs(lons, lats, u, v, transform=ccrs.PlateCarree(),
+                                **vector_plot_kwargs)
         elif vector_plot_method == 'streamplot':
             if vector_plot_kwargs is None:
                 vector_plot_kwargs = cls.default_streamplot_kw
             if vector_plot_kwargs.get('linewidth') == '__module__':
                 vector_plot_kwargs['linewidth'] = 4 * numpy.sqrt(u ** 2 + v ** 2) / min(u.max(), v.max())
-            ax.streamplot(lons, lats, u, v, transform=ccrs.PlateCarree(),
-                          **vector_plot_kwargs)
+            elements = ax.streamplot(lons, lats, u, v, transform=ccrs.PlateCarree(),
+                                     **vector_plot_kwargs)
+        return elements
 
     def cartoplot(self,
                   map_factor_correction=True,
@@ -152,6 +153,7 @@ class _H2DVectorCartopyPlot(object):
                   components_are_projected_on='grid',
                   vector_plot_method='quiver',
                   vector_plot_kwargs=None,
+                  quiverkey=False,
                   **module_plot_kwargs):
         """
         Makes a simple plot of the vector field, with a number of options.
@@ -172,13 +174,16 @@ class _H2DVectorCartopyPlot(object):
             plot, among ('quiver', 'barbs', 'streamplot').
         :param vector_plot_kwargs: arguments to be passed to the associated
             plot method.
+        :param quiverkey: to activate quiverkey, in case
+            vector_plot_method='quiver': may be a dict containing arguments
+            to be passed to pyplot.quiverkey().
         """
         if self.spectral:
             raise epygramError("please convert to gridpoint with sp2gp()" +
                                " method before plotting.")
         # 1/ Ask module to prepare figure, and plot module if required
-        fig, ax, _ = self._cartoplot_set_figure_and_module(map_factor_correction,
-                                                           **module_plot_kwargs)
+        fig, ax = self._cartoplot_set_figure_and_module(map_factor_correction,
+                                                        **module_plot_kwargs)
         # 2/ mask data
         u, v, lons, lats = self._cartoplot_mask(module_plot_kwargs.get('mask_threshold'),
                                                 module_plot_kwargs.get('subzone'))
@@ -192,11 +197,15 @@ class _H2DVectorCartopyPlot(object):
                                               components_are_projected_on,
                                               map_factor_correction)
         # 5/ actual plot
-        self._cartoplot_actual_plot(ax,
-                                    lons, lats,
-                                    u, v,
-                                    vector_plot_method=vector_plot_method,
-                                    vector_plot_kwargs=vector_plot_kwargs)
+        elements = self._cartoplot_actual_plot(ax,
+                                               lons, lats,
+                                               u, v,
+                                               vector_plot_method=vector_plot_method,
+                                               vector_plot_kwargs=vector_plot_kwargs)
+        if vector_plot_method == 'quiver' and quiverkey:
+            if not isinstance(quiverkey, dict):
+                quiverkey = {}
+            ax.quiverkey(elements, **quiverkey)
         if module_plot_kwargs.get('title') is None:
             ax.set_title(str(self.fid) + "\n" + str(self.validity.get()))
         else:
