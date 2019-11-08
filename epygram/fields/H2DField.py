@@ -8,6 +8,7 @@ Contains the class that handle a Horizontal 2D field.
 """
 
 from __future__ import print_function, absolute_import, unicode_literals, division
+import six
 
 import numpy
 import copy
@@ -96,6 +97,8 @@ class _H2DCartopyPlot(object):
         else:
             default_scale = '50m'
         for f in cartopy_features:
+            if isinstance(f, six.string_types):
+                f = getattr(cfeature, f)
             ax.add_feature(f.with_scale(default_scale))
         for f in natural_earth_features:
             f = copy.copy(f)
@@ -439,10 +442,9 @@ class _H2DCartopyPlot(object):
         if title is None:
             fid = self.fid.get('short',
                                self.fid[sorted(self.fid.keys())[0]])
-            ax.set_title("\n".join([str(fid),
-                                    str(self.validity.get())]))
-        else:
-            ax.set_title(title)
+            title = "\n".join([str(fid),
+                               str(self.validity.get())])
+        ax.set_title(title)
         if uniform:
             ax.text(1.02, 0.5, '(uniform field: value={})'.format(uniformvalue),
                     horizontalalignment='center',
@@ -613,6 +615,8 @@ class _H2DCartopyPlot(object):
         # 3/ get data to plot
         if self.spectral:
             self.sp2gp()
+        if not self.geometry.grid.get('LAMzone', False):
+            subzone = None
         data = self.getdata(subzone=subzone)
         # 4/ handle min/max values
         data, pmin, pmax, minmax_along_colorbar = self._cartoplot_treat_minmax(data,

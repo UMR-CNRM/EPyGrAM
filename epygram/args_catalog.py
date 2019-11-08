@@ -302,6 +302,19 @@ output_options = {
                    very slow and produces much too big files...",
              choices=['png', 'pdf'],
              default=_defaults.get('default_graphical_output', False))],
+    'outputfmt':[
+        '-o', '--outputfmt',
+        dict(help="specify format for output file,\
+                   among ('png', pdf). Pdf is kind of disadvised, for it is\
+                   very slow and produces much too big files...",
+             choices=['png', 'pdf'],
+             default=_defaults.get('default_graphical_output', False))],
+    'savefig':[
+        '--sf', '--savefig',
+        dict(help="save figure in file.",
+             action='store_true',
+             dest='savefig',
+             default=False)],
     'outputfilename':[
         '-O', '--outputfilename',
         dict(help="store output in the specified filename (without format for\
@@ -477,6 +490,18 @@ misc_options = {
              action='store_true',
              default=False,
              dest='diff_to_avg')],
+    'map_factor_correction':[
+        '--avg', '--map_factor_correction',
+        dict(help="apply a map factor correction to wind.",
+             action='store_true',
+             default=False,
+             dest='map_factor_correction')],
+    'wind_components_are_projected_on':[
+        '--wpo', '--wind_projected_on',
+        dict(help="specify on which coordinates the wind components are projected.",
+             default='lonlat',
+             choices=['lonlat', 'grid'],
+             dest='wind_components_are_projected_on')],
                 }
 
 # : Arguments dealing with graphical options
@@ -484,6 +509,14 @@ graphical_options = {
     'legend':[
         '-L', '--legend',
         dict(help="legend to be written over field plot.",
+             default=None)],
+    'title':[
+        '--title',
+        dict(help="title to be written over field plot.",
+             default=None)],
+    'difftitle':[
+        '--difftitle',
+        dict(help="title to be written over diff field plot.",
              default=None)],
     'scientifical_unit':[
         '-u', '--unit',
@@ -516,6 +549,15 @@ graphical_options = {
                    Arpege & contourlines.",
              choices=['colorshades', 'contourlines', 'points'],
              default='colorshades')],
+    'plot_method':[
+        '--pm', '--plot_method',
+        dict(help="plot method, among\
+                   ('pcolormesh', 'contourf', 'contour', 'scatter'). Default is\
+                   'pcolormesh'. There is a known bug (yet unsolved) with\
+                   Arpege & contourlines.",
+             choices=['pcolormesh', 'contourf', 'contour', 'scatter'],
+             dest='plot_method',
+             default='pcolormesh')],
     'minmax':[
         '-m', '--minmax',
         dict(help="min and max values for the plot.\
@@ -677,6 +719,11 @@ graphical_options = {
         dict(help="symbol to be used for vectors, among ('barbs', 'arrows', 'stream').",
              dest='vector_symbol',
              default=_defaults['vector_symbol'])],
+    'vector_plot_method':[
+        '--vpm', '--vector_plot_method',
+        dict(help="symbol to be used for vectors, among ('quiver', 'barbs', 'streamplot').",
+             dest='vector_plot_method',
+             default='quiver')],
     'quiverkey':[
         '--qk', '--quiverkey',
         dict(help="arguments to be passed to pyplot.quiverkey(), in case\
@@ -736,7 +783,18 @@ graphical_options = {
              help="NOT to center the histogram of diff on the value 0.\
                    May be useful for fluxes decumulation.",
              default=True)],
-                     }
+    'scatter_kw':[
+        '--skw', '--scatter_kw',
+        dict(help="arguments to be passed to pyplot.scatter(), in case\
+                   *plot_method* == 'scatter'.",
+             dest='scatter_kw',
+             default=None)],
+    'cartopy_features':[
+        '--cpyf', '--cartopy_features',
+        dict(help="cartopy features (cartopy.feature.*), separated by comma",
+             dest='cartopy_features',
+             default=None)],
+    }
 
 # : Arguments dealing with extraction stuff
 extraction_options = {
