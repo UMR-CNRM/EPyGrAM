@@ -974,21 +974,24 @@ class GRIBmessage(RecursiveObject, dict):
     def _GRIB2_set_section4(self, field, **other_GRIB_options):
         """Set k/v for section 4."""
         self._GRIB2_set_product(field, **other_GRIB_options)
-        template = field.fid.get('productDefinitionTemplateNumber', 0)
+        template = field.fid['GRIB2'].get('productDefinitionTemplateNumber', 0)
         if template in (32, 33):  # 32,33 == simulated satellite imagery
             self._GRIB2_set_simulated_satellite_imagery(field.fid['GRIB2'],
                                                         template,
                                                         **other_GRIB_options)
         else:
-            self._GRIB2_set_vertical_geometry(field.geometry, field.fid)
+            self._GRIB2_set_vertical_geometry(field.geometry, field.fid['GRIB2'])
         self._GRIB2_set_validity(field)
 
     def _GRIB2_set_product(self, field, **other_GRIB_options):
         """Set product and process."""
         if field.validity.cumulativeduration():
-            self['productDefinitionTemplateNumber'] = other_GRIB_options.get('productDefinitionTemplateNumber', 8)
+            tpln = field.fid['GRIB2'].get('productDefinitionTemplateNumber',
+                                          other_GRIB_options.get('productDefinitionTemplateNumber', 8))
         else:
-            self['productDefinitionTemplateNumber'] = other_GRIB_options.get('productDefinitionTemplateNumber', 0)
+            tpln = field.fid['GRIB2'].get('productDefinitionTemplateNumber',
+                                          other_GRIB_options.get('productDefinitionTemplateNumber', 0))
+        self['productDefinitionTemplateNumber'] = tpln
         self['parameterCategory'] = field.fid['GRIB2']['parameterCategory']
         self['parameterNumber'] = field.fid['GRIB2']['parameterNumber']
         for k in ['typeOfGeneratingProcess',
