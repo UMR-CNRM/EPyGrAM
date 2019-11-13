@@ -153,7 +153,7 @@ class _H2DVectorCartopyPlot(object):
                   components_are_projected_on='grid',
                   vector_plot_method='quiver',
                   vector_plot_kwargs=None,
-                  quiverkey=False,
+                  quiverkey=None,
                   **module_plot_kwargs):
         """
         Makes a simple plot of the vector field, with a number of options.
@@ -202,10 +202,10 @@ class _H2DVectorCartopyPlot(object):
                                                u, v,
                                                vector_plot_method=vector_plot_method,
                                                vector_plot_kwargs=vector_plot_kwargs)
-        if vector_plot_method == 'quiver' and quiverkey:
+        if vector_plot_method == 'quiver' and quiverkey is not None:
             if not isinstance(quiverkey, dict):
                 quiverkey = {}
-            ax.quiverkey(elements, **quiverkey)
+            ax.quiverkey(elements, 0.95, 1.01, **quiverkey)
         if module_plot_kwargs.get('title') is None:
             ax.set_title(str(self.fid) + "\n" + str(self.validity.get()))
         else:

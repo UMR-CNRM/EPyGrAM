@@ -844,7 +844,11 @@ def auto_meridians_parallels(geometry,
         else:
             delta_lat = float(parallels)
         latmin = minmax['latmin'] - minmax['latmin'] % delta_lat
+        if latmin <= -90:
+            latmin += delta_lat
         latmax = minmax['latmax'] - minmax['latmax'] % delta_lat + 2 * delta_lat
+        if latmax >= 90:
+            latmax -= delta_lat
         parallels = numpy.arange(latmin, latmax, delta_lat)
     elif parallels is None:
         parallels = []

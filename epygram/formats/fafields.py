@@ -212,7 +212,7 @@ class SfxFldDesc_Mod(object):
     _unit = re.compile('(?P<comment>.*)\((?P<unit>.+)\)')
     _fortran_sourcename = 'sfxflddesc_mod.F90'
     type2nature = {'X':'float', 'L':'bool', 'C':'str', 'N':'int', 'Y':'float',
-                   'T':'int'}  # FIXME: T: ask Ph. Marguinaud
+                   'T':'int'}  # FIXME: T: cf mode_write_surf_fa.F90
 
     def __init__(self, actual_init=True):
         self.table = {}

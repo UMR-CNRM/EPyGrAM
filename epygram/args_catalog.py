@@ -491,7 +491,7 @@ misc_options = {
              default=False,
              dest='diff_to_avg')],
     'map_factor_correction':[
-        '--avg', '--map_factor_correction',
+        '--mpf', '--map_factor_correction',
         dict(help="apply a map factor correction to wind.",
              action='store_true',
              default=False,
@@ -643,21 +643,17 @@ graphical_options = {
              default=False)],
     'parallels':[
         '--parallels',
-        dict(help="*meridians* and *parallels* enable to fine-tune the choice\
-                   of lines to plot, with either:\
-                   - 'auto': automatic scaling to the basemap extents (default)\
-                   - 'default': range(0,360,10) and range(-90,90,10)\
-                   - a list of values\
-                   - a grid step, e.g. 5 to plot each 5 degree\
-                   - None: no one is plot\
-                   - 'equator' // 'polarcircles' // 'tropics' or any\
-                     combination (,) will plot only these.",
+        dict(help="""tune the choice of lines to plot, among:
+                     'auto': automatic scaling to the basemap extents (default) |
+                     'default': range(0,360,10) and range(-90,90,10) |
+                     a list of values |
+                     a grid step, e.g. 5 to plot each 5 degree |
+                     None: no one is plot""",
              type=str,
              default='auto')],
     'meridians':[
         '--meridians',
-        dict(help="Same as parallels, cf. parallels doc.\
-                   Preset values are 'greenwich' and 'datechange'.",
+        dict(help="Same as parallels, cf. parallels doc.",
              type=str,
              default='auto')],
     'vectors_subsampling':[

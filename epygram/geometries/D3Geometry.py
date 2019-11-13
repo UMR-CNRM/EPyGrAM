@@ -1460,16 +1460,14 @@ class D3RectangularGridGeometry(D3Geometry):
         if lons.ndim == 1:
             lonmax = lons[:].max()
             lonmin = lons[:].min()
-        else:
-            lonmax = lons[:, -1].max()
-            lonmin = lons[:, 0].min()
-        if lats.ndim == 1:
             latmax = lats[:].max()
             latmin = lats[:].min()
         else:
+            lonmax = lons[:, -1].max()
+            lonmin = lons[:, 0].min()
             latmax = lats[-1, :].max()
             latmin = lats[0, :].min()
-        center_lon = (lonmax - lonmin) / 2.
+        center_lon = (lonmax + lonmin) / 2.
         if latmin <= -80.0 or latmax >= 84.0:
             crs = ccrs.PlateCarree(center_lon)
         else:

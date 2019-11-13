@@ -20,6 +20,9 @@ from epygram.args_catalog import (add_arg_to_parser,
                                   runtime_options, graphical_options)
 
 import matplotlib.pyplot as plt
+import cartopy.feature as cf
+
+CFEATURES = [f for f in dir(cf) if all([c.isupper() for c in f])]
 
 
 def read_and_preprocess(resource,
@@ -41,9 +44,7 @@ def read_and_preprocess(resource,
         field.operation(**operation)
     if global_shift_center is not None:
         field.global_shift_center(global_shift_center)
-    if pressure_pa2hpa and (field.fid['generic'].get('discipline') == 0 and
-                            field.fid['generic'].get('parameterCategory') == 3 and
-                            field.fid['generic'].get('parameterNumber') in (0, 1, 2, 8, 11, 25)):
+    if pressure_pa2hpa:
         field.operation('/', 100.)
     return field
 
@@ -168,16 +169,14 @@ def main(filename,
     Output:
 
     :param savefig: save figures to file, instead of interactive plot
-    :param outputfmt: output format, among ('png', 'pdf', False).
+    :param outputfmt: output format, among ('png', 'pdf', ...).
         Overwritten by outputfilename.
-    :param outputfilename: specify an output filename for the plot
-        (completed by output format).
+    :param outputfilename: specify an output filename for the plot,
+        including format as extension.
     :param figures_dpi: quality of saved figures.
     """
     # 0/ checks, determine mode, initializations
     # checks
-    if outputfilename and not savefig:
-        raise epygramError('*output* format must be defined if outputfilename is supplied.')
     assert not all([f is None for f in (fid, Ufid, Vfid)]), "Mandatory arguments: *fid* OR *Ufid/Vfid*."
     if fid is not None:
         assert Ufid is Vfid is None, "Exclusive arguments: *fid* OR *Ufid/Vfid*."
@@ -254,30 +253,30 @@ def main(filename,
                 title = "\n".join([str(fid), str(field.validity.get())])
             if not diffonly:
                 # plot field and ref
-                fig = field.cartoplot(title="\n".join([resource.container.basename, title]),
-                                      **plot_kwargs)
-                ref_fig = ref_field.cartoplot(title="\n".join([reference.container.basename, title]),
-                                              **plot_kwargs)
+                fig, _ = field.cartoplot(title="\n".join([resource.container.basename, title]),
+                                         **plot_kwargs)
+                ref_fig, _ = ref_field.cartoplot(title="\n".join([reference.container.basename, title]),
+                                                 **plot_kwargs)
             # set diff specifics
             if difftitle is None:
-                title = "\n".join([resource.container.basename + ' - ' +
-                                   reference.container.basename,
-                                   title]),
+                difftitle = "\n".join([resource.container.basename + ' - ' +
+                                       reference.container.basename,
+                                       title])
             plot_kwargs.update(
                 minmax=diffminmax,
                 colorsnumber=diffcolorsnumber,
                 colormap=diffcolormap,
                 center_cmap_on_0=diffcenter_cmap_on_0)
             # plot diff
-            diff_fig = diff_field.cartoplot(title=title,
-                                            **plot_kwargs)
+            diff_fig, _ = diff_field.cartoplot(title=difftitle,
+                                               **plot_kwargs)
         else:
             # 2.2.2/ plot single scalar fields
             field = read_and_preprocess(resource, fid,
                                         **preprocess_options)
             if title is None:
                 title = "\n".join([str(fid), str(field.validity.get())])
-            fig = field.cartoplot(title=title, **plot_kwargs)
+            fig, _ = field.cartoplot(title=title, **plot_kwargs)
     # 3/ output
     if savefig:
         epylog.info("save plot(s)...")
@@ -301,9 +300,12 @@ def main(filename,
                              **save_kwargs)
         else:
             if outputfilename is None:
-                outputfilename = '.'.join([resource.container.abspath,
-                                           parameter,
-                                           outputfmt])
+                if outputfmt is not None:
+                    outputfilename = '.'.join([resource.container.abspath,
+                                               parameter,
+                                               outputfmt])
+                else:
+                    raise epygramError('*outputfmt* or *outputfilename* must be supplied if *savefig*.')
             fig.savefig(outputfilename, **save_kwargs)
     else:
         plt.show()
@@ -322,26 +324,27 @@ if __name__ == '__main__':
     add_arg_to_parser(parser, fields_management['field'])
     add_arg_to_parser(parser, fields_management['windfieldU'])
     add_arg_to_parser(parser, fields_management['windfieldV'])
+
     diffmodes = parser.add_mutually_exclusive_group()
     add_arg_to_parser(diffmodes, files_management['file_to_refer_in_diff'])
     add_arg_to_parser(diffmodes, files_management['file_to_refer_in_diffonly'])
-    add_arg_to_parser(parser, output_options['savefig'])
-    add_arg_to_parser(parser, output_options['outputfmt'])
-    add_arg_to_parser(parser, output_options['outputfilename'])
+
+    add_arg_to_parser(parser, misc_options['pressure_unit_hpa'])
+    add_arg_to_parser(parser, misc_options['operation_on_field'])
+    add_arg_to_parser(parser, misc_options['mask_threshold'])
+    add_arg_to_parser(parser, misc_options['wind_components_are_projected_on'])
+    add_arg_to_parser(parser, misc_options['map_factor_correction'])
     add_arg_to_parser(parser, misc_options['LAMzone'])
+    # graphics
     add_arg_to_parser(parser, graphical_options['plot_method'])
     add_arg_to_parser(parser, graphical_options['minmax'])
-    add_arg_to_parser(parser, graphical_options['diffminmax'])
     add_arg_to_parser(parser, graphical_options['levels_number'])
-    add_arg_to_parser(parser, graphical_options['diff_levels_number'])
     add_arg_to_parser(parser, graphical_options['colormap'], default='plasma')
-    add_arg_to_parser(parser, graphical_options['diffcolormap'])
     add_arg_to_parser(parser, graphical_options['center_cmap_on_0'])
-    add_arg_to_parser(parser, graphical_options['diff_center_cmap_on_0'])
     add_arg_to_parser(parser, graphical_options['title'])
-    add_arg_to_parser(parser, graphical_options['difftitle'])
-    add_arg_to_parser(parser, graphical_options['gis_quality'])
-    add_arg_to_parser(parser, graphical_options['cartopy_features'])
+    add_arg_to_parser(parser, graphical_options['cartopy_features'],
+                      help="cartopy features (cartopy.feature.*), separated by comma " +
+                      str(CFEATURES))
     add_arg_to_parser(parser, graphical_options['french_departments'])
     add_arg_to_parser(parser, graphical_options['parallels'])
     add_arg_to_parser(parser, graphical_options['meridians'])
@@ -352,12 +355,16 @@ if __name__ == '__main__':
     add_arg_to_parser(parser, graphical_options['quiverkey'])
     add_arg_to_parser(parser, graphical_options['figures_dpi'])
     add_arg_to_parser(parser, graphical_options['global_shift_center'])
-    add_arg_to_parser(parser, misc_options['pressure_unit_hpa'])
-    add_arg_to_parser(parser, misc_options['operation_on_field'])
+    # diff
     add_arg_to_parser(parser, misc_options['diffoperation_on_field'])
-    add_arg_to_parser(parser, misc_options['mask_threshold'])
-    add_arg_to_parser(parser, misc_options['wind_components_are_projected_on'])
-    add_arg_to_parser(parser, misc_options['map_factor_correction'])
+    add_arg_to_parser(parser, graphical_options['diffminmax'])
+    add_arg_to_parser(parser, graphical_options['diff_levels_number'])
+    add_arg_to_parser(parser, graphical_options['diffcolormap'])
+    add_arg_to_parser(parser, graphical_options['diff_center_cmap_on_0'])
+    add_arg_to_parser(parser, graphical_options['difftitle'])
+    # output
+    add_arg_to_parser(parser, output_options['outputfmt'])
+    add_arg_to_parser(parser, output_options['outputfilename'], default=None)
     add_arg_to_parser(parser, runtime_options['verbose'])
 
     args = parser.parse_args()
@@ -410,34 +417,42 @@ if __name__ == '__main__':
         diffoperation = None
     if args.parallels == 'None':
         parallels = None
+    elif ',' in args.parallels:
+        parallels = [float(p.strip()) for p in args.parallels.split(',')]
     else:
-        if ',' in args.parallels:
-            parallels = [p.strip() for p in args.parallels.split(',')]
-        else:
+        try:
+            parallels = float(args.parallels)
+        except ValueError:
             parallels = args.parallels
     if args.meridians == 'None':
         meridians = None
+    elif ',' in args.meridians:
+            meridians = [float(m.strip()) for m in args.meridians.split(',')]
     else:
-        if ',' in args.meridians:
-            meridians = [m.strip() for m in args.meridians.split(',')]
-        else:
+        try:
+            meridians = float(args.meridians)
+        except ValueError:
             meridians = args.meridians
     if args.mask_threshold is not None:
         mask_threshold = str2dict(args.mask_threshold, float)
     else:
         mask_threshold = None
-    if args.quiverkey is not None:
-        quiverkey = str2dict(args.quiverkey, float)
-    else:
+    if args.quiverkey is None or args.quiverkey == '':
         quiverkey = {}
+    else:
+        quiverkey = str2dict(args.quiverkey, float)
     if args.scatter_kw is not None:
-        scatter_kw = str2dict(args.quiverkey, int)
+        scatter_kw = str2dict(args.scatter_kw, int)
     else:
         scatter_kw = None
     if args.cartopy_features is not None:
         cartopy_features = args.cartopy_features.split(',')
     else:
         cartopy_features = []
+    if args.outputfilename or args.outputfmt:
+        savefig = True
+    else:
+        savefig = False
 
     # 2.2 field to be processed
     if args.Ucomponentofwind is not None or args.Vcomponentofwind is not None:
@@ -461,6 +476,7 @@ if __name__ == '__main__':
          diffoperation=diffoperation,
          pressure_pa2hpa=args.pressure_unit_hpa,
          global_shift_center=args.global_shift_center,
+         zoom=zoom,
          # figure
          title=args.title,
          difftitle=args.difftitle,
@@ -490,7 +506,7 @@ if __name__ == '__main__':
          quiverkey=quiverkey,
          map_factor_correction=args.map_factor_correction,
          # output
-         savefig=args.savefig,
+         savefig=savefig,
          outputfilename=args.outputfilename,
          figures_dpi=args.figures_dpi,
          outputfmt=args.outputfmt)
