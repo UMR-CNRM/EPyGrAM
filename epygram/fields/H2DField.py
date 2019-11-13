@@ -32,7 +32,8 @@ class _H2DCartopyPlot(object):
     # defaults arguments for cartopy plots
     default_NEfeatures = [dict(category='cultural',
                                name='admin_0_countries',
-                               facecolor='none'),]
+                               facecolor='none',
+                               edgecolor='k'),]
     default_scatter_kw = {'s':20,
                           'marker':',',
                           'linewidths':0}
@@ -40,6 +41,7 @@ class _H2DCartopyPlot(object):
     default_clabel_kw = {'fmt':'%0i'}
     default_gridlines_kw = {'draw_labels':True,
                             'linewidth':1,
+                            'color':'k',
                             'linestyle':'--'}
 
     def cartoplot_fig_init(self,
