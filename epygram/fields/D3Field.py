@@ -20,7 +20,7 @@ from bronx.syntax.arrays import stretch_array
 
 from epygram import epygramError, config
 from epygram.util import (write_formatted, Angle,
-                          degrees_nearest_mod, vtk_check_transform,
+                          degrees_nearest_mod,
                           vtk_modify_grid, vtk_write_grid,
                           as_numpy_array,
                           moveaxis)
@@ -286,22 +286,24 @@ class _D3CommonField(Field):
                         value[n] = f(as_numpy_array(lon)[n], as_numpy_array(lat)[n])
 
             elif method == 'bilinear':
+                square = numpy.all(all_i[:, 0] == all_i[:, 1]) and numpy.all(all_i[:, 2] == all_i[:, 3]) and \
+                         numpy.all(all_j[:, 0] == all_j[:, 2]) and numpy.all(all_j[:, 1] == all_j[:, 3])
 
-                def simple_inter(x1, q1, x2, q2, x):
-                    """Simple linear interpolant"""
-                    return (x2 - x) / (x2 - x1) * q1 + (x - x1) / (x2 - x1) * q2
-
-                # Position of wanted point
-                wanted_i, wanted_j = self.geometry.ll2ij(lon, lat)
-
-                assert numpy.all(all_i[:, 0] == all_i[:, 1]) and numpy.all(all_i[:, 2] == all_i[:, 3]) and \
-                       numpy.all(all_j[:, 0] == all_j[:, 2]) and numpy.all(all_j[:, 1] == all_j[:, 3])
-
-                value = simple_inter(all_j[:, 0], simple_inter(all_i[:, 0], values_at_interp_points[:, 0],
-                                                                all_i[:, 2], values_at_interp_points[:, 2], wanted_i),
-                                     all_j[:, 1], simple_inter(all_i[:, 1], values_at_interp_points[:, 1],
-                                                               all_i[:, 3], values_at_interp_points[:, 3], wanted_i),
-                                     wanted_j)
+                if square:
+                    def simple_inter(x1, q1, x2, q2, x):
+                        """Simple linear interpolant"""
+                        return (x2 - x) / (x2 - x1) * q1 + (x - x1) / (x2 - x1) * q2
+                    
+                    # Position of wanted point
+                    wanted_i, wanted_j = self.geometry.ll2ij(lon, lat)
+                    
+                    value = simple_inter(all_j[:, 0], simple_inter(all_i[:, 0], values_at_interp_points[:, 0],
+                                                                    all_i[:, 2], values_at_interp_points[:, 2], wanted_i),
+                                         all_j[:, 1], simple_inter(all_i[:, 1], values_at_interp_points[:, 1],
+                                                                   all_i[:, 3], values_at_interp_points[:, 3], wanted_i),
+                                         wanted_j)
+                else:
+                    raise NotImplementedError("Bilinear interpolation on irregular grid")
         else:
             raise NotImplementedError('*interpolation*=' + interpolation)
         if one:
@@ -313,6 +315,7 @@ class _D3CommonField(Field):
         return copy.copy(value)
 
     def as_vtkGrid(self, hCoord, grid_type, z_factor, offset,
+                   subzone=None,
                    filename=None, name='scalar', grid=None,
                    version='XML', binary=True, compression='ZLib',
                    compression_level=5):
@@ -331,6 +334,9 @@ class _D3CommonField(Field):
                           If the field is 3D, thickness are approximately computed
         :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
         :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
+        :param subzone: optional, among ('C', 'CI'), for LAM grids only, returns
+                        the grid resp. for the C or C+I zone off the C+I+E zone. \n
+                        Default is no subzone, i.e. the whole field.
         :param filename: if not None, resulting grid will be written into filename
         :param name: name to give to the scalar array (useful with the grid option)
         :param grid: if grid is not None, the method will add the data to it.
@@ -343,6 +349,7 @@ class _D3CommonField(Field):
         If grid_type is 'sgrid_point', the result is the grid; otherwise
         the result is the function is the last filter used.
         """
+        import vtk # @UnresolvedImport
         from vtk.numpy_interface import dataset_adapter as dsa  # @UnresolvedImport
 
         if len(self.validity) != 1:
@@ -350,11 +357,11 @@ class _D3CommonField(Field):
         if self.spectral:
             raise epygramError("Spectral field, please use sp2gp() before.")
 
-        data = self.getdata(d4=True).astype(numpy.float32)
-        data = data[0, ...]
+        data = self.getdata(d4=True, subzone=subzone).astype(numpy.float32)
+        data = data[0, ...].flatten()
 
         if grid is None:
-            grid = self.geometry.make_vtkGrid(hCoord, z_factor, offset)
+            grid = self.geometry.make_vtkGrid(hCoord, z_factor, offset, subzone)
             grid.epygram = dict(geometry=self.geometry)
         else:
             if grid.epygram['geometry'] != self.geometry:
@@ -363,7 +370,7 @@ class _D3CommonField(Field):
             if name in names:
                 raise epygramError("There already is an array with same name: " + name)
 
-        grid.GetPointData().AddArray(dsa.numpyTovtkDataArray(data.flatten(), name))
+        grid.GetPointData().AddArray(dsa.numpyTovtkDataArray(data, name, array_type=vtk.VTK_FLOAT))
         grid.GetPointData().SetActiveScalars(name)
 
         grid = vtk_modify_grid(grid, grid_type, datamin=data.min())
@@ -520,6 +527,41 @@ class _D3CommonField(Field):
                 result.append(profilefield)
         return result
 
+    def extract_physicallevels(self, getdata=True):
+        """
+        Returns a new field excluding levels with no physical meaning.
+
+        :param getdata: if False returns a field without data
+        """
+        if self.geometry.vcoordinate.typeoffirstfixedsurface == 118:
+            # build fid
+            fid = {key:(FPDict(value)
+                        if isinstance(value, dict)
+                        else value)
+                   for (key, value) in self.fid.items()}
+            #build geometry
+            geometry = self.geometry.make_physicallevels_geometry()
+            # Field
+            newfield = fpx.field(fid=FPDict(fid),
+                                 structure=geometry.structure,
+                                 geometry=geometry,
+                                 validity=self.validity.deepcopy(),
+                                 processtype=self.processtype,
+                                 comment=self.comment)
+            if getdata:
+                shp = geometry.get_datashape(dimT=len(self.validity), d4=True)
+                data = numpy.ndarray(shp)
+                for t in range(len(self.validity)):
+                    for k in range(len(geometry.vcoordinate.levels)):
+                        k_index = self.geometry.vcoordinate.levels.index(geometry.vcoordinate.levels[k])
+                        data[t, k, :, :] = self.getdata(d4=True)[t, k_index, :, :]
+                newfield.setdata(data)
+    
+            return newfield
+        else:
+            return self
+
+
     def extractprofile(self, lon, lat,
                        interpolation='nearest',
                        external_distance=None,
@@ -551,8 +593,9 @@ class _D3CommonField(Field):
         profile = self.extract_subdomain(pointG,
                                          interpolation=interpolation,
                                          external_distance=external_distance,
-                                         exclude_extralevels=exclude_extralevels,
                                          getdata=getdata)
+        if exclude_extralevels:
+            profile = profile.extract_physicallevels()
         return profile
 
     def extractsection(self, end1, end2,
@@ -590,15 +633,14 @@ class _D3CommonField(Field):
                                                        resolution=resolution)
         section = self.extract_subdomain(sectionG,
                                          interpolation=interpolation,
-                                         exclude_extralevels=exclude_extralevels,
                                          getdata=getdata)
-
+        if exclude_extralevels:
+            section = section.extract_physicallevels()
         return section
 
     def extract_subdomain(self, geometry,
                           interpolation='nearest',
                           external_distance=None,
-                          exclude_extralevels=True,
                           getdata=True):
         """
         Extracts a subdomain from a field, given a new geometry.
@@ -617,8 +659,6 @@ class _D3CommonField(Field):
           {'target_value':4810, 'external_field':an_H2DField_with_same_geometry}.
           If so, the nearest point is selected with
           distance = abs(target_value - external_field.data)
-        :param exclude_extralevels: if True levels with no physical meaning are
-                                    suppressed.
         :param getdata: if False returns a field without data
         """
         # build subdomain fid
@@ -640,13 +680,6 @@ class _D3CommonField(Field):
             kwargs_vcoord['grid'] = copy.copy(self.geometry.vcoordinate.grid)
             kwargs_vcoord['levels'] = copy.copy(self.geometry.vcoordinate.levels)
             k_index = list(range(len(kwargs_vcoord['levels'])))
-            # Suppression of levels above or under physical domain
-            if exclude_extralevels:
-                for ilevel, level in enumerate(list(kwargs_vcoord['levels'])):
-                    if level < 1 or level > len(self.geometry.vcoordinate.grid['gridlevels']) - 1:
-                        kwargs_vcoord['levels'].remove(level)
-                        k_index[ilevel] = None
-            k_index = [k for k in k_index if k is not None]
         elif self.geometry.vcoordinate.typeoffirstfixedsurface in [100, 102, 103, 109, 1, 106, 255, 160, 200]:
             kwargs_vcoord['levels'] = list(copy.deepcopy(self.geometry.vcoordinate.levels))
             k_index = range(len(kwargs_vcoord['levels']))
@@ -681,7 +714,7 @@ class _D3CommonField(Field):
             structure = {'H2D':'3D',
                          'Point':'V1D',
                          'H1D':'V2D',
-                         'D3':'D3',
+                         '3D':'3D',
                          'V2D':'V2D',
                          'V1D':'V1D'}[structure]
         kwargs_geom = {'structure': structure,
@@ -712,7 +745,6 @@ class _D3CommonField(Field):
             extracted = temp_field.extract_subdomain(temp_geom,
                                                      interpolation=interpolation,
                                                      external_distance=external_distance,
-                                                     exclude_extralevels=False,
                                                      getdata=True).getdata(d4=True)
             extracted = extracted.swapaxes(0, 1)  # z first, then validity for levels (opposite of fields)
             if len(self.validity) > 1:
@@ -1316,34 +1348,17 @@ class _D3CommonField(Field):
     def plotfield(self):
         raise NotImplementedError("plot of 3D field is not implemented")
 
-    def _vtk_check_transform(self, rendering, hCoord, z_factor, offset):
-        """
-        :param rendering:  a dictionary containing, at least, the renderer key
-        :param hCoord: 'll': horizontal coordinates are the lon/lat values
-                       a basemap: horizontal coordinates are set according to this basemap
-        :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
-        :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
-        """
-        return vtk_check_transform(rendering,
-                                   self.geometry.vcoordinate.typeoffirstfixedsurface,
-                                   hCoord, z_factor, offset)
-
-    def plot3DOutline(self, rendering, color='Black',
-                      hCoord=None, z_factor=None, offset=None):
+    def plot3DOutline(self, rendering, color='Black'):
         """
         Plots the outline of the data
-        :param rendering:  a dictionary containing, at least, the renderer key
-        :param color: color to use for the outline
-        :param hCoord: 'll': horizontal coordinates are the lon/lat values
-                       a basemap: horizontal coordinates are set according to this basemap
-        :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
-        :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
+        :param rendering:  a dictionary obtained from util.vtk_setup
+        :param color: color name to use for the outline
         """
         import vtk  # @UnresolvedImport
 
-        hCoord, z_factor, offset = self._vtk_check_transform(rendering, hCoord, z_factor, offset)
 
-        grid = self.as_vtkGrid(hCoord, 'sgrid_point', z_factor, offset)
+        grid = self.as_vtkGrid(rendering['hCoord'], 'sgrid_point',
+                               rendering['z_factor'], rendering['offset'], rendering['subzone'])
 
         # outline = vtk.vtkStructuredGridOutlineFilter()
         outline = vtk.vtkOutlineFilter()
@@ -1360,27 +1375,23 @@ class _D3CommonField(Field):
         return (outlineActor, outlineMapper)
 
     def plot3DContour(self, rendering,
-                      levels, color='Black', opacity=1.,
-                      hCoord=None, z_factor=None, offset=None):
+                      levels, color='Black', opacity=1.):
         """
         This method adds contour lines. If the field is 3D, contours appear as isosurface.
-        :param rendering: a dictionary containing, at least, the renderer key
+        :param rendering: a dictionary obtained from util.vtk_setup
         :param levels: list of values to use to compute the contour lines
-        :param color: color name used for coloring the contour lines
+        :param color: color name or lookup table or color transfer function
+                      for coloring the contour lines
         :param opacity: opacity value for the contour lines
-        :param hCoord: 'll': horizontal coordinates are the lon/lat values
-                       a basemap: horizontal coordinates are set according to this basemap
-        :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
-        :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
         """
         import vtk  # @UnresolvedImport
 
-        hCoord, z_factor, offset = self._vtk_check_transform(rendering, hCoord, z_factor, offset)
-
-        ugrid = self.as_vtkGrid(hCoord, 'ugrid_point', z_factor, offset)
+        ugrid = self.as_vtkGrid(rendering['hCoord'], 'ugrid_point',
+                                rendering['z_factor'], rendering['offset'], rendering['subzone'])
         iso = vtk.vtkContourFilter()
         # iso.GenerateTrianglesOff()
         iso.SetInputConnection(ugrid.GetOutputPort())
+        iso.ComputeScalarsOn()
         for i, value in enumerate(levels):
             iso.SetValue(i, value)
 
@@ -1393,32 +1404,33 @@ class _D3CommonField(Field):
 
         isoMapper = vtk.vtkPolyDataMapper()
         isoMapper.SetInputConnection(iso.GetOutputPort())
-        isoMapper.ScalarVisibilityOff()
-
+        
         isoActor = vtk.vtkActor()
         isoActor.SetMapper(isoMapper)
-        isoActor.GetProperty().SetColor(vtk.vtkNamedColors().GetColor3d(color))
+        
+        if isinstance(color, vtk.vtkLookupTable) or isinstance(color, vtk.vtkColorTransferFunction):
+            isoMapper.ScalarVisibilityOn()
+            isoMapper.SetLookupTable(color)
+            isoMapper.UseLookupTableScalarRangeOn()
+        else:
+            isoMapper.ScalarVisibilityOff()
+            isoActor.GetProperty().SetColor(vtk.vtkNamedColors().GetColor3d(color))
         isoActor.GetProperty().SetOpacity(opacity)
         rendering['renderer'].AddActor(isoActor)
         return (isoActor, isoMapper)
 
     def plot3DColore(self, rendering,
-                     color,
-                     hCoord=None, z_factor=None, offset=None):
+                     color, opacity=1.):
         """
         This method color the field.
-        :param rendering: a dictionary containing, at least, the renderer key
-        :param color: look up table (vtk.vtkLookupTable) to colorize the contour lines
-        :param hCoord: 'll': horizontal coordinates are the lon/lat values
-                       a basemap: horizontal coordinates are set according to this basemap
-        :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
-        :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
+        :param rendering: a dictionary obtained from util.vtk_setup
+        :param color: look up table or color transfer function to colorize the contour lines
+        :param opacity: opacity value
         """
         import vtk  # @UnresolvedImport
 
-        hCoord, z_factor, offset = self._vtk_check_transform(rendering, hCoord, z_factor, offset)
-
-        sgrid = self.as_vtkGrid(hCoord, 'sgrid_point', z_factor, offset)
+        sgrid = self.as_vtkGrid(rendering['hCoord'], 'sgrid_point',
+                                rendering['z_factor'], rendering['offset'], rendering['subzone'])
         sgridGeom = vtk.vtkStructuredGridGeometryFilter()
         sgridGeom.SetInputData(sgrid)
 
@@ -1430,32 +1442,27 @@ class _D3CommonField(Field):
 
         sgridGeomMapActor = vtk.vtkActor()
         sgridGeomMapActor.SetMapper(sgridGeomMap)
+        sgridGeomMapActor.GetProperty().SetOpacity(opacity)
         rendering['renderer'].AddActor(sgridGeomMapActor)
         return (sgridGeomMapActor, sgridGeomMap)
 
     def plot3DVolume(self, rendering,
-                     threshold, color, alpha,
-                     hCoord=None, z_factor=None, offset=None,
+                     threshold, color, opacity,
                      algo='OpenGLProjectedTetrahedra'):
         """
         Adds a volume to the vtk rendering system
-        :param rendering: a dictionary containing, at least, the renderer key
+        :param rendering: a dictionary obtained from util.vtk_setup
         :param threshold: a tuple (minval, maxval) used to discard values outside of the interval
                           minval and/or maxval can be replace by None value
         :param color: a vtk.vtkColorTransferFunction object or None to describe the color
-        :param alpha: a vtk.vtkPiecewiseFunction object or None to describe the alpha channel
-        :param hCoord: 'll': horizontal coordinates are the lon/lat values
-                       a basemap: horizontal coordinates are set according to this basemap
-        :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
-        :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
+        :param opacity: a vtk.vtkPiecewiseFunction object or None to describe the alpha channel
         :param algo: among 'RayCast', 'ZSweep', 'ProjectedTetrahedra', 'OpenGLProjectedTetrahedra'
         """
         import vtk  # @UnresolvedImport
 
-        hCoord, z_factor, offset = self._vtk_check_transform(rendering, hCoord, z_factor, offset)
-
         minval, maxval = threshold
-        grid = self.as_vtkGrid(hCoord, 'ugrid_cell', z_factor, offset)
+        grid = self.as_vtkGrid(rendering['hCoord'], 'ugrid_cell',
+                               rendering['z_factor'], rendering['offset'], rendering['subzone'])
 
         fil = vtk.vtkThreshold()
         fil.SetInputConnection(grid.GetOutputPort())
@@ -1480,8 +1487,8 @@ class _D3CommonField(Field):
         volumeProperty = vtk.vtkVolumeProperty()
         if color is not None:
             volumeProperty.SetColor(color)
-        if alpha is not None:
-            volumeProperty.SetScalarOpacity(alpha)
+        if opacity is not None:
+            volumeProperty.SetScalarOpacity(opacity)
         volumeProperty.ShadeOff()
         volumeProperty.SetInterpolationTypeToLinear()
 
@@ -2846,6 +2853,14 @@ class D3VirtualField(_D3CommonField):
             my_k = k
 
         result = self._getFieldByFid(self._fidList[my_k], True)
+        
+        #update vccordinate in case of this attribute was changed in the geometry
+        vcoord = self.geometry.vcoordinate.deepcopy()
+        levels = vcoord.levels[my_k]
+        for _ in range(len(vcoord.levels)):
+            vcoord.levels.pop()
+        vcoord.levels.append(levels)
+        result.geometry.vcoordinate = vcoord
 
         for op, kwargs in self._spgpOpList:
             if op == 'sp2gp':

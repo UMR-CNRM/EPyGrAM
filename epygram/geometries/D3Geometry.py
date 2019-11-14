@@ -26,8 +26,9 @@ from bronx.syntax.decorators import nicedeco
 from epygram import epygramError, config
 from epygram.util import (RecursiveObject, degrees_nearest_mod, Angle,
                           separation_line, write_formatted,
-                          nearlyEqual, set_map_up, vtk_check_transform,
-                          get_file, as_numpy_array, moveaxis)
+                          nearlyEqual, set_map_up,
+                          get_file, as_numpy_array, moveaxis, vtk_proj)
+
 from .VGeometry import VGeometry
 
 epylog = footprints.loggers.getLogger(__name__)
@@ -165,7 +166,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
                 levels = levels.repeat(h_shape2D[1]).reshape(shape)
         else:
             # level values with horizontal variations
-            h_shape = self.get_datashape(force_dimZ=1)
+            h_shape = self.get_datashape(force_dimZ=2)[1:] #workaround for inconsistency between rectangular and gauss, self.get_datashape(force_dimZ=1)
             if len(levels.shape) == 1 + len(h_shape):
                 original_has_time = False
             elif len(levels.shape) == 2 + len(h_shape):
@@ -254,7 +255,8 @@ class D3Geometry(RecursiveObject, FootprintBase):
         :param end1: first point, must be a tuple (lon, lat) in degrees.
         :param end2: second point, must be a tuple (lon, lat) in degrees.
 
-        One of end1, end2 can be a (<array of lon>, <array of lat>)
+        If one of (end1, end2) is a tuple of arrays (like (<array of lon>, <array of lat>))
+        the other one must be a scalar tuple or a tuple of arrays with same dimensions.
 
         Warning: requires the :mod:`pyproj` module.
         """
@@ -263,9 +265,27 @@ class D3Geometry(RecursiveObject, FootprintBase):
         end2_0 = as_numpy_array(end2[0]).flatten()
         end2_1 = as_numpy_array(end2[1]).flatten()
         assert len(end1_0) == len(end1_1) and len(end2_0) == len(end2_1), 'pb with dims'
-        assert 1 in (len(end1_0), len(end2_0)), 'at least one point must be fixed'
-        distance = numpy.array([self._pyproj_geod.inv(end1_0[i1], end1_1[i1], end2_0[i2], end2_1[i2])[2]
-                                for i1 in range(len(end1_0)) for i2 in range(len(end2_0))]).squeeze()
+        assert len(end1_0.shape) == len(end1_1.shape) == len(end2_0.shape) == len(end2_1.shape) == 1, 'only scalars or 1D arrays'
+        
+        if len(end1_0) == len(end2_0):
+            pass
+        else:
+            if len(end1_0) == 1:
+                end1_0 = numpy.repeat(end1_0, len(end2_0), axis=0)
+                end1_1 = numpy.repeat(end1_1, len(end2_0), axis=0)
+            elif len(end2_0) == 1:
+                end2_0 = numpy.repeat(end2_0, len(end1_0), axis=0)
+                end2_1 = numpy.repeat(end2_1, len(end1_0), axis=0)
+            else:
+                raise epygramError('at least one point must be fixed or both arrays must have the same length')
+        if True in [isinstance(a, numpy.ma.MaskedArray) for a in [end1_0, end1_1, end2_0, end2_1]]:
+            #inv method does not like masked arrays and can raise a ValueError: undefined inverse geodesic (may be an antipodal point)
+            #on masked points
+            mask = numpy.logical_not(end1_0 + end1_1 + end2_0 + end2_1)
+            distance = numpy.empty_like(end1_0, dtype=float)
+            distance[mask] = self._pyproj_geod.inv(end1_0[mask], end1_1[mask], end2_0[mask], end2_1[mask])[2]
+        else:
+            distance = self._pyproj_geod.inv(end1_0, end1_1, end2_0, end2_1)[2]
         return distance
 
     @_need_pyproj_geod
@@ -374,57 +394,80 @@ class D3Geometry(RecursiveObject, FootprintBase):
         vcoordinate = fpx.geometry(structure='V',
                                    typeoffirstfixedsurface=255,
                                    levels=[])
-        return fpx.geometry(structure='V2D',
-                            name='unstructured',
-                            vcoordinate=vcoordinate,
-                            dimensions={'X':len(transect), 'Y':1},
-                            grid={'longitudes':[p[0] for p in transect],
-                                  'latitudes':[p[1] for p in transect]},
-                            position_on_horizontal_grid='center' if position is None else position)
+        kwargs_geom = {'structure':'V2D',
+                       'name':'unstructured',
+                       'vcoordinate':vcoordinate,
+                       'dimensions':{'X':len(transect), 'Y':1},
+                       'grid':{'longitudes':[p[0] for p in transect],
+                               'latitudes':[p[1] for p in transect]},
+                       'position_on_horizontal_grid':'center' if position is None else position}
+        if self.geoid:
+            kwargs_geom['geoid'] = self.geoid
+        return fpx.geometry(**kwargs_geom)
 
-    def make_vtkGrid(self, hCoord, z_factor, offset):
+    def make_physicallevels_geometry(self):
+        """
+        Returns a new geometry excluding levels with no physical meaning.
+
+        :param getdata: if False returns a field without data
+        """
+        geometry = self.deepcopy()
+        if self.vcoordinate.typeoffirstfixedsurface == 118:
+            # build vertical geometry
+            kwargs_vcoord = {'structure':'V',
+                             'typeoffirstfixedsurface': self.vcoordinate.typeoffirstfixedsurface,
+                             'position_on_grid': self.vcoordinate.position_on_grid,
+                             'grid': copy.copy(self.vcoordinate.grid),
+                             'levels': copy.copy(self.vcoordinate.levels)}
+            # Suppression of levels above or under physical domain
+            for level in list(kwargs_vcoord['levels']):
+                if level < 1 or level > len(self.vcoordinate.grid['gridlevels']) - 1:
+                    kwargs_vcoord['levels'].remove(level)
+            # build geometry
+            geometry.vcoordinate = fpx.geometry(**kwargs_vcoord)
+        return geometry
+
+    @_need_pyproj_geod
+    def make_vtkGrid(self, hCoord, z_factor, offset, subzone=None):
         """
         Makes an empty grid to use with vtk
         :param hCoord: 'll': horizontal coordinates are the lon/lat values
                        a basemap: horizontal coordinates are set according to this basemap
         :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
         :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
-
+        :param subzone: optional, among ('C', 'CI'), for LAM grids only, returns
+                        the grid resp. for the C or C+I zone off the C+I+E zone. \n
+                        Default is no subzone, i.e. the whole field.
         """
-        from mpl_toolkits.basemap import Basemap
         import vtk  # @UnresolvedImport
         from vtk.numpy_interface import dataset_adapter as dsa  # @UnresolvedImport
         from vtk.numpy_interface import algorithms as algs  # @UnresolvedImport
 
-        if self.vcoordinate.typeoffirstfixedsurface in (119, 100):
-            reverseZ = True
-        else:
-            reverseZ = False
+        reverseZ = self.vcoordinate.typeoffirstfixedsurface in (119, 100)
 
-        lons, lats = self.get_lonlat_grid(d4=True, nb_validities=1)
-        if hCoord == 'll':
-            x, y = lons.flatten(), lats.flatten()
-        elif isinstance(hCoord, Basemap):
-            x, y = hCoord(lons.flatten(), lats.flatten())
+        if hCoord == 'geoid' and not self.vcoordinate.typeoffirstfixedsurface in (102, 103):
+            raise ValueError("The 'geoid' option is only meaningfull with " + \
+                             "vertical coordinate expressed in meters!")
+        if hCoord == 'geoid':
+            if not hasattr(self, '_pyproj_geod'):
+                self._set_geoid()
+            geoid = self.geoid
         else:
-            raise ValueError("hCoord must be 'ij', 'll' or a basemap instance")
-        (x_offset, y_offset) = offset
-        x -= x_offset
-        y -= y_offset
-
-        z = self.get_levels(d4=True, nb_validities=1)
-        z = z[0, ...] * z_factor
-        if reverseZ:
-            z = -z
+            geoid = None
+            
+        #Compute x, y, z
+        lons, lats = self.get_lonlat_grid(d4=True, nb_validities=1, subzone=subzone)
+        z = self.get_levels(d4=True, nb_validities=1, subzone=subzone)[0, ...]
+        shape = z.shape
+        x, y, z = vtk_proj(hCoord, z_factor, offset, reverseZ, geoid)(lons, lats, z)
 
         # sgrid_point
         grid = vtk.vtkStructuredGrid()
-        grid.SetDimensions(*(z.shape[::-1]))
+        grid.SetDimensions(*shape[::-1])
         points = vtk.vtkPoints()
-        coordinates = algs.make_vector(x.astype(numpy.float32),
-                                       y.astype(numpy.float32),
-                                       z.astype(numpy.float32).flatten())
-        points.SetData(dsa.numpyTovtkDataArray(coordinates, None))
+        x, y, z = [a.astype(numpy.float32) for a in (x, y, z)]
+        coordinates = algs.make_vector(x, y, z.flatten())
+        points.SetData(dsa.numpyTovtkDataArray(coordinates, None, array_type=vtk.VTK_FLOAT))
         grid.SetPoints(points)
         return grid
 
@@ -544,48 +587,22 @@ class D3Geometry(RecursiveObject, FootprintBase):
 
         return fig, ax
 
-    def _vtk_check_transform(self, rendering, hCoord, z_factor, offset):
-        """
-        :param rendering:  a dictionary containing, at least, the renderer key
-        :param hCoord: 'll': horizontal coordinates are the lon/lat values
-                       a basemap: horizontal coordinates are set according to this basemap
-        :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
-        :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
-        """
-        return vtk_check_transform(rendering,
-                                   self.vcoordinate.typeoffirstfixedsurface,
-                                   hCoord, z_factor, offset)
-
     def plot3DLLImage(self, rendering,
                       filename, first_corner, last_corner,
-                      interpolation='nearest',
-                      hCoord=None, z_factor=None, offset=None):
+                      interpolation='nearest'):
         """
         This method adds an image to the vtk rendering system. The image is projected
         on the vertical coordinate of this geometry. The image must be in a regular
         lon-lat geometry
-        :param rendering: a dictionary containing, at least, the renderer key
+        :param rendering: a dictionary obtained from util.vtk_setup
         :param filename: path to an image file
         :param first_corner: (lon, lat) corresponding to the first point of the image
         :param last_corner: (lon, lat) corresponding to the last point of the image
         :param interpolation: interpolation method to use to compute levels at each pixel
-        :param hCoord: 'll': horizontal coordinates are the lon/lat values
-                       a basemap: horizontal coordinates are set according to this basemap
-        :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
-        :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
         """
-        from mpl_toolkits.basemap import Basemap
         import vtk  # @UnresolvedImport
         from vtk.numpy_interface import dataset_adapter as dsa  # @UnresolvedImport
-        from vtk.numpy_interface import algorithms as algs  # @UnresolvedImport
         from PIL import Image
-
-        hCoord, z_factor, offset = self._vtk_check_transform(rendering, hCoord, z_factor, offset)
-
-        if self.vcoordinate.typeoffirstfixedsurface in (119, 100):
-            reverseZ = True
-        else:
-            reverseZ = False
 
         # Image reading
         with Image.open(filename) as image:
@@ -604,10 +621,11 @@ class D3Geometry(RecursiveObject, FootprintBase):
         m = 1 if interpolation == 'linear' else 0
         inside = numpy.array(self.point_is_inside_domain_ll(lons.flatten(),
                                                             lats.flatten(),
-                                                            margin=m)).reshape((size[1],
-                                                                                size[0]))
+                                                            margin=m,
+                                                            subzone=rendering['subzone'])).reshape((size[1],
+                                                                                                    size[0]))
         if numpy.count_nonzero(inside) == 0:
-            return  # image is completely out of the domain
+            return  (None, None) # image is completely out of the domain
         alpha[inside] = 255  # Points inside domain are set visible
 
         # Projection of levels on the image geometry
@@ -642,40 +660,41 @@ class D3Geometry(RecursiveObject, FootprintBase):
         # We cut the useless part to reduce the grid size to render
         i, j = numpy.where(inside)
         imin, imax, jmin, jmax = i.min(), i.max(), j.min(), j.max()
-        lons = lons[imin:imax + 1, jmin:jmax + 1]
-        lats = lats[imin:imax + 1, jmin:jmax + 1]
         rgb = rgb[imin:imax + 1, jmin:jmax + 1, :]
         alpha = alpha[imin:imax + 1, jmin:jmax + 1, :]
         z = z[imin:imax + 1, jmin:jmax + 1]
-        size = (jmax - jmin + 1, imax - imin + 1)
-
-        # Z axis transformation
-        z = z * z_factor
-        if reverseZ:
-            z = -z
-
-        # Horizontal projection
-        if hCoord == 'll':
-            x, y = lons.flatten(), lats.flatten()
-        elif isinstance(hCoord, Basemap):
-            x, y = hCoord(lons.flatten(), lats.flatten())
-        else:
-            raise ValueError("hCoord must be 'ij', 'll' or a basemap instance")
-        (x_offset, y_offset) = offset
-        x -= x_offset
-        y -= y_offset
 
         # VTK grid
-        shape = [1] + list(size[::-1])
-        grid = vtk.vtkStructuredGrid()
-        grid.SetDimensions(*(shape[::-1]))
-        points = vtk.vtkPoints()
-        coordinates = algs.make_vector(x, y, z.flatten())
-        points.SetData(dsa.numpyTovtkDataArray(coordinates, None))
-        grid.SetPoints(points)
-        data = numpy.append(rgb, alpha, axis=2).flatten()
-        arr = dsa.numpyTovtkDataArray(data, "CellID")
-        arr.SetNumberOfComponents(4)
+        grid = {'input_lon':Angle(lons[imin, jmin], 'degrees'),
+                'input_lat':Angle(lats[imin, jmin], 'degrees'),
+                'input_position':(0, 0),
+                'X_resolution':Angle((last_corner[0] - first_corner[0]) / size[0], 'degrees'),
+                'Y_resolution':Angle((last_corner[1] - first_corner[1]) / size[1], 'degrees')}
+        kwargs_vcoord = {'structure': 'V',
+                         'typeoffirstfixedsurface':self.vcoordinate.typeoffirstfixedsurface,
+                         'position_on_grid': self.vcoordinate.position_on_grid,
+                         'grid': self.vcoordinate.grid,
+                         'levels': [z]
+                         }
+        kwargs_geom = dict(structure='3D',
+                           name='regular_lonlat',
+                           grid=grid,
+                           dimensions=dict(Y=imax + 1 - imin, X=jmax + 1 - jmin),
+                           vcoordinate=fpx.geometry(**kwargs_vcoord),
+                           position_on_horizontal_grid='center',
+                           geoid=self.geoid)
+        grid = fpx.geometry(**kwargs_geom).make_vtkGrid(rendering['hCoord'], rendering['z_factor'], rendering['offset'])
+
+        # Filling grid
+        if numpy.all(alpha == 255):
+            data = rgb.flatten()
+            arr = dsa.numpyTovtkDataArray(data, "CellID")
+            arr.SetNumberOfComponents(3)
+        else:
+            #use alpha-channel only when really needed
+            data = numpy.append(rgb, alpha, axis=2).flatten()
+            arr = dsa.numpyTovtkDataArray(data, "CellID")
+            arr.SetNumberOfComponents(4)
         grid.GetPointData().SetScalars(arr)
 
         # Render image
@@ -691,39 +710,35 @@ class D3Geometry(RecursiveObject, FootprintBase):
         # sgridGeomMapActor.GetProperty().SetSpecular(0)
         return (sgridGeomMapActor, sgridGeomMap)
 
-    def plot3DBluemarble(self, rendering, interpolation='nearest',
-                         hCoord=None, z_factor=None, offset=None):
+    def plot3DBluemarble(self, rendering, interpolation='nearest'):
         """
         This method adds the NOAA's bluemarble image to the vtk rendering system. The image
         is projected on the vertical coordinate of this geometry.
-        :param rendering: a dictionary containing, at least, the renderer key
+        :param rendering: a dictionary obtained from util.vtk_setup
         :param interpolation: interpolation method to use to compute levels at each pixel
-        :param hCoord: 'll': horizontal coordinates are the lon/lat values
-                       a basemap: horizontal coordinates are set according to this basemap
-        :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
-        :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
 
         Image can be found here:
             https://sos.noaa.gov/datasets/blue-marble-without-clouds/
             ftp://public.sos.noaa.gov/land/blue_marble/earth_vegetation/4096.jpg
         """
+        if isinstance(self, D3AcademicGeometry):
+            raise epygramError("We cannot plot lon-lat images in an academic projection")
+
         path = tempfile.mkstemp()[1]
         get_file("ftp://public.sos.noaa.gov/land/blue_marble/earth_vegetation/4096.jpg",
                  path, authorize_cache=True, subst=None)
         result = self.plot3DLLImage(rendering, path, (-180, 90), (180, -90),
-                                    interpolation,
-                                    hCoord, z_factor, offset)
+                                    interpolation)
         os.remove(path)
         return result
 
     def plot3DMaptiles(self, rendering, url, resol_factor,
                        minzoom=1, maxzoom=18,
-                       interpolation='nearest',
-                       hCoord=None, z_factor=None, offset=None):
+                       interpolation='nearest'):
         """
         This method adds tiles image to the vtk rendering system. The image
         is projected on the vertical coordinate of this geometry.
-        :param rendering: a dictionary containing, at least, the renderer key
+        :param rendering: a dictionary obtained from util.vtk_setup
         :param url: url to get the map tiles to use
                     ex: https://a.tile.openstreetmap.org/${z}/${x}/${y}.png
                     where ${z}, ${x} and ${y} are place holders for
@@ -733,10 +748,6 @@ class D3Geometry(RecursiveObject, FootprintBase):
                              induce using the next (resp. preceding) zoom level.
         :param minzoom/maxzoom: minimum and maximum zoom levels to use
         :param interpolation: interpolation method to use to compute levels at each pixel
-        :param hCoord: 'll': horizontal coordinates are the lon/lat values
-                       a basemap: horizontal coordinates are set according to this basemap
-        :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
-        :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates):
 
         Zoom computation is done supposing that each tile is made of 256 * 256 pixels.
 
@@ -746,8 +757,11 @@ class D3Geometry(RecursiveObject, FootprintBase):
             - osm: a (full?) list can be found on https://wiki.openstreetmap.org/wiki/Tile_servers
                    or https://wiki.openstreetmap.org/wiki/Tiles
                    The most common one is certainly: https://a.tile.openstreetmap.org/${z}/${x}/${y}.png
-            - google maps: it seems to be forbidden to use this tiles outside of goole products.
+            - google maps: it seems to be forbidden to use this tiles outside of google products.
         """
+        if isinstance(self, D3AcademicGeometry):
+            raise epygramError("We cannot plot lon-lat images in an academic projection")
+
         def deg2num(lon, lat, zoom):
             """
             Returns x and y of the tile containing the point (lon, lat) in degrees
@@ -785,8 +799,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
                          subst={'${z}': zoom, '${x}': x, '${y}': y})
                 result.append(self.plot3DLLImage(rendering, path,
                                                  num2deg(x, y, zoom), num2deg(x + 1, y + 1, zoom),
-                                                 interpolation,
-                                                 hCoord, z_factor, offset))
+                                                 interpolation))
         os.remove(path)
         return result
 
@@ -848,6 +861,13 @@ class D3RectangularGridGeometry(D3Geometry):
         )
     )
 
+    @property
+    def isglobal(self):
+        """
+        :return: True if geometry is global
+        """
+        return False #Apart for global lon-lat
+    
     def _get_grid(self, indextype, subzone=None, position=None):
         """
         Returns a tuple of two tables containing the two indexes of each
@@ -2312,7 +2332,8 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
                            position_on_horizontal_grid='center' if position is None else position,
                            vcoordinate=vcoordinate
                            )
-
+        if self.geoid:
+            kwargs_geom['geoid'] = self.geoid
         return fpx.geometry(**kwargs_geom)
 
 
@@ -2329,6 +2350,14 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
         )
     )
 
+    @property
+    def isglobal(self):
+        """
+        :return: True if geometry is global
+        """
+        return self.dimensions['X'] * self.grid['X_resolution'].get('degrees') >= 360. and \
+               self.dimensions['Y'] * self.grid['Y_resolution'].get('degrees') >= 180.
+    
     def __init__(self, *args, **kwargs):
         super(D3RegLLGeometry, self).__init__(*args, **kwargs)
 
@@ -4011,7 +4040,8 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                            geoid=self.geoid,
                            position_on_horizontal_grid='center' if position is None else position,
                            vcoordinate=vcoordinate)
-
+        if self.geoid:
+            kwargs_geom['geoid'] = self.geoid
         return fpx.geometry(**kwargs_geom)
 
     def compass_grid(self, subzone=None, position=None):
@@ -4250,6 +4280,13 @@ class D3GaussGeometry(D3Geometry):
         )
     )
 
+    @property
+    def isglobal(self):
+        """
+        :return: True if geometry is global
+        """
+        return True
+    
     def _consistency_check(self):
         """Check that the geometry is consistent."""
         grid_keys = ['dilatation_coef', 'latitudes']
@@ -4289,9 +4326,10 @@ class D3GaussGeometry(D3Geometry):
 
         if isinstance(i, list) or isinstance(i, tuple) or\
            isinstance(i, numpy.ndarray):
-            lat = [self.grid['latitudes'][n].get('degrees') for n in j]
-            lon = [(numpy.pi * 2 * i[n]) / self.dimensions['lon_number_by_lat'][j[n]]
-                   for n in range(len(j))]
+            latitudes = as_numpy_array([self.grid['latitudes'][n].get('degrees') for n in range(len(self.grid['latitudes']))])
+            dimensions = as_numpy_array(self.dimensions['lon_number_by_lat'])
+            lat = latitudes[j]
+            lon = (numpy.pi * 2 * i) / dimensions[j]
         else:
             lat = self.grid['latitudes'][j].get('degrees')
             lon = (numpy.pi * 2. * i) / self.dimensions['lon_number_by_lat'][j]
@@ -4799,8 +4837,11 @@ class D3GaussGeometry(D3Geometry):
             if i >= self.dimensions['lon_number_by_lat'][j] or i < 0:
                 inside = False
         else:
-            inside = [self.point_is_inside_domain_ij(i[n], j[n], margin=margin)
-                      for n in range(N)]
+            dimensions = as_numpy_array(self.dimensions['lon_number_by_lat'])
+            inside = numpy.logical_and(numpy.logical_and(j >= 0,
+                                                         j < self.dimensions['lat_number']),
+                                       numpy.logical_and(i >=0,
+                                                         i < dimensions[j]))
         return inside
 
     def _rotate_stretch(self, lon, lat, reverse=False):
@@ -5085,31 +5126,40 @@ class D3GaussGeometry(D3Geometry):
             - 4 to find the two surrounding latitude circles plus the
                 preceding one and the following one.
             - and so on...
+            
+            returns an array of shape (len(latrs), num)
             """
-
             if not numpy.all(numpy.array(latitudes[1:]) <= numpy.array(latitudes[:-1])):
                 raise ValueError('latitudes must be in descending order')
-            distmin = None
-            nearest = None
-            for n in range(0, len(latitudes)):
-                dist = latrs - latitudes[n]
-                if distmin is None or abs(dist) < abs(distmin):
-                    distmin = dist
-                    nearest = n
+            
+            latrs = as_numpy_array(latrs)
+            nearest = numpy.ndarray((len(latrs), ), dtype=int)
+            distmin = numpy.ndarray((len(latrs), ), dtype=float)
+            #Slicing is needed to prevent memory error
+            batch_size = 100 #on a particular example, increasing this value implies a longuer execution time
+            for imin in range(0, len(latrs), batch_size):
+                imax = min(imin + batch_size, len(latrs))
+                dist = latrs[imin:imax, numpy.newaxis] - as_numpy_array(latitudes)[numpy.newaxis, :]
+                nearest[imin:imax] = numpy.argmin(numpy.abs(dist), axis=1)
+                distmin[imin:imax] = dist[numpy.arange(dist.shape[0]), nearest[imin:imax]]
+            
+            result = numpy.zeros((len(latrs), num), dtype=int)
             if num == 2:
-                lats = [nearest,
-                        (nearest - numpy.copysign(1, distmin)).astype('int')]
+                result[:, 1] = - numpy.copysign(1, distmin).astype('int')
             elif num == 3:
-                lats = [nearest - 1, nearest, nearest + 1]
+                result[:, 0] = -1
+                result[:, 2] = 1
             elif num % 2:  # odd
-                lats = [nearest - k for k in reversed(range(1, num // 2 + 1))] + \
-                       [nearest, ] + \
-                       [nearest + k for k in range(1, num // 2 + 1)]
+                for k in range(1, num // 2 + 1):
+                    result[:, num // 2 - k] = - k
+                    result[:, num // 2 + k] = k
             elif not num % 2:  # even
-                lats = [nearest - k for k in reversed(range(1, num // 2))] + \
-                       [nearest, ] + \
-                       [nearest + k for k in range(1, num // 2 + 1)]
-            return lats
+                for k in range(1, num // 2):
+                    result[:, num // 2 - k - 1] = - k
+                    result[:, num // 2 + k - 1] = k
+                result[:, -1] = num // 2
+            result = result + nearest[:, numpy.newaxis]
+            return result
 
         def nearest_lons(lonrs, latnum, num):
             """
@@ -5127,69 +5177,108 @@ class D3GaussGeometry(D3Geometry):
             - *latnum*: if -1 (resp. -2), we search for the opposite longitude
               on the first (resp. second) latitude circle.
               The same is true for the other pole.
+              
+            latnum must be of shape (len(lonrs), x) where x is the number of latitude
+            to search for each longitude
+            
+            result shape is (len(lonrs), x, num, 2)
             """
-
+            lonrs = as_numpy_array(lonrs)
+            latnum = as_numpy_array(latnum)
+            
+            assert len(lonrs.shape) == 1 and lonrs.shape == latnum.shape[:1]
+            result = numpy.ndarray(tuple(list(latnum.shape) + [num, 2]), dtype=int)
+            
             lonrs = numpy.radians(lonrs)
-            if latnum < 0:
-                # We are near the pole, have to look-up on the first latitudes
-                # circles, symmetrically with regards to the pole
-                j = abs(latnum) - 1
-                lonnummax = self.dimensions['lon_number_by_lat'][j]
-                i = ((lonrs - numpy.pi) % (numpy.pi * 2)) * \
-                    lonnummax / (numpy.pi * 2)
-            elif latnum >= len(latitudes):
-                # j = len(latitudes) - 1
-                j = len(latitudes) - (latnum - len(latitudes)) - 1  # TOBECHECKED: next circle past the pole
-                lonnummax = self.dimensions['lon_number_by_lat'][j]
-                i = ((lonrs - numpy.pi) % (numpy.pi * 2)) * \
-                    lonnummax / (numpy.pi * 2)
-            else:
-                j = latnum
-                lonnummax = self.dimensions['lon_number_by_lat'][latnum]
-                i = lonrs * lonnummax / (numpy.pi * 2)
+            
+            lonnummax = numpy.ndarray(latnum.shape, dtype=int)
+            j = numpy.ndarray(latnum.shape, dtype=int)
+            i = numpy.ndarray(latnum.shape, dtype=float)
+            lonrs2d = numpy.repeat(lonrs[:, numpy.newaxis], latnum.shape[1], axis=1)
+            
+            # Near the pole, have to look-up on the first latitudes
+            # circles, symmetrically with regards to the pole
+            mask1 = latnum < 0
+            j[mask1] = abs(latnum[mask1]) - 1
+            lonnummax[mask1] = as_numpy_array(self.dimensions['lon_number_by_lat'])[j[mask1]]
+            i[mask1] = ((lonrs2d[mask1] - numpy.pi) % (numpy.pi * 2)) * \
+                       lonnummax[mask1] / (numpy.pi * 2)
+                        
+            mask2 = latnum >= len(latitudes)
+            j[mask2] = len(latitudes) - (latnum[mask2] - len(latitudes)) - 1  # TOBECHECKED: next circle past the pole
+            lonnummax[mask2] = as_numpy_array(self.dimensions['lon_number_by_lat'])[j[mask2]]
+            i[mask2] = ((lonrs2d[mask2] - numpy.pi) % (numpy.pi * 2)) * \
+                            lonnummax[mask2] / (numpy.pi * 2)
+                        
+            mask = numpy.logical_not(numpy.logical_or(mask1, mask2))
+            j[mask] = latnum[mask]
+            lonnummax[mask] = as_numpy_array(self.dimensions['lon_number_by_lat'])[latnum[mask]]
+            i[mask] = lonrs2d[mask] * lonnummax[mask] / (numpy.pi * 2)
+            
+            
             if num == 1:
-                lons = (numpy.rint(i).astype('int') % lonnummax, j)
+                result[:, :, 0, 0] = numpy.rint(i).astype('int') % lonnummax
+                result[:, :, 0, 1] = j
             elif num == 2:
-                lons = [(numpy.floor(i).astype('int') % lonnummax, j),
-                        ((numpy.floor(i).astype('int') + 1) % lonnummax, j)]
+                result[:, :, 0, 0] = numpy.floor(i).astype('int') % lonnummax
+                result[:, :, 0, 1] = j
+                result[:, :, 1, 0] = (numpy.floor(i).astype('int') + 1) % lonnummax
+                result[:, :, 1, 1] = j
             elif num % 2:  # odd
                 raise NotImplementedError("but is it necessary ?")
             elif not num % 2:  # even
                 ii = numpy.floor(i).astype('int')
-                lons = [((ii - k) % lonnummax, j) for k in reversed(range(1, num // 2))] + \
-                       [(ii % lonnummax, j)] + \
-                       [((ii + k) % lonnummax, j) for k in reversed(range(1, num // 2 + 1))]
+                for k in range(1, num // 2):
+                    result[:, :, num // 2 - k - 1, 0] = (ii - k) % lonnummax
+                    result[:, :, num // 2 - k - 1, 1] = j
+                result[:, :, num // 2 - 1, 0] = ii % lonnummax
+                result[:, :, num // 2 - 1, 1] = j
+                for k in range(1, num // 2 + 1):
+                    result[:, :, num // 2 + k -1, 0] = (ii + num // 2 + 1 - k) % lonnummax #reverse order? why?
+                    result[:, :, num // 2 + k -1, 1] = j
 
-            return lons
+            return result
 
         def nearest(lon, lat, lonrs, latrs):
             """
             Internal method used to find the nearest point.
             lon/lat are the true coordinate, lonrs/latrs are rotated and
             streched coordinates.
+            
+            returns an array of points
             """
-
-            distance = None
-            nearpoint = None
-            for latnum in nearest_lats(latrs, 3):
-                point = nearest_lons(lonrs, latnum, 1)
-                dist = self.distance((lon, lat), self.ij2ll(*point))
-                if distance is None or dist < distance:
-                    nearpoint = point
-                    distance = dist
-            return nearpoint
+            lon, lat = as_numpy_array(lon).flatten(), as_numpy_array(lat).flatten()
+            lonrs, latrs = as_numpy_array(lonrs).flatten(), as_numpy_array(latrs).flatten()
+            assert len(lon) == len(lat) == len(lonrs) == len(latrs)
+            
+            all_nearest_lats = nearest_lats(latrs, 3)
+            all_nearest_lons = nearest_lons(lonrs, all_nearest_lats, 1)
+            lon2d = numpy.repeat(lon[:, numpy.newaxis], 3, axis=1)
+            lat2d = numpy.repeat(lat[:, numpy.newaxis], 3, axis=1)
+            ll = self.ij2ll(*[all_nearest_lons[:, :, 0, 0].flatten(),
+                              all_nearest_lons[:, :, 0, 1].flatten()])
+            all_dist = self.distance((lon2d.flatten(), lat2d.flatten()), ll)
+            all_dist = all_dist.reshape((len(lonrs), 3))
+            result = all_nearest_lons[numpy.arange(all_dist.shape[0]), numpy.argmin(all_dist, axis=1), 0, :]
+            return result
 
         def nearests(lonrs, latrs, n):
             """
             Internal methods used to find the n*n points surrunding the
             point lonrs/latrs, lonrs/latrs are rotated and stretched
             coordinates.
+            
+            lonrs and latrs can be arrays
             """
-
-            points = []
-            for j in nearest_lats(latrs, n):
-                points.extend(nearest_lons(lonrs, j, n))
-            return points
+            lonrs = as_numpy_array(lonrs)
+            latrs = as_numpy_array(latrs)
+            assert lonrs.shape == latrs.shape and len(lonrs.shape) == 1, "only scalar or 1d arrays with same length"
+            
+            all_nearest_lats = nearest_lats(latrs, n)
+            all_nearest_lons = nearest_lons(lonrs, all_nearest_lats, n)
+            result = all_nearest_lons.reshape((len(lonrs), n**2, 2))
+            
+            return result
 
         # ## actual algorithm
         # initializations
@@ -5222,9 +5311,7 @@ class D3GaussGeometry(D3Geometry):
                 j_incr = _rng(n)
             return (i_incr, j_incr)
         if request == {'n':'1'} and not external_distance:
-            result = numpy.zeros((len(lat), 2), dtype=numpy.int)
-            for k in range(0, len(lat)):
-                result[k] = nearest(lon[k], lat[k], lonrs[k], latrs[k])
+            result = nearest(lon, lat, lonrs, latrs)
         # 2.: several points are needed
         else:
             # 2.1: how many ?
@@ -5241,9 +5328,7 @@ class D3GaussGeometry(D3Geometry):
             else:
                 raise epygramError("unrecognized **request**: " + str(request))
             # 2.2: get points
-            result = numpy.zeros((len(lat), n * n, 2), dtype=numpy.int)
-            for k in range(len(lat)):
-                result[k] = nearests(lonrs[k], latrs[k], n)
+            result = nearests(lonrs, latrs, n)
 
             # 2.3: only select the nearest with regards to external_distance
             if external_distance:

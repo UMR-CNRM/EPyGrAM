@@ -728,6 +728,7 @@ class netCDFMNH(FileResource):
         :param fid: must have syntax: 'PARAMETER' PARAMETER being the name of the
                     parameter requested, as named in the file.
         :param geometry: the geometry on which extract data.
+                         None to keep the geometry untouched.
         :param vertical_coordinate: defines the requested vertical coordinate of the
           V2DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
           possible values).
@@ -743,9 +744,18 @@ class netCDFMNH(FileResource):
         """
         field3d = self.readfield(fid)
 
-        subdomain = field3d.extract_subdomain(geometry,
-                                              interpolation=interpolation,
-                                              exclude_extralevels=True)
+        if geometry is None or geometry == field3d.geometry:
+            subdomain = field3d
+            if exclude_extralevels:
+                subdomain = subdomain.extract_physicallevels()
+            geometry = subdomain.geometry
+        elif geometry == field3d.geometry.make_physicallevels_geometry():
+            subdomain = field3d.extract_physicallevels()
+            geometry = subdomain.geometry
+        else:
+            subdomain = field3d.extract_subdomain(geometry, interpolation=interpolation)
+            if exclude_extralevels:
+                subdomain = subdomain.extract_physicallevels()
 
         # vertical coords conversion
         if vertical_coordinate not in (None, subdomain.geometry.vcoordinate.typeoffirstfixedsurface):
@@ -754,19 +764,24 @@ class netCDFMNH(FileResource):
                 zsfield = self.readfield('ZS')
                 zs_values = zsfield.getvalue_ll(*geometry.get_lonlat_grid(),
                                                 interpolation=interpolation, one=False)
+                zs_values = zs_values.reshape(geometry.get_datashape(force_dimZ=1))
                 subdomain.geometry.vcoordinate = hybridH2altitude(subdomain.geometry.vcoordinate,
                                                                   zs_values,
                                                                   gridposition=subdomain.geometry.vcoordinate.position_on_grid,
                                                                   conv2height=(vertical_coordinate == 103))
             elif subdomain.geometry.vcoordinate.typeoffirstfixedsurface == 118 and \
                    vertical_coordinate == 100:
+                pid = ['PABSM', 'PABST']
                 try:
-                    P3d = self.readfield('PABSM')
+                    P = self.extract_subdomain(pid[0], geometry, interpolation=interpolation)
                 except:
-                    P3d = self.readfield('PABST')
-                P = P3d.extract_subdomain(geometry,
-                                          interpolation=interpolation,
-                                          exclude_extralevels=True)
+                    P = self.extract_subdomain(pid[1], geometry, interpolation=interpolation)
+#                    
+#                try:
+#                    P3d = self.readfield('PABSM')
+#                except:
+#                    P3d = self.readfield('PABST')
+#                P = P3d.extract_subdomain(geometry, interpolation=interpolation)
                 subdomain.geometry.vcoordinate = hybridH2pressure(subdomain.geometry.vcoordinate,
                                                                   P.getdata(),
                                                                   P.geometry.vcoordinate.position_on_grid)

@@ -392,7 +392,7 @@ class DiagnosticsResource(Resource):
         return section
 
     def extract_subdomain(self, handgrip, geometry, vertical_coordinate=None,
-                          interpolation='linear', field3d=None):
+                          interpolation='linear', exclude_extralevels=True, field3d=None):
         """
         Extracts a subdomain from the resource, given its handgrip
         and the geometry to use.
@@ -410,6 +410,7 @@ class DiagnosticsResource(Resource):
                                   computed with linear spline interpolation;
                                 - if 'cubic', each horizontal point of the section is
                                   computed with linear spline interpolation.
+        :param exclude_extralevels: if True, not physical levels are removed
         """
 
         if field3d is None:
@@ -417,9 +418,9 @@ class DiagnosticsResource(Resource):
 
         if field3d.spectral:
             field3d.sp2gp()
-        subdomain = field3d.extract_subdomain(geometry,
-                                              interpolation=interpolation,
-                                              exclude_extralevels=True)
+        subdomain = field3d.extract_subdomain(geometry, interpolation=interpolation)
+        if exclude_extralevels:
+            subdomain = subdomain.extract_physicallevels()
 
         # preparation for vertical coords conversion
         if vertical_coordinate not in (None, subdomain.geometry.vcoordinate.typeoffirstfixedsurface):
@@ -437,9 +438,9 @@ class DiagnosticsResource(Resource):
             vertical_field = self._get_field3d_from_handrgrip(vertical_fid)
             if vertical_field.spectral:
                 vertical_field.sp2gp()
-            levels = vertical_field.extract_subdomain(subdomain.geometry,
-                                                      interpolation=interpolation,
-                                                      exclude_extralevels=True)
+            levels = vertical_field.extract_subdomain(subdomain.geometry, interpolation=interpolation)
+            if exclude_extralevels:
+                levels = levels.extract_physicallevels()
 
             if vertical_coordinate == 100:
                 pass
@@ -447,9 +448,9 @@ class DiagnosticsResource(Resource):
                 surface_height = self.readfield({'discipline':2, 'parameterCategory':0, 'parameterNumber':7})
                 surface_geom = geometry.deepcopy()
                 surface_geom.vcoordinate = surface_height.geometry.vcoordinate
-                surface_height = surface_height.extract_subdomain(surface_geom,
-                                                                  interpolation=interpolation,
-                                                                  exclude_extralevels=True)
+                surface_height = surface_height.extract_subdomain(surface_geom, interpolation=interpolation)
+                if exclude_extralevels:
+                    surface_height = surface_height.extract_physicallevels()
                 if surface_height.spectral:
                     surface_height.sp2gp()
                 levels.setdata(levels.getdata() - surface_height.getdata())

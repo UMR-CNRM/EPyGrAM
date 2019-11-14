@@ -1068,6 +1068,56 @@ def set_map_up(bm, ax,
                                    drawgreenwich_kwargs=drawgreenwich_kwargs)
 
 
+def vtk_proj(hCoord, z_factor, offset, reverseZ, geoid, subzone=None):
+    """
+    Returns a function to transform true coordinates into vtk coordinates
+    :param hCoord: 'll': horizontal coordinates are the lon/lat values
+                       a basemap: horizontal coordinates are set according to this basemap
+    :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
+    :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
+    :param reverseZ: True if z coordinate must be reversed
+    :param geoid: geoid to use (only used with hCoord='geoid')
+    :param subzone: useless but here to be able to use **vtk_guess_param_from_field as parameters
+    """
+    from mpl_toolkits.basemap import Basemap
+    
+    def proj3d(lons, lats, z):
+        """
+        Compute coordinates in vtk world
+        :param lons, lats: longitude, latitude
+        :param z: height, altitude or pressure
+        """
+        lons = as_numpy_array(lons)
+        lats = as_numpy_array(lats)
+        z = as_numpy_array(z)
+        
+        z = z * z_factor
+        (x_offset, y_offset, z_offset) = offset
+        z_offset = z_offset * z_factor
+        if hCoord == 'll':
+            x, y = lons.flatten(), lats.flatten()
+        elif hCoord == 'geoid':
+            import pyproj
+            ecef = pyproj.Proj(proj='geocent', **geoid)
+            lla = pyproj.Proj(proj='latlong', **geoid)
+            x, y, z = pyproj.transform(lla, ecef, lons.flatten(), lats.flatten(), z.flatten(), radians=False)
+            x_offset, y_offset, z_offset = pyproj.transform(lla, ecef, x_offset, y_offset, z_offset, radians=False)
+        elif isinstance(hCoord, Basemap):
+            x, y = hCoord(lons.flatten(), lats.flatten())
+            x_offset, y_offset= hCoord(x_offset, y_offset)
+        else:
+            raise ValueError("hCoord must be 'ij', 'll' or a basemap instance")
+        
+        #x, y, z modification to change plot aspect and axis position
+        x -= x_offset
+        y -= y_offset
+        z -= z_offset
+        if reverseZ:
+            z = -z
+        
+        return (x, y, z)
+    return proj3d
+
 def vtk_modify_grid(grid, grid_type, datamin=None):
     """
     Modifies the kind of grid
@@ -1141,24 +1191,122 @@ def vtk_write_png(rendering, filename, resolution_increase=1, enable_alpha=True)
     PNGWriter.Write()
 
 
-def vtk_set_window(background_color, window_size, hide_axes=False, offscreen=False,
-                   interactor_style=None):
+def vtk_guess_param_from_field(field, specificproj,
+                               reverseZ=None, subzone=None, z_factor=None,
+                               hCoord=None, offset=None, geoid=None):
+    """
+    Guess suitable values for parameters needed by vtk_setup or vtk_proj:
+      - hCoord
+      - z_factor
+      - offset
+      - subzone
+      - reverseZ
+      - geoid
+    needed by vtk_setup
+    :param field: field to plot
+    :param specificproj: 'geoid' to plot on a geoid portion
+                         'll' to plot in lon-lat coordinate
+                         None to use the field projection
+                         name of a proj to use among \
+                         ('kav7', 'ortho', 'cyl', 'moll',\
+                          'nsper[,sat_height=3000,lon=15.0,lat=55]')
+    :param reverseZ, subzone, z_factor: if set, this value is not guessed
+    :param hCoord, offset, geoid: if set, this value is not guessed
+    :return: dictionary holding all the values
+    """
+    
+    if subzone is None:
+        subzone = 'CI'
+        if not field.geometry.grid.get('LAMzone', False):
+            subzone = None
+    elif subzone == 'CIE':
+        subzone = None
+
+    if reverseZ is None:
+        reverseZ = field.geometry.vcoordinate.typeoffirstfixedsurface in (119, 100)
+    
+    if hCoord is None:
+        if specificproj == 'geoid':
+            hCoord = specificproj
+        elif specificproj == 'll':
+            hCoord = specificproj
+        else:
+            hCoord = field.geometry.make_basemap(specificproj=specificproj, subzone=subzone)
+
+    #Guess z_factor
+    if z_factor is None:
+        if field.geometry.isglobal and specificproj == 'geoid':
+            z_factor = 500.
+        else:
+            proj3d = vtk_proj(hCoord, 1., (0., 0., 0.), reverseZ, field.geometry.geoid)
+            if hasattr(field.geometry, 'gimme_corners_ll'):
+                pos = numpy.array([proj3d(*(pos[0], pos[1], 0.)) for pos in field.geometry.gimme_corners_ll().values()])
+                xpos, ypos = pos[:, 0], pos[:, 1]
+                dx, dy = xpos.max() - xpos.min(), ypos.max() - ypos.min()
+                dxy = max([dx, dy])
+            else:
+                lons, lats = field.geometry.get_lonlat_grid()
+                z = numpy.zeros_like(lons)
+                x, y, z = proj3d(lons, lats, z)
+                dxy = numpy.sqrt((x.max() - x.min())**2 + (y.max() - y.min())**2 + (z.max() - z.min())**2)
+                del lons, lats, z, x, y
+            dz = numpy.array(field.geometry.vcoordinate.levels).max() - numpy.array(field.geometry.vcoordinate.levels).min()
+            z_factor = dxy / dz
+
+    #Guess offset
+    if offset is None:
+        if hasattr(field.geometry, 'gimme_corners_ll'):
+            if field.geometry.isglobal:
+                if specificproj == 'geoid':
+                    offset = (0, 0, -field.geometry.geoid['a'] / z_factor) # divided by z_factor because earth internal is not expanded
+                else:
+                    offset = (0, 0, 0)
+            else:
+                offset = field.geometry.gimme_corners_ll()['ll']
+                offset = (offset[0], offset[1], 0)
+        else:
+            offset = (0, 0, -field.geometry.geoid['a'] / z_factor) # divided by z_factor because earth internal is not expanded
+
+    if geoid is None and field.geometry.name != 'academic':
+        geoid = field.geometry.geoid
+
+    return dict(hCoord=hCoord, z_factor=z_factor, offset=offset,
+                subzone=subzone, reverseZ=reverseZ, geoid=geoid)
+
+def vtk_setup(background_color, window_size,
+              hCoord, z_factor, offset,
+              hide_axes=False, offscreen=False,
+              interactor_style=None, title=None,
+              subzone=None, reverseZ=None, geoid=None):
     """
     This function creates a simple vtk environment and returns
     a dictionary holding the different objects created
     :param background_color: must be a color name or a 3-tuple
     :param window_size: must be a 2-tuple
+    :param hCoord: 'll': horizontal coordinates are the lon/lat values
+                   'geoid': horizontal coordinates are the lon/lat values on a geoid
+                   a basemap: horizontal coordinates are set according to this basemap
+    :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
+    :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
     :param hide_axes: True to hide the axes representation
     :param offscreen: True to hide window (useful when we only
                       want to produce png file instead of
                       interactively viewing the window)
     :param interactor_style: interactor style class to use (defaults
                              to vtkInteractorStyleTrackball)
+    :param title: title to give to the window
+    :param subzone: optional, among ('C', 'CI'), for LAM grids only, returns
+                    the grid resp. for the C or C+I zone off the C+I+E zone. \n
+                    Default is no subzone, i.e. the whole field.
+    :param reverseZ, geoid: useless but here to be able to use **vtk_guess_param_from_field as parameters
+    :return: a dictionary holding all the vtk setup needed for plotting methods
     """
     import vtk  # @UnresolvedImport
 
     renderer = vtk.vtkRenderer()
     renderWin = vtk.vtkRenderWindow()
+    if title is not None:
+        renderWin.SetWindowName(title)
     renderWin.AddRenderer(renderer)
     result = dict(renderer=renderer, window=renderWin)
     if offscreen:
@@ -1184,7 +1332,8 @@ def vtk_set_window(background_color, window_size, hide_axes=False, offscreen=Fal
         renderer.SetBackground(*background_color)
     else:
         renderer.SetBackground(vtk.vtkNamedColors().GetColor3d(background_color))
-    renderWin.SetSize(*window_size)
+    if window_size is not None:
+        renderWin.SetSize(*window_size)
 
     axes = vtk.vtkAxesActor()
     axes.SetTotalLength([30., 30., 30.])
@@ -1195,6 +1344,11 @@ def vtk_set_window(background_color, window_size, hide_axes=False, offscreen=Fal
     if hide_axes:
         axes.VisibilityOff()
     renderer.AddActor(axes)
+
+    result['subzone'] = subzone
+    result['hCoord'] = hCoord
+    result['z_factor'] = z_factor
+    result['offset'] = offset
 
     return result
 
@@ -1216,43 +1370,6 @@ def vtk_print_text_in_window(rendering, text, pos, fontsize=20, color='Black'):
     textActor.GetTextProperty().SetColor(vtk.vtkNamedColors().GetColor3d(color))
     rendering['renderer'].AddActor2D(textActor)
     return textActor
-
-
-def vtk_check_transform(rendering, current_typeoffirstfixedsurface, hCoord, z_factor, offset):
-    """
-    :param rendering:  a dictionary containing, at least, the renderer key
-    :param current_typeoffirstfixedsurface: typeoffirstfixedsurface associated to the object to plot
-    :param hCoord: 'll': horizontal coordinates are the lon/lat values
-                   a basemap: horizontal coordinates are set according to this basemap
-    :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
-    :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
-    """
-
-    if not hasattr(rendering['renderer'], 'epygram'):
-        rendering['renderer'].epygram = dict()
-    conf = rendering['renderer'].epygram
-
-    if 'Z_axis_type' not in conf:
-        conf['Z_axis_type'] = current_typeoffirstfixedsurface
-    assert conf['Z_axis_type'] == current_typeoffirstfixedsurface, \
-           "type of first fixed surface must be the same for all plotted objects"
-
-    if 'hCoord' not in conf:
-        conf['hCoord'] = hCoord if hCoord is not None else 'll'
-    assert hCoord is None or conf['hCoord'] == hCoord, \
-           "horizontal transformation of coordinate (hCoord option) must be the same for all plotted objects"
-
-    if 'z_factor' not in conf:
-        conf['z_factor'] = z_factor if z_factor is not None else 1.
-    assert z_factor is None or conf['z_factor'] == z_factor, \
-           "factor applied on z axis must be the same for all plotted objects"
-
-    if 'offset' not in conf:
-        conf['offset'] = offset if offset is not None else (0., 0.)
-    assert offset is None or conf['offset'] == offset, \
-           "offset applied on x/y axis must be the same for all plotted objects"
-
-    return conf['hCoord'], conf['z_factor'], conf['offset']
 
 
 def vtk_write_grid(grid, filename, version='XML', binary=True,

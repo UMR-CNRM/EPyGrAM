@@ -18,8 +18,8 @@ from footprints import proxy as fpx, FPList
 
 from epygram import epygramError
 from epygram.base import Field, FieldValidityList
-from epygram.util import vtk_modify_grid, vtk_check_transform, vtk_write_grid
-from . import D3Field
+from epygram.util import vtk_modify_grid, vtk_write_grid
+from . import D3Field, D3VirtualField
 
 
 def make_vector_field(fX, fY):
@@ -28,7 +28,7 @@ def make_vector_field(fX, fY):
     two :class:`epygram.D3Field` or subclass *fX, fY* representing resp.
     the X and Y components of the vector in the field geometry.
     """
-    if not isinstance(fX, D3Field) or not isinstance(fY, D3Field):
+    if not isinstance(fX, (D3Field, D3VirtualField)) or not isinstance(fY, (D3Field, D3VirtualField)):
         raise epygramError("'fX', 'fY' must be (subclass of) D3Field.")
     if fX.geometry.dimensions != fY.geometry.dimensions:
         raise epygramError("'fX', 'fY' must be share their gridpoint" +
@@ -573,33 +573,26 @@ class D3VectorField(Field):
         return self.components[0].plot3DOutline(*args, **kwargs)
 
     def plot3DVector(self, rendering,
-                     samplerate=None, arrowScaleFactor=1., color=None,
-                     hCoord=None, z_factor=None, offset=None):
+                     samplerate=None, arrowScaleFactor=1., color='Blue'):
         """
         This method adds contour lines and/or colorize the field. If
         the field is 3D, contours appear as isosurface.
-        :param rendering: a dictionary containing, at least, the renderer key
+        :param rendering: a dictionary obtained from util.vtk_setup
         :param samplerate: if not None, must be a dictionary. Allowed keys are
                         'x', 'y' and 'z' and values are the sample rate in the given
                         direction. For example {'x':3} means take one over 3 points
                         in the x direction
         :param arrowScaleFactor: scale factor used to plot the vector
-        :param color: lookup table to associate colors to the vectors
-        :param hCoord: 'll': horizontal coordinates are the lon/lat values
-                       a basemap: horizontal coordinates are set according to this basemap
-        :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
-        :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
+        :param color: color name or lookup table or color transfer function
+                      to associate colors to the vector norms
         """
         import vtk  # @UnresolvedImport
-
-        hCoord, z_factor, offset = vtk_check_transform(rendering,
-                                                       self.geometry.vcoordinate.typeoffirstfixedsurface,
-                                                       hCoord, z_factor, offset)
 
         # generate grid and seed grid
         if samplerate is None:
             samplerate = dict()
-        grid = self.as_vtkGrid(hCoord, 'sgrid_point', z_factor, offset)
+        grid = self.as_vtkGrid(rendering['hCoord'], 'sgrid_point',
+                               rendering['z_factor'], rendering['offset'], rendering['subzone'])
         seedGrid = vtk.vtkExtractGrid()
         seedGrid.SetInputData(grid)
         seedGrid.SetSampleRate(samplerate.get('x', 1),
@@ -611,50 +604,45 @@ class D3VectorField(Field):
         glyphMapper.SetSourceConnection(arrowSource.GetOutputPort())
         glyphMapper.SetInputConnection(seedGrid.GetOutputPort())
         glyphMapper.SetScaleFactor(arrowScaleFactor)
-        if color is not None:
+        glyphActor = vtk.vtkActor()
+        glyphActor.SetMapper(glyphMapper)
+        if isinstance(color, (vtk.vtkLookupTable, vtk.vtkColorTransferFunction)):
             glyphMapper.SetColorModeToMapScalars()
             glyphMapper.UseLookupTableScalarRangeOn()
             glyphMapper.SetLookupTable(color)
-        glyphActor = vtk.vtkActor()
-        glyphActor.SetMapper(glyphMapper)
+        else:
+            glyphMapper.ScalarVisibilityOff()
+            glyphActor.GetProperty().SetColor(vtk.vtkNamedColors().GetColor3d(color))
         rendering['renderer'].AddActor(glyphActor)
         return (glyphActor, glyphMapper)
 
     def plot3DStream(self, rendering,
                      samplerate=None,
                      maxTime=None, tubesRadius=0.1,
-                     color=None,
-                     plot_tube=False,
-                     hCoord=None, z_factor=None, offset=None):
+                     color='Blue',
+                     plot_tube=False):
         """
         This method adds contour lines and/or colorize the field. If
         the field is 3D, contours appear as isosurface.
-        :param rendering: a dictionary containing, at least, the renderer key
+        :param rendering: a dictionary obtained from util.vtk_setup
         :param samplerate: if not None, must be a dictionary. Allowed keys are
                         'x', 'y' and 'z' and values are the sample rate in the given
                         direction. For example {'x':3} means take one over 3 points
                         in the x direction
         :param maxTime: integration time to build the stream lines and tubes
         :param tubesRadius: radius of the tubes
-        :param color: a vtk.vtkColorTransferFunction or a vtk.vtkLookupTable
+        :param color: a color name, a vtk.vtkColorTransferFunction or a vtk.vtkLookupTable
                       to associate colors to the stream lines or tubes
         :param alpha: a vtk.vtkPiecewiseFunction object or None to describe the alpha channel
         :param plot_tube: True to plot the tubes instead of lines
-        :param hCoord: 'll': horizontal coordinates are the lon/lat values
-                       a basemap: horizontal coordinates are set according to this basemap
-        :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
-        :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
         """
         import vtk  # @UnresolvedImport
-
-        hCoord, z_factor, offset = vtk_check_transform(rendering,
-                                                       self.geometry.vcoordinate.typeoffirstfixedsurface,
-                                                       hCoord, z_factor, offset)
 
         # generate grid and seed grid
         if samplerate is None:
             samplerate = dict()
-        grid = self.as_vtkGrid(hCoord, 'sgrid_point', z_factor, offset)
+        grid = self.as_vtkGrid(rendering['hCoord'], 'sgrid_point',
+                               rendering['z_factor'], rendering['offset'], rendering['subzone'])
         seedGrid = vtk.vtkExtractGrid()
         seedGrid.SetInputData(grid)
         seedGrid.SetSampleRate(samplerate.get('x', 1),
@@ -691,13 +679,15 @@ class D3VectorField(Field):
         mapper = vtk.vtkPolyDataMapper()
         mapper.SetInputConnection((tubes if plot_tube else streamers).GetOutputPort())
         mapper.SetScalarRange(scalarRange[0], scalarRange[1])
-        if color is not None:
+        actor = vtk.vtkActor()
+        actor.SetMapper(mapper)
+        if isinstance(color, vtk.vtkLookupTable) or isinstance(color, vtk.vtkColorTransferFunction):
             mapper.UseLookupTableScalarRangeOn()
             mapper.InterpolateScalarsBeforeMappingOn()
             mapper.SetLookupTable(color)
-
-        actor = vtk.vtkActor()
-        actor.SetMapper(mapper)
+        else:
+            mapper.ScalarVisibilityOff()
+            actor.GetProperty().SetColor(vtk.vtkNamedColors().GetColor3d(color))
         rendering['renderer'].AddActor(actor)
         return (actor, mapper)
 

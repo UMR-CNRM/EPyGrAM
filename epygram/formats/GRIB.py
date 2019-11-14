@@ -26,6 +26,7 @@ import json
 import footprints
 from footprints import proxy as fpx, FPDict, FPList
 from bronx.meteo.conversion import q2R
+from bronx.meteo import constants
 import griberies
 
 from epygram import config, epygramError, util
@@ -2639,6 +2640,9 @@ class GRIB(FileResource):
           If so, the nearest point is selected with
           distance = |target_value - external_field.data|
         """
+        if isinstance(handgrip, six.string_types):
+            handgrip = griberies.parse_GRIBstr_todict(handgrip)
+
         field3d = fpx.field(fid={'GRIB':handgrip},
                             structure='3D',
                             resource=self, resource_fids=[handgrip])
@@ -2700,6 +2704,8 @@ class GRIB(FileResource):
           taking hydrometeors into account (in R computation) nor NH Pressure
           departure (Non-Hydrostatic data). Computation therefore faster.
         """
+        if isinstance(handgrip, six.string_types):
+            handgrip = griberies.parse_GRIBstr_todict(handgrip)
 
         field3d = fpx.field(fid={'GRIB':handgrip},
                             structure='3D',
@@ -2738,6 +2744,7 @@ class GRIB(FileResource):
 
         :param handgrip: MUST define the parameter and the type of levels
         :param geometry: is the geometry on which extract data.
+                         None to keep the geometry untouched.
         :param vertical_coordinate: defines the requested vertical coordinate of the
           V2DField (cf. `epygram.geometries.vertical_coordinates` possible values).
         :param interpolation: defines the interpolation function used to compute
@@ -2749,15 +2756,21 @@ class GRIB(FileResource):
           - if 'cubic', each horizontal point of the section is
             computed with linear spline interpolation.
         """
+        if isinstance(handgrip, six.string_types):
+            handgrip = griberies.parse_GRIBstr_todict(handgrip)
+
         if field3d is None:
             field3d = fpx.field(fid={'GRIB':handgrip},
                                 structure='3D',
                                 resource=self, resource_fids=[handgrip])
 
-        subdomain = field3d.extract_subdomain(geometry,
-                                              interpolation=interpolation,
-                                              exclude_extralevels=True,
-                                              external_distance=external_distance)
+        if geometry is None or geometry == field3d.geometry:
+            subdomain = field3d
+            geometry = field3d.geometry
+        else:
+            subdomain = field3d.extract_subdomain(geometry,
+                                                  interpolation=interpolation,
+                                                  external_distance=external_distance)
 
         # preparation for vertical coords conversion
         if vertical_coordinate not in (None, subdomain.geometry.vcoordinate.typeoffirstfixedsurface):
@@ -2800,12 +2813,34 @@ class GRIB(FileResource):
                     #                                                 external_distance=external_distance)
                     # del geopotential
                 else:
-                    surface_geopotential = numpy.zeros(geometry.get_lonlat_grid()[0].size)
+                    surface_geopotential = None
+            if (subdomain.geometry.vcoordinate.typeoffirstfixedsurface, vertical_coordinate) in ((102, 103), (103, 102)):
+                fids = self.listfields(complete=True)
+                zs = None
+                for fid in fids:
+                    hg = (fid['generic'].get('discipline', 255),
+                          fid['generic'].get('parameterCategory', 255),
+                          fid['generic'].get('parameterNumber', 255),
+                          fid['generic'].get('typeOfFirstFixedSurface', 255))
+                    if hg in ((0, 3, 4, 1), (0, 193, 5, 1), (0, 3, 5, 1), (0, 3, 6, 1), (2, 0, 7, 1)):
+                        #(0, 193, 5) is for SPECSURFGEOPOTEN
+                        fmt = [fk for fk in fid.keys() if fk != 'generic'][0]
+                        zs = self.extract_subdomain(fid[fmt], geometry,
+                                                    interpolation=interpolation,
+                                                    external_distance=external_distance)
+                        if zs.spectral:
+                            zs.sp2gp()
+                        if hg in ((0, 3, 4, 1), (0, 193, 5, 1)):
+                            zs.setdata(zs.getdata() / constants.g0)
+                        break
+                if zs is None:
+                    raise epygramError("No terrain height field found, ground cannot be plotted")
+                print("chmp trouve!!!")
 
             # effective vertical coords conversion
-            vertical_mean = 'geometric'
             if subdomain.geometry.vcoordinate.typeoffirstfixedsurface == 100 and \
                  vertical_coordinate in (102, 103):
+                vertical_mean = 'geometric'
                 subdomain.geometry.vcoordinate = pressure2altitude(subdomain.geometry.vcoordinate,
                                                                    R,
                                                                    side_profiles['t'],
