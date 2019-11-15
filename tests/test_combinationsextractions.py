@@ -262,7 +262,7 @@ class TestMisc(TestCase):
         fid = {'discipline': 0,
                'parameterCategory': 1,
                'parameterNumber': 1,
-               'level': 2,
+               'scaledValueOfFirstFixedSurface': 2, #level': 2,
                'typeOfFirstFixedSurface': 103}
         virtual3D_resource = fpx.resource_modificator(name='CombineLevels',
                                                       resource=self.resources[0],
@@ -396,9 +396,9 @@ class TestMisc(TestCase):
     def test_3D(self):
         # Test CombineLevels
         field3D = self._CL_resources[0].readfield({'discipline': 0,
-                                                   'parameterCategory': 2,
+                                                   'parameterCategory': 193, #'parameterCategory': 2,
                                                    'typeOfFirstFixedSurface': 119,
-                                                   'parameterNumber': 11})
+                                                   'parameterNumber': 28}) #'parameterNumber': 11
         field3D.sp2gp()
         for k in range(60):
             field = self.resources[0].readfield('S{:03}VERTIC.DIVER'.format(k + 1))
@@ -408,9 +408,9 @@ class TestMisc(TestCase):
     def test_4D_2ways(self):
         # Test 4D
         fid = {'discipline': 0,
-               'parameterCategory': 2,
+               'parameterCategory': 193, #'parameterCategory': 2,
                'typeOfFirstFixedSurface': 119,
-               'parameterNumber': 11}
+               'parameterNumber': 28} #'parameterNumber': 11
         field_1 = self._MVCL_resource.readfield(fid)
         field_2 = self._CLMV_resource.readfield(fid)
         field_1.fid.pop('MultiValidities', None)

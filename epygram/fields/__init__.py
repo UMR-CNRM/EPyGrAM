@@ -9,7 +9,7 @@ Contains all fields classes.
 
 from .PointField import PointField, gimme_one_point
 from .MiscField import MiscField
-from .D3Field import D3Field
+from .D3Field import D3Field, D3VirtualField
 from .H2DField import H2DField
 from .V1DField import V1DField
 from .V2DField import V2DField

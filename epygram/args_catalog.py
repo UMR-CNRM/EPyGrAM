@@ -558,6 +558,12 @@ graphical_options = {
              choices=['pcolormesh', 'contourf', 'contour', 'scatter'],
              dest='plot_method',
              default='pcolormesh')],
+    'plotmode':[
+        'plotmode',
+        dict(type=str,
+             help="Kind of 3d plot, among ('contour', 'color', 'volume',\
+                   'vector', 'stream')",
+             choices=['contour', 'color', 'volume', 'vectors', 'streamlines', 'donothing'])],
     'minmax':[
         '-m', '--minmax',
         dict(help="min and max values for the plot.\
@@ -589,6 +595,29 @@ graphical_options = {
                    Default is 50.",
              type=int,
              default=50)],
+    'colorminmax':[
+        '-c', '--colorminax',
+        dict(help="Colors associated to min and max values. Syntax: 'color1, color2'.",
+             default=None,
+             dest='colorminmax')],
+    'diffcolorminmax':[
+        '--diffcolorminax',
+        dict(help="Colors associated to min and max values for diff plot. \
+                   Syntax: 'color1, color2'.",
+             default=None,
+             dest='diffcolorminmax')],
+    'alphaminmax':[
+        '--alphaminmax',
+        dict(help="Alpha values associated to min and max values. \
+                   Syntax: 'alpha1, alpha2'.",
+             default=None,
+             dest='alphaminmax')],
+    'diffalphaminmax':[
+        '--diffalphaminax',
+        dict(help="Alpha values associated to min and max values for diff plot. \
+                   Syntax: 'alpha1, alpha2'.",
+             default=None,
+             dest='diffalphaminmax')],
     'colormap':[
         '-c', '--colormap',
         dict(help="name of the **matplotlib** colormap to use.\
@@ -656,12 +685,44 @@ graphical_options = {
         dict(help="Same as parallels, cf. parallels doc.",
              type=str,
              default='auto')],
+    'hide_axes':[
+        '--hide_axes',
+        dict(help="To hide axe arrows.",
+             action='store_true',
+             default=False)],
     'vectors_subsampling':[
         '-s', '--vectors_subsampling',
         dict(help="Subsampling factor for plotting vectors barbs\
                    (-w: computewind option). Defaults to 20.",
              type=int,
              default=20)],
+    'vectors_verticalsubsampling':[
+        '--vectors_verticalsubsampling',
+        dict(help="Vertical subsampling factor for plotting vectors barbs.\
+                   Defaults to 1.",
+             type=int,
+             default=1)],
+    'vectors_scale_factor':[
+        '-S', '--vectors_scale_factor',
+        dict(help="Scale factor to apply on vectors",
+             type=float,
+             default=1.)],
+    'diffvectors_scale_factor':[
+        '--diffvectors_scale_factor',
+        dict(help="Scale factor to apply on diff vectors",
+             type=float,
+             default=1.)],
+    'streamlines_time':[
+        '-t', '--stream_time',
+        dict(help="Integration time for stream lines or tubes",
+             default=1,
+             type=float,
+             dest='streamlines_time')],
+    'diffstreamlines_time':[
+        '-T', '--diffstream_time',
+        dict(help="Integration time for diff stream lines or tubes",
+             default=None,
+             dest='diffstreamlines_time')],
     'points_size':[
         '-p', '--pointsize',
         dict(help="size of points for *graphicmode* == 'points'.\
@@ -679,6 +740,11 @@ graphical_options = {
         dict(help="optional zoom (vertical reduction) on the profile plot. \
                    Ex: 'ymax=150, ymin=850'. The unit must be that of the \
                    vertical coordinate requested (hPa, m, level number).",
+             default=None)],
+    'z_factor':[
+        '--z_factor',
+        dict(help="factor to apply on z values (to modify aspect ratio of the plot).",
+             type=float,
              default=None)],
     'spectra_zoom':[
         '--zoom',
@@ -732,17 +798,40 @@ graphical_options = {
              dest='figures_dpi',
              type=int,
              default=_defaults['default_figures_dpi'])],
+    'resolution_increase':[
+        '--resolution_increase',
+        dict(help="Resolution increase factor",
+             type=int,
+             default=1)],
+    'window_size':[
+        '--window_size',
+        dict(help="window size. Syntax: 'width, height'",
+             default=None)],
     'bluemarble':[
         '--bluemarble',
         dict(help="displays NASA's \"blue marble\" as background, with\
                    a transparency set to the given value [0.0, 1.0].",
              type=float,
              default=0.0)],
+    'ground':[
+        '--ground',
+        dict(help="'bluemarble' to display NASA's \"blue marble\" on ground\
+                   or a url (using '${z}', '${x}' and '${y}' as place holders)\
+                   to plot maptiles (use single quote around the url in the\
+                   shall to prevent '$' to be expanded)",
+             type=str,
+             default=None)],
     'background':[
         '--background',
         dict(help="sets a background color to continents and oceans.",
              action='store_true',
              default=False)],
+    'background_color':[
+        '--bg', '--background_color',
+        dict(help="backgound color.",
+             type=str,
+             default='Black',
+             dest='background_color')],
     'section_abscissa':[
         '--section_abscissa', '--sa',
         dict(help="abscissa of section, among ('distance', 'lon', 'lat').",
@@ -779,6 +868,16 @@ graphical_options = {
              help="NOT to center the histogram of diff on the value 0.\
                    May be useful for fluxes decumulation.",
              default=True)],
+    'focal_point':[
+        '--focal_point',
+        dict(type=str,
+             help="Focal point: 'x,y,z'.",
+             default=None)],
+    'camera':[
+        '--camera',
+        dict(type=str,
+             help="Camera position: 'x, y, z'.",
+             default=None)],
     'scatter_kw':[
         '--skw', '--scatter_kw',
         dict(help="arguments to be passed to pyplot.scatter(), in case\

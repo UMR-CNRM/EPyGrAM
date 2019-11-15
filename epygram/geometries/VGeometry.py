@@ -239,8 +239,7 @@ def hybridP2altitude(hybridP_geometry, R, T, Psurf, vertical_mean,
                                         Phi_surf=Phi_surf,
                                         Ptop=config.default_Ptop)
         # and update info
-        if Phi_surf is None or \
-           numpy.all(numpy.array(abs(Phi_surf)) < config.epsilon):
+        if Phi_surf is None:
             coordinate = 103
         else:
             coordinate = 102
@@ -262,7 +261,7 @@ def hybridH2altitude(hybridH_geometry, Zsurf,
     """
     Converts a hybrid_height coordinate grid into altitude.
 
-    :param Zsurf: the surface pressure, needed for integration of Ai and Bi.
+    :param Zsurf: the surface height, needed for integration of Ai and Bi.
     :param gridposition: if given ('mass' or 'flux'), the target grid is
       computed accordingly.
       By default the data position in the origin geometry is taken.
@@ -337,7 +336,7 @@ def pressure2altitude(pressure_geometry, R, T, vertical_mean,
                                             Pdep=Pdep,
                                             Phi_surf=Phi_surf)
     # and update info
-    if abs(Phi_surf) < config.epsilon:
+    if Phi_surf is None:
         coordinate = 103
     else:
         coordinate = 102
