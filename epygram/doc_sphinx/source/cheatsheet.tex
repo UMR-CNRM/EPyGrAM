@@ -22,7 +22,7 @@
 
 \huge
 \begin{center}
-\texttt{epygram-1.3.8} \textit{cheatsheet}
+\texttt{epygram-1.4.0} \textit{cheatsheet}
 \end{center}
 \normalsize
 %\maketitle
@@ -36,7 +36,7 @@ Please refer to the complete HTML documention for description of the arguments a
 \hline
 \texttt{epygram.init\_env()} & initialize environment for inner libraries\\
 \texttt{epygram.showconfig()} & show config variables, tunable in \texttt{\$HOME/.epygram/userconfig.py}\\
-\texttt{\% epy\_doc.py -o [-s plotfield]} & open the \texttt{epygram} documentation in a web browser [option: search for "plotfield"]\\
+\texttt{\% epy\_doc.py -o [-s cartoplot]} & open the \texttt{epygram} documentation in a web browser [option: search for ``\texttt{cartoplot}'']\\
 \hline
 \end{tabular}\\
 \\
@@ -106,7 +106,7 @@ $~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~$"MV")}& a \textit{meta} "\textbf{M}ulti\t
 \multicolumn{2}{|c|}{\textbf{Fields data representation}}\\
 \hline
 \texttt{fig, ax = f.cartoplot()} & plot the field (w/ cartopy) and get back the underlying \texttt{matplotlib} figure and axis\\
-\texttt{fig, ax = f.plotfield()} & plot the field and get back the underlying \texttt{matplotlib} figure and axis\\
+\texttt{fig, ax = f.plotfield()} & [\textbf{deprecated}] plot the field and get back the underlying \texttt{matplotlib} figure and axis\\
 \texttt{fig, ax = f.histogram()} & compute and plot a data histogram\\
 \texttt{spectrum = f.dctspectrum()} & compute a DCT spectrum of data\\
 \texttt{fig, ax = spectrum.plotspectrum()} & and plot it\\

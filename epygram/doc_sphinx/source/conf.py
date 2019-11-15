@@ -43,7 +43,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'epygram'
-copyright = u'2014 --- 2018, A.Mary, S.Riette'
+copyright = u'2014 --- 2019, A.Mary, S.Riette'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

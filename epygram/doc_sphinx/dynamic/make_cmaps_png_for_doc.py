@@ -14,9 +14,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import string
 
-from bronx.graphics.colormapping import register_colormap_from_json
-
 import epygram
+from epygram.colormapping import register_colormap_from_json
 
 here = os.path.dirname(os.path.abspath(__file__))
 doc_root = os.path.dirname(here)
