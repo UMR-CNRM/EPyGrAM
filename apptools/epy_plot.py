@@ -21,6 +21,8 @@ from epygram.args_catalog import (add_arg_to_parser,
 
 import matplotlib.pyplot as plt
 
+epylog.warning("EPyGrAM-1.4.0: epy_plot.py is DEPRECATED, because is uses deprecated package 'basemap'. Please use epy_cartoplot.py")
+
 
 def main(filename,
          fieldseed,

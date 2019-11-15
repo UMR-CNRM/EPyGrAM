@@ -19,7 +19,8 @@ Currently available:
 - ``epy_profile.py``: extract and plot a vertical profile from 3D fields
 - ``epy_section.py``: extract and plot a vertical section from 3D fields
 - ``epy_stats.py``: compute basic statistics on fields
-- ``epy_plot.py``: plot horizontal 2D fields
+- ``epy_plot.py``: plot horizontal 2D fields using basemap package (DEPRECATED)
+- ``epy_cartoplot.py``: plot horizontal 2D fields using cartopy package
 - ``epy_hist.py``: compute and plot a histogram of fields values
 - ``epy_point.py``: extract the value of fields on a given location
 - ``epy_spectrum.py``: compute and plot the DCT spectrum of a field
