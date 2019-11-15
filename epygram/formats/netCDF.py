@@ -233,27 +233,31 @@ class netCDF(FileResource):
 
         # 2. time
         def get_validity(T_varname):
-            validity = FieldValidityList()
-            validity.pop()
-            if T_varname not in self._listfields():
-                raise epygramError('unable to find T_grid in variables.')
-            T = self._variables[T_varname][:]
-            if len(self._variables[T_varname].dimensions) == 0:
-                T = [T]
-            time_unit = getattr(self._variables[T_varname], 'units', '')
-            if re.match('(hours|seconds|days|minutes)\s+since.+$', time_unit):
-                T = netCDF4.num2date(T, time_unit).squeeze().reshape((len(T),))
-                T = [datetime.datetime(*t.timetuple()[:6]) for t in T]  # FIXME: not sure of that for dates older than julian/gregorian calendar
-                basis = netCDF4.num2date(0, time_unit)
-                if basis.year <= 1582:
-                    epylog.warning('suspicion of inconsistency of julian/gregorian dates')
-                basis = datetime.datetime(*basis.timetuple()[:6])  # FIXME: not sure of that for dates older than julian/gregorian calendar
-                for v in T:
-                    validity.append(FieldValidity(date_time=v, basis=basis))
-            else:
-                epylog.warning('temporal unit is not CF1.6-compliant, cannot decode.')
-                for v in T:
-                    validity.append(FieldValidity())
+            try:
+                validity = FieldValidityList()
+                validity.pop()
+                if T_varname not in self._listfields():
+                    raise epygramError('unable to find T_grid in variables.')
+                T = self._variables[T_varname][:]
+                if len(self._variables[T_varname].dimensions) == 0:
+                    T = [T]
+                time_unit = getattr(self._variables[T_varname], 'units', '')
+                if re.match('(hours|seconds|days|minutes)\s+since.+$', time_unit):
+                    T = netCDF4.num2date(T, time_unit).squeeze().reshape((len(T),))
+                    T = [datetime.datetime(*t.timetuple()[:6]) for t in T]  # FIXME: not sure of that for dates older than julian/gregorian calendar
+                    basis = netCDF4.num2date(0, time_unit)
+                    if basis.year <= 1582:
+                        epylog.warning('suspicion of inconsistency of julian/gregorian dates')
+                    basis = datetime.datetime(*basis.timetuple()[:6])  # FIXME: not sure of that for dates older than julian/gregorian calendar
+                    for v in T:
+                        validity.append(FieldValidity(date_time=v, basis=basis))
+                else:
+                    epylog.warning('temporal unit is not CF1.6-compliant, cannot decode.')
+                    for v in T:
+                        validity.append(FieldValidity())
+            except Exception:
+                epylog.warning("Failed to read validity, but ignore !")
+                validity = FieldValidityList()
             return validity
         if 'T_dimension' in dims_dict_e2n:
             # field has a time dimension
