@@ -8,6 +8,9 @@ import re
 import argparse
 from collections import defaultdict
 import sys
+import site
+
+EPyGrAM = 'EPyGrAM'
 
 epygram_repositories = {
     'cnrm':'/home/common/epygram',
@@ -32,9 +35,11 @@ userconfigs = defaultdict(lambda:'userconfig_no_arpifs4py.py',  # default
 profiles = defaultdict(lambda:'.bash_profile',
                        ecmwf_cc='.user_profile',
                        ecgate='.user_profile')
-linkname = 'src'
-vortex_linkname = 'vortex'
+VORTEX_LINKNAME = 'vortex'
 epygram_home = os.path.join(os.environ['HOME'], '.epygram')
+usersite = site.getusersitepackages()
+if isinstance(usersite, list):
+    usersite = usersite[0]
 profile = os.path.join(epygram_home, 'profile')
 
 hostname = os.environ.get('HOSTNAME', '')
@@ -56,7 +61,7 @@ else:
 epygram_repo = epygram_repositories.get(localhost,
                                         epygram_repositories['cnrm'])
 vortex_repo = vortex_repositories.get(localhost,
-                                      epygram_repositories['cnrm'])
+                                      vortex_repositories['cnrm'])
 userconfig = userconfigs[localhost]
 _install_profile = localhost + '_profile'
 _vortex_install_profile = 'vortex_profile'
@@ -81,45 +86,54 @@ def main(version='',
     Link to **version** from **fromdir**, copy adequate profile and
     make .bash_profile source it.
     """
-    # link epygram version
+    # EPyGrAM version
     if version != '':
-        if version.startswith('EPyGrAM'):
+        if version.startswith(EPyGrAM):
             version = version[7:]
         elif not version.startswith('-'):
             version = '-' + version
+    # link sources in site-packages
+    if not os.path.exists(usersite):
+        os.makedirs(usersite)
+    os.chdir(usersite)
+    if os.path.islink(EPyGrAM):
+        os.remove(EPyGrAM)
+    os.symlink(os.path.join(fromdir, EPyGrAM + version),
+               EPyGrAM)
+    epygram_in_site = os.path.join(usersite, EPyGrAM)
+    shutil.copy(os.path.join(EPyGrAM, '_install', EPyGrAM + '.pth'),
+                EPyGrAM + '.pth')
+    # epygram_home local directory
     if not os.path.exists(epygram_home):
         os.mkdir(epygram_home)
     os.chdir(epygram_home)
-    if os.path.islink(linkname):
-        os.remove(linkname)
-    os.symlink(os.path.join(fromdir, 'EPyGrAM' + version),
-               linkname)
     # vortex (if needed)
     if install_vortex:
         if vortex_version != '':
             if not vortex_version.startswith('-'):
                 vortex_version = '-' + vortex_version
-        if os.path.islink(vortex_linkname):
-            os.remove(vortex_linkname)
+        if os.path.islink(VORTEX_LINKNAME):
+            os.remove(VORTEX_LINKNAME)
         os.symlink(os.path.join(vortex_from, 'vortex' + vortex_version),
-                   vortex_linkname)
+                   VORTEX_LINKNAME)
     # profile
     if update_epygram_profile or not os.path.exists(profile):
-        with open(os.path.join(linkname, '_install', _install_profile), 'r') as p:
+        with open(os.path.join(epygram_in_site, '_install', _install_profile), 'r') as p:
             lines = p.readlines()
+        lines.append('export PATH=$PATH:{}'.format(os.path.join(epygram_in_site, 'apptools')))
         if install_vortex:
-            with open(os.path.join(linkname, '_install', _vortex_install_profile), 'r') as p:
+            with open(os.path.join(epygram_in_site, '_install', _vortex_install_profile), 'r') as p:
                 lines.extend(p.readlines())
         with open(profile, 'w') as p:
             for l in lines:
                 p.write(l)
     # user customization
     if not os.path.exists('userconfig.py'):
-        shutil.copy(os.path.join(linkname, '_install', userconfig),
+        shutil.copy(os.path.join(epygram_in_site, '_install', userconfig),
                     'userconfig.py')
     for example in ('sfxflddesc_mod.F90', 'gribapi.def.0'):
         if not os.path.exists(example):
-            source = os.path.join(linkname, '_install', example)
+            source = os.path.join(epygram_in_site, '_install', example)
             if os.path.isdir(source):
                 shutil.copytree(source, example)
             else:
@@ -134,15 +148,11 @@ def main(version='',
             pf.write('fi\n')
     # eccodes
     if link_eccodes and sys.version_info.major == 2:
-        linkdir = os.path.join(os.environ['HOME'],
-                               '.local/lib/python2.7/site-packages')
         targetdir = py2_eccodes_installdir.get(localhost, None)
         if targetdir is None:
             raise NotImplementedError("eccodes linking on this kind of platform: {}".format(localhost))
-        if not os.path.exists(linkdir):
-            os.makedirs(linkdir)
         for lib in ('eccodes', 'gribapi'):
-            link = os.path.join(linkdir, lib)
+            link = os.path.join(usersite, lib)
             if not os.path.exists(link):
                 os.symlink(os.path.join(targetdir, lib), link)
             else:
