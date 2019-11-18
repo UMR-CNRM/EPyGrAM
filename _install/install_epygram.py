@@ -70,7 +70,9 @@ _vortex_install_profile = 'vortex_profile'
 def _version_():
     realpath = os.path.realpath(__file__)
     epygramversion = realpath.split(os.path.sep)[-3]
-    version = re.match('EPyGrAM-?(.+)', epygramversion).group(1)
+    version = re.match('EPyGrAM-?(.+)?', epygramversion).group(1)
+    if version is None:
+        version = ''
     return version
 
 
@@ -103,6 +105,7 @@ def main(version='',
     epygram_in_site = os.path.join(usersite, EPyGrAM)
     shutil.copy(os.path.join(EPyGrAM, '_install', EPyGrAM + '.pth'),
                 EPyGrAM + '.pth')
+    print("EPyGrAM has been successfully installed under: {}".format(usersite))
     # epygram_home local directory
     if not os.path.exists(epygram_home):
         os.mkdir(epygram_home)
@@ -120,6 +123,7 @@ def main(version='',
     if update_epygram_profile or not os.path.exists(profile):
         with open(os.path.join(epygram_in_site, '_install', _install_profile), 'r') as p:
             lines = p.readlines()
+        lines.append("# EPyGrAM apptools")
         lines.append('export PATH=$PATH:{}'.format(os.path.join(epygram_in_site, 'apptools')))
         if install_vortex:
             with open(os.path.join(epygram_in_site, '_install', _vortex_install_profile), 'r') as p:
@@ -138,6 +142,7 @@ def main(version='',
                 shutil.copytree(source, example)
             else:
                 shutil.copy(source, example)
+    print("EPyGrAM user customization has been setup under: {}".format(epygram_home))
     # bash_profile
     if update_bash_profile:
         with io.open(os.path.join(os.environ['HOME'], profiles[localhost]), 'a') as pf:
@@ -157,8 +162,7 @@ def main(version='',
                 os.symlink(os.path.join(targetdir, lib), link)
             else:
                 print("!!! Link eccodes failed: link already exists: {}".format(link))
-    print("Local installation complete in: {}".format(epygram_home))
-    print("To use it, restart session (if option -b) or source {}".format(profile))
+    print("To use EPyGrAM, restart session (if option -b) or source {}".format(profile))
 
 
 if __name__ == '__main__':
