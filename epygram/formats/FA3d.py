@@ -274,7 +274,7 @@ class FA3d(FileResource):
     def _field_type(self, fieldname):
         """Return type of the field."""
         if fieldname in self.resource.listfields():
-            return self.resource._field_type(fieldname)
+            return self.resource.field_type(fieldname)
         else:
             return '3D'
 
@@ -502,6 +502,7 @@ class FA3d(FileResource):
 
         :param fieldname: name of the field.
         :param geometry: is the geometry on which extract data.
+                         None to keep the geometry untouched.
         :param vertical_coordinate: defines the requested vertical coordinate of the
           V2DField (cf. `epygram.geometries.vertical_coordinates`
           possible values).
@@ -521,9 +522,13 @@ class FA3d(FileResource):
         field3d = self.readfield(fieldname)
         if field3d.spectral:
             field3d.sp2gp()
-        subdomain = field3d.extract_subdomain(geometry,
-                                              interpolation=interpolation,
-                                              exclude_extralevels=True)
+            
+        if geometry is None or geometry == field3d.geometry:
+            subdomain = field3d
+            geometry = field3d.geometry
+        else:
+            subdomain = field3d.extract_subdomain(geometry,
+                                                  interpolation=interpolation)
 
         # preparation for vertical coords conversion
         if vertical_coordinate not in (None, subdomain.geometry.vcoordinate.typeoffirstfixedsurface):
@@ -535,6 +540,7 @@ class FA3d(FileResource):
             # surface pressure (hybridP => P,A,H)
             if subdomain.geometry.vcoordinate.typeoffirstfixedsurface == 119 and \
                vertical_coordinate in (100, 102, 103):
+                h_shape = geometry.get_datashape(force_dimZ=1)
                 Psurf = self.readfield('SURFPRESSION')
                 if Psurf.spectral:
                     Psurf.sp2gp()
@@ -542,6 +548,7 @@ class FA3d(FileResource):
                                                           interpolation=interpolation,
                                                           one=False,
                                                           external_distance=external_distance))
+                ps_transect = ps_transect.reshape(h_shape)
                 del Psurf
             # P => H necessary profiles
             if vertical_coordinate in (102, 103):
@@ -588,9 +595,10 @@ class FA3d(FileResource):
                                                                 interpolation=interpolation,
                                                                 one=False,
                                                                 external_distance=external_distance)
+                surface_geopotential = surface_geopotential.reshape(h_shape)
                 del geopotential
             else:
-                surface_geopotential = numpy.zeros(geometry.get_lonlat_grid()[0].size)
+                surface_geopotential = None
 
             # effective vertical coords conversion
             if subdomain.geometry.vcoordinate.typeoffirstfixedsurface == 119 and \

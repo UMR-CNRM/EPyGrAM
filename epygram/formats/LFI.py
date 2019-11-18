@@ -1049,6 +1049,7 @@ class LFI(FileResource):
           \* being a true star character,
           and PARAMETER being the name of the parameter requested, as named in LFI.
         :param geometry: the geometry on which extract data.
+                         None to keep the geometry untouched.
         :param vertical_coordinate: defines the requested vertical coordinate of the
           V2DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
           possible values).
@@ -1069,10 +1070,18 @@ class LFI(FileResource):
             field3d = fpx.field(fid={'LFI':fid},
                                 structure='3D',
                                 resource=self, resource_fids=[fid])
-
-        subdomain = field3d.extract_subdomain(geometry,
-                                              interpolation=interpolation,
-                                              exclude_extralevels=exclude_extralevels)
+        if geometry is None or geometry == field3d.geometry:
+            subdomain = field3d
+            if exclude_extralevels:
+                subdomain = subdomain.extract_physicallevels()
+            geometry = subdomain.geometry
+        elif geometry == field3d.geometry.make_physicallevels_geometry():
+            subdomain = field3d.extract_physicallevels()
+            geometry = subdomain.geometry
+        else:
+            subdomain = field3d.extract_subdomain(geometry, interpolation=interpolation)
+            if exclude_extralevels:
+                subdomain = subdomain.extract_physicallevels()
 
         # vertical coords conversion
         if vertical_coordinate not in (None, subdomain.geometry.vcoordinate.typeoffirstfixedsurface):
@@ -1081,29 +1090,18 @@ class LFI(FileResource):
                 zsfield = self.readfield('ZS' if self.true3d else ('ZS', 0))
                 zs_values = zsfield.getvalue_ll(*geometry.get_lonlat_grid(),
                                                 interpolation=interpolation, one=False)
+                zs_values = zs_values.reshape(geometry.get_datashape(force_dimZ=1))
                 subdomain.geometry.vcoordinate = hybridH2altitude(subdomain.geometry.vcoordinate,
                                                                   zs_values,
                                                                   gridposition=subdomain.geometry.vcoordinate.position_on_grid,
                                                                   conv2height=(vertical_coordinate == 103))
             elif subdomain.geometry.vcoordinate.typeoffirstfixedsurface == 118 and \
                    vertical_coordinate == 100:
-                if self.true3d:
-                    try:
-                        P3d = self.readfield('PABSM')
-                    except:
-                        P3d = self.readfield('PABST')
-                else:
-                    try:
-                        P3d = fpx.field(fid={'LFI':'PABSM'},
-                                        structure='3D',
-                                        resource=self, resource_fids=[('PABSM', '*')])
-                    except:
-                        P3d = fpx.field(fid={'LFI':'PABST'},
-                                        structure='3D',
-                                        resource=self, resource_fids=[('PABST', '*')])
-                P = P3d.extract_subdomain(geometry,
-                                          interpolation=interpolation,
-                                          exclude_extralevels=exclude_extralevels)
+                pid = ['PABSM', 'PABST'] if self.true3d else [('PABSM', '*'), ('PABST', '*')]
+                try:
+                    P = self.extract_subdomain(pid[0], geometry, interpolation=interpolation)
+                except:
+                    P = self.extract_subdomain(pid[1], geometry, interpolation=interpolation)
                 subdomain.geometry.vcoordinate = hybridH2pressure(subdomain.geometry.vcoordinate,
                                                                   P.getdata(),
                                                                   P.geometry.vcoordinate.position_on_grid)

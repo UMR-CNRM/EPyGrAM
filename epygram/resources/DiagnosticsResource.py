@@ -392,7 +392,7 @@ class DiagnosticsResource(Resource):
         return section
 
     def extract_subdomain(self, handgrip, geometry, vertical_coordinate=None,
-                          interpolation='linear', field3d=None):
+                          interpolation='linear', exclude_extralevels=True, field3d=None):
         """
         Extracts a subdomain from the resource, given its handgrip
         and the geometry to use.
@@ -410,6 +410,7 @@ class DiagnosticsResource(Resource):
                                   computed with linear spline interpolation;
                                 - if 'cubic', each horizontal point of the section is
                                   computed with linear spline interpolation.
+        :param exclude_extralevels: if True, not physical levels are removed
         """
 
         if field3d is None:
@@ -417,9 +418,9 @@ class DiagnosticsResource(Resource):
 
         if field3d.spectral:
             field3d.sp2gp()
-        subdomain = field3d.extract_subdomain(geometry,
-                                              interpolation=interpolation,
-                                              exclude_extralevels=True)
+        subdomain = field3d.extract_subdomain(geometry, interpolation=interpolation)
+        if exclude_extralevels:
+            subdomain = subdomain.extract_physicallevels()
 
         # preparation for vertical coords conversion
         if vertical_coordinate not in (None, subdomain.geometry.vcoordinate.typeoffirstfixedsurface):
@@ -437,9 +438,9 @@ class DiagnosticsResource(Resource):
             vertical_field = self._get_field3d_from_handrgrip(vertical_fid)
             if vertical_field.spectral:
                 vertical_field.sp2gp()
-            levels = vertical_field.extract_subdomain(subdomain.geometry,
-                                                      interpolation=interpolation,
-                                                      exclude_extralevels=True)
+            levels = vertical_field.extract_subdomain(subdomain.geometry, interpolation=interpolation)
+            if exclude_extralevels:
+                levels = levels.extract_physicallevels()
 
             if vertical_coordinate == 100:
                 pass
@@ -447,9 +448,9 @@ class DiagnosticsResource(Resource):
                 surface_height = self.readfield({'discipline':2, 'parameterCategory':0, 'parameterNumber':7})
                 surface_geom = geometry.deepcopy()
                 surface_geom.vcoordinate = surface_height.geometry.vcoordinate
-                surface_height = surface_height.extract_subdomain(surface_geom,
-                                                                  interpolation=interpolation,
-                                                                  exclude_extralevels=True)
+                surface_height = surface_height.extract_subdomain(surface_geom, interpolation=interpolation)
+                if exclude_extralevels:
+                    surface_height = surface_height.extract_physicallevels()
                 if surface_height.spectral:
                     surface_height.sp2gp()
                 levels.setdata(levels.getdata() - surface_height.getdata())
@@ -677,7 +678,7 @@ class DiagnosticsResource(Resource):
                         readfid = f
                         break
                 field = self.readfield(readfid, getdata=getdata)
-                for fmt in field.fid.keys():
+                for fmt in list(field.fid.keys()):
                     field.fid.pop(fmt)
                 field.fid[self.format] = dict(level=fid['level'], typeOfFirstFixedSurface=100, **fid_P)
                 field.fid['generic'] = dict(level=fid['level'], typeOfFirstFixedSurface=100, **fid_P)
@@ -718,7 +719,7 @@ class DiagnosticsResource(Resource):
                     T.setdata(T.getdata() * (constants.P0 / P.getdata()) ** (constants.Rd / constants.Cpd))
                 myfid_Theta = fid.copy()
                 myfid_Theta.update(fid_Theta)
-                for fmt in T.fid.keys():
+                for fmt in list(T.fid.keys()):
                     T.fid.pop(fmt)
                 T.fid[self.format] = myfid_Theta
                 T.fid['generic'] = myfid_Theta
@@ -749,7 +750,7 @@ class DiagnosticsResource(Resource):
                     theta.setdata(theta.getdata() * (1 + qv.getdata() * constants.Rv / constants.Rd - qt.getdata()))
                 myfid_ThetaV = fid.copy()
                 myfid_ThetaV.update(fid_ThetaV)
-                for fmt in theta.fid.keys():
+                for fmt in list(theta.fid.keys()):
                     theta.fid.pop(fmt)
                 theta.fid[self.format] = myfid_ThetaV
                 theta.fid['generic'] = myfid_ThetaV
@@ -776,7 +777,7 @@ class DiagnosticsResource(Resource):
                     Theta.setdata(Theta.getdata() * (P.getdata() / constants.P0) ** (constants.Rd / constants.Cpd))
                 myfid_Theta = fid.copy()
                 myfid_Theta.update(fid_T)
-                for fmt in Theta.fid.keys():
+                for fmt in list(Theta.fid.keys()):
                     Theta.fid.pop(fmt)
                 Theta.fid[self.format] = myfid_Theta
                 Theta.fid['generic'] = myfid_Theta
@@ -840,7 +841,7 @@ class DiagnosticsResource(Resource):
                     qv.setdata(qt)
                 myfid_qt = fid.copy()
                 myfid_qt.update(fid_qt)
-                for fmt in qv.fid.keys():
+                for fmt in list(qv.fid.keys()):
                     qv.fid.pop(fmt)
                 qv.fid[self.format] = myfid_qt
                 qv.fid['generic'] = myfid_qt
@@ -905,7 +906,7 @@ class DiagnosticsResource(Resource):
                     rv.setdata(qt)
                 myfid_qt = fid.copy()
                 myfid_qt.update(fid_qt)
-                for fmt in rv.fid.keys():
+                for fmt in list(rv.fid.keys()):
                     rv.fid.pop(fmt)
                 rv.fid[self.format] = myfid_qt
                 rv.fid['generic'] = myfid_qt
@@ -927,7 +928,7 @@ class DiagnosticsResource(Resource):
                     qt.setdata(r.getdata() * (1. - qt.getdata()))
                 myfid_Theta = fid.copy()
                 myfid_Theta.update(fid_q)
-                for fmt in qt.fid.keys():
+                for fmt in list(qt.fid.keys()):
                     qt.fid.pop(fmt)
                 qt.fid[self.format] = myfid_Theta
                 qt.fid['generic'] = myfid_Theta
@@ -1024,7 +1025,7 @@ class DiagnosticsResource(Resource):
                     qv.setdata(R)
                 myfid_R = fid.copy()
                 myfid_R.update(fid_R)
-                for fmt in qv.fid.keys():
+                for fmt in list(qv.fid.keys()):
                     qv.fid.pop(fmt)
                 qv.fid[self.format] = myfid_R
                 qv.fid['generic'] = myfid_R
@@ -1068,7 +1069,7 @@ class DiagnosticsResource(Resource):
                     U.setdata(numpy.sqrt(U.getdata()))
                 myfid_ff = fid.copy()
                 myfid_ff.update(fid_ff)
-                for fmt in U.fid.keys():
+                for fmt in list(U.fid.keys()):
                     U.fid.pop(fmt)
                 U.fid[self.format] = myfid_ff
                 U.fid['generic'] = myfid_ff
@@ -1079,22 +1080,27 @@ class DiagnosticsResource(Resource):
         """
         Helper method that returns information to deal with hybrid-P coordinates
         """
-        fid_Ps = {'discipline':0, 'parameterCategory':3, 'parameterNumber':25, 'typeOfFirstFixedSurface':1, 'productDefinitionTemplateNumber':0}
+        fid_Ps = [{'discipline':0, 'parameterCategory':3, 'parameterNumber':25, 'typeOfFirstFixedSurface':1, 'productDefinitionTemplateNumber':0},
+                  {'discipline':0, 'parameterCategory':3, 'parameterNumber':0, 'typeOfFirstFixedSurface':1, 'productDefinitionTemplateNumber':0}]
 
         fid_for_vcoord = None
         if 'hybridP' not in self._cache:
-            fid_for_vcoord = [fid[self.resource.format] for fid in self.resource.listfields(complete=True) if fid['generic'].get('typeOfFirstFixedSurface', 255) == 119]
+            fid_for_vcoord = [fid[self.resource.format] for fid in self.resource.listfields(complete=True)
+                              if (fid['generic'].get('typeOfFirstFixedSurface', 255) == 119 and
+                                  fid['generic'].get('parameterNumber', 255) != 255)] #to be able to read it from a CombineLevels resource
             if len(fid_for_vcoord) != 0:
                 hybridP_geometry = self.resource.readfield(fid_for_vcoord[0], getdata=False).geometry.vcoordinate
                 A = [level[1]['Ai'] for level in hybridP_geometry.grid['gridlevels']][1:]
                 B = [level[1]['Bi'] for level in hybridP_geometry.grid['gridlevels']][1:]
                 if not len(A) == len(B):
                     raise ValueError("A, B must have the same size.")
-                try:
-                    fid_Ps = self.find_fields_in_resource(fid_Ps)
-                except:
-                    fid_Ps = None
-                if fid_Ps is None:
+                for fid in fid_Ps:
+                    try:
+                        fid_Ps_complete = self.find_fields_in_resource(fid_Ps)
+                        break
+                    except:
+                        fid_Ps_complete = None
+                if fid_Ps_complete is None:
                     result = None
                 else:
                     field_3d = len(hybridP_geometry.levels) > 1  # True if the first field on hybrid-P level is 3D
@@ -1120,7 +1126,7 @@ class DiagnosticsResource(Resource):
                to compute half-levels from full-levels, or inverse: 'geometric' or 'arithmetic'
         """
         self._diag_checks(fids, dolist)
-        fid_Ps = {'discipline':0, 'parameterCategory':3, 'parameterNumber':25, 'typeOfFirstFixedSurface':1, 'productDefinitionTemplateNumber':0}
+        fid_Ps = {'discipline':0, 'parameterCategory':3, 'parameterNumber':0, 'typeOfFirstFixedSurface':1, 'productDefinitionTemplateNumber':0}
         fid_P = {'discipline':0, 'parameterCategory':3, 'parameterNumber':0, 'productDefinitionTemplateNumber':0}
         option_pos = self.options.get('pos_P_from_sigma', 'mass')
         option_vertical_mean = self.options.get('vertical_mean_P_from_sigma', None)
@@ -1149,6 +1155,7 @@ class DiagnosticsResource(Resource):
                 Ps.sp2gp()
             if getdata and Ps.getdata().flatten()[0] < 100:
                 # Ps contains lnsp and not sp
+                # This is a workaround for a bug in FA
                 Ps.setdata(numpy.exp(Ps.getdata()))
             if getdata:
                 pressure = hybridP2pressure(hybridP['vgeometry'], Ps.getdata(), option_vertical_mean,
@@ -1320,6 +1327,12 @@ class DiagnosticsAROMEResource(DiagnosticsResource):
         )
     )
 
+    def diag_equiv_model_terrain_height(self, *args, **kwargs):
+        equiv = ({'discipline':0, 'parameterCategory':193, 'parameterNumber':5, 'typeOfFirstFixedSurface':1},
+                 {'discipline':0, 'parameterCategory':3, 'parameterNumber':4, 'typeOfFirstFixedSurface':1},
+                 True, 1, None)  # Always equivalent, no factor
+        return self._diag_equivalence(equiv, *args, **kwargs)
+    
     def diag_Hgeopot_from_T_q(self, fids=[], dolist=False, getdata=True):
         """
         Computes Z on hybrid-P levels
@@ -1332,7 +1345,7 @@ class DiagnosticsAROMEResource(DiagnosticsResource):
         - approx_R is used, see. diag_R_from_q
         """
         self._diag_checks(fids, dolist)
-        fid_Ps = {'discipline':0, 'parameterCategory':3, 'parameterNumber':25, 'typeOfFirstFixedSurface':1, 'productDefinitionTemplateNumber':0}
+        fid_Ps = {'discipline':0, 'parameterCategory':3, 'parameterNumber':0, 'typeOfFirstFixedSurface':1, 'productDefinitionTemplateNumber':0}
         fid_T = {'discipline':0, 'parameterCategory':0, 'parameterNumber':0, 'typeOfFirstFixedSurface':119, 'productDefinitionTemplateNumber':0}
         fid_Pdep = {'discipline':0, 'parameterCategory':3, 'parameterNumber':8, 'typeOfFirstFixedSurface':119, 'productDefinitionTemplateNumber':0}
         fid_R = {'discipline':0, 'parameterCategory':1, 'parameterNumber':254, 'typeOfFirstFixedSurface': 119, 'productDefinitionTemplateNumber':0}
@@ -1371,6 +1384,7 @@ class DiagnosticsAROMEResource(DiagnosticsResource):
                         Ps.sp2gp()
                     if Ps.getdata().flatten()[0] < 100:
                         # Ps contains lnsp and not sp
+                        # This is a workaround for a bug in FA
                         Ps.setdata(numpy.exp(Ps.getdata()))
 
                     # Pressure on mass levels
