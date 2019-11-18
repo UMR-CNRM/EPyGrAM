@@ -6,7 +6,7 @@
 
 from __future__ import print_function, absolute_import, division, unicode_literals
 
-from unittest import TestCase, skipIf
+from unittest import TestCase
 import tempfile
 import os
 import sys
@@ -18,7 +18,6 @@ import epygram
 
 from .util import datadir, suffixes, delta_assertAlmostEqual
 
-basemap_ok = True
 timing = False
 
 
@@ -200,32 +199,6 @@ class Test_GeometryMethods(TestCase):
             self.assertAlmostEqual(out, expected, delta=delta_assertAlmostEqual)
         elif assertion == 'IsInstance':
             self.assertIsInstance(out, expected)
-
-    @skipIf(not basemap_ok, 'need basemap module')
-    def _test_make_basemap(self, **kwargs):
-        from mpl_toolkits.basemap import Basemap
-        self.assertIsInstance(self.geo.make_basemap(**kwargs),
-                              Basemap)
-
-    def test_make_basemap(self):
-        self._test_make_basemap()
-
-    def test_make_basemap_opts1(self):
-        self._test_make_basemap(specificproj=('nsper', {}))
-
-    def test_make_basemap_opts2(self):
-        self._test_make_basemap(specificproj=('nsper', {'lon':self.point[0],
-                                                        'lat':self.point[1],
-                                                        'sat_height':600.}))
-
-    def test_make_basemap_opts3(self):
-        self._test_make_basemap(specificproj='ortho')
-
-    def test_make_basemap_opts4(self):
-        self._test_make_basemap(zoom={'lonmin':self.point[0] - 1,
-                                      'lonmax':self.point[0] + 1,
-                                      'latmin':self.point[1] - 1,
-                                      'latmax':self.point[1] + 1})
 
     def test_make_point_geometry(self):
         self.assertIsInstance(self.geo.make_point_geometry(*self.point),
