@@ -755,7 +755,8 @@ class GRIBmessage(RecursiveObject, dict):
         if field.spectral:
             self._GRIB2_set_spectral_geometry(field.geometry)
         else:
-            self._GRIB2_set_horizontal_geometry(field.geometry)
+            self._GRIB2_set_horizontal_geometry(field.geometry,
+                                                **other_GRIB_options)
             self._GRIB2_set_data_ordering(field.geometry, **other_GRIB_options)
 
     def _GRIB2_set_earth_geometry(self, geometry):
@@ -980,8 +981,9 @@ class GRIBmessage(RecursiveObject, dict):
                                                         template,
                                                         **other_GRIB_options)
         else:
-            self._GRIB2_set_vertical_geometry(field.geometry, field.fid['GRIB2'])
-        self._GRIB2_set_validity(field)
+            self._GRIB2_set_vertical_geometry(field.geometry, field.fid['GRIB2'],
+                                              **other_GRIB_options)
+        self._GRIB2_set_validity(field, **other_GRIB_options)
 
     def _GRIB2_set_product(self, field, **other_GRIB_options):
         """Set product and process."""
@@ -1126,7 +1128,7 @@ class GRIBmessage(RecursiveObject, dict):
                     packing['bitsPerValue'] = config.GRIB_max_bitspervalue
         # FIXME: ? pre-set values before packing seems necessary if packing different from sample
         if any([self[k] != v for k, v in packing.items()]):
-            self._GRIB2_set_section6_7(field)
+            self._GRIB2_set_section6_7(field, **other_GRIB_options)
         for k in order:
             if k in packing:
                 try:
