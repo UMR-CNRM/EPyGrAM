@@ -88,7 +88,8 @@ class _H2DCartopyPlot(object):
                              meridians='auto',
                              parallels='auto',
                              gridlines_kw=None,
-                             epygram_departments=False):
+                             epygram_departments=False,
+                             subzone=None):
         """Set cartography features, such as borders, coastlines, meridians and parallels..."""
         import cartopy.crs as ccrs
         import cartopy.feature as cfeature
@@ -117,11 +118,14 @@ class _H2DCartopyPlot(object):
             if not isinstance(projection, (ccrs.PlateCarree, ccrs.Mercator)):
                 # only these projections have labels available in cartopy
                 gridlines_kw.pop('draw_labels', False)
-                # from cartopy_plus import lambert_ticks_workaround
-                # draw_labels = gridlines_kw.pop('draw_labels', False)
-                # FIXME: canvas drawing can be over-consuming !!!
-                # lambert_ticks_workaround(fig, ax, projection,
-                #                          draw_labels, parallels, meridians)
+                # home-made workaround for Lambert
+                if isinstance(projection, ccrs.LambertConformal):
+                    from cartopy_plus import lambert_parallels_meridians_labels
+                    lambert_parallels_meridians_labels(ax, geometry, projection,
+                                                       meridians, parallels,
+                                                       subzone=subzone)
+                else:
+                    pass  # TODO: workarounds for other geometries ?
             gl = ax.gridlines(xlocs=meridians,
                               ylocs=parallels,
                               **gridlines_kw)
@@ -613,7 +617,8 @@ class _H2DCartopyPlot(object):
                                   meridians,
                                   parallels,
                                   gridlines_kw,
-                                  epygram_departments)
+                                  epygram_departments,
+                                  subzone=subzone)
         # 3/ get data to plot
         if self.spectral:
             self.sp2gp()

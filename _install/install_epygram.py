@@ -123,7 +123,7 @@ def main(version='',
     if update_epygram_profile or not os.path.exists(profile):
         with open(os.path.join(epygram_in_site, '_install', _install_profile), 'r') as p:
             lines = p.readlines()
-        lines.append("# EPyGrAM apptools")
+        lines.append("# EPyGrAM apptools\n")
         lines.append('export PATH=$PATH:{}'.format(os.path.join(epygram_in_site, 'apptools')))
         if install_vortex:
             with open(os.path.join(epygram_in_site, '_install', _vortex_install_profile), 'r') as p:

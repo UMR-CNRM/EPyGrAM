@@ -817,7 +817,9 @@ def auto_meridians_parallels(geometry,
         return delta
 
     # meridians    # TODO: stereopol : all ! + parallels enough ?
-    if meridians == 'default' or (meridians == 'auto' and
+    if meridians is None or meridians == 0.:
+        meridians = []
+    elif meridians == 'default' or (meridians == 'auto' and
                                   ('gauss' in geometry.name or
                                    geometry.name == 'polar_stereographic')):
         meridians = numpy.arange(0, 370, 10)
@@ -832,10 +834,10 @@ def auto_meridians_parallels(geometry,
         meridians = numpy.arange(lonmin, lonmax, delta_lon)
         if max(meridians > 180.):
             meridians = meridians - 180.  # FIXME: cartopy does not plot meridians > 180°
-    elif meridians is None:
-        meridians = []
     # parallels
-    if parallels == 'default' or ('gauss' in geometry.name and parallels == 'auto'):
+    if parallels is None or parallels == 0.:
+        parallels = []
+    elif parallels == 'default' or ('gauss' in geometry.name and parallels == 'auto'):
         parallels = numpy.arange(-90, 90, 10)
     elif parallels == 'auto' or isinstance(parallels, int) or isinstance(parallels, float):
         minmax = geometry.minmax_ll()
@@ -850,8 +852,6 @@ def auto_meridians_parallels(geometry,
         if latmax >= 90:
             latmax -= delta_lat
         parallels = numpy.arange(latmin, latmax, delta_lat)
-    elif parallels is None:
-        parallels = []
     return list(meridians), list(parallels)
 
 
