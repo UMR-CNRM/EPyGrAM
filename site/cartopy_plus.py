@@ -2,12 +2,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, absolute_import, unicode_literals, division
 
-from copy import copy
-
 from bronx.fancies import loggers
 import cartopy.crs as ccrs
-import numpy as np
-import shapely.geometry as sgeom
 
 logger = loggers.getLogger(__name__)
 
@@ -20,90 +16,63 @@ natural_earth_countries_departments = [dict(category='cultural',
                                             linestyle=':')]
 
 
-def lambert_ticks_workaround(fig,
-                             ax,
-                             projection,
-                             draw_labels,
-                             parallels,
-                             meridians):
+def formatted_meridian(value):
+    return '{:g}°{}'.format(abs(value), 'E' if value >= 0 else 'W')
+
+
+def formatted_parallel(value):
+    return '{:g}°{} '.format(abs(value), 'N' if value >= 0 else 'S')
+
+
+def lambert_parallels_meridians_labels(ax, geometry, projection,
+                                       meridians, parallels,
+                                       subzone=None):
     """
-    Workaround to cartopy unability to add ticks for LambertConformal projection.
-
-    WARNING: drawing of canvas is over-consuming !
+    An Epygram workaround to cartopy's inability to write labels to parallels
+    and meridians in Lambert projection.
     """
-    import time
-    from cartopy.mpl.gridliner import LATITUDE_FORMATTER, LONGITUDE_FORMATTER
-    ax.xaxis.set_major_formatter(LONGITUDE_FORMATTER)
-    ax.yaxis.set_major_formatter(LATITUDE_FORMATTER)
-    if draw_labels:
-        if isinstance(projection, ccrs.LambertConformal):
-            lambert_xticks(ax, meridians)
-            lambert_yticks(ax, parallels)
-            t0 = time.time()
-            fig.canvas.draw()
-            print('canvas', time.time() - t0)
-        else:
-            logger.warning("gridlines_kw: 'draw_labels' ignored for that proj")
-
-
-def find_side(ls, side):
-    """
-    Given a shapely LineString which is assumed to be rectangular, return the
-    line corresponding to a given side of the rectangle.
-    """
-    minx, miny, maxx, maxy = ls.bounds
-    points = {'left': [(minx, miny), (minx, maxy)],
-              'right': [(maxx, miny), (maxx, maxy)],
-              'bottom': [(minx, miny), (maxx, miny)],
-              'top': [(minx, maxy), (maxx, maxy)],}
-    return sgeom.LineString(points[side])
-
-
-def lambert_xticks(ax, ticks):
-    """Draw ticks on the bottom x-axis of a Lambert Conformal projection."""
-    te = lambda xy: xy[0]
-    lc = lambda t, n, b: np.vstack((np.zeros(n) + t, np.linspace(b[2], b[3], n))).T
-    xticks, xticklabels = _lambert_ticks(ax, ticks, 'bottom', lc, te)
-    ax.xaxis.tick_bottom()
-    ax.set_xticks(xticks)
-    ax.set_xticklabels([ax.xaxis.get_major_formatter()(xtick) for xtick in xticklabels])
-
-
-def lambert_yticks(ax, ticks):
-    """Draw ricks on the left y-axis of a Lamber Conformal projection."""
-    te = lambda xy: xy[1]
-    lc = lambda t, n, b: np.vstack((np.linspace(b[0], b[1], n), np.zeros(n) + t)).T
-    yticks, yticklabels = _lambert_ticks(ax, ticks, 'left', lc, te)
-    ax.yaxis.tick_left()
-    ax.set_yticks(yticks)
-    ax.set_yticklabels([ax.yaxis.get_major_formatter()(ytick) for ytick in yticklabels])
-
-
-def _lambert_ticks(ax, ticks, tick_location, line_constructor, tick_extractor):
-    """Get the tick locations and labels for an axis of a Lambert Conformal projection."""
-    outline_patch = sgeom.LineString(ax.outline_patch.get_path().vertices.tolist())
-    axis = find_side(outline_patch, tick_location)
-    n_steps = 30
-    extent = ax.get_extent(ccrs.PlateCarree())
-    _ticks = []
-    for t in ticks:
-        xy = line_constructor(t, n_steps, extent)
-        proj_xyz = ax.projection.transform_points(ccrs.Geodetic(), xy[:, 0], xy[:, 1])
-        xyt = proj_xyz[..., :2]
-        ls = sgeom.LineString(xyt.tolist())
-        locs = axis.intersection(ls)
-        if not locs:
-            tick = [None]
-        else:
-            tick = tick_extractor(locs.xy)
-        _ticks.append(tick[0])
-    # Remove ticks that aren't visible:
-    ticklabels = copy(ticks)
-    while True:
-        try:
-            index = _ticks.index(None)
-        except ValueError:
-            break
-        _ticks.pop(index)
-        ticklabels.pop(index)
-    return _ticks, ticklabels
+    pc = ccrs.PlateCarree()
+    corners = geometry.gimme_corners_ll(subzone=subzone)
+    lons, lats = geometry.get_lonlat_grid(subzone=subzone)
+    left_border = (lons[:, 0], lats[:, 0])
+    bottom_border = (lons[0, :], lats[0, :])
+    corners = {k:projection.transform_point(*v, src_crs=pc)
+               for k, v in corners.items()}
+    (x0, y0) = corners['ll']
+    # MERIDIANS
+    # filter: only keep the meridians that cross the bottom border
+    meridians = [m for m in meridians
+                 if bottom_border[0].min() <= m <= bottom_border[0].max()]
+    for m in meridians:
+        # find closest gridpoint on the bottom border, take its latitude
+        dist = bottom_border[0] - m
+        dmin = 360
+        for i, d in enumerate(dist):
+            if abs(d) <= dmin:
+                dmin = abs(d)
+            else:
+                break
+        lat_crossborder = bottom_border[1][i]
+        x, _ = projection.transform_point(m, lat_crossborder, src_crs=pc)
+        ax.text(x, y0 , '\n\n' + formatted_meridian(m),
+                horizontalalignment='center',
+                verticalalignment='center')
+    # PARALLELS
+    # filter: only keep the parallels that cross the left border
+    parallels = [p for p in parallels
+                 if left_border[1].min() <= p <= left_border[1].max()]
+    for p in parallels:
+        # find closest gridpoint on the left border, take its longitude
+        dist = left_border[1] - p
+        dmin = 90
+        for i, d in enumerate(dist):
+            if abs(d) <= dmin:
+                dmin = abs(d)
+            else:
+                break
+        lon_crossborder = left_border[0][i]
+        # compute y coordinate and write label
+        _, y = projection.transform_point(lon_crossborder, p, src_crs=pc)
+        ax.text(x0, y, formatted_parallel(p),
+                horizontalalignment='right',
+                verticalalignment='center')
