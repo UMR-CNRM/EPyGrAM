@@ -312,10 +312,10 @@ class _H2DCartopyPlot(object):
         import matplotlib.pyplot as plt
         from matplotlib.colors import cnames
         from epygram import colormapping
-        if colormap not in plt.colormaps() and colormap in config.colormaps:
+        if colormap in config.colormaps:
             cmapfile = config.colormaps[colormap]
             if cmapfile.endswith('.json'):
-                colormaphelper = colormapping.get_ColormapHelper_fromfile(cmapfile)
+                colormaphelper = colormapping.get_ColormapHelper_fromfile(cmapfile)  # potentially already loaded
             elif cmapfile.endswith('.cmap'):
                 # deprecated
                 raise epygramError(util._deprecated_cmap)

@@ -15,6 +15,8 @@ __all__ = []
 
 logger = loggers.getLogger(__name__)
 
+_loaded_colormaps = {}
+
 
 def register_colormap_from_json(filename):
     """
@@ -36,12 +38,16 @@ def register_colormap_from_json(filename):
         plt.register_cmap(name=colormap, cmap=colors)
     else:
         raise ValueError('this colormap is already registered: {}'.format(colormap))
+    _loaded_colormaps[filename] = asdict
     return asdict
 
 
 def get_ColormapHelper_fromfile(filename):
     """Get colormap from file (json) and build ad hoc ColormapHelper."""
-    asdict = register_colormap_from_json(filename)
+    if filename in _loaded_colormaps:
+        asdict = _loaded_colormaps[filename]
+    else:
+        asdict = register_colormap_from_json(filename)
     colormap = asdict['name']
     # colormap helper
     if asdict.get('colorcenters', False):
