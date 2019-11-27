@@ -42,6 +42,16 @@ GRIB2_keyvalue = {1:{'tablesVersion':15,
 GRIB2_metadata_to_embark = ['typeOfGeneratingProcess',
                             'productionStatusOfProcessedData',
                             'typeOfProcessedData',
+                            'generatingProcessIdentifier',
+                            'typeOfTimeIncrement',
+                            'indicatorOfUnitOfTimeRange',
+                            'indicatorOfUnitForTimeRange',
+                            'indicatorOfUnitForTimeIncrement',
+                            'hoursAfterDataCutoff',
+                            'minutesAfterDataCutoff',
+                            'timeIncrement',
+                            'bitsPerValue',
+                            'dataRepresentationTemplateNumber',
                             ]
 
 # GRIB1 ------------------------------------------------------------------------

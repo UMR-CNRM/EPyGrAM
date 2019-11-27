@@ -424,7 +424,7 @@ class GRIBmessage(RecursiveObject, dict):
                  grib_edition=None,
                  other_GRIB_options={},
                  interpret_comment=False,
-                 set_misc_metadata=False):
+                 set_misc_metadata=True):
         """
         Initialize a GRIBmessage from either sources.
 
@@ -545,7 +545,7 @@ class GRIBmessage(RecursiveObject, dict):
                          ordering=None,
                          # GRIB2/new way
                          interpret_comment=False,
-                         set_misc_metadata=False):
+                         set_misc_metadata=True):
         """Initialize message from epygram field (and sample)."""
         if grib_edition == 2 or (grib_edition is None and
                                      'GRIB2' in field.fid):
@@ -664,7 +664,7 @@ class GRIBmessage(RecursiveObject, dict):
     def _GRIB2_set(self, field,
                    sample=None,
                    interpret_comment=False,
-                   set_misc_metadata=False,
+                   set_misc_metadata=True,
                    **other_GRIB_options):
         """Set up a GRIB2 message from a field."""
         # clone from sample or file
@@ -694,9 +694,11 @@ class GRIBmessage(RecursiveObject, dict):
         # interpret comment
         if interpret_comment and field.comment is not None:
             comment_options = json.loads(field.comment)
-            other_GRIB_options.update(comment_options)
+            for k, v in comment_options.items():
+                other_GRIB_options.setdefault(k, v)
         if set_misc_metadata:
-            other_GRIB_options.update(field.misc_metadata)
+            for k, v in field.misc_metadata.items():
+                other_GRIB_options.setdefault(k, v)
         # then set keys/values
         self._untouch = set()
         self._GRIB2_set_sections(field, **other_GRIB_options)
@@ -1068,10 +1070,17 @@ class GRIBmessage(RecursiveObject, dict):
             elif cumul_unit != 13:
                 raise NotImplementedError("indicatorOfUnitForTimeRange=={}".format(cumul_unit))
             self['lengthOfTimeRange'] = length
-            self['forecastTime'] = start
             self['indicatorOfUnitForTimeRange'] = cumul_unit
+            self['forecastTime'] = start
+            end = field.validity.get()
+            self['yearOfEndOfOverallTimeInterval'] = end.year
+            self['monthOfEndOfOverallTimeInterval'] = end.month
+            self['dayOfEndOfOverallTimeInterval'] = end.day
+            self['hourOfEndOfOverallTimeInterval'] = end.hour
+            self['minuteOfEndOfOverallTimeInterval'] = end.minute
+            self['secondOfEndOfOverallTimeInterval'] = end.second
             statistical_process = field.validity[0].statistical_process_on_duration(asGRIB2code=True)
-            if statistical_process:
+            if statistical_process is not None:
                 self['typeOfStatisticalProcessing'] = statistical_process
             time_increment = field.validity.statistical_time_increment()
             time_increment_unit = other_GRIB_options.get('indicatorOfUnitForTimeIncrement',
@@ -1647,7 +1656,9 @@ class GRIBmessage(RecursiveObject, dict):
         """Read specified additional keys."""
         misc_metadata = FPDict({})
         for k in read_misc_metadata:
-            misc_metadata[k] = self.get(k)
+            v = self.get(k)
+            if v is not None:
+                misc_metadata[k] = v
         return misc_metadata
 
     def _read_validity(self):
@@ -2477,7 +2488,7 @@ class GRIB(FileResource):
                   getdata=True,
                   footprints_proxy_as_builder=config.footprints_proxy_as_builder,
                   get_info_as_json=None,
-                  read_misc_metadata=[]):
+                  read_misc_metadata=griberies.defaults.GRIB2_metadata_to_embark):
         """
         Finds in GRIB the message that correspond to the *handgrip*,
         and returns it as a :class:`epygram.base.Field`.
@@ -2527,7 +2538,7 @@ class GRIB(FileResource):
                    getdata=True,
                    footprints_proxy_as_builder=config.footprints_proxy_as_builder,
                    get_info_as_json=None,
-                   read_misc_metadata=[]):
+                   read_misc_metadata=griberies.defaults.GRIB2_metadata_to_embark):
         """
         Finds in GRIB the message(s) that correspond to the *handgrip*,
         and returns it as a :class:`epygram.base.FieldSet` of
@@ -2856,7 +2867,6 @@ class GRIB(FileResource):
                         break
                 if zs is None:
                     raise epygramError("No terrain height field found, ground cannot be plotted")
-                print("chmp trouve!!!")
 
             # effective vertical coords conversion
             if subdomain.geometry.vcoordinate.typeoffirstfixedsurface == 100 and \
