@@ -2283,8 +2283,11 @@ class GRIB(FileResource):
         :param additional_keys: add given keys in fids
         """
         if select is not None:
-            additional_keys = list(select.keys()) + additional_keys
-        fidlist = super(GRIB, self).listfields(additional_keys=additional_keys)
+            select_keys = list(select.keys())
+        else:
+            select_keys = []
+        fidlist = super(GRIB, self).listfields(additional_keys=additional_keys,
+                                               select_keys=select_keys)
         if select is not None:
             fidlist = [f for f in fidlist if all([f[k] == select[k] for k in select.keys()])]
         if onlykey is not None:
@@ -2297,11 +2300,10 @@ class GRIB(FileResource):
             for f in fidlist:
                 if 'GRIB2' in f:
                     f['generic'] = f['GRIB2']
-
         return fidlist
 
     @FileResource._openbeforedelayed
-    def _listfields(self, additional_keys=[]):
+    def _listfields(self, additional_keys=[], select_keys=[]):
         """Returns a list of GRIB-type fid of the fields inside the resource."""
         def gid_key_to_fid(gid, k, fid):
             # bug in GRIB_API ? 1, 103 & 105 => 'sfc'
@@ -2332,7 +2334,12 @@ class GRIB(FileResource):
                 t = None
             for k in GRIBmessage.fid_keys_for(n, t):
                 gid_key_to_fid(gid, k, fid)
-            for k in additional_keys:
+            for k in additional_keys:  # FIXME: here we mix additional, if present, and select/filter
+                try:
+                    gid_key_to_fid(gid, k, fid)
+                except lowlevelgrib.InternalError:
+                    pass
+            for k in select_keys:  # FIXME: here we mix additional, if present, and select/filter
                 try:
                     gid_key_to_fid(gid, k, fid)
                 except lowlevelgrib.InternalError:
@@ -2342,7 +2349,6 @@ class GRIB(FileResource):
             if not filter_out:
                 fidlist.append(fid)
         _file.close()
-
         return fidlist
 
     def split_UV(self, fieldseed):
