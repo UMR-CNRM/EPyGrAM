@@ -553,11 +553,12 @@ graphical_options = {
         '--pm', '--plot_method',
         dict(help="plot method, among\
                    ('pcolormesh', 'contourf', 'contour', 'scatter'). Default is\
-                   'pcolormesh'. There is a known bug (yet unsolved) with\
+                   'pcolormesh' for rectangular grids, else 'contourf'.\
+                   There is a known bug (yet unsolved) with\
                    Arpege & contourlines.",
              choices=['pcolormesh', 'contourf', 'contour', 'scatter'],
              dest='plot_method',
-             default='pcolormesh')],
+             default='__default__')],
     'plotmode':[
         'plotmode',
         dict(type=str,
