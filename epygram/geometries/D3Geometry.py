@@ -4822,25 +4822,19 @@ class D3GaussGeometry(D3Geometry):
 
         :param i: X index of point in the 2D matrix of gridpoints
         :param j: Y index of point in the 2D matrix of gridpoints
-        :param margin: considers the point inside if at least 'margin' points far
-          from the border. The -0.1 default is a safety for precision errors.
+        :param margin: DEPRECATED
         """
-        try:
-            N = len(i)
-        except Exception:
-            N = 1
-        if N == 1:
-            inside = True
-            if j >= self.dimensions['lat_number'] or j < 0:
-                inside = False
-            if i >= self.dimensions['lon_number_by_lat'][j] or i < 0:
-                inside = False
-        else:
-            dimensions = as_numpy_array(self.dimensions['lon_number_by_lat'])
-            inside = numpy.logical_and(numpy.logical_and(j >= 0,
-                                                         j < self.dimensions['lat_number']),
-                                       numpy.logical_and(i >=0,
-                                                         i < dimensions[j]))
+        i = as_numpy_array(i) if isinstance(i, (list, tuple)) else i
+        j = as_numpy_array(j) if isinstance(j, (list, tuple)) else j
+        dimensions = as_numpy_array(self.dimensions['lon_number_by_lat'])
+        # Firstly we test the validity of j.
+        # In case j is invalid result will be False
+        # but we need a valid value for j to test the i validity
+        j2 = numpy.maximum(0, numpy.minimum(j, self.dimensions['lat_number'] - 1))
+        inside = numpy.logical_and(numpy.logical_and(j >= 0,
+                                                     j < self.dimensions['lat_number']),
+                                   numpy.logical_and(i >= 0,
+                                                     i < dimensions[j2]))
         return inside
 
     def _rotate_stretch(self, lon, lat, reverse=False):
