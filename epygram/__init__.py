@@ -199,7 +199,7 @@ def init_env(omp_num_threads=1,
     """
     # 1. arpifs4py library
     # FA & LFI need some special environment setting
-    if any([f in config.implemented_formats for f in ('FA', 'LFI')]):
+    if any([f in formats.runtime_available_formats for f in ('FA', 'LFI')]):
         import arpifs4py
         if mute_FA4py is None:
             mute_FA4py = config.FA_mute_FA4py
@@ -219,7 +219,7 @@ def init_env(omp_num_threads=1,
     # 3. grib_api or eccodes
     # need some special environment setting
     # ensure grib_api/eccodes variables are consistent with inner library
-    if 'GRIB' in config.implemented_formats and ensure_consistent_GRIB_paths:
+    if 'GRIB' in formats.runtime_available_formats and ensure_consistent_GRIB_paths:
         from .formats.GRIB import lowlevelgrib
         lowlevelgrib.init_env(reset=ignore_gribenv_paths)
 
