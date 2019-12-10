@@ -131,6 +131,9 @@ from . import fields
 from . import formats
 from . import resources
 
+# Register plugins
+import epygram._plugins
+
 # User modules
 if len(config.usermodules) > 0:
     footprints.priorities.set_before('debug', 'user')

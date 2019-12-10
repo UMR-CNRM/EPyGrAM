@@ -628,8 +628,6 @@ class DiagnosticsResource(Resource):
                             myfid = fid.copy()
                             myfid.update(e[1])
                             field = self.readfield(myfid, getdata=getdata)
-                            if field.spectral:
-                                field.sp2gp()
                             if e[2] != 1 or e[3] is not None:
                                 for fmt in [fmt for fmt in field.fid.keys() if fmt not in ['generic', self.format]]:
                                     field.fid.pop(fmt)
@@ -640,6 +638,8 @@ class DiagnosticsResource(Resource):
                             field.fid['generic'] = fid_generic
                             field.fid[self.format] = fid_format
                             if getdata:
+                                if field.spectral:
+                                    field.sp2gp()
                                 field.setdata(field.getdata() * e[2])
                                 if e[3] is not None:
                                     field.setdata(e[3](field.getdata()))
@@ -1327,7 +1327,7 @@ class DiagnosticsAROMEResource(DiagnosticsResource):
         )
     )
 
-    def diag_equiv_model_terrain_height(self, *args, **kwargs):
+    def diag_equiv_model_terrain_height_AROME(self, *args, **kwargs):
         equiv = ({'discipline':0, 'parameterCategory':193, 'parameterNumber':5, 'typeOfFirstFixedSurface':1},
                  {'discipline':0, 'parameterCategory':3, 'parameterNumber':4, 'typeOfFirstFixedSurface':1},
                  True, 1, None)  # Always equivalent, no factor

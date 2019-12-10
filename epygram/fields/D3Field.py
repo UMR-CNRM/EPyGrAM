@@ -21,13 +21,11 @@ from bronx.syntax.arrays import stretch_array
 from epygram import epygramError, config
 from epygram.util import (write_formatted, Angle,
                           degrees_nearest_mod,
-                          vtk_modify_grid, vtk_write_grid,
                           as_numpy_array,
                           moveaxis)
 from epygram.base import Field, FieldSet, FieldValidity, FieldValidityList, Resource
 from epygram.geometries import D3Geometry, SpectralGeometry
 from epygram.geometries.D3Geometry import D3ProjectedGeometry, D3RectangularGridGeometry
-
 
 class _D3CommonField(Field):
     """
@@ -286,13 +284,28 @@ class _D3CommonField(Field):
                         value[n] = f(as_numpy_array(lon)[n], as_numpy_array(lat)[n])
 
             elif method == 'bilinear':
-                square = numpy.all(all_i[:, 0] == all_i[:, 1]) and numpy.all(all_i[:, 2] == all_i[:, 3]) and \
-                         numpy.all(all_j[:, 0] == all_j[:, 2]) and numpy.all(all_j[:, 1] == all_j[:, 3])
+                def simple_inter(x1, q1, x2, q2, x):
+                    """Simple linear interpolant"""
+                    return (x2 - x) / (x2 - x1) * q1 + (x - x1) / (x2 - x1) * q2
 
-                if square:
-                    def simple_inter(x1, q1, x2, q2, x):
-                        """Simple linear interpolant"""
-                        return (x2 - x) / (x2 - x1) * q1 + (x - x1) / (x2 - x1) * q2
+                if 'gauss' in self.geometry.name:
+                    test = numpy.all(all_j[:, 0] == all_j[:, 1]) and numpy.all(all_j[:, 2] == all_j[:, 3])
+                    if not test:
+                        raise RuntimeError("Points are not in the awaited order...")
+
+                    lonrs, latrs = self.geometry._rotate_stretch(lon, lat) #waited point
+                    lonrs_near, latrs_near = self.geometry._rotate_stretch(*self.geometry.ij2ll(all_i.flatten(), all_j.flatten()))
+                    lonrs_near, latrs_near = lonrs_near.reshape(all_i.shape), latrs_near.reshape(all_i.shape)
+                    value = simple_inter(latrs_near[:, 0], simple_inter(lonrs_near[:, 0], values_at_interp_points[:, 0],
+                                                                        lonrs_near[:, 1], values_at_interp_points[:, 1], lonrs),
+                                         latrs_near[:, 2], simple_inter(lonrs_near[:, 2], values_at_interp_points[:, 2],
+                                                                        lonrs_near[:, 3], values_at_interp_points[:, 3], lonrs),
+                                         latrs)
+                else:
+                    square = numpy.all(all_i[:, 0] == all_i[:, 1]) and numpy.all(all_i[:, 2] == all_i[:, 3]) and \
+                             numpy.all(all_j[:, 0] == all_j[:, 2]) and numpy.all(all_j[:, 1] == all_j[:, 3])
+                    if not square:
+                        raise NotImplementedError("Bilinear interpolation on non gaussian, irregular grid")
                     
                     # Position of wanted point
                     wanted_i, wanted_j = self.geometry.ll2ij(lon, lat)
@@ -302,8 +315,6 @@ class _D3CommonField(Field):
                                          all_j[:, 1], simple_inter(all_i[:, 1], values_at_interp_points[:, 1],
                                                                    all_i[:, 3], values_at_interp_points[:, 3], wanted_i),
                                          wanted_j)
-                else:
-                    raise NotImplementedError("Bilinear interpolation on irregular grid")
         else:
             raise NotImplementedError('*interpolation*=' + interpolation)
         if one:
@@ -314,71 +325,6 @@ class _D3CommonField(Field):
 
         return copy.copy(value)
 
-    def as_vtkGrid(self, hCoord, grid_type, z_factor, offset,
-                   subzone=None,
-                   filename=None, name='scalar', grid=None,
-                   version='XML', binary=True, compression='ZLib',
-                   compression_level=5):
-        """
-        Returns a vtkStructuredGrid filled with the field
-        :param hCoord: 'll': horizontal coordinates are the lon/lat values
-                       a basemap: horizontal coordinates are set according to this basemap
-        :param grid_type: can be:
-            - sgrid_point: structured grid filled with points
-            - sgrid_cell: structured grid filled with hexahedron
-                          If the field is 2D, a zero thickness is used.
-                          If the field is 3D, thickness are approximately computed
-            - ugrid_point: unstructured grid filled with points
-            - ugrid_cell: unstructured grid build filled with cells
-                          If the field is 2D, a zero thickness is used.
-                          If the field is 3D, thickness are approximately computed
-        :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
-        :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
-        :param subzone: optional, among ('C', 'CI'), for LAM grids only, returns
-                        the grid resp. for the C or C+I zone off the C+I+E zone. \n
-                        Default is no subzone, i.e. the whole field.
-        :param filename: if not None, resulting grid will be written into filename
-        :param name: name to give to the scalar array (useful with the grid option)
-        :param grid: if grid is not None, the method will add the data to it.
-        :param version: must be 'legacy' or 'XML', used with filename
-        :param binary: True (default) for a binary file, used with filename
-        :param compression: must be None, 'LZ4' or 'ZLib'
-                            only used for binary XML
-        :param compression_level: between 1 and 9, only used for binary XML Zlib-compressed
-
-        If grid_type is 'sgrid_point', the result is the grid; otherwise
-        the result is the function is the last filter used.
-        """
-        import vtk # @UnresolvedImport
-        from vtk.numpy_interface import dataset_adapter as dsa  # @UnresolvedImport
-
-        if len(self.validity) != 1:
-            raise NotImplementedError("For now, animation are not possible, only one validity allowed.")
-        if self.spectral:
-            raise epygramError("Spectral field, please use sp2gp() before.")
-
-        data = self.getdata(d4=True, subzone=subzone).astype(numpy.float32)
-        data = data[0, ...].flatten()
-
-        if grid is None:
-            grid = self.geometry.make_vtkGrid(hCoord, z_factor, offset, subzone)
-            grid.epygram = dict(geometry=self.geometry)
-        else:
-            if grid.epygram['geometry'] != self.geometry:
-                raise epygramError("To add a value to an existing grid, geometries must be the same")
-            names = [grid.GetPointData().GetArrayName(i) for i in range(grid.GetPointData().GetNumberOfArrays())]
-            if name in names:
-                raise epygramError("There already is an array with same name: " + name)
-
-        grid.GetPointData().AddArray(dsa.numpyTovtkDataArray(data, name, array_type=vtk.VTK_FLOAT))
-        grid.GetPointData().SetActiveScalars(name)
-
-        grid = vtk_modify_grid(grid, grid_type, datamin=data.min())
-
-        if filename is not None:
-            vtk_write_grid(grid, filename, version=version, binary=binary,
-                           compression=compression, compression_level=compression_level)
-        return grid
 
     def as_lists(self, order='C', subzone=None):
         """
@@ -751,8 +697,8 @@ class _D3CommonField(Field):
                 # We keep all dims when validity is not unique
                 extracted = list(extracted)
             else:
-                # We suppress null dims
-                extracted = list(extracted.squeeze())
+                # We suppress the validity dimension
+                extracted = list(extracted[:, 0, ...])
             del newgeometry.vcoordinate.levels[:]
             newgeometry.vcoordinate.levels.extend(extracted)
             del temp_field, temp_geom
@@ -807,32 +753,42 @@ class _D3CommonField(Field):
                 comment = "Profile @ " + str(int(distance)) + "m " + \
                           direction + " from " + str((float(lons), float(lats))) + \
                           "\n" + "( = nearest gridpoint: " + gridpointstr + ")"
-        elif interpolation in ('linear', 'cubic'):
+        elif interpolation in ('linear', 'cubic', 'bilinear'):
             if interpolation == 'linear':
                 interpstr = 'linearly'
             elif interpolation == 'cubic':
                 interpstr = 'cubically'
+            elif interpolation == 'bilinear':
+                interpstr = 'bilinearly'
             if lons.size == 1:
                 comment = "Profile " + interpstr + " interpolated @ " + \
                           str((float(lons), float(lats)))
         else:
-            raise NotImplementedError(interpolation + "interpolation.")
+            raise NotImplementedError(interpolation + " interpolation.")
 
         # Values
         if getdata:
             shp = newgeometry.get_datashape(dimT=len(self.validity), d4=True)
             data = numpy.ndarray(shp)
             for t in range(len(self.validity)):
-                for k in range(len(newgeometry.vcoordinate.levels)):
-                    # level = newgeometry.vcoordinate.levels[k]
-                    extracted = self.getvalue_ll(lons, lats,
-                                                 # level=level,  # equivalent to k=k_index[k] except that the k option
-                                                 k=k_index[k],  # still works when level is an array
-                                                 validity=self.validity[t],
-                                                 interpolation=interpolation,
-                                                 external_distance=external_distance,
-                                                 one=False)
-                    data[t, k, :, :] = newgeometry.reshape_data(extracted)
+                #This is the old version, to delete later
+                #for k in range(len(newgeometry.vcoordinate.levels)):
+                #    # level = newgeometry.vcoordinate.levels[k]
+                #    extracted = self.getvalue_ll(lons, lats,
+                #                                 # level=level,  # equivalent to k=k_index[k] except that the k option
+                #                                 k=k_index[k],  # still works when level is an array
+                #                                 validity=self.validity[t],
+                #                                 interpolation=interpolation,
+                #                                 external_distance=external_distance,
+                #                                 one=False)
+                #    data[t, k, :, :] = newgeometry.reshape_data(extracted)
+                data[t, ...] = self.getvalue_ll(as_numpy_array(lons)[numpy.newaxis, :].repeat(len(k_index), axis=0).flatten(),
+                                                as_numpy_array(lats)[numpy.newaxis, :].repeat(len(k_index), axis=0).flatten(),
+                                                k=as_numpy_array(k_index).repeat(lons.size),
+                                                validity=self.validity[t],
+                                                interpolation=interpolation,
+                                                external_distance=external_distance,
+                                                one=False).reshape(shp[1:])
 
         # Field
         newfield = fpx.field(fid=FPDict(subdomainfid),
@@ -846,6 +802,7 @@ class _D3CommonField(Field):
 
         return newfield
 
+
     def extract_zoom(self, zoom, extra_10th=False):
         """
         Extract an unstructured field with the gridpoints contained in *zoom*.
@@ -857,9 +814,8 @@ class _D3CommonField(Field):
         assert not self.spectral, \
                "spectral field: convert to gridpoint beforehand"
 
-        (lons, lats) = self.geometry.get_lonlat_grid()
         kwargs_zoomgeom = {'structure':self.geometry.structure,
-                           'vcoordinate':self.geometry.vcoordinate,
+                           'vcoordinate':self.geometry.vcoordinate.deepcopy(),
                            'position_on_horizontal_grid':self.geometry.position_on_horizontal_grid,
                            'geoid':self.geometry.geoid}
         if self.geometry.name == 'regular_lonlat':
@@ -903,6 +859,7 @@ class _D3CommonField(Field):
                                        'X_resolution':self.geometry.grid['X_resolution'],
                                        'Y_resolution':self.geometry.grid['Y_resolution']}
         else:
+            (lons, lats) = self.geometry.get_lonlat_grid()
             lons = lons.flatten()
             lats = lats.flatten()
             zoomlons = FPList([])
@@ -921,11 +878,37 @@ class _D3CommonField(Field):
             kwargs_zoomgeom['grid'] = {'longitudes':zoomlons,
                                        'latitudes':zoomlats}
         zoom_geom = fpx.geometry(**kwargs_zoomgeom)
+        # Il serait mieux d'utiliser
+        # zoom_geom = self.geometry.make_zoom_geometry(zoom, extra_10th)
+        # mais il faudrait s'assurer d'appliquer le global_shift_center de
+        # la même manière sur la géométrie et sur le champ.
+        # Le problème ne se poserait plus en utilisant extract_subdomain
+
+        if any([isinstance(level, numpy.ndarray) for level in zoom_geom.vcoordinate.levels]):
+            # level value is not constant on the domain, we must extract a subdomain.
+            # We build a new field with same structure/geometry/validity as self
+            # and we fill its data with the level values. We replace levels by index
+            # in the geometry to stop recursion and use the extract_subdomain method
+            # to get the level values on the new geometry levels.
+            temp_field = self.geometry.vcoord_as_field(self.geometry.vcoordinate.typeoffirstfixedsurface,
+                                                       self.validity)
+            extracted = temp_field.extract_zoom(zoom, extra_10th).getdata(d4=True)
+            extracted = extracted.swapaxes(0, 1)  # z first, then validity for levels (opposite of fields)
+            if len(self.validity) > 1:
+                # We keep all dims when validity is not unique
+                extracted = list(extracted)
+            else:
+                # We suppress the validity dimension
+                extracted = list(extracted[:, 0, ...])
+            del zoom_geom.vcoordinate.levels[:]
+            zoom_geom.vcoordinate.levels.extend(extracted)
+            del temp_field
 
         # Serait plus élégant mais pb d'efficacité (2x plus lent)
         # car extract_subdomain fait une recherche des plus proches points:
         # zoom_field = self.extract_subdomain(zoom_geom)
         # zoom_field.fid = fid
+        
         shp = zoom_geom.get_datashape(dimT=len(self.validity), d4=True)
         data = numpy.empty(shp)
         values = self.getdata(d4=True)
@@ -945,14 +928,35 @@ class _D3CommonField(Field):
             if isinstance(v, dict):
                 fid[k] = FPDict(v)
         zoom_field = fpx.field(fid=fid,
-                                            structure=self.structure,
-                                            geometry=zoom_geom,
-                                            validity=self.validity,
-                                            spectral_geometry=None,
-                                            processtype=self.processtype)
+                               structure=self.structure,
+                               geometry=zoom_geom,
+                               validity=self.validity,
+                               spectral_geometry=None,
+                               processtype=self.processtype)
         zoom_field.setdata(data)
-
+        
         return zoom_field
+
+
+    #This method is intended to replace the extract_zoom one
+    #but is still longer at execution
+    #def _extract_zoom_with_subdo(self, zoom, extra_10th=False):
+    #    """
+    #    Extract an unstructured field with the gridpoints contained in *zoom*.
+    #
+    #    :param zoom: a dict(lonmin=, lonmax=, latmin=, latmax=).
+    #    :param extra_10th: if True, add 1/10th of the X/Y extension of the zoom
+    #                       (regular_lonlat grid case only).
+    #    """
+    #    assert not self.spectral, \
+    #           "spectral field: convert to gridpoint beforehand"
+    #
+    #    zoom_geom = self.geometry.make_zoom_geometry(zoom, extra_10th)
+    #    if any([isinstance(level, numpy.ndarray) for level in self.geometry.vcoordinate.levels]):
+    #        del zoom_geom.vcoordinate.levels[:]
+    #    zoom_field = self.extract_subdomain(zoom_geom, interpolation='nearest')
+    #
+    #    return zoom_field
 
     def extract_subarray(self,
                          first_i, last_i,
@@ -967,8 +971,34 @@ class _D3CommonField(Field):
         """
         newgeom = self.geometry.make_subarray_geometry(first_i, last_i,
                                                        first_j, last_j)
+        if any([isinstance(level, numpy.ndarray) for level in newgeom.vcoordinate.levels]):
+            # level value is not constant on the domain, we must extract a subdomain.
+            # We build a new field with same structure/geometry/validity as self
+            # and we fill its data with the level values. We replace levels by index
+            # in the geometry to stop recursion and use the extract_subdomain method
+            # to get the level values on the new geometry levels.
+            temp_field = self.geometry.vcoord_as_field(self.geometry.vcoordinate.typeoffirstfixedsurface,
+                                                       self.validity)
+            extracted = temp_field.extract_subarray(first_i, last_i,
+                                                    first_j, last_j,
+                                                    getdata=True,
+                                                    deepcopy=True).getdata(d4=True)
+            extracted = extracted.swapaxes(0, 1)  # z first, then validity for levels (opposite of fields)
+            if len(self.validity) > 1:
+                # We keep all dims when validity is not unique
+                extracted = list(extracted)
+            else:
+                # We suppress null dims
+                extracted = list(extracted.squeeze())
+            del newgeom.vcoordinate.levels[:]
+            newgeom.vcoordinate.levels.extend(extracted)
+            del temp_field
+
         # copy the field object and set the new geometry, then data
-        field_kwargs = self._attributes
+        if hasattr(self, 'as_real_field'):
+            field_kwargs = self.as_real_field()._attributes
+        else:
+            field_kwargs = self._attributes
         if deepcopy:
             field_kwargs = copy.deepcopy(field_kwargs)
         field_kwargs['geometry'] = newgeom
@@ -976,7 +1006,7 @@ class _D3CommonField(Field):
         if getdata:
             assert not self.spectral
             # select data
-            subdata = self.getdata(d4=True)[:, :, first_j:last_j, first_i:last_i]
+            subdata = self.getdata(d4=True)[:, :, first_j:last_j + 1, first_i:last_i + 1]
             newfield.setdata(subdata)
 
         return newfield
@@ -1005,6 +1035,29 @@ class _D3CommonField(Field):
         newgeom = self.geometry.make_subsample_geometry(sample_x,
                                                         sample_y,
                                                         sample_z)
+        
+        if any([isinstance(level, numpy.ndarray) for level in newgeom.vcoordinate.levels]):
+            # level value is not constant on the domain, we must extract a subdomain.
+            # We build a new field with same structure/geometry/validity as self
+            # and we fill its data with the level values. We replace levels by index
+            # in the geometry to stop recursion and use the extract_subdomain method
+            # to get the level values on the new geometry levels.
+            temp_field = self.geometry.vcoord_as_field(self.geometry.vcoordinate.typeoffirstfixedsurface,
+                                                       self.validity)
+            extracted = temp_field.extract_subsample(sample_x, sample_y, sample_z,
+                                                     getdata=True,
+                                                     deepcopy=True).getdata(d4=True)
+            extracted = extracted.swapaxes(0, 1)  # z first, then validity for levels (opposite of fields)
+            if len(self.validity) > 1:
+                # We keep all dims when validity is not unique
+                extracted = list(extracted)
+            else:
+                # We suppress null dims
+                extracted = list(extracted.squeeze())
+            del newgeom.vcoordinate.levels[:]
+            newgeom.vcoordinate.levels.extend(extracted)
+            del temp_field
+        
         # copy the field object and set the new geometry, then data
         field_kwargs = self._attributes
         if deepcopy:
@@ -1350,157 +1403,6 @@ class _D3CommonField(Field):
 
     def plotfield(self):
         raise NotImplementedError("plot of 3D field is not implemented")
-
-    def plot3DOutline(self, rendering, color='Black'):
-        """
-        Plots the outline of the data
-        :param rendering:  a dictionary obtained from util.vtk_setup
-        :param color: color name to use for the outline
-        """
-        import vtk  # @UnresolvedImport
-
-
-        grid = self.as_vtkGrid(rendering['hCoord'], 'sgrid_point',
-                               rendering['z_factor'], rendering['offset'], rendering['subzone'])
-
-        # outline = vtk.vtkStructuredGridOutlineFilter()
-        outline = vtk.vtkOutlineFilter()
-        outline.SetInputData(grid)
-
-        outlineMapper = vtk.vtkPolyDataMapper()
-        outlineMapper.SetInputConnection(outline.GetOutputPort())
-
-        outlineActor = vtk.vtkActor()
-        outlineActor.SetMapper(outlineMapper)
-        outlineActor.GetProperty().SetColor(vtk.vtkNamedColors().GetColor3d(color))
-
-        rendering['renderer'].AddActor(outlineActor)
-        return (outlineActor, outlineMapper)
-
-    def plot3DContour(self, rendering,
-                      levels, color='Black', opacity=1.):
-        """
-        This method adds contour lines. If the field is 3D, contours appear as isosurface.
-        :param rendering: a dictionary obtained from util.vtk_setup
-        :param levels: list of values to use to compute the contour lines
-        :param color: color name or lookup table or color transfer function
-                      for coloring the contour lines
-        :param opacity: opacity value for the contour lines
-        """
-        import vtk  # @UnresolvedImport
-
-        ugrid = self.as_vtkGrid(rendering['hCoord'], 'ugrid_point',
-                                rendering['z_factor'], rendering['offset'], rendering['subzone'])
-        iso = vtk.vtkContourFilter()
-        # iso.GenerateTrianglesOff()
-        iso.SetInputConnection(ugrid.GetOutputPort())
-        iso.ComputeScalarsOn()
-        for i, value in enumerate(levels):
-            iso.SetValue(i, value)
-
-        # Does it change something? We certainly need to adjust convergence
-        """
-        smooth = vtk.vtkSmoothPolyDataFilter()
-        smooth.SetInputConnection(iso.GetOutputPort())
-        iso = smooth
-        """
-
-        isoMapper = vtk.vtkPolyDataMapper()
-        isoMapper.SetInputConnection(iso.GetOutputPort())
-        
-        isoActor = vtk.vtkActor()
-        isoActor.SetMapper(isoMapper)
-        
-        if isinstance(color, vtk.vtkLookupTable) or isinstance(color, vtk.vtkColorTransferFunction):
-            isoMapper.ScalarVisibilityOn()
-            isoMapper.SetLookupTable(color)
-            isoMapper.UseLookupTableScalarRangeOn()
-        else:
-            isoMapper.ScalarVisibilityOff()
-            isoActor.GetProperty().SetColor(vtk.vtkNamedColors().GetColor3d(color))
-        isoActor.GetProperty().SetOpacity(opacity)
-        rendering['renderer'].AddActor(isoActor)
-        return (isoActor, isoMapper)
-
-    def plot3DColore(self, rendering,
-                     color, opacity=1.):
-        """
-        This method color the field.
-        :param rendering: a dictionary obtained from util.vtk_setup
-        :param color: look up table or color transfer function to colorize the contour lines
-        :param opacity: opacity value
-        """
-        import vtk  # @UnresolvedImport
-
-        sgrid = self.as_vtkGrid(rendering['hCoord'], 'sgrid_point',
-                                rendering['z_factor'], rendering['offset'], rendering['subzone'])
-        sgridGeom = vtk.vtkStructuredGridGeometryFilter()
-        sgridGeom.SetInputData(sgrid)
-
-        sgridGeomMap = vtk.vtkPolyDataMapper()
-        sgridGeomMap.SetInputConnection(sgridGeom.GetOutputPort())
-        sgridGeomMap.SetLookupTable(color)
-        sgridGeomMap.UseLookupTableScalarRangeOn()
-        sgridGeomMap.InterpolateScalarsBeforeMappingOn()
-
-        sgridGeomMapActor = vtk.vtkActor()
-        sgridGeomMapActor.SetMapper(sgridGeomMap)
-        sgridGeomMapActor.GetProperty().SetOpacity(opacity)
-        rendering['renderer'].AddActor(sgridGeomMapActor)
-        return (sgridGeomMapActor, sgridGeomMap)
-
-    def plot3DVolume(self, rendering,
-                     threshold, color, opacity,
-                     algo='OpenGLProjectedTetrahedra'):
-        """
-        Adds a volume to the vtk rendering system
-        :param rendering: a dictionary obtained from util.vtk_setup
-        :param threshold: a tuple (minval, maxval) used to discard values outside of the interval
-                          minval and/or maxval can be replace by None value
-        :param color: a vtk.vtkColorTransferFunction object or None to describe the color
-        :param opacity: a vtk.vtkPiecewiseFunction object or None to describe the alpha channel
-        :param algo: among 'RayCast', 'ZSweep', 'ProjectedTetrahedra', 'OpenGLProjectedTetrahedra'
-        """
-        import vtk  # @UnresolvedImport
-
-        minval, maxval = threshold
-        grid = self.as_vtkGrid(rendering['hCoord'], 'ugrid_cell',
-                               rendering['z_factor'], rendering['offset'], rendering['subzone'])
-
-        fil = vtk.vtkThreshold()
-        fil.SetInputConnection(grid.GetOutputPort())
-        if maxval is None:
-            fil.ThresholdByUpper(minval)
-        elif minval is None:
-            fil.ThresholdByLower(maxval)
-        elif minval is None and maxval is None:
-            pass
-        else:
-            fil.ThresholdBetween(minval, maxval)
-
-        tri = vtk.vtkDataSetTriangleFilter()
-        tri.SetInputConnection(fil.GetOutputPort())
-
-        volumeMapper = {'RayCast':vtk.vtkUnstructuredGridVolumeRayCastMapper,
-                        'ZSweep':vtk.vtkUnstructuredGridVolumeZSweepMapper,
-                        'ProjectedTetrahedra':vtk.vtkProjectedTetrahedraMapper,
-                        'OpenGLProjectedTetrahedra':vtk.vtkOpenGLProjectedTetrahedraMapper}[algo]()
-        volumeMapper.SetInputConnection(tri.GetOutputPort())
-
-        volumeProperty = vtk.vtkVolumeProperty()
-        if color is not None:
-            volumeProperty.SetColor(color)
-        if opacity is not None:
-            volumeProperty.SetScalarOpacity(opacity)
-        volumeProperty.ShadeOff()
-        volumeProperty.SetInterpolationTypeToLinear()
-
-        volume = vtk.vtkVolume()
-        volume.SetMapper(volumeMapper)
-        volume.SetProperty(volumeProperty)
-
-        rendering['renderer'].AddVolume(volume)
-        return (volume, volumeMapper)
 
     def stats(self, subzone=None):
         """
@@ -2364,7 +2266,7 @@ class D3Field(_D3CommonField):
         if len(sizes) > 2 or (len(sizes) == 2 and 1 not in sizes):
             raise epygramError("each of i, j, k and t must be scalar or have the same length as the others")
 
-        value = numpy.copy(self.getdata(d4=True)[t, k, j, i])
+        value = (self.getdata(d4=True)[t, k, j, i]).copy()
 
         if value.size == 1 and one:
             value = value.item()
@@ -2744,24 +2646,29 @@ class D3VirtualField(_D3CommonField):
         dataList = []
         concat = numpy.concatenate
         arr = numpy.array
+        missing = set()
         for k in range(len(self.geometry.vcoordinate.levels)):
             data = self.getlevel(k=k).getdata(subzone=subzone, d4=d4)
             if isinstance(data, numpy.ma.masked_array):
                 concat = numpy.ma.concatenate
                 arr = numpy.ma.array
+                missing.add(data.fill_value)
             dataList.append(data)
         if d4:
             # vertical dimension already exists, and is the second one
-            return concat(dataList, axis=1)
+            result = concat(dataList, axis=1)
         else:
             if len(self.validity) > 1:
                 # vertical dimension does not exist and
                 # must be the second one of the resulting array
-                return numpy.stack(dataList, axis=1)
+                result = numpy.stack(dataList, axis=1)
             else:
                 # vertical dimension does not exist and
                 # must be the first one of the resulting array
-                return arr(dataList)
+                result = arr(dataList)
+        if len(missing) == 1:
+            result.set_fill_value(missing.pop())
+        return result
 
     def setdata(self, data):
         """setdata() not implemented on virtual fields."""

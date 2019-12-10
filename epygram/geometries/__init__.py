@@ -12,7 +12,7 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 from footprints import proxy as fpx
 
 from .H2DGeometry import H2DGeometry
-from .D3Geometry import D3Geometry
+from .D3Geometry import D3Geometry, D3AcademicGeometry, _need_pyproj_geod
 from .VGeometry import VGeometry
 from .V1DGeometry import V1DGeometry
 from .V2DGeometry import V2DGeometry

@@ -233,8 +233,14 @@ class V2DCommonField(_D3CommonField):
         else:
             raise NotImplementedError('graphicmode="{}"'.format(graphicmode))
         # decoration
-        surf = z[-1, :]
-        bottom = max(surf) if reverseY else min(surf)
+        #surf = z[-1, :]
+        #bottom = max(surf) if reverseY else min(surf)
+        if reverseY:
+            surf = z.max(axis=0)
+            bottom = surf.max()
+        else:
+            surf = z.min(axis=0)
+            bottom = surf.min()
         ax.fill_between(x[-1, :], surf, numpy.ones(len(surf)) * bottom,
                         color='k')
         if self.geometry.vcoordinate.typeoffirstfixedsurface == 119:
