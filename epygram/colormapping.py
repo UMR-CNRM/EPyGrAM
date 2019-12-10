@@ -10,6 +10,8 @@ import json
 
 from bronx.fancies import loggers
 
+from . import config
+
 #: No automatic export
 __all__ = []
 
@@ -42,6 +44,15 @@ def register_colormap_from_json(filename):
     return asdict
 
 
+def load_colormap(colormap):
+    """Load colormap from epygram colormaps if needed."""
+    import matplotlib.pyplot as plt
+    if colormap not in plt.colormaps():
+        if colormap in config.colormaps:
+            cmapfile = config.colormaps[colormap]
+            register_colormap_from_json(cmapfile)
+
+
 def get_ColormapHelper_fromfile(filename):
     """Get colormap from file (json) and build ad hoc ColormapHelper."""
     if filename in _loaded_colormaps:
@@ -67,6 +78,7 @@ def get_ColormapHelper_fromfile(filename):
     return ch
 
 
+# FIXME: using a ColormapHelper with e.g. viridis colormap, explicit_colorbounds and norm=True does not work !
 class ColormapHelper(object):
     """
     An integrated object helping for colormapping.
@@ -92,6 +104,7 @@ class ColormapHelper(object):
         :param explicit_ticks: to specify the ticks values to be shown
         """
         self.colormap = colormap
+        load_colormap(colormap)
         self.explicit_colorbounds = explicit_colorbounds
         self.normalize = normalize
         self.explicit_ticks = explicit_ticks
@@ -204,6 +217,7 @@ class CenteredColormapHelper(ColormapHelper):
             interval need to occupy the same space on the colorbar.
         """
         self.colormap = colormap
+        load_colormap(colormap)
         colorbounds = [float(explicit_colorcenters[0]) -
                        0.5 * abs(explicit_colorcenters[0])]
         colorbounds += [float(explicit_colorcenters[i + 1] +
