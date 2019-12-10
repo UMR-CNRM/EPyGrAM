@@ -777,8 +777,8 @@ class GRIBmessage(RecursiveObject, dict):
                 for s, g in griberies.tables.pyproj_geoid_shapes.items():
                     if s in (0, 2, 4, 5, 6, 8, 9) and geometry.geoid == g:
                         self['shapeOfTheEarth'] = s
-                        break
                         found = True
+                        break
                 if not found:
                     radius = geometry.geoid.get('geoidradius')
                     if radius is None:
