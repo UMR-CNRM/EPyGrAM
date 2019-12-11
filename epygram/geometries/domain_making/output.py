@@ -11,6 +11,7 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 
 import six
 
+import footprints
 from bronx.datagrip import namelist
 
 from epygram.config import epsilon
@@ -18,6 +19,8 @@ from epygram.geometries.SpectralGeometry import truncation_from_gridpoint_dims
 
 from .util import Ezone_minimum_width
 from .build import compute_lonlat_included, build_CIE_field, build_lonlat_field
+
+epylog = footprints.loggers.getLogger(__name__)
 
 
 def lam_geom2namelists(geometry,
@@ -304,6 +307,7 @@ def plot_geometry(geometry,
                   out=None,
                   background=True,
                   departments=False,
+                  plotlib='basemap',
                   **_):
     """
     Plot the built geometry, along with lonlat included domain if given.
@@ -314,6 +318,22 @@ def plot_geometry(geometry,
     :param departments: if True, adds the french departments on map (instead
                          of countries).
     """
+    if plotlib == 'cartopy':
+        fig = cartoplot_geometry(geometry, lonlat_included, background, departments)
+    elif plotlib == 'basemap':  # CLEANME: 2021 ?
+        fig = basemap_plot_geometry(geometry, lonlat_included, background, departments)
+    if out is not None:
+        fig.savefig(out, bbox_inches='tight')
+    else:
+        import matplotlib.pyplot as plt
+        plt.show()
+
+
+def cartoplot_geometry(geometry,
+                       lonlat_included=None,
+                       background=True,
+                       departments=False,
+                       **_):
     import cartopy.crs as ccrs
     import cartopy.feature as cfeature
     # plot
@@ -353,8 +373,38 @@ def plot_geometry(geometry,
                             set_global=True,
                             meridians=None,
                             parallels=None)
-    if out is not None:
-        fig.savefig(out, bbox_inches='tight')
-    else:
-        import matplotlib.pyplot as plt
-        plt.show()
+    return fig
+
+
+def basemap_plot_geometry(geometry,
+                          lonlat_included=None,
+                          background=True,
+                          departments=False):
+    """DEPRECATED"""
+    epylog.warning('basemap is DEPRECATED.')
+    # plot
+    CIEdomain = build_CIE_field(geometry)
+    sat_height = geometry.distance(geometry.gimme_corners_ll()['ll'],
+                                   geometry.gimme_corners_ll()['ur']) / 1000
+    bm = CIEdomain.geometry.make_basemap(specificproj=('nsper', {'sat_height':sat_height * 3}))
+    fig, ax = CIEdomain.plotfield(use_basemap=bm,
+                                  levelsnumber=6,
+                                  minmax=[-1.0, 3.0],
+                                  colorbar=False,
+                                  title='Domain: C+I+E',
+                                  meridians=None,
+                                  parallels=None,
+                                  background=background,
+                                  departments=departments)
+    if lonlat_included is not None:
+        ll_domain = build_lonlat_field(lonlat_included)
+        ll_domain.plotfield(over=(fig, ax),
+                            use_basemap=bm,
+                            graphicmode='contourlines',
+                            title='Domain: C+I+E \n Red contour: required lon/lat',
+                            levelsnumber=2,
+                            contourcolor='red',
+                            contourwidth=2,
+                            contourlabel=False,
+                            departments=departments)
+    return fig

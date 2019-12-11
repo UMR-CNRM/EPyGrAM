@@ -75,7 +75,8 @@ def main(mode,
                                         lonlat_included=ll_boundaries,
                                         out=out,
                                         departments=french_depts,
-                                        background=background)
+                                        background=background,
+                                        plotlib='cartopy')
             # retry ?
             retry = raw_input("Do you want to modify something ? [n] ")
             if retry in ('yes', 'y', 'Y'):
@@ -103,7 +104,8 @@ def main(mode,
                                         lonlat_included=defaults,
                                         out=out,
                                         departments=french_depts,
-                                        background=background)
+                                        background=background,
+                                        plotlib='cartopy')
             # retry ?
             retry = raw_input("Do you want to modify something ? [n] ")
             if retry in ('yes', 'y', 'Y'):
