@@ -15,12 +15,14 @@ EPyGrAM = 'EPyGrAM'
 epygram_repositories = {
     'cnrm':'/home/common/epygram',
     'bullx':'/home/gmap/mrpe/mary/public',
+    'bull_sequana':'/home/gmap/mrpe/mary/public',
     'dsidev':'/soprano/home/marp999/epygram',
     'ecmwf_cc':'/home/ms/fr/rm9/public',
     'ecgate':'/home/ms/fr/rm9/public',}
 vortex_repositories = {
     'cnrm':'/home/common/sync/vortex',
     'bullx':'/home/mf/dp/marp/verolive/vortex',
+    'bull_sequana':'/home/mf/dp/marp/verolive/vortex',
     'dsidev':'/soprano/home/marp999/vortex',
     'ecmwf_cc':'/home/ms/fr/sos/vortex',
     'ecgate':'/home/ms/fr/sos/vortex'}
@@ -31,6 +33,7 @@ py2_eccodes_installdir = {
 userconfigs = defaultdict(lambda:'userconfig_no_arpifs4py.py',  # default
                           cnrm='userconfig_empty.py',
                           bullx='userconfig_empty.py',
+                          bull_sequana='userconfig_empty.py',
                           ecmwf_cc='userconfig_empty.py')
 profiles = defaultdict(lambda:'.bash_profile',
                        ecmwf_cc='.user_profile',
@@ -46,6 +49,9 @@ hostname = os.environ.get('HOSTNAME', '')
 if any([hostname.startswith(h) for h in
         ['beaufix', 'prolix']]):
     localhost = 'bullx'
+elif any([hostname.startswith(h) for h in
+          ['epona', 'belenos', 'taranis']]):
+    localhost = 'bull_sequana'
 elif any([h in hostname for h in
           ['alose', 'pagre', 'orphie', 'rason', 'guppy']]):
     localhost = 'dsidev'
@@ -123,8 +129,9 @@ def main(version='',
     if update_epygram_profile or not os.path.exists(profile):
         with open(os.path.join(epygram_in_site, '_install', _install_profile), 'r') as p:
             lines = p.readlines()
-        lines.append("# EPyGrAM apptools\n")
-        lines.append('export PATH=$PATH:{}'.format(os.path.join(epygram_in_site, 'apptools')))
+        lines.insert(0, "export EPYGRAM_DIR={}\n\n".format(epygram_in_site))
+        lines.append("\n# EPyGrAM apptools\n")
+        lines.append('export PATH=$PATH:$EPYGRAM_DIR/{}\n'.format('apptools'))
         if install_vortex:
             with open(os.path.join(epygram_in_site, '_install', _vortex_install_profile), 'r') as p:
                 lines.extend(p.readlines())
@@ -198,7 +205,7 @@ if __name__ == '__main__':
                         required=False,
                         default='olive')
     parser.add_argument('--link_eccodes',
-                        help='link eccodes python2 interface installation in .local (CNRM workstations and Bullx only)',
+                        help='link eccodes python2 interface installation in .local (CNRM workstations and beaufix/prolix only)',
                         action='store_true',
                         default=False)
     args = parser.parse_args()
