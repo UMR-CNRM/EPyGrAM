@@ -24,8 +24,7 @@ from epygram.args_catalog import (add_arg_to_parser,
                                   runtime_options, graphical_options,
                                   extraction_options)
 from epygram.base import FieldSet
-from epygram.util import (vtk_setup, vtk_write_png,
-                          vtk_guess_param_from_field, vtk_proj)
+from usevtk import Usevtk
 
 import numpy
 
@@ -67,6 +66,10 @@ def _get_field(resource, fieldseed, subzone, zoom, operation,
            ' '.join(['Oops ! Looks like',
                      str(fieldseed),
                      'is not known as a 3D Field by epygram.'])
+    if subzone is None:
+        subzone = 'CI'
+    elif subzone == 'CIE':
+        subzone = None
     if not field.geometry.grid.get('LAMzone', False):
         subzone = None
     if field.spectral:
@@ -121,8 +124,9 @@ def _get_field(resource, fieldseed, subzone, zoom, operation,
 def _do_plot(field, plotmode,
              background_color, window_size, hide_axes, offscreen, title,
              z_factor, subzone, specificproj,
-             minmax, colormin, colormax, opacitymin, opacitymax,
-             vectors_subsampling, levelsnumber, streamlines_time, vectors_scale_factor):
+             minmax, colormin, colormax, opacity, opacitymin, opacitymax,
+             vectors_subsampling, levelsnumber, streamlines_time, vectors_scale_factor,
+             existing_rendering, viewport_pos):
     """
     :param field: field to plot
     :param background_color: must be a color name or a 3-tuple.
@@ -134,22 +138,29 @@ def _do_plot(field, plotmode,
     :param title: title to use on window.
     :param z_factor: factor to apply on z values (to modify aspect ratio of the plot).
     :param subzone: LAM zone among ('C', 'CI', None).
-    :param specificproj: specific projection name or 'geood'.
+    :param specificproj: specific projection name or 'geoId'.
     :param minmax: tuple giving (or not) min and max fields values to be plotted.
     :param colormin, colormax: color to associate to min/max values (name or RGB values as a tuple).
+    :param opacity: opacity for mode in ('contour', 'color', 'vectors')
     :param opacitymin, opacitymax: opacity to associate to mon/max values,
                                    for mode == 'volume'.
     :param vectors_subsampling: subsampling ratio of vectors plots.
     :param levelsnumber: number of color isolines for contour plot.
     :param streamlines_time: integration time for streamlines.
     :param vectors_scale_factor: scale factor to apply on vectors.
+    :param existing_rendering: rendering to use for enabling several
+                               viewports in a same window
+    :param viewport_pos: position of viewport in window
     """
     
-    param = vtk_guess_param_from_field(field, specificproj, subzone=subzone, z_factor=z_factor)
-
-    rendering = vtk_setup(background_color, window_size, 
-                          hide_axes=hide_axes, offscreen=offscreen, title=title,
-                          **param)
+    rendering = Usevtk(background_color, window_size,
+                       hCoord=specificproj, z_factor=z_factor, offset=None,
+                       reverseZ=None,
+                       hide_axes=hide_axes, offscreen=offscreen, title=title,
+                       maximum_number_of_peels=30, #useful, at least,  for contour plots with several levels and opacity!=1
+                       from_field=field,
+                       existing_rendering=existing_rendering, viewport_pos=viewport_pos)
+    rendering.plotBorder('White' if background_color == 'Black' else 'Black')
 
     if plotmode != 'donothing':
         #Defining the color and alpha trasfer functions
@@ -183,6 +194,7 @@ def _do_plot(field, plotmode,
                     M = ff.max()
                 minmax = (m, M)
             
+        colorequal = colormin == colormax
         if isinstance(colormin, six.string_types):
             colormin = vtk.vtkNamedColors().GetColor3d(colormin)
         if isinstance(colormax, six.string_types):
@@ -198,27 +210,38 @@ def _do_plot(field, plotmode,
         if plotmode == 'contour':
             levels = numpy.linspace(minmax[0], minmax[1], levelsnumber)
             field.plot3DContour(rendering,
-                                levels, color, opacity=1.)
+                                levels, color, opacity=opacity,
+                                colorbar=levelsnumber > 1 and not colorequal,
+                                subzone=subzone)
         elif plotmode == 'color':
-            field.plot3DColore(rendering,
-                               color, opacity=1.)
+            field.plot3DColor(rendering,
+                              color, opacity=opacity,
+                              colorbar=not colorequal,
+                              subzone=subzone)
         elif plotmode == 'volume':
             field.plot3DVolume(rendering,
-                               minmax, color, opacity)
+                               minmax, color, opacity,
+                               colorbar=not colorequal,
+                               subzone=subzone)
         elif plotmode == 'vectors':
             field.plot3DVector(rendering,
-                               vectors_subsampling, vectors_scale_factor, color)
+                               vectors_subsampling, vectors_scale_factor,
+                               color, opacity,
+                               colorbar=not colorequal,
+                               subzone=subzone)
         elif plotmode == 'streamlines':
             field.plot3DStream(rendering,
                                vectors_subsampling,
                                streamlines_time, tubesRadius=0.1,
                                color=color,
-                               plot_tube=False)
+                               opacity=opacity,
+                               plot_tube=False,
+                               colorbar=not colorequal,
+                               subzone=subzone)
         else:
             raise epygramError("This plot mode does not exist: " + str(plotmode))
     
-    proj3d = vtk_proj(**param)
-    return rendering, proj3d
+    return rendering
 
 def main(plotmode,
          filename,
@@ -230,7 +253,7 @@ def main(plotmode,
          operation=None,
          diffoperation=None,
          pressure_unit_hpa=False,
-         background_color='White',
+         background_color='Black',
          window_size=(800, 800),
          hide_axes=False,
          ground=None,
@@ -252,6 +275,7 @@ def main(plotmode,
          colormax='Red',
          diffcolormin='Blue',
          diffcolormax='Red',
+         opacity=1,
          opacitymin=1.,
          opacitymax=1.,
          diffopacitymin=1.,
@@ -265,7 +289,8 @@ def main(plotmode,
          Yconvert=None,
          cheap_height=True,
          verbose=False,
-         empty_value=None
+         empty_value=None,
+         diffsamewindow=True
          ):
     """
     Plot fields.
@@ -308,7 +333,8 @@ def main(plotmode,
     :param diffstreamlines_time: integration time for streamlines of diff plot.
     :param colormin, colormax: color to associate to min/max values (name or RGB values as a tuple).
     :param diffcolormin, diffcolormax: color to associate to min/max values of diff plot.
-    :param opacitymin, opacitymax: opacity to associate to mon/max values,
+    :param opacity: opacity for mode in ('contour', 'color', 'vectors').
+    :param opacitymin, opacitymax: opacity to associate to min/max values,
                                    for mode == 'volume'.
     :param diffopacitymin, diffopacitymax: opacity to associate to mon/max values of diff plot.
     :param zoom: a dict(lonmin, lonmax, latmin, latmax) on which to build the plot.
@@ -328,6 +354,7 @@ def main(plotmode,
     :param verbose: True to be verbose
     :param empty_value: levels with all data set to empty_value are suppressed
                         to minimize memory print
+    :param diffsamewindow: if True uses several renderers in the same window in diff mode
     """
     if outputfilename and not output:
         raise epygramError('*output* format must be defined if outputfilename is supplied.')
@@ -337,6 +364,11 @@ def main(plotmode,
     diffmode = refname is not None
     if diffmode:
         reference = epygram.formats.resource(refname, openmode='r')
+
+    if diffsamewindow:
+        plot_numbers_by_window = (1 if diffonly else 3) if diffmode else 1
+    else:
+        plot_numbers_by_window = 1
 
     rendering = []
     if not computewind:
@@ -369,11 +401,13 @@ def main(plotmode,
     if not diffonly:
         if academic:
             specificproj = 'll'
-        ren_res, proj3d = _do_plot(field, plotmode,
-                                   background_color, window_size, hide_axes, output, title,
-                                   z_factor, subzone, specificproj,
-                                   minmax, colormin, colormax, opacitymin, opacitymax,
-                                   vectors_subsampling, levelsnumber, streamlines_time, vectors_scale_factor)
+        ren_res = _do_plot(field, plotmode,
+                           background_color, window_size, hide_axes, output, title,
+                           z_factor, subzone, specificproj,
+                           minmax, colormin, colormax, opacity, opacitymin, opacitymax,
+                           vectors_subsampling, levelsnumber, streamlines_time, vectors_scale_factor,
+                           existing_rendering=None,
+                           viewport_pos=(0., 0., 1., 1.) if plot_numbers_by_window == 1 else (0., 0., 1./3, 1.))
         rendering.append(ren_res)
     if diffmode:
         if not computewind:
@@ -399,11 +433,13 @@ def main(plotmode,
         if not diffonly:
             if academic:
                 specificproj = 'll'
-            ren_ref, proj3d = _do_plot(reffield, plotmode,
-                                       background_color, window_size, hide_axes, output, title,
-                                       z_factor, subzone, specificproj,
-                                       minmax, colormin, colormax, opacitymin, opacitymax,
-                                       vectors_subsampling, levelsnumber, streamlines_time, vectors_scale_factor)
+            ren_ref = _do_plot(reffield, plotmode,
+                               background_color, window_size, hide_axes, output, title,
+                               z_factor, subzone, specificproj,
+                               minmax, colormin, colormax, opacity, opacitymin, opacitymax,
+                               vectors_subsampling, levelsnumber, streamlines_time, vectors_scale_factor,
+                               existing_rendering=None if plot_numbers_by_window == 1 else ren_res,
+                               viewport_pos=(0., 0., 1., 1.) if plot_numbers_by_window == 1 else (1./3, 0., 2./3, 1.))
             rendering.append(ren_ref)
         if legend is not None:
             title = legend
@@ -414,11 +450,13 @@ def main(plotmode,
             diff.operation(**diffoperation)
         if academic:
             specificproj = 'll'
-        ren_dif, proj3d = _do_plot(diff, plotmode,
-                                   background_color, window_size, hide_axes, output, title,
-                                   z_factor, subzone, specificproj,
-                                   diffminmax, diffcolormin, diffcolormax, diffopacitymin, diffopacitymax,
-                                   vectors_subsampling, difflevelsnumber, diffstreamlines_time, diffvectors_scale_factor)
+        ren_dif = _do_plot(diff, plotmode,
+                           background_color, window_size, hide_axes, output, title,
+                           z_factor, subzone, specificproj,
+                           diffminmax, diffcolormin, diffcolormax, opacity, diffopacitymin, diffopacitymax,
+                           vectors_subsampling, difflevelsnumber, diffstreamlines_time, diffvectors_scale_factor,
+                           existing_rendering=None if plot_numbers_by_window == 1 else ren_res,
+                           viewport_pos=(0., 0., 1., 1.) if plot_numbers_by_window == 1 else (2./3, 0., 1., 1.))
         rendering.append(ren_dif)
 
     if ground is not None:
@@ -461,53 +499,44 @@ def main(plotmode,
                                  'levels': [0]}
                 geometry.vcoordinate = fpx.geometry(**kwargs_vcoord)
             if ground == 'bluemarble':
-                actor, _ = geometry.plot3DBluemarble(ren, interpolation='nearest')
+                actor, _ = geometry.plot3DBluemarble(ren, interpolation='nearest', subzone=subzone)
                 actor.GetProperty().LightingOff()
             else:
-                actors = geometry.plot3DMaptiles(ren, ground, 2, interpolation='nearest')
+                actors = geometry.plot3DMaptiles(ren, ground, 2, interpolation='nearest', subzone=subzone)
                 for actor, _ in actors:
                     if actor is not None:
                         actor.GetProperty().LightingOff()
 
-    #Synchronize cameras
-    cam = None
+    #Rendering and cameras synchronization
+    for ren in rendering:
+        ren.window.Render()
+    cam = rendering[0].renderer.GetActiveCamera()
     for ren in rendering[1:]:
-        cam = rendering[0]['renderer'].GetActiveCamera()
-        ren['renderer'].SetActiveCamera(cam)
-
+        ren.renderer.SetActiveCamera(cam)
+    proj3d = rendering[0].proj3d
     if focal_point is not None:
-        if cam is None:
-            cam = rendering[0]['renderer'].GetActiveCamera()
         cam.SetFocalPoint(*proj3d(*focal_point))
     if camera is not None:
-        if cam is None:
-            cam = rendering[0]['renderer'].GetActiveCamera()
         cam.SetPosition(*proj3d(*camera))
-    if verbose and cam is None:
-        cam = rendering[0]['renderer'].GetActiveCamera()
+    for ren in rendering:
+        ren.renderer.ResetCameraClippingRange()
     def cameraMove(*args):
         if verbose:
             print("Camera:")
-            print("  Position:", cam.GetPosition())
-            print("  Focal Point:", cam.GetFocalPoint())
-            print("  View up:", cam.GetViewUp())
-            print("  Distance:", cam.GetDistance())
-            print("  Direction of projection:", cam.GetDirectionOfProjection())
-            print("  Roll:", cam.GetRoll())
-            print("  Clipping range:", cam.GetClippingRange())
+            print("  Position                (vtk coordinates) :", cam.GetPosition())
+            print("  Position                (true coordinates):", tuple([c[0] for c in proj3d(*cam.GetPosition(), inverse=True)]))
+            print("  Focal Point             (vtk coordinates) :", cam.GetFocalPoint())
+            print("  Focal Point             (true coordinates):", tuple([c[0] for c in proj3d(*cam.GetFocalPoint(), inverse=True)]))
+            print("  View up                 (vtk coordinates) :", cam.GetViewUp())
+            print("  Distance                (vtk coordinates) :", cam.GetDistance())
+            print("  Direction of projection (vtk coordinates) :", cam.GetDirectionOfProjection())
+            print("  Roll                    (vtk coordinates) :", cam.GetRoll())
+            print("  Clipping range          (vtk coordinates) :", cam.GetClippingRange())
         for ren in rendering:
-            ren['window'].Render() 
+            ren.window.Render()
     for ren in rendering:
-        ren['interactor'].AddObserver("EndInteractionEvent", cameraMove)
-    if cam is not None:
-        #In this case, clipping range is set to its default value
-        #and with some projections it suppress the rendering
-        #until a camera movement induces a recomputation of the clipping range
-        #through the interactor
-        #These two lines must solve the problem in most of the cases
-        distance = cam.GetDistance()
-        cam.SetClippingRange(distance * 0.01, distance * 1000.)
-    cameraMove()
+        ren.interactor.AddObserver("EndInteractionEvent", cameraMove)
+    cameraMove() #for printing position
 
     # Output
     if output:
@@ -524,13 +553,13 @@ def main(plotmode,
                 outputfile = '.'.join([resource.container.abspath,
                                        parameter,
                                        suffix])
-            vtk_write_png(ren_res, outputfile, resolution_increase)
+            ren_res.write_png(outputfile, resolution_increase)
         # reference
         if diffmode and not diffonly:
             outputfile = '.'.join([reference.container.abspath,
                                    parameter,
                                    suffix])
-            vtk_write_png(ren_ref, outputfile, resolution_increase)
+            ren_ref.write_png(outputfile, resolution_increase)
         # diff
         if diffmode:
             if not outputfilename:
@@ -541,9 +570,9 @@ def main(plotmode,
                                        suffix])
             else:
                 outputfile = '.'.join([outputfilename, output])
-            vtk_write_png(ren_dif, outputfile, resolution_increase)
+            ren_dif.write_png(outputfile, resolution_increase)
     else:
-        rendering[0]['interactor'].Start()
+        rendering[0].interactor.Start()
 
 # end of main() ###############################################################
 
@@ -584,6 +613,7 @@ if __name__ == '__main__':
     add_arg_to_parser(parser, graphical_options['diffstreamlines_time'])
     add_arg_to_parser(parser, graphical_options['colorminmax'])
     add_arg_to_parser(parser, graphical_options['diffcolorminmax'])
+    add_arg_to_parser(parser, graphical_options['alpha'])
     add_arg_to_parser(parser, graphical_options['alphaminmax'])
     add_arg_to_parser(parser, graphical_options['diffalphaminmax'])
     add_arg_to_parser(parser, graphical_options['lonlat_zoom'])
@@ -754,6 +784,7 @@ if __name__ == '__main__':
          colormax=colormax,
          diffcolormin=diffcolormin,
          diffcolormax=diffcolormax,
+         opacity=args.alpha,
          opacitymin=alphamin,
          opacitymax=alphamax,
          diffopacitymin=diffalphamin,
@@ -767,5 +798,6 @@ if __name__ == '__main__':
          Yconvert=args.Yconvert,
          cheap_height=args.cheap_height,
          verbose=args.verbose,
-         empty_value=None #if useful, add it to the command line options
+         empty_value=None, #if useful, add it to the command line options
+         diffsamewindow=True, #could also be added to command line options
          )

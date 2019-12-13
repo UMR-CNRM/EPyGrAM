@@ -76,6 +76,7 @@ if [ "$bullx" == 1 ]; then
   bull_public="~mary/public/EPyGrAM$version/"
   rsync -avL * "beaufix:$bull_public" $bull_exclude
   rsync -avL * "prolix:$bull_public" $bull_exclude
+  rsync -avL * "epona:$bull_public" $bull_exclude
 fi
 
 
@@ -92,7 +93,8 @@ if [ "$pagre" == 1 ]; then
   echo "!!! Deactivate arpifs4py formats there !!!"
 fi
 if [ "$bullx" == 1 ]; then
-  echo "=> deployed on beaufix & prolix"
-  echo "   libs4py.so to be linked there (~mary/deploy_epygram_finalize.sh)"
+  echo "=> deployed on beaufix, prolix & epona"
+  echo "   beaufix/prolix: libs4py.so to be linked there (~mary/deploy_epygram_finalize.sh)"
+  echo "   epona: ~mary/public/epygram_link_libs.sh"
 fi
 

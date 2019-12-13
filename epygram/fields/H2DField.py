@@ -158,8 +158,7 @@ class _H2DCartopyPlot(object):
                                 data,
                                 mask_threshold,
                                 minmax,
-                                colorbounds,
-                                colormap,
+                                colormap_helper,
                                 minmax_along_colorbar):
         """Mask according to threshold, get min/max, mask according to colormap."""
         # 1/ mask values or explicit thresholding
@@ -174,8 +173,7 @@ class _H2DCartopyPlot(object):
         pmin = data.min()
         pmax = data.max()
         if minmax_along_colorbar and (minmax is not None or
-                                      colormap in config.colormaps_scaling or
-                                      colorbounds is not None):
+                                      colormap_helper.explicit_colorbounds is not None):
             minmax_along_colorbar = '(min: {: .{precision}{type}} // max: {: .{precision}{type}})'.format(
                 pmin, pmax, type='E', precision=3)
         else:
@@ -189,11 +187,11 @@ class _H2DCartopyPlot(object):
                 pmax = float(minmax[1])
             except ValueError:
                 pass
-        if colorbounds is not None:
+        if colormap_helper.explicit_colorbounds is not None:
             if minmax is not None:
-                epylog.warning('**minmax** overwritten by **colorbounds**')
-            pmin = min(colorbounds)
-            pmax = max(colorbounds)
+                epylog.warning('**minmax** overwritten by **colormap_helper.explicit_colorbounds**')
+            pmin = min(colormap_helper.explicit_colorbounds)
+            pmax = max(colormap_helper.explicit_colorbounds)
         # 3/ mask outside colorbounds/minmax
         data = numpy.ma.masked_outside(data, pmin, pmax)
         return data, pmin, pmax, minmax_along_colorbar
@@ -299,29 +297,34 @@ class _H2DCartopyPlot(object):
         return xf, yf, zf
 
     @classmethod
-    def _cartoplot_colormap(cls,
-                            m, M,
-                            colormap,
-                            colorbounds,
-                            plot_method,
-                            colorsnumber,
-                            colorstep,
-                            center_cmap_on_0,
-                            contourcolor):
-        """Set colors settings."""
-        import matplotlib.pyplot as plt
-        from matplotlib.colors import cnames
+    def _cartoplot_get_ColormapHelper(cls,
+                                      colormap,
+                                      colorbounds):
+        """Build ColormapHelper object."""
         from epygram import colormapping
-        if colormap not in plt.colormaps() and colormap in config.colormaps:
+        if colormap in config.colormaps:
             cmapfile = config.colormaps[colormap]
             if cmapfile.endswith('.json'):
-                colormaphelper = colormapping.get_ColormapHelper_fromfile(cmapfile)
+                colormaphelper = colormapping.get_ColormapHelper_fromfile(cmapfile)  # potentially already loaded
             elif cmapfile.endswith('.cmap'):
                 # deprecated
                 raise epygramError(util._deprecated_cmap)
         else:
             colormaphelper = colormapping.ColormapHelper(colormap,
                                                          explicit_colorbounds=colorbounds)
+        return colormaphelper
+
+    @classmethod
+    def _cartoplot_colormap_kwargs(cls,
+                                   colormaphelper,
+                                   m, M,
+                                   plot_method,
+                                   colorsnumber,
+                                   colorstep,
+                                   center_cmap_on_0,
+                                   contourcolor):
+        """Get colors kwargs."""
+        from matplotlib.colors import cnames
         plot_kwargs = colormaphelper.kwargs_for_plot(plot_method,
                                                      (m, M),
                                                      center_cmap_on_0,
@@ -336,7 +339,7 @@ class _H2DCartopyPlot(object):
                 contourcolor = None
             plot_kwargs.update(colors=contourcolor,
                                cmap=colormap)
-        return plot_kwargs, colormaphelper
+        return plot_kwargs
 
     def _cartoplot_actualplot(self,
                               ax,
@@ -345,7 +348,7 @@ class _H2DCartopyPlot(object):
                               plot_method,
                               plot_kwargs,
                               uniform,
-                              colormap,
+                              colormap_helper,
                               scatter_kw,
                               contour_kw,
                               contourlabel,
@@ -363,8 +366,8 @@ class _H2DCartopyPlot(object):
         elif plot_method == 'scatter':
             # treat uniform field case
             if uniform:
-                if colormap in cnames or len(colormap) == 1:
-                    colors = colormap
+                if colormap_helper.colormap in cnames or len(colormap_helper.colormap) == 1:
+                    colors = colormap_helper.colormap
                 else:
                     colors = 'silver'
             else:
@@ -486,6 +489,7 @@ class _H2DCartopyPlot(object):
                   natural_earth_features=default_NEfeatures,
                   epygram_departments=False,
                   # colormapping
+                  colormap_helper=None,
                   colormap='plasma',
                   colorbounds=None,
                   colorsnumber=None,
@@ -574,6 +578,9 @@ class _H2DCartopyPlot(object):
 
         Colormap settings:
 
+        :param colormap_helper: an instance of the class
+            epygram.colormapping.ColormapHelper.
+            Has priority on the following arguments.
         :param colormap: name of the ``matplotlib`` colormap to use (or an
             ``epygram`` one, or a user-defined one, cf.
             config.usercolormaps).
@@ -626,11 +633,13 @@ class _H2DCartopyPlot(object):
             subzone = None
         data = self.getdata(subzone=subzone)
         # 4/ handle min/max values
+        if colormap_helper is None:
+            colormap_helper = self._cartoplot_get_ColormapHelper(colormap,
+                                                                 colorbounds)
         data, pmin, pmax, minmax_along_colorbar = self._cartoplot_treat_minmax(data,
                                                                                mask_threshold,
                                                                                minmax,
-                                                                               colorbounds,
-                                                                               colormap,
+                                                                               colormap_helper,
                                                                                minmax_along_colorbar)
         if abs(float(pmin) - float(pmax)) < config.epsilon and plot_method is not None:
             epylog.warning("uniform field: plot as 'points'.")
@@ -656,14 +665,13 @@ class _H2DCartopyPlot(object):
             ax.set_extent([x.min(), x.max(), y.min(), y.max()],
                           crs=projection)
         # 7/ colormapping
-        plot_kwargs, colormap_helper = self._cartoplot_colormap(pmin, pmax,
-                                                                colormap,
-                                                                colorbounds,
-                                                                plot_method,
-                                                                colorsnumber,
-                                                                colorstep,
-                                                                center_cmap_on_0,
-                                                                contourcolor)
+        plot_kwargs = self._cartoplot_colormap_kwargs(colormap_helper,
+                                                      pmin, pmax,
+                                                      plot_method,
+                                                      colorsnumber,
+                                                      colorstep,
+                                                      center_cmap_on_0,
+                                                      contourcolor)
         if plot_method is not None:
             # 8/ plot
             elements = self._cartoplot_actualplot(ax,
@@ -672,7 +680,7 @@ class _H2DCartopyPlot(object):
                                                   plot_method,
                                                   plot_kwargs,
                                                   uniform,
-                                                  colormap,
+                                                  colormap_helper,
                                                   scatter_kw,
                                                   contour_kw,
                                                   contourlabel,

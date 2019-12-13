@@ -20,6 +20,7 @@ import importlib
 import copy
 import os
 
+import footprints
 from footprints import proxy as fpx
 from bronx.system.unistd import stderr_redirected
 
@@ -27,7 +28,35 @@ from epygram import config, epygramError, util
 
 __all__ = []
 
+epylog = footprints.loggers.getLogger(__name__)
+
 from . import fafields
+
+
+def available_format(fmt):
+    """Check availability of low-level libraries for activating format."""
+    reason = None
+    available = True
+    try:
+        if fmt in ('FA', 'LFI', 'DDHLFA', 'LFA'):
+            import arpifs4py
+        elif fmt == 'GRIB':
+            if config.GRIB_lowlevel_api.lower() in ('gribapi', 'grib_api'):
+                import gribapi
+            elif config.GRIB_lowlevel_api.lower() == 'eccodes':
+                import eccodes
+            else:
+                available = False
+                reason = 'Unknown config.GRIB_lowlevel_api={}'.format(config.GRIB_lowlevel_api)
+        elif fmt in ('netCDF', 'netCDFMNH'):
+            import netCDF4
+        elif fmt == 'TIFFMF':
+            import pyexttiff
+    except Exception as e:
+        available = False
+        reason = str(e)
+    return (available, reason)
+
 
 # Formats loading used to have to follow an order,
 # for common dynamic libraries of different versions.
@@ -40,13 +69,22 @@ from . import fafields
 # _loaded_first_formats = ['FA', 'LFI', 'DDHLFA', 'LFA', 'GRIB']
 _loaded_first_formats = ['GRIB', 'FA', 'LFI', 'DDHLFA', 'LFA']
 _formats_in_loading_order = copy.copy(config.implemented_formats)
+# set ordering
 for lff in _loaded_first_formats[::-1]:
     if lff in _formats_in_loading_order:
         _formats_in_loading_order = [lff] + [f for f in _formats_in_loading_order if f != lff]
-
+#: list of formats actually available at runtime
+runtime_available_formats = []
+# import formats modules
 for f in _formats_in_loading_order:
-    if f not in [m['name'] for m in config.usermodules]:
-        importlib.import_module('.' + f, __name__)
+    _available, _reason = available_format(f)
+    if _available:
+        runtime_available_formats.append(f)
+        if f not in [m['name'] for m in config.usermodules]:
+            importlib.import_module('.' + f, __name__)
+    else:
+        epylog.warning(("Format: {} is deactivated at runtime ({}). " +
+                        "Please deactivate from config.implemented_formats or fix error.").format(f, _reason))
 
 
 #############
@@ -58,8 +96,8 @@ def guess(filename):
     **filename**, if succeeded.
     """
 
-    formats_in_guess_order = copy.copy(config.implemented_formats)
-    _guess_last_formats = ['FA', 'LFI', ]  # because they might not be very clean at catching exceptions
+    formats_in_guess_order = copy.copy(runtime_available_formats)
+    _guess_last_formats = ['DDHLFA', 'LFA', 'FA', 'LFI', ]  # because they might not be very clean at catching exceptions
     for glf in _guess_last_formats:
         if glf in formats_in_guess_order:
             formats_in_guess_order = [f for f in formats_in_guess_order

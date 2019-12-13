@@ -101,8 +101,9 @@ epylog = footprints.loggers.getLogger(__name__)
 
 # Check that Python version is compatible
 if sys.version_info.major == 3:
-    epylog.warning('*epygram* is now supposed to be compatible with Python3, ' +
-                   'provided you have an ecCodes >= 2.10.0 !')
+    if sys.version_info.minor < 5:
+        epylog.warning('*epygram* requires Python3.5 at least. ' +
+                       'It may not work properly with older versions.')
 else:
     if sys.version_info.minor < 7:
         epylog.warning('*epygram* requires Python2.7 at least. ' +
@@ -130,6 +131,9 @@ from . import geometries
 from . import fields
 from . import formats
 from . import resources
+
+# Register plugins
+import epygram._plugins
 
 # User modules
 if len(config.usermodules) > 0:
@@ -198,7 +202,7 @@ def init_env(omp_num_threads=1,
     """
     # 1. arpifs4py library
     # FA & LFI need some special environment setting
-    if any([f in config.implemented_formats for f in ('FA', 'LFI')]):
+    if any([f in formats.runtime_available_formats for f in ('FA', 'LFI')]):
         import arpifs4py
         if mute_FA4py is None:
             mute_FA4py = config.FA_mute_FA4py
@@ -218,7 +222,7 @@ def init_env(omp_num_threads=1,
     # 3. grib_api or eccodes
     # need some special environment setting
     # ensure grib_api/eccodes variables are consistent with inner library
-    if 'GRIB' in config.implemented_formats and ensure_consistent_GRIB_paths:
+    if 'GRIB' in formats.runtime_available_formats and ensure_consistent_GRIB_paths:
         from .formats.GRIB import lowlevelgrib
         lowlevelgrib.init_env(reset=ignore_gribenv_paths)
 

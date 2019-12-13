@@ -36,7 +36,7 @@ from epygram.util import (Angle, RecursiveObject,
                           separation_line, write_formatted_dict)
 from epygram.fields import H2DField
 from epygram.geometries.H2DGeometry import gauss_latitudes
-from epygram.geometries.VGeometry import pressure2altitude
+from epygram.geometries.VGeometry import pressure2altitude, altitude2height, height2altitude
 from epygram.geometries.SpectralGeometry import (SpectralGeometry,
                                                  gridpoint_dims_from_truncation,
                                                  nearest_greater_FFT992compliant_int)
@@ -424,7 +424,7 @@ class GRIBmessage(RecursiveObject, dict):
                  grib_edition=None,
                  other_GRIB_options={},
                  interpret_comment=False,
-                 set_misc_metadata=False):
+                 set_misc_metadata=True):
         """
         Initialize a GRIBmessage from either sources.
 
@@ -545,7 +545,7 @@ class GRIBmessage(RecursiveObject, dict):
                          ordering=None,
                          # GRIB2/new way
                          interpret_comment=False,
-                         set_misc_metadata=False):
+                         set_misc_metadata=True):
         """Initialize message from epygram field (and sample)."""
         if grib_edition == 2 or (grib_edition is None and
                                      'GRIB2' in field.fid):
@@ -664,7 +664,7 @@ class GRIBmessage(RecursiveObject, dict):
     def _GRIB2_set(self, field,
                    sample=None,
                    interpret_comment=False,
-                   set_misc_metadata=False,
+                   set_misc_metadata=True,
                    **other_GRIB_options):
         """Set up a GRIB2 message from a field."""
         # clone from sample or file
@@ -694,9 +694,11 @@ class GRIBmessage(RecursiveObject, dict):
         # interpret comment
         if interpret_comment and field.comment is not None:
             comment_options = json.loads(field.comment)
-            other_GRIB_options.update(comment_options)
+            for k, v in comment_options.items():
+                other_GRIB_options.setdefault(k, v)
         if set_misc_metadata:
-            other_GRIB_options.update(field.misc_metadata)
+            for k, v in field.misc_metadata.items():
+                other_GRIB_options.setdefault(k, v)
         # then set keys/values
         self._untouch = set()
         self._GRIB2_set_sections(field, **other_GRIB_options)
@@ -775,8 +777,8 @@ class GRIBmessage(RecursiveObject, dict):
                 for s, g in griberies.tables.pyproj_geoid_shapes.items():
                     if s in (0, 2, 4, 5, 6, 8, 9) and geometry.geoid == g:
                         self['shapeOfTheEarth'] = s
-                        break
                         found = True
+                        break
                 if not found:
                     radius = geometry.geoid.get('geoidradius')
                     if radius is None:
@@ -1068,10 +1070,17 @@ class GRIBmessage(RecursiveObject, dict):
             elif cumul_unit != 13:
                 raise NotImplementedError("indicatorOfUnitForTimeRange=={}".format(cumul_unit))
             self['lengthOfTimeRange'] = length
-            self['forecastTime'] = start
             self['indicatorOfUnitForTimeRange'] = cumul_unit
+            self['forecastTime'] = start
+            end = field.validity.get()
+            self['yearOfEndOfOverallTimeInterval'] = end.year
+            self['monthOfEndOfOverallTimeInterval'] = end.month
+            self['dayOfEndOfOverallTimeInterval'] = end.day
+            self['hourOfEndOfOverallTimeInterval'] = end.hour
+            self['minuteOfEndOfOverallTimeInterval'] = end.minute
+            self['secondOfEndOfOverallTimeInterval'] = end.second
             statistical_process = field.validity[0].statistical_process_on_duration(asGRIB2code=True)
-            if statistical_process:
+            if statistical_process is not None:
                 self['typeOfStatisticalProcessing'] = statistical_process
             time_increment = field.validity.statistical_time_increment()
             time_increment_unit = other_GRIB_options.get('indicatorOfUnitForTimeIncrement',
@@ -1647,7 +1656,9 @@ class GRIBmessage(RecursiveObject, dict):
         """Read specified additional keys."""
         misc_metadata = FPDict({})
         for k in read_misc_metadata:
-            misc_metadata[k] = self.get(k)
+            v = self.get(k)
+            if v is not None:
+                misc_metadata[k] = v
         return misc_metadata
 
     def _read_validity(self):
@@ -2272,8 +2283,11 @@ class GRIB(FileResource):
         :param additional_keys: add given keys in fids
         """
         if select is not None:
-            additional_keys = list(select.keys()) + additional_keys
-        fidlist = super(GRIB, self).listfields(additional_keys=additional_keys)
+            select_keys = list(select.keys())
+        else:
+            select_keys = []
+        fidlist = super(GRIB, self).listfields(additional_keys=additional_keys,
+                                               select_keys=select_keys)
         if select is not None:
             fidlist = [f for f in fidlist if all([f[k] == select[k] for k in select.keys()])]
         if onlykey is not None:
@@ -2286,11 +2300,10 @@ class GRIB(FileResource):
             for f in fidlist:
                 if 'GRIB2' in f:
                     f['generic'] = f['GRIB2']
-
         return fidlist
 
     @FileResource._openbeforedelayed
-    def _listfields(self, additional_keys=[]):
+    def _listfields(self, additional_keys=[], select_keys=[]):
         """Returns a list of GRIB-type fid of the fields inside the resource."""
         def gid_key_to_fid(gid, k, fid):
             # bug in GRIB_API ? 1, 103 & 105 => 'sfc'
@@ -2321,7 +2334,12 @@ class GRIB(FileResource):
                 t = None
             for k in GRIBmessage.fid_keys_for(n, t):
                 gid_key_to_fid(gid, k, fid)
-            for k in additional_keys:
+            for k in additional_keys:  # FIXME: here we mix additional, if present, and select/filter
+                try:
+                    gid_key_to_fid(gid, k, fid)
+                except lowlevelgrib.InternalError:
+                    pass
+            for k in select_keys:  # FIXME: here we mix additional, if present, and select/filter
                 try:
                     gid_key_to_fid(gid, k, fid)
                 except lowlevelgrib.InternalError:
@@ -2331,7 +2349,6 @@ class GRIB(FileResource):
             if not filter_out:
                 fidlist.append(fid)
         _file.close()
-
         return fidlist
 
     def split_UV(self, fieldseed):
@@ -2477,7 +2494,7 @@ class GRIB(FileResource):
                   getdata=True,
                   footprints_proxy_as_builder=config.footprints_proxy_as_builder,
                   get_info_as_json=None,
-                  read_misc_metadata=[]):
+                  read_misc_metadata=griberies.defaults.GRIB2_metadata_to_embark):
         """
         Finds in GRIB the message that correspond to the *handgrip*,
         and returns it as a :class:`epygram.base.Field`.
@@ -2527,7 +2544,7 @@ class GRIB(FileResource):
                    getdata=True,
                    footprints_proxy_as_builder=config.footprints_proxy_as_builder,
                    get_info_as_json=None,
-                   read_misc_metadata=[]):
+                   read_misc_metadata=griberies.defaults.GRIB2_metadata_to_embark):
         """
         Finds in GRIB the message(s) that correspond to the *handgrip*,
         and returns it as a :class:`epygram.base.FieldSet` of
@@ -2795,6 +2812,30 @@ class GRIB(FileResource):
 
         # preparation for vertical coords conversion
         if vertical_coordinate not in (None, subdomain.geometry.vcoordinate.typeoffirstfixedsurface):
+            # surface height
+            if (subdomain.geometry.vcoordinate.typeoffirstfixedsurface, vertical_coordinate) in ((102, 103), (103, 102), (100, 103)):
+                fids = self.listfields(complete=True)
+                zs = None
+                for fid in fids:
+                    hg = (fid['generic'].get('discipline', 255),
+                          fid['generic'].get('parameterCategory', 255),
+                          fid['generic'].get('parameterNumber', 255),
+                          fid['generic'].get('typeOfFirstFixedSurface', 255))
+                    if hg in ((0, 3, 4, 1), (0, 193, 5, 1), (0, 3, 5, 1), (0, 3, 6, 1), (2, 0, 7, 1)):
+                        #(0, 193, 5) is for SPECSURFGEOPOTEN
+                        fmt = [fk for fk in fid.keys() if fk != 'generic'][0]
+                        zs = self.extract_subdomain(fid[fmt], geometry,
+                                                    interpolation=interpolation,
+                                                    external_distance=external_distance)
+                        if zs.spectral:
+                            zs.sp2gp()
+                        if hg in ((0, 3, 4, 1), (0, 193, 5, 1)):
+                            zs.setdata(zs.getdata() / constants.g0)
+                        zs = zs.getdata()
+                        break
+                if zs is None:
+                    raise epygramError("No terrain height field found, conversion height/altitude cannot be done")
+
             # P => H necessary profiles
             if subdomain.geometry.vcoordinate.typeoffirstfixedsurface == 100 and \
                vertical_coordinate in (102, 103):
@@ -2827,36 +2868,9 @@ class GRIB(FileResource):
                 R = q2R(*[side_profiles[p] for p in
                           ['q']])
                 if vertical_coordinate == 102:
-                    raise NotImplementedError("vertical_coordinate=={}.".format(vertical_coordinate))
-                    # surface_geopotential = geopotential.getvalue_ll(*geometry.get_lonlat_grid(),
-                    #                                                 interpolation=interpolation,
-                    #                                                 one=False,
-                    #                                                 external_distance=external_distance)
-                    # del geopotential
+                    surface_geopotential = zs * constants.g0
                 else:
                     surface_geopotential = None
-            if (subdomain.geometry.vcoordinate.typeoffirstfixedsurface, vertical_coordinate) in ((102, 103), (103, 102)):
-                fids = self.listfields(complete=True)
-                zs = None
-                for fid in fids:
-                    hg = (fid['generic'].get('discipline', 255),
-                          fid['generic'].get('parameterCategory', 255),
-                          fid['generic'].get('parameterNumber', 255),
-                          fid['generic'].get('typeOfFirstFixedSurface', 255))
-                    if hg in ((0, 3, 4, 1), (0, 193, 5, 1), (0, 3, 5, 1), (0, 3, 6, 1), (2, 0, 7, 1)):
-                        #(0, 193, 5) is for SPECSURFGEOPOTEN
-                        fmt = [fk for fk in fid.keys() if fk != 'generic'][0]
-                        zs = self.extract_subdomain(fid[fmt], geometry,
-                                                    interpolation=interpolation,
-                                                    external_distance=external_distance)
-                        if zs.spectral:
-                            zs.sp2gp()
-                        if hg in ((0, 3, 4, 1), (0, 193, 5, 1)):
-                            zs.setdata(zs.getdata() / constants.g0)
-                        break
-                if zs is None:
-                    raise epygramError("No terrain height field found, ground cannot be plotted")
-                print("chmp trouve!!!")
 
             # effective vertical coords conversion
             if subdomain.geometry.vcoordinate.typeoffirstfixedsurface == 100 and \
@@ -2868,6 +2882,11 @@ class GRIB(FileResource):
                                                                    vertical_mean,
                                                                    Pdep=side_profiles['pdep'],
                                                                    Phi_surf=surface_geopotential)
+            elif (subdomain.geometry.vcoordinate.typeoffirstfixedsurface, vertical_coordinate) in ((102, 103), (103, 102)):
+                if vertical_coordinate == 102:
+                    subdomain.geometry.vcoordinate = height2altitude(subdomain.geometry.vcoordinate, zs)
+                else:
+                    subdomain.geometry.vcoordinate = altitude2height(subdomain.geometry.vcoordinate, zs)
             else:
                 raise NotImplementedError("this vertical coordinate" +
                                           " conversion.")

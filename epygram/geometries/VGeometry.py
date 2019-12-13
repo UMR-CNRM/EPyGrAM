@@ -272,7 +272,7 @@ def hybridH2altitude(hybridH_geometry, Zsurf,
     """
     assert isinstance(hybridH_geometry, VGeometry), "*hybridH_geometry* must be of type VGeometry."
     if hybridH_geometry.typeoffirstfixedsurface != 118:
-        raise epygramError("*hybridH_geometry.cooridnate* must be 118.")
+        raise epygramError("*hybridH_geometry.coordinate* must be 118.")
     if hybridH_geometry.grid['ABgrid_position'] != 'flux':
         raise NotImplementedError('A and B must define flux levels')
     if gridposition is None:
@@ -297,6 +297,50 @@ def hybridH2altitude(hybridH_geometry, Zsurf,
                      'position_on_grid': hybridH_geometry.position_on_grid,
                      # 'grid':{'gridlevels':list(levels)},
                      'levels': list(levels)
+                     }
+    return fpx.geometry(**kwargs_vcoord)
+
+
+def height2altitude(height_geometry, Zsurf):
+    """
+    Converts a height coordinate grid into altitude.
+
+    :param Zsurf: the surface height.
+
+    :rtype: VGeometry
+    """
+    assert isinstance(height_geometry, VGeometry), "*height_geometry* must be of type VGeometry."
+    if height_geometry.typeoffirstfixedsurface != 103:
+        raise epygramError("*height_geometry.coordinate* must be 103.")
+    levels = list(height_geometry.levels)
+    for k in range(len(levels)):
+        levels[k] = levels[k] + Zsurf
+    kwargs_vcoord = {'structure':'V',
+                     'typeoffirstfixedsurface': 102,
+                     'position_on_grid': height_geometry.position_on_grid,
+                     'levels': levels
+                     }
+    return fpx.geometry(**kwargs_vcoord)
+
+
+def altitude2height(altitude_geometry, Zsurf):
+    """
+    Converts an altitude coordinate grid into height.
+
+    :param Zsurf: the surface height.
+
+    :rtype: VGeometry
+    """
+    assert isinstance(altitude_geometry, VGeometry), "*altitude_geometry* must be of type VGeometry."
+    if altitude_geometry.typeoffirstfixedsurface != 102:
+        raise epygramError("*altitude_geometry.coordinate* must be 102.")
+    levels = list(altitude_geometry.levels)
+    for k in range(len(levels)):
+        levels[k] = levels[k] - Zsurf
+    kwargs_vcoord = {'structure':'V',
+                     'typeoffirstfixedsurface': 103,
+                     'position_on_grid': altitude_geometry.position_on_grid,
+                     'levels': levels
                      }
     return fpx.geometry(**kwargs_vcoord)
 

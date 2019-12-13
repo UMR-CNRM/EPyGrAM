@@ -310,7 +310,7 @@ class NetCDFWriter(Converter):
                        subzone=self.subzone,
                        progressmode=self.progressmode,
                        # format specific
-                       grib_short_fid=self.grib_short_fid,
+                       grib_short_fid=self.grib_short_fid,  # TODO: use griberies cfName ?
                        compression=self.compression,
                        flatten_horizontal_grids=self.flatten_horizontal_grids)
 
