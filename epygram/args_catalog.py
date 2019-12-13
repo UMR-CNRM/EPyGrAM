@@ -597,7 +597,7 @@ graphical_options = {
              type=int,
              default=50)],
     'colorminmax':[
-        '-c', '--colorminax',
+        '-c', '--colorminmax',
         dict(help="Colors associated to min and max values. Syntax: 'color1, color2'.",
              default=None,
              dest='colorminmax')],
@@ -607,15 +607,23 @@ graphical_options = {
                    Syntax: 'color1, color2'.",
              default=None,
              dest='diffcolorminmax')],
+    'alpha':[
+        '--alpha',
+        dict(help="Alpha value (for contour, color and vectors plots)",
+             default=1.,
+             type=float,
+             dest='alpha')],
     'alphaminmax':[
         '--alphaminmax',
-        dict(help="Alpha values associated to min and max values. \
+        dict(help="Alpha values associated to min and max values \
+                   for volume plot. \
                    Syntax: 'alpha1, alpha2'.",
              default=None,
              dest='alphaminmax')],
     'diffalphaminmax':[
         '--diffalphaminax',
-        dict(help="Alpha values associated to min and max values for diff plot. \
+        dict(help="Alpha values associated to min and max values \
+                   for diff volume plot. \
                    Syntax: 'alpha1, alpha2'.",
              default=None,
              dest='diffalphaminmax')],
@@ -915,9 +923,9 @@ extraction_options = {
     'horizontal_interpolation':[
         '-i', '--interpolation',
         dict(help="interpolation mode from field grid to point/section\
-                   coordinates. Among ('nearest', 'linear', 'cubic').\
-                   Defaults to 'nearest'.",
-             choices=['nearest', 'linear', 'cubic'],
+                   coordinates. Among ('nearest', 'linear', 'cubic',\
+                   'bilinear'). Defaults to 'nearest'.",
+             choices=['nearest', 'linear', 'cubic', 'bilinear'],
              default='nearest')],
     'external_distance':[
         '-z', '--external_distance',

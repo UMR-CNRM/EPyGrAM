@@ -36,7 +36,7 @@ from epygram.util import (Angle, RecursiveObject,
                           separation_line, write_formatted_dict)
 from epygram.fields import H2DField
 from epygram.geometries.H2DGeometry import gauss_latitudes
-from epygram.geometries.VGeometry import pressure2altitude
+from epygram.geometries.VGeometry import pressure2altitude, altitude2height, height2altitude
 from epygram.geometries.SpectralGeometry import (SpectralGeometry,
                                                  gridpoint_dims_from_truncation,
                                                  nearest_greater_FFT992compliant_int)
@@ -2812,6 +2812,30 @@ class GRIB(FileResource):
 
         # preparation for vertical coords conversion
         if vertical_coordinate not in (None, subdomain.geometry.vcoordinate.typeoffirstfixedsurface):
+            # surface height
+            if (subdomain.geometry.vcoordinate.typeoffirstfixedsurface, vertical_coordinate) in ((102, 103), (103, 102), (100, 103)):
+                fids = self.listfields(complete=True)
+                zs = None
+                for fid in fids:
+                    hg = (fid['generic'].get('discipline', 255),
+                          fid['generic'].get('parameterCategory', 255),
+                          fid['generic'].get('parameterNumber', 255),
+                          fid['generic'].get('typeOfFirstFixedSurface', 255))
+                    if hg in ((0, 3, 4, 1), (0, 193, 5, 1), (0, 3, 5, 1), (0, 3, 6, 1), (2, 0, 7, 1)):
+                        #(0, 193, 5) is for SPECSURFGEOPOTEN
+                        fmt = [fk for fk in fid.keys() if fk != 'generic'][0]
+                        zs = self.extract_subdomain(fid[fmt], geometry,
+                                                    interpolation=interpolation,
+                                                    external_distance=external_distance)
+                        if zs.spectral:
+                            zs.sp2gp()
+                        if hg in ((0, 3, 4, 1), (0, 193, 5, 1)):
+                            zs.setdata(zs.getdata() / constants.g0)
+                        zs = zs.getdata()
+                        break
+                if zs is None:
+                    raise epygramError("No terrain height field found, conversion height/altitude cannot be done")
+
             # P => H necessary profiles
             if subdomain.geometry.vcoordinate.typeoffirstfixedsurface == 100 and \
                vertical_coordinate in (102, 103):
@@ -2844,35 +2868,9 @@ class GRIB(FileResource):
                 R = q2R(*[side_profiles[p] for p in
                           ['q']])
                 if vertical_coordinate == 102:
-                    raise NotImplementedError("vertical_coordinate=={}.".format(vertical_coordinate))
-                    # surface_geopotential = geopotential.getvalue_ll(*geometry.get_lonlat_grid(),
-                    #                                                 interpolation=interpolation,
-                    #                                                 one=False,
-                    #                                                 external_distance=external_distance)
-                    # del geopotential
+                    surface_geopotential = zs * constants.g0
                 else:
                     surface_geopotential = None
-            if (subdomain.geometry.vcoordinate.typeoffirstfixedsurface, vertical_coordinate) in ((102, 103), (103, 102)):
-                fids = self.listfields(complete=True)
-                zs = None
-                for fid in fids:
-                    hg = (fid['generic'].get('discipline', 255),
-                          fid['generic'].get('parameterCategory', 255),
-                          fid['generic'].get('parameterNumber', 255),
-                          fid['generic'].get('typeOfFirstFixedSurface', 255))
-                    if hg in ((0, 3, 4, 1), (0, 193, 5, 1), (0, 3, 5, 1), (0, 3, 6, 1), (2, 0, 7, 1)):
-                        #(0, 193, 5) is for SPECSURFGEOPOTEN
-                        fmt = [fk for fk in fid.keys() if fk != 'generic'][0]
-                        zs = self.extract_subdomain(fid[fmt], geometry,
-                                                    interpolation=interpolation,
-                                                    external_distance=external_distance)
-                        if zs.spectral:
-                            zs.sp2gp()
-                        if hg in ((0, 3, 4, 1), (0, 193, 5, 1)):
-                            zs.setdata(zs.getdata() / constants.g0)
-                        break
-                if zs is None:
-                    raise epygramError("No terrain height field found, ground cannot be plotted")
 
             # effective vertical coords conversion
             if subdomain.geometry.vcoordinate.typeoffirstfixedsurface == 100 and \
@@ -2884,6 +2882,11 @@ class GRIB(FileResource):
                                                                    vertical_mean,
                                                                    Pdep=side_profiles['pdep'],
                                                                    Phi_surf=surface_geopotential)
+            elif (subdomain.geometry.vcoordinate.typeoffirstfixedsurface, vertical_coordinate) in ((102, 103), (103, 102)):
+                if vertical_coordinate == 102:
+                    subdomain.geometry.vcoordinate = height2altitude(subdomain.geometry.vcoordinate, zs)
+                else:
+                    subdomain.geometry.vcoordinate = altitude2height(subdomain.geometry.vcoordinate, zs)
             else:
                 raise NotImplementedError("this vertical coordinate" +
                                           " conversion.")
