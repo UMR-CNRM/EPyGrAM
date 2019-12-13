@@ -97,7 +97,7 @@ def guess(filename):
     """
 
     formats_in_guess_order = copy.copy(runtime_available_formats)
-    _guess_last_formats = ['FA', 'LFI', ]  # because they might not be very clean at catching exceptions
+    _guess_last_formats = ['DDHLFA', 'LFA', 'FA', 'LFI', ]  # because they might not be very clean at catching exceptions
     for glf in _guess_last_formats:
         if glf in formats_in_guess_order:
             formats_in_guess_order = [f for f in formats_in_guess_order
