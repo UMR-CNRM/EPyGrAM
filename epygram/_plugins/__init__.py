@@ -23,8 +23,8 @@ for module in glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),
     if ext in ('', '.py'):
         try:
             importlib.import_module('.' + name, __name__)
-        except  ImportError as e:
-            epylog.warning("An error ('" + str(e) + "') occurred when importing the " + \
-                           name + " plugin; " + \
-                           "this is certainly due to a missing dependency, some " + \
+        except ImportError as e:
+            epylog.warning("An error ('" + str(e) + "') occurred when importing the " +
+                           name + " plugin; " +
+                           "this is certainly due to a missing dependency, some " +
                            "functionalities can be missing.")

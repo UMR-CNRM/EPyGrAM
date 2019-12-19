@@ -49,6 +49,7 @@ class Field(RecursiveObject, FootprintBase):
             misc_metadata=dict(
                 type=FPDict,
                 optional=True,
+                default=FPDict(),
                 access='rwd'),
             units=dict(
                 optional=True,

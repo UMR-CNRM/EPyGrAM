@@ -609,6 +609,8 @@ class _H2DCartopyPlot(object):
             else:
                 plot_method = 'contourf'
         # 1/ geometry and figure
+        # if self.geometry.isglobal:  # FIXME: do something of that kind, or an extent='__default__'
+        #     set_global = True
         fig, ax, projection = self.cartoplot_fig_init(fig,
                                                       ax,
                                                       projection,
@@ -661,7 +663,7 @@ class _H2DCartopyPlot(object):
         x, y, data = self._cartoplot_shape(x, y,
                                            data,
                                            plot_method)
-        if focus_extent and not set_global and 'gauss' not in self.geometry.name:
+        if focus_extent and not set_global and not self.geometry.isglobal:
             ax.set_extent([x.min(), x.max(), y.min(), y.max()],
                           crs=projection)
         # 7/ colormapping

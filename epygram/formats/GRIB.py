@@ -1012,7 +1012,8 @@ class GRIBmessage(RecursiveObject, dict):
         for k in self.specific_fid_keys_for(template_number):
             self.set_from(k, [other_GRIB_options,
                               fid,
-                              griberies.defaults.GRIB2_keyvalue[4]])
+                              griberies.defaults.GRIB2_keyvalue[4]],
+                          fatal=False)  # FIXME: known issue...
 
     def _GRIB2_set_vertical_geometry(self, geometry, fid, **other_GRIB_options):
         """Set vertical geometry."""
@@ -2023,8 +2024,11 @@ class GRIBmessage(RecursiveObject, dict):
             structure='V',
             position_on_grid='mass')
         kwargs_vcoord['typeoffirstfixedsurface'] = self.get('typeOfFirstFixedSurface', 255)
-        first_level = self['scaledValueOfFirstFixedSurface'] * 10**(-self['scaleFactorOfFirstFixedSurface'])
-        kwargs_vcoord['levels'] = [first_level]
+        if kwargs_vcoord['typeoffirstfixedsurface'] != 255:
+            first_level = self['scaledValueOfFirstFixedSurface'] * 10**(-self['scaleFactorOfFirstFixedSurface'])
+            kwargs_vcoord['levels'] = [first_level]
+        else:
+            kwargs_vcoord['levels'] = [0]
         if self.get('typeOfSecondFixedSurface', 255) != 255:
             kwargs_vcoord['typeofsecondfixedsurface'] = self['typeOfSecondFixedSurface']
             second_level = self['scaledValueOfSecondFixedSurface'] * 10**(-self['scaleFactorOfSecondFixedSurface'])
@@ -2049,13 +2053,19 @@ class GRIBmessage(RecursiveObject, dict):
 
     # Utilities methods --------------------------------------------------------
 
-    def set_from(self, k, series_of_dicts):
+    def set_from(self, k, series_of_dicts, fatal=True):
         """Set key k from its value first found in one of **series_of_dicts**."""
         for d in series_of_dicts:
             if k in d:
-                self[k] = d[k]
-                if hasattr(self, '_untouch'):
-                    self._untouch.add(k)
+                try:
+                    self[k] = d[k]
+                    if hasattr(self, '_untouch'):
+                        self._untouch.add(k)
+                except Exception:
+                    if fatal:
+                        raise
+                    else:
+                        epylog.warning('Failed to set {}={}'.format(k, d[k]))
                 break
 
     def set_values(self, values):
