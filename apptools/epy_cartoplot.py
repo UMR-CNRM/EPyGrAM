@@ -438,7 +438,7 @@ if __name__ == '__main__':
     else:
         mask_threshold = None
     if args.quiverkey is None or args.quiverkey == '':
-        quiverkey = {}
+        quiverkey = None
     else:
         quiverkey = str2dict(args.quiverkey, float)
     if args.scatter_kw is not None:

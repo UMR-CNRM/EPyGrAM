@@ -55,6 +55,8 @@ class _H2DVectorCartopyPlot(object):
                         'max':config.mask_outside}
         if mask_threshold is not None:
             mask_outside.update(mask_threshold)
+        if not self.geometry.grid.get('LAMzone', False):
+            subzone = None
         [u, v] = [numpy.ma.masked_outside(data,
                                           mask_outside['min'],
                                           mask_outside['max']) for data in
@@ -202,10 +204,10 @@ class _H2DVectorCartopyPlot(object):
                                                u, v,
                                                vector_plot_method=vector_plot_method,
                                                vector_plot_kwargs=vector_plot_kwargs)
-        if vector_plot_method == 'quiver' and quiverkey is not None:
-            if not isinstance(quiverkey, dict):
-                quiverkey = {}
-            ax.quiverkey(elements, 0.95, 1.01, **quiverkey)
+        if vector_plot_method == 'quiver' and quiverkey:
+            if quiverkey is True:
+                quiverkey = {'X':0.95, 'Y':1.01, 'U':5, 'label':'5m/s'}
+            ax.quiverkey(elements, **quiverkey)
         if module_plot_kwargs.get('title') is None:
             ax.set_title(str(self.fid) + "\n" + str(self.validity.get()))
         else:

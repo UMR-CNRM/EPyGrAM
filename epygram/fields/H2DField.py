@@ -608,6 +608,8 @@ class _H2DCartopyPlot(object):
                 plot_method = 'pcolormesh'
             else:
                 plot_method = 'contourf'
+        if not self.geometry.grid.get('LAMzone', False):
+            subzone = None
         # 1/ geometry and figure
         # if self.geometry.isglobal:  # FIXME: do something of that kind, or an extent='__default__'
         #     set_global = True
@@ -631,8 +633,6 @@ class _H2DCartopyPlot(object):
         # 3/ get data to plot
         if self.spectral:
             self.sp2gp()
-        if not self.geometry.grid.get('LAMzone', False):
-            subzone = None
         data = self.getdata(subzone=subzone)
         # 4/ handle min/max values
         if colormap_helper is None:
