@@ -31,6 +31,7 @@ GRIB2_keyvalue = {1:{'tablesVersion':15,
                      'scaleFactorOfFirstFixedSurface':0,
                      'scaleFactorOfSecondFixedSurface':0,
                      # simulated satellite imagery
+                     'NB':1,
                      'satelliteSeries':0,
                      'satelliteNumber':0,
                      'instrumentType':0,

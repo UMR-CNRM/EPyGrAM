@@ -328,7 +328,8 @@ class GRIBmessage(RecursiveObject, dict):
                     'bottomLevel',
                     'tablesVersion',
                     'productDefinitionTemplateNumber']}
-    _satellite_imagery_keys = ['satelliteSeries',
+    _satellite_imagery_keys = ['NB',
+                               'satelliteSeries',
                                'satelliteNumber',
                                'instrumentType',
                                'scaleFactorOfCentralWaveNumber',
