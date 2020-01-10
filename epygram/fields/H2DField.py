@@ -442,6 +442,7 @@ class _H2DCartopyPlot(object):
             cax.set_yticklabels(ticks_label)
         if minmax_along_colorbar:
             cb.set_label(minmax_along_colorbar)
+        return cb
 
     def _cartoplot_text(self, ax,
                         title,
@@ -501,10 +502,12 @@ class _H2DCartopyPlot(object):
                   colorbar_over=None,
                   colorbar_ax_kw=None,
                   minmax_along_colorbar=True,
+                  # takeover
+                  takeover=False
                   ):
         """
-        Plot field with **cartopy**.
-
+        Plot field with **cartopy**. Returns (figure, axis).
+        
         Figure settings:
 
         :param fig: any existing figure to be used for the plot.
@@ -601,6 +604,11 @@ class _H2DCartopyPlot(object):
             make_axes_locatable(ax).append_axes(colorbar, **kwargs)
         :param minmax_along_colorbar: if True and minmax is not None,
             adds min and max values along colorbar.
+            
+        Takeover:
+        
+        :param takeover: give the user more access to the objects used in the
+            plot, by returning a dict containing them instead of only fig/ax
         """
         # 0/ defaults pre-sets
         if plot_method == '__default__':
@@ -689,19 +697,22 @@ class _H2DCartopyPlot(object):
                                                   clabel_kw)
             # 9/ colorbar
             if colorbar and plot_method != 'contour':
-                self._cartoplot_colorbar(ax,
-                                         elements,
-                                         colorbar,
-                                         colorbar_over,
-                                         colorbar_ax_kw,
-                                         colormap_helper,
-                                         minmax_along_colorbar,
-                                         pmin, pmax,
-                                         colorsnumber,
-                                         colorstep)
+                cb = self._cartoplot_colorbar(ax,
+                                              elements,
+                                              colorbar,
+                                              colorbar_over,
+                                              colorbar_ax_kw,
+                                              colormap_helper,
+                                              minmax_along_colorbar,
+                                              pmin, pmax,
+                                              colorsnumber,
+                                              colorstep)
         # 10/ texts
         self._cartoplot_text(ax, title, uniform, uniformvalue)
-        return fig, ax
+        if takeover:
+            return dict(fig=fig, ax=ax, plot_elements=elements, colorbar=cb)
+        else:
+            return fig, ax
 
 
 class H2DField(_H2DBasemapPlot, _H2DCartopyPlot, D3Field):
