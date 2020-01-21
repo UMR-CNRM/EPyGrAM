@@ -20,29 +20,31 @@ from epygram import epygramError
 from epygram.base import Field, FieldValidityList
 from . import D3Field, D3VirtualField
 
-def make_vector_field(fX, fY):
+def make_vector_field(*components):
     """
     Creates a new :class:`epygram.D3VectorField` or subclass from
-    two :class:`epygram.D3Field` or subclass *fX, fY* representing resp.
-    the X and Y components of the vector in the field geometry.
+    several :class:`epygram.D3Field` or subclass representing
+    the components of the vector in the field geometry.
     """
-    if not isinstance(fX, (D3Field, D3VirtualField)) or not isinstance(fY, (D3Field, D3VirtualField)):
-        raise epygramError("'fX', 'fY' must be (subclass of) D3Field.")
-    if fX.geometry.dimensions != fY.geometry.dimensions:
-        raise epygramError("'fX', 'fY' must be share their gridpoint" +
+    if len(components) < 2:
+        raise epygramError("One need at least two components to make a vector")
+    if not all([isinstance(c, (D3Field, D3VirtualField)) for c in components]):
+        raise epygramError("All components must be (subclass of) D3Field.")
+    if any([components[0].geometry.dimensions != c.geometry.dimensions for c in components[1:]]):
+        raise epygramError("All components must be share their gridpoint" +
                            " dimensions.")
-    if fX.spectral_geometry != fY.spectral_geometry:
-        raise epygramError("'fX', 'fY' must be share their spectral" +
+    if any([components[0].spectral_geometry != c.spectral_geometry for c in components[1:]]):
+        raise epygramError("All components must be share their spectral" +
                            " geometry.")
-    if fX.structure != fY.structure:
+    if any([components[0].structure != c.structure for c in components[1:]]):
         raise epygramError("'fX', 'fY' must share their structure.")
 
     f = fpx.field(fid={'op':'make_vector()'},
-                  structure=fX.structure,
-                  validity=fX.validity.copy(),
-                  processtype=fX.processtype,
+                  structure=components[0].structure,
+                  validity=components[0].validity.copy(),
+                  processtype=components[0].processtype,
                   vector=True,
-                  components=[fX, fY])
+                  components=components)
     return f
 
 

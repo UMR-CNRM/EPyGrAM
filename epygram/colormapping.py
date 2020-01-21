@@ -10,10 +10,14 @@ import json
 
 from bronx.fancies import loggers
 
+from . import config
+
 #: No automatic export
 __all__ = []
 
 logger = loggers.getLogger(__name__)
+
+_loaded_colormaps = {}
 
 
 def register_colormap_from_json(filename):
@@ -31,17 +35,35 @@ def register_colormap_from_json(filename):
     if colors.max() > 1.:
         colors /= 255.
     asdict['colors_RGB'] = colors
-    colors = matplotlib.colors.ListedColormap(colors)
+    cmap = matplotlib.colors.ListedColormap(colors, name=colormap)
+    asdict['cmap'] = cmap
     if colormap not in plt.colormaps():
-        plt.register_cmap(name=colormap, cmap=colors)
+        plt.register_cmap(name=colormap, cmap=cmap)
     else:
         raise ValueError('this colormap is already registered: {}'.format(colormap))
+    _loaded_colormaps[filename] = asdict
     return asdict
 
 
+def load_colormap(colormap):
+    """Load colormap from epygram colormaps if needed."""
+    import matplotlib.pyplot as plt
+    if colormap not in plt.colormaps():
+        if colormap in config.colormaps:
+            cmapfile = config.colormaps[colormap]
+            cmap = register_colormap_from_json(cmapfile)['cmap']
+        else:
+            raise ValueError("unknown colormap: {}".format(colormap))
+    else:
+        cmap = plt.get_cmap(colormap)
+    return cmap
+
 def get_ColormapHelper_fromfile(filename):
     """Get colormap from file (json) and build ad hoc ColormapHelper."""
-    asdict = register_colormap_from_json(filename)
+    if filename in _loaded_colormaps:
+        asdict = _loaded_colormaps[filename]
+    else:
+        asdict = register_colormap_from_json(filename)
     colormap = asdict['name']
     # colormap helper
     if asdict.get('colorcenters', False):
@@ -85,11 +107,15 @@ class ColormapHelper(object):
             interval need to occupy the same space on the colorbar.
         :param explicit_ticks: to specify the ticks values to be shown
         """
-        self.colormap = colormap
+        self.cmap_object = load_colormap(colormap)
         self.explicit_colorbounds = explicit_colorbounds
         self.normalize = normalize
         self.explicit_ticks = explicit_ticks
-
+    
+    @property
+    def colormap(self):
+        return self.cmap_object.name
+    
     def colorbounds(self, minmax=None, number=None, step=None):
         """
         Get color bounds, i.e. values where colors change.
@@ -123,7 +149,7 @@ class ColormapHelper(object):
         assert self.explicit_colorbounds is not None, "Cannot compute norm if explicit_colorbounds are not known"
         colors = matplotlib.colors
         return colors.BoundaryNorm(boundaries=self.explicit_colorbounds,
-                                   ncolors=len(self.explicit_colorbounds) - 1)
+                                   ncolors=self.cmap_object.N)
 
     def ticks_label(self, *args, **kwargs):
         """
@@ -197,7 +223,7 @@ class CenteredColormapHelper(ColormapHelper):
         :param normalize: if colors need to be normalized, i.e. that each color
             interval need to occupy the same space on the colorbar.
         """
-        self.colormap = colormap
+        self.cmap_object = load_colormap(colormap)
         colorbounds = [float(explicit_colorcenters[0]) -
                        0.5 * abs(explicit_colorcenters[0])]
         colorbounds += [float(explicit_colorcenters[i + 1] +

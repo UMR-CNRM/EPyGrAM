@@ -126,7 +126,7 @@ def _do_plot(field, plotmode,
              z_factor, subzone, specificproj,
              minmax, colormin, colormax, opacity, opacitymin, opacitymax,
              vectors_subsampling, levelsnumber, streamlines_time, vectors_scale_factor,
-             existing_rendering, viewport_pos):
+             existing_rendering, viewport_pos, outline):
     """
     :param field: field to plot
     :param background_color: must be a color name or a 3-tuple.
@@ -151,6 +151,7 @@ def _do_plot(field, plotmode,
     :param existing_rendering: rendering to use for enabling several
                                viewports in a same window
     :param viewport_pos: position of viewport in window
+    :param outline: must be None or a color name to plot outline
     """
     
     rendering = Usevtk(background_color, window_size,
@@ -240,7 +241,8 @@ def _do_plot(field, plotmode,
                                subzone=subzone)
         else:
             raise epygramError("This plot mode does not exist: " + str(plotmode))
-    
+        if outline is not None:
+            field.plot3DOutline(rendering, color=outline, subzone=subzone)
     return rendering
 
 def main(plotmode,
@@ -290,7 +292,8 @@ def main(plotmode,
          cheap_height=True,
          verbose=False,
          empty_value=None,
-         diffsamewindow=True
+         diffsamewindow=True,
+         outline=None
          ):
     """
     Plot fields.
@@ -355,6 +358,7 @@ def main(plotmode,
     :param empty_value: levels with all data set to empty_value are suppressed
                         to minimize memory print
     :param diffsamewindow: if True uses several renderers in the same window in diff mode
+    :param outline: must be None or a color name to plot outline
     """
     if outputfilename and not output:
         raise epygramError('*output* format must be defined if outputfilename is supplied.')
@@ -407,7 +411,8 @@ def main(plotmode,
                            minmax, colormin, colormax, opacity, opacitymin, opacitymax,
                            vectors_subsampling, levelsnumber, streamlines_time, vectors_scale_factor,
                            existing_rendering=None,
-                           viewport_pos=(0., 0., 1., 1.) if plot_numbers_by_window == 1 else (0., 0., 1./3, 1.))
+                           viewport_pos=(0., 0., 1., 1.) if plot_numbers_by_window == 1 else (0., 0., 1./3, 1.),
+                           outline=outline)
         rendering.append(ren_res)
     if diffmode:
         if not computewind:
@@ -439,7 +444,8 @@ def main(plotmode,
                                minmax, colormin, colormax, opacity, opacitymin, opacitymax,
                                vectors_subsampling, levelsnumber, streamlines_time, vectors_scale_factor,
                                existing_rendering=None if plot_numbers_by_window == 1 else ren_res,
-                               viewport_pos=(0., 0., 1., 1.) if plot_numbers_by_window == 1 else (1./3, 0., 2./3, 1.))
+                               viewport_pos=(0., 0., 1., 1.) if plot_numbers_by_window == 1 else (1./3, 0., 2./3, 1.),
+                               outline=outline)
             rendering.append(ren_ref)
         if legend is not None:
             title = legend
@@ -456,7 +462,8 @@ def main(plotmode,
                            diffminmax, diffcolormin, diffcolormax, opacity, diffopacitymin, diffopacitymax,
                            vectors_subsampling, difflevelsnumber, diffstreamlines_time, diffvectors_scale_factor,
                            existing_rendering=None if plot_numbers_by_window == 1 else ren_res,
-                           viewport_pos=(0., 0., 1., 1.) if plot_numbers_by_window == 1 else (2./3, 0., 1., 1.))
+                           viewport_pos=(0., 0., 1., 1.) if plot_numbers_by_window == 1 else (2./3, 0., 1., 1.),
+                           outline=outline)
         rendering.append(ren_dif)
 
     if ground is not None:
@@ -500,12 +507,9 @@ def main(plotmode,
                 geometry.vcoordinate = fpx.geometry(**kwargs_vcoord)
             if ground == 'bluemarble':
                 actor, _ = geometry.plot3DBluemarble(ren, interpolation='nearest', subzone=subzone)
-                actor.GetProperty().LightingOff()
             else:
-                actors = geometry.plot3DMaptiles(ren, ground, 2, interpolation='nearest', subzone=subzone)
-                for actor, _ in actors:
-                    if actor is not None:
-                        actor.GetProperty().LightingOff()
+                actor, _ = geometry.plot3DMaptiles(ren, ground, 2, interpolation='nearest', subzone=subzone)
+            actor.GetProperty().LightingOff()
 
     #Rendering and cameras synchronization
     for ren in rendering:
@@ -800,4 +804,5 @@ if __name__ == '__main__':
          verbose=args.verbose,
          empty_value=None, #if useful, add it to the command line options
          diffsamewindow=True, #could also be added to command line options
+         outline=None #could also be added to command line options
          )

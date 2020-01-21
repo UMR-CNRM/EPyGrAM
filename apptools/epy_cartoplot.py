@@ -33,7 +33,7 @@ def read_and_preprocess(resource,
                         zoom):
     """Read field in resource, and preprocess if requested."""
     field = resource.readfield(fid)
-    assert isinstance(field, epygram.fields.H2DField), \
+    assert isinstance(field, (epygram.fields.H2DField, epygram.fields.H2DVectorField)), \
         ' '.join(['Oops ! Looks like {} is not known as a horizontal 2D Field by epygram.',
                   'Add it to ~/.epygram/user_Field_Dict_FA.csv ?']).format(fid)
     if field.spectral:
@@ -276,7 +276,11 @@ def main(filename,
                                         **preprocess_options)
             if title is None:
                 title = "\n".join([str(fid), str(field.validity.get())])
-            fig, _ = field.cartoplot(title=title, **plot_kwargs)
+            if isinstance(field, epygram.fields.H2DVectorField):
+                # Scalar field in a vector field is a true color image
+                fig, _ = field.cartoimage(title=title, **plot_kwargs)
+            else:
+                fig, _ = field.cartoplot(title=title, **plot_kwargs)
     # 3/ output
     if savefig:
         epylog.info("save plot(s)...")

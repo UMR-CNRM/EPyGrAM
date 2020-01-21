@@ -158,8 +158,7 @@ class _H2DCartopyPlot(object):
                                 data,
                                 mask_threshold,
                                 minmax,
-                                colorbounds,
-                                colormap,
+                                colormap_helper,
                                 minmax_along_colorbar):
         """Mask according to threshold, get min/max, mask according to colormap."""
         # 1/ mask values or explicit thresholding
@@ -174,8 +173,7 @@ class _H2DCartopyPlot(object):
         pmin = data.min()
         pmax = data.max()
         if minmax_along_colorbar and (minmax is not None or
-                                      colormap in config.colormaps_scaling or
-                                      colorbounds is not None):
+                                      colormap_helper.explicit_colorbounds is not None):
             minmax_along_colorbar = '(min: {: .{precision}{type}} // max: {: .{precision}{type}})'.format(
                 pmin, pmax, type='E', precision=3)
         else:
@@ -189,11 +187,11 @@ class _H2DCartopyPlot(object):
                 pmax = float(minmax[1])
             except ValueError:
                 pass
-        if colorbounds is not None:
+        if colormap_helper.explicit_colorbounds is not None:
             if minmax is not None:
-                epylog.warning('**minmax** overwritten by **colorbounds**')
-            pmin = min(colorbounds)
-            pmax = max(colorbounds)
+                epylog.warning('**minmax** overwritten by **colormap_helper.explicit_colorbounds**')
+            pmin = min(colormap_helper.explicit_colorbounds)
+            pmax = max(colormap_helper.explicit_colorbounds)
         # 3/ mask outside colorbounds/minmax
         data = numpy.ma.masked_outside(data, pmin, pmax)
         return data, pmin, pmax, minmax_along_colorbar
@@ -211,35 +209,37 @@ class _H2DCartopyPlot(object):
             corners_ij = self.geometry.gimme_corners_ij(subzone=subzone)
             Imax, Jmax = corners_ij['ur']
             Imin, Jmin = corners_ij['ll']
-            ii = list(range(Imin, Imax + 1))
-            jj = list(range(Jmin, Jmax + 1))
+            ii = numpy.arange(Imin, Imax + 1)
+            jj = numpy.arange(Jmin, Jmax + 1)
             # compute upper line, upper border
             up_lon, up_lat = self.geometry.ij2ll(ii,
-                                                 [Jmax for _ in ii],
+                                                 numpy.full((len(ii),), Jmax, dtype=numpy.int),
                                                  position='upper-right')
             ul = self.geometry.ij2ll(Imin, Jmax,
                                      position='upper-left')
-            up_lon = numpy.hstack((numpy.array([ul[0]]), up_lon))
-            up_lat = numpy.hstack((numpy.array([ul[1]]), up_lat))
+            up_lon = numpy.ma.hstack((ul[0], up_lon))
+            up_lat = numpy.ma.hstack((ul[1], up_lat))
             up_lon = up_lon.reshape((1, len(up_lon)))
             up_lat = up_lat.reshape((1, len(up_lat)))
             # compute right line, right border
-            right_lon, right_lat = self.geometry.ij2ll([Imax for _ in jj],
+            right_lon, right_lat = self.geometry.ij2ll(numpy.full((len(jj),), Imax, dtype=numpy.int),
                                                        jj,
                                                        position='upper-right')
             lr = self.geometry.ij2ll(Imax, Jmin,
                                      position='lower-right')
-            right_lon = numpy.hstack((numpy.array([lr[0]]), right_lon))
-            right_lat = numpy.hstack((numpy.array([lr[1]]), right_lat))
+            right_lon = numpy.ma.hstack((lr[0], right_lon))
+            right_lat = numpy.ma.hstack((lr[1], right_lat))
             right_lon = right_lon.reshape((len(right_lon), 1))
             right_lat = right_lat.reshape((len(right_lat), 1))
             # augment numpy array
-            lons = numpy.vstack((lons, up_lon[:, :-1]))
-            lats = numpy.vstack((lats, up_lat[:, :-1]))
-            lons = numpy.hstack((lons, right_lon))
-            lats = numpy.hstack((lats, right_lat))
-            lats[lats > 90.] = 90.
-            lats[lats < -90.] = -90.
+            lons = numpy.ma.vstack((lons, up_lon[:, :-1]))
+            lats = numpy.ma.vstack((lats, up_lat[:, :-1]))
+            lons = numpy.ma.hstack((lons, right_lon))
+            lats = numpy.ma.hstack((lats, right_lat))
+            mask = numpy.ma.array(lats > 90.).filled(False) #don't replace value where masked
+            lats[mask] = 90.
+            mask = numpy.ma.array(lats < -90.).filled(False) #don't replace value where masked
+            lats[mask] = -90.
         else:
             raise NotImplementedError("plot_method='pcolormesh' for Gauss or unstructured grids. Any idea ?")  # TODO: ?
         return lons, lats
@@ -261,8 +261,11 @@ class _H2DCartopyPlot(object):
             y = (lats - lats.min()) * self.geometry.grid['Y_resolution']
         else:
             xyz = projection.transform_points(ccrs.PlateCarree(), lons, lats)
-            x = xyz[..., 0]
-            y = xyz[..., 1]
+            x = numpy.ma.array(xyz[..., 0])
+            y = numpy.ma.array(xyz[..., 1])
+            masked = numpy.logical_or(x == numpy.inf, y == numpy.inf)
+            x[masked] = numpy.ma.masked
+            y[masked] = numpy.ma.masked
             if isinstance(lons, numpy.ma.masked_array):
                 x = numpy.ma.masked_where(lons.mask, x)
                 y = numpy.ma.masked_where(lons.mask, y)
@@ -299,29 +302,34 @@ class _H2DCartopyPlot(object):
         return xf, yf, zf
 
     @classmethod
-    def _cartoplot_colormap(cls,
-                            m, M,
-                            colormap,
-                            colorbounds,
-                            plot_method,
-                            colorsnumber,
-                            colorstep,
-                            center_cmap_on_0,
-                            contourcolor):
-        """Set colors settings."""
-        import matplotlib.pyplot as plt
-        from matplotlib.colors import cnames
+    def _cartoplot_get_ColormapHelper(cls,
+                                      colormap,
+                                      colorbounds):
+        """Build ColormapHelper object."""
         from epygram import colormapping
-        if colormap not in plt.colormaps() and colormap in config.colormaps:
+        if colormap in config.colormaps:
             cmapfile = config.colormaps[colormap]
             if cmapfile.endswith('.json'):
-                colormaphelper = colormapping.get_ColormapHelper_fromfile(cmapfile)
+                colormaphelper = colormapping.get_ColormapHelper_fromfile(cmapfile)  # potentially already loaded
             elif cmapfile.endswith('.cmap'):
                 # deprecated
                 raise epygramError(util._deprecated_cmap)
         else:
             colormaphelper = colormapping.ColormapHelper(colormap,
                                                          explicit_colorbounds=colorbounds)
+        return colormaphelper
+
+    @classmethod
+    def _cartoplot_colormap_kwargs(cls,
+                                   colormaphelper,
+                                   m, M,
+                                   plot_method,
+                                   colorsnumber,
+                                   colorstep,
+                                   center_cmap_on_0,
+                                   contourcolor):
+        """Get colors kwargs."""
+        from matplotlib.colors import cnames
         plot_kwargs = colormaphelper.kwargs_for_plot(plot_method,
                                                      (m, M),
                                                      center_cmap_on_0,
@@ -336,7 +344,7 @@ class _H2DCartopyPlot(object):
                 contourcolor = None
             plot_kwargs.update(colors=contourcolor,
                                cmap=colormap)
-        return plot_kwargs, colormaphelper
+        return plot_kwargs
 
     def _cartoplot_actualplot(self,
                               ax,
@@ -345,7 +353,7 @@ class _H2DCartopyPlot(object):
                               plot_method,
                               plot_kwargs,
                               uniform,
-                              colormap,
+                              colormap_helper,
                               scatter_kw,
                               contour_kw,
                               contourlabel,
@@ -363,8 +371,8 @@ class _H2DCartopyPlot(object):
         elif plot_method == 'scatter':
             # treat uniform field case
             if uniform:
-                if colormap in cnames or len(colormap) == 1:
-                    colors = colormap
+                if colormap_helper.colormap in cnames or len(colormap_helper.colormap) == 1:
+                    colors = colormap_helper.colormap
                 else:
                     colors = 'silver'
             else:
@@ -376,6 +384,19 @@ class _H2DCartopyPlot(object):
             pf = ax.scatter(x, y, c=colors,
                             **plot_kwargs)
         elif plot_method == 'pcolormesh':
+            if any([isinstance(arr, numpy.ma.masked_array) for arr in [x, y]]):
+                #pcolormesh cannot plot if x or y contain masked values
+                #We mask data values instead of x or y
+                data = numpy.ma.array(data)
+                m = numpy.logical_or(numpy.ma.getmaskarray(x),
+                                     numpy.ma.getmaskarray(y))
+                m = numpy.logical_or(numpy.logical_or(m[:-1, :-1],
+                                                      m[1:, :-1]),
+                                     numpy.logical_or(m[:-1, 1:],
+                                                      m[1:, 1:]))
+                data[m] = numpy.ma.masked
+                x = x.filled()
+                y = y.filled()
             pf = ax.pcolormesh(x, y, data,
                                **plot_kwargs)
         elif plot_method == 'contour':
@@ -439,6 +460,7 @@ class _H2DCartopyPlot(object):
             cax.set_yticklabels(ticks_label)
         if minmax_along_colorbar:
             cb.set_label(minmax_along_colorbar)
+        return cb
 
     def _cartoplot_text(self, ax,
                         title,
@@ -486,6 +508,7 @@ class _H2DCartopyPlot(object):
                   natural_earth_features=default_NEfeatures,
                   epygram_departments=False,
                   # colormapping
+                  colormap_helper=None,
                   colormap='plasma',
                   colorbounds=None,
                   colorsnumber=None,
@@ -497,10 +520,12 @@ class _H2DCartopyPlot(object):
                   colorbar_over=None,
                   colorbar_ax_kw=None,
                   minmax_along_colorbar=True,
+                  # takeover
+                  takeover=False
                   ):
         """
-        Plot field with **cartopy**.
-
+        Plot field with **cartopy**. Returns (figure, axis).
+        
         Figure settings:
 
         :param fig: any existing figure to be used for the plot.
@@ -574,6 +599,9 @@ class _H2DCartopyPlot(object):
 
         Colormap settings:
 
+        :param colormap_helper: an instance of the class
+            epygram.colormapping.ColormapHelper.
+            Has priority on the following arguments.
         :param colormap: name of the ``matplotlib`` colormap to use (or an
             ``epygram`` one, or a user-defined one, cf.
             config.usercolormaps).
@@ -594,6 +622,11 @@ class _H2DCartopyPlot(object):
             make_axes_locatable(ax).append_axes(colorbar, **kwargs)
         :param minmax_along_colorbar: if True and minmax is not None,
             adds min and max values along colorbar.
+            
+        Takeover:
+        
+        :param takeover: give the user more access to the objects used in the
+            plot, by returning a dict containing them instead of only fig/ax
         """
         # 0/ defaults pre-sets
         if plot_method == '__default__':
@@ -601,13 +634,18 @@ class _H2DCartopyPlot(object):
                 plot_method = 'pcolormesh'
             else:
                 plot_method = 'contourf'
+        if not self.geometry.grid.get('LAMzone', False):
+            subzone = None
         # 1/ geometry and figure
+        # if self.geometry.isglobal:  # FIXME: do something of that kind, or an extent='__default__'
+        #     set_global = True
         fig, ax, projection = self.cartoplot_fig_init(fig,
                                                       ax,
                                                       projection,
                                                       figsize,
                                                       rcparams,
                                                       set_global)
+        result = dict(fig=fig, ax=ax)
         # 2/ background
         self.cartoplot_background(self.geometry,
                                   ax,
@@ -622,15 +660,15 @@ class _H2DCartopyPlot(object):
         # 3/ get data to plot
         if self.spectral:
             self.sp2gp()
-        if not self.geometry.grid.get('LAMzone', False):
-            subzone = None
         data = self.getdata(subzone=subzone)
         # 4/ handle min/max values
+        if colormap_helper is None:
+            colormap_helper = self._cartoplot_get_ColormapHelper(colormap,
+                                                                 colorbounds)
         data, pmin, pmax, minmax_along_colorbar = self._cartoplot_treat_minmax(data,
                                                                                mask_threshold,
                                                                                minmax,
-                                                                               colorbounds,
-                                                                               colormap,
+                                                                               colormap_helper,
                                                                                minmax_along_colorbar)
         if abs(float(pmin) - float(pmax)) < config.epsilon and plot_method is not None:
             epylog.warning("uniform field: plot as 'points'.")
@@ -652,18 +690,24 @@ class _H2DCartopyPlot(object):
         x, y, data = self._cartoplot_shape(x, y,
                                            data,
                                            plot_method)
-        if focus_extent and not set_global and 'gauss' not in self.geometry.name:
-            ax.set_extent([x.min(), x.max(), y.min(), y.max()],
-                          crs=projection)
+        if focus_extent and not set_global and not self.geometry.isglobal:
+            xyz = ax.projection.transform_points(projection, x, y)
+            xyz = numpy.ma.masked_where(numpy.abs(xyz) == numpy.inf, xyz)
+            ax.set_xlim((xyz[..., 0].min(), xyz[..., 0].max()))
+            ax.set_ylim((xyz[..., 1].min(), xyz[..., 1].max()))
+            del xyz
+            #The method below is more elegant but does not work
+            #because it relies only on (xmin, ymin) and (xmax, ymax) points.
+            #ax.set_extent([x.min(), x.max(), y.min(), y.max()],
+            #              crs=projection)
         # 7/ colormapping
-        plot_kwargs, colormap_helper = self._cartoplot_colormap(pmin, pmax,
-                                                                colormap,
-                                                                colorbounds,
-                                                                plot_method,
-                                                                colorsnumber,
-                                                                colorstep,
-                                                                center_cmap_on_0,
-                                                                contourcolor)
+        plot_kwargs = self._cartoplot_colormap_kwargs(colormap_helper,
+                                                      pmin, pmax,
+                                                      plot_method,
+                                                      colorsnumber,
+                                                      colorstep,
+                                                      center_cmap_on_0,
+                                                      contourcolor)
         if plot_method is not None:
             # 8/ plot
             elements = self._cartoplot_actualplot(ax,
@@ -672,26 +716,28 @@ class _H2DCartopyPlot(object):
                                                   plot_method,
                                                   plot_kwargs,
                                                   uniform,
-                                                  colormap,
+                                                  colormap_helper,
                                                   scatter_kw,
                                                   contour_kw,
                                                   contourlabel,
                                                   clabel_kw)
+            result['plot_elements'] = elements
             # 9/ colorbar
             if colorbar and plot_method != 'contour':
-                self._cartoplot_colorbar(ax,
-                                         elements,
-                                         colorbar,
-                                         colorbar_over,
-                                         colorbar_ax_kw,
-                                         colormap_helper,
-                                         minmax_along_colorbar,
-                                         pmin, pmax,
-                                         colorsnumber,
-                                         colorstep)
+                cb = self._cartoplot_colorbar(ax,
+                                              elements,
+                                              colorbar,
+                                              colorbar_over,
+                                              colorbar_ax_kw,
+                                              colormap_helper,
+                                              minmax_along_colorbar,
+                                              pmin, pmax,
+                                              colorsnumber,
+                                              colorstep)
+                result['colorbar'] = cb
         # 10/ texts
         self._cartoplot_text(ax, title, uniform, uniformvalue)
-        return fig, ax
+        return result if takeover else (fig, ax)
 
 
 class H2DField(_H2DBasemapPlot, _H2DCartopyPlot, D3Field):

@@ -41,11 +41,13 @@ class _H2DVectorCartopyPlot(object):
                                                         module_cartoplot_kwargs.pop('rcparams', config.default_rcparams),
                                                         # get: to be passed to cartoplot()
                                                         module_cartoplot_kwargs.get('set_global'))
-        fig, ax = module.cartoplot(fig=fig,
-                                   ax=ax,
-                                   projection=projection,
-                                   **module_cartoplot_kwargs)
-        return fig, ax
+        result = module.cartoplot(fig=fig,
+                                  ax=ax,
+                                  projection=projection,
+                                  takeover=True,
+                                  **{k:v for (k, v) in module_cartoplot_kwargs.items() if k != 'takeover'})
+        result = {(k if k in ('fig', 'ax') else 'module_' + k):v for (k, v) in result.items()}
+        return result
 
     def _cartoplot_mask(self,
                         mask_threshold,
@@ -55,6 +57,8 @@ class _H2DVectorCartopyPlot(object):
                         'max':config.mask_outside}
         if mask_threshold is not None:
             mask_outside.update(mask_threshold)
+        if not self.geometry.grid.get('LAMzone', False):
+            subzone = None
         [u, v] = [numpy.ma.masked_outside(data,
                                           mask_outside['min'],
                                           mask_outside['max']) for data in
@@ -147,6 +151,23 @@ class _H2DVectorCartopyPlot(object):
                                      **vector_plot_kwargs)
         return elements
 
+    @classmethod
+    def _cartoimage_actual_plot(cls,
+                                ax,
+                                colorspace,
+                                crs, extent,
+                                data
+                               ):
+        if colorspace not in ('RGB', 'RGBA'):
+            import PIL.Image
+            data = PIL.Image.fromarray(data.astype(numpy.uint8)) #astype needed especially if interpolation occurred before
+            data = data.convert('RGBA')
+            data = numpy.array(data.getdata()).reshape(data.size[1], data.size[0], 4)
+            
+        elements = ax.imshow(data / 255., transform=crs, extent=extent, origin='lower') #division because imshow does not recognize numpy.int64 as int!
+        return elements
+
+
     def cartoplot(self,
                   map_factor_correction=True,
                   subsampling=1,
@@ -154,6 +175,8 @@ class _H2DVectorCartopyPlot(object):
                   vector_plot_method='quiver',
                   vector_plot_kwargs=None,
                   quiverkey=None,
+                  # takeover
+                  takeover=False,
                   **module_plot_kwargs):
         """
         Makes a simple plot of the vector field, with a number of options.
@@ -177,13 +200,19 @@ class _H2DVectorCartopyPlot(object):
         :param quiverkey: to activate quiverkey, in case
             vector_plot_method='quiver': may be a dict containing arguments
             to be passed to pyplot.quiverkey().
+            
+        Takeover:
+        
+        :param takeover: give the user more access to the objects used in the
+            plot, by returning a dict containing them instead of only fig/ax
         """
         if self.spectral:
             raise epygramError("please convert to gridpoint with sp2gp()" +
                                " method before plotting.")
         # 1/ Ask module to prepare figure, and plot module if required
-        fig, ax = self._cartoplot_set_figure_and_module(map_factor_correction,
-                                                        **module_plot_kwargs)
+        result = self._cartoplot_set_figure_and_module(map_factor_correction,
+                                                       **module_plot_kwargs)
+        fig, ax = result['fig'], result['ax']
         # 2/ mask data
         u, v, lons, lats = self._cartoplot_mask(module_plot_kwargs.get('mask_threshold'),
                                                 module_plot_kwargs.get('subzone'))
@@ -202,15 +231,70 @@ class _H2DVectorCartopyPlot(object):
                                                u, v,
                                                vector_plot_method=vector_plot_method,
                                                vector_plot_kwargs=vector_plot_kwargs)
-        if vector_plot_method == 'quiver' and quiverkey is not None:
-            if not isinstance(quiverkey, dict):
-                quiverkey = {}
-            ax.quiverkey(elements, 0.95, 1.01, **quiverkey)
+        result['vector_plot_elements'] = elements
+        if vector_plot_method == 'quiver' and quiverkey:
+            if quiverkey is True:
+                quiverkey = {'X':0.95, 'Y':1.01, 'U':5, 'label':'5m/s'}
+            ax.quiverkey(elements, **quiverkey)
         if module_plot_kwargs.get('title') is None:
             ax.set_title(str(self.fid) + "\n" + str(self.validity.get()))
         else:
             ax.set_title(module_plot_kwargs.get('title'))
-        return fig, ax
+        return result if takeover else (fig, ax)
+
+    def cartoimage(self,
+                   # takeover
+                   takeover=False,
+                   **plot_kwargs):
+        """
+        Project an image, with a number of options.
+            
+        :param takeover: give the user more access to the objects used in the
+            plot, by returning a dict containing them instead of only fig/ax
+
+        Arguments to build the figure, geometry, cartography and to plot the
+        image shall be passed as additional arguments,
+        cf. H2DField.cartoplot() arguments.
+
+        """
+        if self.spectral:
+            raise epygramError("please convert to gridpoint with sp2gp()" +
+                               " method before plotting.")
+        # 1/ Ask first component to prepare figure
+        kwargs = plot_kwargs.copy()
+        kwargs['plot_method'] = None
+        kwargs['takeover'] = True
+        result = self._cartoplot_set_figure_and_module(False,
+                                                       **kwargs)
+        fig, ax = result['fig'], result['ax']
+        # 2/ get crs and extension
+        crs = self.geometry.default_cartopy_CRS()
+        extent = self.geometry.get_cartopy_extent(subzone=plot_kwargs.get('subzone'))
+        
+        # 3/ determine color space
+        if not all(['color' in c.fid for c in self.components]):
+            raise epygramError("cartoimage can be called only on special vector fields " + \
+                                "containing the different channel of a color space")
+        colorspace = tuple([c.fid['color'] for c in self.components])
+        colorspace = {tuple(['R', 'G', 'B']):'RGB',
+                      tuple(['C', 'M', 'Y', 'K']):'CMYK',
+                      tuple(['Y', 'Cb', 'Cr']):'YCbCr',
+                      tuple(['L*', 'a*', 'b*']):'CIELab'}[colorspace]
+        data = numpy.moveaxis(numpy.ma.array(self.getdata()), 0, -1)
+        
+        # 4/ actual plot
+        elements = self._cartoimage_actual_plot(ax,
+                                                colorspace,
+                                                crs, extent,
+                                                data
+                                               )
+        result['image_plot_elements'] = elements
+
+        if plot_kwargs.get('title') is None:
+            ax.set_title(str(self.fid) + "\n" + str(self.validity.get()))
+        else:
+            ax.set_title(plot_kwargs.get('title'))
+        return result if takeover else (fig, ax)
 
 
 class H2DVectorField(D3VectorField, _H2DVectorBasemapPlot, _H2DVectorCartopyPlot):
