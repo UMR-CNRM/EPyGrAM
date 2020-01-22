@@ -15,4 +15,5 @@ from .V1DField import V1DField
 from .V2DField import V2DField
 from .H1DField import H1DField
 from .H2DVectorField import H2DVectorField
+from .V2DVectorField import V2DVectorField
 from .D3VectorField import D3VectorField, make_vector_field, psikhi2uv

@@ -23,7 +23,7 @@ from epygram import config, epygramError, util
 from epygram.util import Angle
 from epygram.base import FieldSet, FieldValidity, Field
 from epygram.resources import FileResource
-from epygram.fields import H2DField
+from epygram.fields import H2DField, make_vector_field
 
 __all__ = ['TIFFMF']
 
@@ -170,24 +170,50 @@ class TIFFMF(FileResource):
 
         if self.openmode == 'w':
             raise epygramError("cannot read fields in resource with openmode == 'w'.")
-        if type(fieldidentifier) != type(""):
+        if not isinstance(fieldidentifier, six.string_types):
             raise epygramError("fieldidentifier of a TIFFMF field is a string.")
         if fieldidentifier not in self.listfields():
             raise epygramError("fieldidentifier is not found in th TIFFMF file.")
 
-        field = H2DField(fid=FPDict({self.format:fieldidentifier, 'generic':FPDict()}),
-                         structure=self.geometry.structure,
-                         geometry=self.geometry.deepcopy(), validity=self.validity.deepcopy(),
-                         processtype='observation', comment="")
-
-        if getdata:
-            if self.scan != 0:
-                raise NotImplementedError("This scan mode is not implemented")
-            for IFD in self.tiff.IFDs:
-                if IFD.get_value(270) == fieldidentifier:
-                    data = IFD.get_image()[::-1, :]
-                    data = numpy.ma.masked_values(data, 0)
-                    field.setdata(data)
+        if self.scan != 0:
+            raise NotImplementedError("This scan mode is not implemented")
+        for IFD in self.tiff.IFDs:
+            if IFD.get_value(270) == fieldidentifier:
+                data = IFD.get_image()[::-1, :]
+                if len(data.shape) != 2:
+                    if IFD.has_tag('PhotometricInterpretation') and \
+                       IFD.get_entry('PhotometricInterpretation').get_value() in (2, 5, 6, 8):
+                        componentNames = {2:['R', 'G', 'B'],
+                                          5:['C', 'M', 'Y', 'K'],
+                                          6:['Y', 'Cb', 'Cr'],
+                                          8:['L*', 'a*', 'b*']}[IFD.get_entry('PhotometricInterpretation').get_value()]
+                        assert len(componentNames) == data.shape[-1], "Data shape error"
+                        fields = []
+                        for i, cname in enumerate(componentNames):
+                            field = H2DField(fid=FPDict({self.format:fieldidentifier,
+                                                         'generic':FPDict(),
+                                                         'color':cname}),
+                                             structure=self.geometry.structure,
+                                             geometry=self.geometry.deepcopy(),
+                                             validity=self.validity.deepcopy(),
+                                             processtype='observation',
+                                             comment="")
+                            if getdata:
+                                field.setdata(data[..., i])
+                            fields.append(field)
+                        field = make_vector_field(*fields)
+                    else:
+                        raise NotImplementedError("This file certainly contains an image in true colors in a" + \
+                                                  "color space not (yet) implemented")
+                else:
+                    field = H2DField(fid=FPDict({self.format:fieldidentifier, 'generic':FPDict()}),
+                                     structure=self.geometry.structure,
+                                     geometry=self.geometry.deepcopy(),
+                                     validity=self.validity.deepcopy(),
+                                     processtype='observation',
+                                     comment="")
+                    if getdata:
+                        field.setdata(data)
 
         return field
 
@@ -318,7 +344,7 @@ class TIFFMF(FileResource):
     @FileResource._openbeforedelayed
     def _read_sections(self):
         """
-        Reads sectrion 1 and section 2 in the TIIF tags.
+        Reads section 1 and section 2 in the TIIF tags.
         """
 
         # MF tags reading

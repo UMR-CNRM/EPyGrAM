@@ -209,35 +209,37 @@ class _H2DCartopyPlot(object):
             corners_ij = self.geometry.gimme_corners_ij(subzone=subzone)
             Imax, Jmax = corners_ij['ur']
             Imin, Jmin = corners_ij['ll']
-            ii = list(range(Imin, Imax + 1))
-            jj = list(range(Jmin, Jmax + 1))
+            ii = numpy.arange(Imin, Imax + 1)
+            jj = numpy.arange(Jmin, Jmax + 1)
             # compute upper line, upper border
             up_lon, up_lat = self.geometry.ij2ll(ii,
-                                                 [Jmax for _ in ii],
+                                                 numpy.full((len(ii),), Jmax, dtype=numpy.int),
                                                  position='upper-right')
             ul = self.geometry.ij2ll(Imin, Jmax,
                                      position='upper-left')
-            up_lon = numpy.hstack((numpy.array([ul[0]]), up_lon))
-            up_lat = numpy.hstack((numpy.array([ul[1]]), up_lat))
+            up_lon = numpy.ma.hstack((ul[0], up_lon))
+            up_lat = numpy.ma.hstack((ul[1], up_lat))
             up_lon = up_lon.reshape((1, len(up_lon)))
             up_lat = up_lat.reshape((1, len(up_lat)))
             # compute right line, right border
-            right_lon, right_lat = self.geometry.ij2ll([Imax for _ in jj],
+            right_lon, right_lat = self.geometry.ij2ll(numpy.full((len(jj),), Imax, dtype=numpy.int),
                                                        jj,
                                                        position='upper-right')
             lr = self.geometry.ij2ll(Imax, Jmin,
                                      position='lower-right')
-            right_lon = numpy.hstack((numpy.array([lr[0]]), right_lon))
-            right_lat = numpy.hstack((numpy.array([lr[1]]), right_lat))
+            right_lon = numpy.ma.hstack((lr[0], right_lon))
+            right_lat = numpy.ma.hstack((lr[1], right_lat))
             right_lon = right_lon.reshape((len(right_lon), 1))
             right_lat = right_lat.reshape((len(right_lat), 1))
             # augment numpy array
-            lons = numpy.vstack((lons, up_lon[:, :-1]))
-            lats = numpy.vstack((lats, up_lat[:, :-1]))
-            lons = numpy.hstack((lons, right_lon))
-            lats = numpy.hstack((lats, right_lat))
-            lats[lats > 90.] = 90.
-            lats[lats < -90.] = -90.
+            lons = numpy.ma.vstack((lons, up_lon[:, :-1]))
+            lats = numpy.ma.vstack((lats, up_lat[:, :-1]))
+            lons = numpy.ma.hstack((lons, right_lon))
+            lats = numpy.ma.hstack((lats, right_lat))
+            mask = numpy.ma.array(lats > 90.).filled(False)  # don't replace value where masked
+            lats[mask] = 90.
+            mask = numpy.ma.array(lats < -90.).filled(False)  # don't replace value where masked
+            lats[mask] = -90.
         else:
             raise NotImplementedError("plot_method='pcolormesh' for Gauss or unstructured grids. Any idea ?")  # TODO: ?
         return lons, lats
@@ -259,8 +261,11 @@ class _H2DCartopyPlot(object):
             y = (lats - lats.min()) * self.geometry.grid['Y_resolution']
         else:
             xyz = projection.transform_points(ccrs.PlateCarree(), lons, lats)
-            x = xyz[..., 0]
-            y = xyz[..., 1]
+            x = numpy.ma.array(xyz[..., 0])
+            y = numpy.ma.array(xyz[..., 1])
+            masked = numpy.logical_or(x == numpy.inf, y == numpy.inf)
+            x[masked] = numpy.ma.masked
+            y[masked] = numpy.ma.masked
             if isinstance(lons, numpy.ma.masked_array):
                 x = numpy.ma.masked_where(lons.mask, x)
                 y = numpy.ma.masked_where(lons.mask, y)
@@ -379,6 +384,19 @@ class _H2DCartopyPlot(object):
             pf = ax.scatter(x, y, c=colors,
                             **plot_kwargs)
         elif plot_method == 'pcolormesh':
+            if any([isinstance(arr, numpy.ma.masked_array) for arr in [x, y]]):
+                # pcolormesh cannot plot if x or y contain masked values
+                # We mask data values instead of x or y
+                data = numpy.ma.array(data)
+                m = numpy.logical_or(numpy.ma.getmaskarray(x),
+                                     numpy.ma.getmaskarray(y))
+                m = numpy.logical_or(numpy.logical_or(m[:-1, :-1],
+                                                      m[1:, :-1]),
+                                     numpy.logical_or(m[:-1, 1:],
+                                                      m[1:, 1:]))
+                data[m] = numpy.ma.masked
+                x = x.filled()
+                y = y.filled()
             pf = ax.pcolormesh(x, y, data,
                                **plot_kwargs)
         elif plot_method == 'contour':
@@ -627,6 +645,7 @@ class _H2DCartopyPlot(object):
                                                       figsize,
                                                       rcparams,
                                                       set_global)
+        result = dict(fig=fig, ax=ax)
         # 2/ background
         self.cartoplot_background(self.geometry,
                                   ax,
@@ -672,8 +691,11 @@ class _H2DCartopyPlot(object):
                                            data,
                                            plot_method)
         if focus_extent and not set_global and not self.geometry.isglobal:
-            ax.set_extent([x.min(), x.max(), y.min(), y.max()],
-                          crs=projection)
+            xyz = ax.projection.transform_points(projection, x, y)
+            xyz = numpy.ma.masked_where(numpy.abs(xyz) == numpy.inf, xyz)
+            ax.set_xlim((xyz[..., 0].min(), xyz[..., 0].max()))
+            ax.set_ylim((xyz[..., 1].min(), xyz[..., 1].max()))
+            del xyz
         # 7/ colormapping
         plot_kwargs = self._cartoplot_colormap_kwargs(colormap_helper,
                                                       pmin, pmax,
@@ -695,6 +717,7 @@ class _H2DCartopyPlot(object):
                                                   contour_kw,
                                                   contourlabel,
                                                   clabel_kw)
+            result['plot_elements'] = elements
             # 9/ colorbar
             if colorbar and plot_method != 'contour':
                 cb = self._cartoplot_colorbar(ax,
@@ -707,12 +730,10 @@ class _H2DCartopyPlot(object):
                                               pmin, pmax,
                                               colorsnumber,
                                               colorstep)
+                result['colorbar'] = cb
         # 10/ texts
         self._cartoplot_text(ax, title, uniform, uniformvalue)
-        if takeover:
-            return dict(fig=fig, ax=ax, plot_elements=elements, colorbar=cb)
-        else:
-            return fig, ax
+        return result if takeover else (fig, ax)
 
 
 class H2DField(_H2DBasemapPlot, _H2DCartopyPlot, D3Field):

@@ -3430,6 +3430,19 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
             y = numpy.array(y)
         (a, b) = self._rotate_axis(x, y, direction='xy2ll')
         ll = self._proj(a, b, inverse=True)
+        # mask invalid values
+        lons, lats = ll
+        lons_is_scalar, lats_is_scalar = is_scalar(lons), is_scalar(lats)
+        lons, lats = as_numpy_array(lons), as_numpy_array(lats)
+        mask = numpy.logical_or(lons == config.pyproj_invalid_values,
+                                lats == config.pyproj_invalid_values)
+        lons = numpy.ma.masked_where(mask, lons)
+        lats = numpy.ma.masked_where(mask, lats)
+        if lons_is_scalar:
+            lons = lons[0]
+        if lats_is_scalar:
+            lats = lats[0]
+        ll = (lons, lats)
         return ll
 
     def ij2ll(self, i, j, position=None):
@@ -3492,8 +3505,16 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         :param position: grid position with respect to the model cell.
           Defaults to self.position_on_horizontal_grid.
         """
+        kwargs_vcoord = {'structure': 'V',
+                         'typeoffirstfixedsurface': 255,
+                         'position_on_grid': '__unknown__',
+                         'levels': [0]}
+        vcoordinate = fpx.geometry(**kwargs_vcoord)
+        geometry = fpx.geometrys.almost_clone(self,
+                                              structure='H2D',
+                                              vcoordinate=vcoordinate)
         f = fpx.field(structure='H2D',
-                      geometry=self,
+                      geometry=geometry,
                       fid={'geometry':'Map Factor'},
                       units='-')
         lats = self.get_lonlat_grid(position=position)[1]
@@ -3697,6 +3718,43 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                 raise epygramError('unknown **specificproj**: ' + str(specificproj))
 
         return b
+    
+    def get_cartopy_extent(self, subzone=None):
+        """
+        Gets the extension of the geometry in the default crs
+        :param subzone: defines the LAM subzone to be included, in LAM case,
+                        among: 'C', 'CI'.
+        :return: (xmin, xmax, ymin, ymax) as expected by matplotlib's ax.set_extent
+        """
+        # Actually, this method transforms projected coordinates from pyproj to
+        # projected coordinates from cartopy's CRS
+        # Both make use of proj4 but the transformation is not exactly the same.
+        # Easiest method is to transform pyproj coordinates into lat/lon then
+        # into crs coordinates. But this method does not work when the point
+        # does not have lat/lon. This is the case in space_view where corners
+        # can be outside the sphere.
+        from cartopy import crs as ccrs
+        crs = self.default_cartopy_CRS()
+        
+        if self.name != 'space_view':
+            (llcrnrlon, llcrnrlat) = self.ij2ll(*self.gimme_corners_ij(subzone)['ll'])
+            (urcrnrlon, urcrnrlat) = self.ij2ll(*self.gimme_corners_ij(subzone)['ur'])
+            ll = crs.transform_points(ccrs.PlateCarree(), numpy.array(llcrnrlon), numpy.array(llcrnrlat))[0]
+            ur = crs.transform_points(ccrs.PlateCarree(), numpy.array(urcrnrlon), numpy.array(urcrnrlat))[0]
+        else:
+            #one point that can be viewed from satellite
+            lon0 = self.projection['satellite_lon'].get('degrees')
+            lat0 = self.projection['satellite_lat'].get('degrees')
+            #projected coordinates in both systems of this point
+            pos_crs0 = crs.transform_points(ccrs.PlateCarree(), numpy.array(lon0), numpy.array(lat0))[0]
+            pos_epy0 = self.ll2xy(lon0, lat0)
+            #Corners
+            ll = self.ij2xy(*self.gimme_corners_ij(subzone)['ll'])
+            ur = self.ij2xy(*self.gimme_corners_ij(subzone)['ur'])
+            ll = (ll[0] - pos_epy0[0] + pos_crs0[0], ll[1] - pos_epy0[1] + pos_crs0[1])
+            ur = (ur[0] - pos_epy0[0] + pos_crs0[0], ur[1] - pos_epy0[1] + pos_crs0[1])
+        return (ll[0], ur[0], ll[1], ur[1])
+        
 
     def default_cartopy_CRS(self):
         """
@@ -3734,9 +3792,16 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                 central_longitude=self.projection['reference_lon'].get('degrees'),
                 true_scale_latitude=self.projection[lat].get('degrees'))
         elif self.name == 'space_view':
-            crs = ccrs.Geostationary(
-                central_longitude=self.projection['satellite_lon'].get('degrees'),
-                satellite_height=self.projection['satellite_height'].get('degrees'))
+            if self.projection['satellite_lat'].get('degrees') == 0.:
+                crs = ccrs.Geostationary(
+                    central_longitude=self.projection['satellite_lon'].get('degrees'),
+                    satellite_height=self.projection['satellite_height'])
+            else:
+                raise NotImplementedError("Implementatation to be tested")
+                crs = ccrs.NearsidePerspective(
+                    central_longitude=self.projection['satellite_lon'].get('degrees'),
+                    central_latitude=self.projection['satellite_lat'].get('degrees'),
+                    satellite_height=self.projection['satellite_height'])
         else:
             raise epygramError("Projection name unknown.")
         return crs
@@ -4792,8 +4857,16 @@ class D3GaussGeometry(D3Geometry):
         :param position: grid position with respect to the model cell.
           Defaults to self.position_on_horizontal_grid.
         """
+        kwargs_vcoord = {'structure': 'V',
+                         'typeoffirstfixedsurface': 255,
+                         'position_on_grid': '__unknown__',
+                         'levels': [0]}
+        vcoordinate = fpx.geometry(**kwargs_vcoord)
+        geometry = fpx.geometrys.almost_clone(self,
+                                              structure='H2D',
+                                              vcoordinate=vcoordinate)
         f = fpx.field(structure='H2D',
-                      geometry=self,
+                      geometry=geometry,
                       fid={'geometry':'Map Factor'},
                       units='-')
         (lons, lats) = self.get_lonlat_grid(position=position)

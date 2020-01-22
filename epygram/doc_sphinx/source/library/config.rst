@@ -100,6 +100,7 @@ Options
 .. autodata:: default_geoid
 .. autodata:: protect_unhappy_writes
 .. autodata:: mask_outside
+.. autodata:: pyproj_invalid_values
 .. autodata:: hide_footprints_warnings
 .. autodata:: prevent_swapping_legendre
 .. autodata:: footprints_proxy_as_builder

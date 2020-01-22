@@ -233,6 +233,8 @@ default_geoid = {'ellps':'WGS84'}
 protect_unhappy_writes = False
 #: Threshold on field absolute values to mask meaningless field values
 mask_outside = 1e19
+#: pyproj coordinates invalid values
+pyproj_invalid_values = 1.e30
 #: To hide footprints warnings...
 hide_footprints_warnings = True
 #: To raise an error if the memory needed for Legendre transforms exceeds

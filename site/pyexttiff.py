@@ -10,7 +10,7 @@ It uses PIL for image reading.
 This module uses code from pylibtiff (https://pypi.python.org/pypi/libtiff, https://code.google.com/p/pylibtiff or https://github.com/hmeine/pylibtiff)
 """
 
-from __future__ import print_function, absolute_import, division  # , unicode_literals
+from __future__ import print_function, absolute_import, division, unicode_literals
 
 import os
 import numpy
@@ -31,8 +31,10 @@ class TiffFile(object):
     This class allows the access to the entire tiff file (tags and images).
     """
 
-    _rational = numpy.dtype([('numer', numpy.uint32), ('denom', numpy.uint32)])
-    _srational = numpy.dtype([('numer', numpy.int32), ('denom', numpy.int32)])
+    #see https://github.com/numpy/numpy/issues/2407 for the str workaround
+    #We will be able to suppress it when python2 with "from __future__ import unicode_literals" will not be used
+    _rational = numpy.dtype([(str('numer'), numpy.uint32), (str('denom'), numpy.uint32)])
+    _srational = numpy.dtype([(str('numer'), numpy.int32), (str('denom'), numpy.int32)])
 
     _type2name = {1:'BYTE', 2:'ASCII', 3:'SHORT', 4:'LONG', 5:'RATIONAL',  # two longs, lsm uses it for float64
                   6:'SBYTE', 7:'UNDEFINED', 8:'SSHORT', 9:'SLONG', 10:'SRATIONAL',
@@ -168,7 +170,15 @@ class TiffFile(object):
                 entryvalue = self._get_values(valueOffset, entrytype, entrycount)
             entrypath = tuple(list(path) + [entrytag])
             if entrypath in [mypath[:len(entrypath)] for mypath in subIFDpaths]:
-                subifd, _ = self._readIFD(entryvalue, entrypath, subIFDpaths, None)
+                #In the first version of this tool, entryvalue was an array at this stage
+                #This is corrected to suppress the numpy warning but code
+                #(by replacing entryvalue by entryvalue[0] in following statement)
+                #lacks comment and I'm now unable to understand this part.
+                #If an error is raised by this line, it would be necessary
+                #to investigate more...
+                assert entryvalue.shape == (1, ), "Not as expected..."
+                
+                subifd, _ = self._readIFD(entryvalue[0], entrypath, subIFDpaths, None)
                 ifd.append(IFDEntry(entrytag, entrytype, subifd))
             else:
                 ifd.append(IFDEntry(entrytag, entrytype, entryvalue))
@@ -204,23 +214,21 @@ class TiffFile(object):
         """
         return self._data
 
-    def get_buffer(self):
-        """
-        Returns the buffer
-        """
-        return numpy.getbuffer(self.get_data())
-
-    def get_stringio(self):
-        """
-        Returns the stringio representeing the buffer.
-        """
-        return six.StringIO(self.get_buffer())
-
     def get_PILImage(self):
         """
         Returns the PIL image object of the file.
         """
-        return PIL.Image.open(self.get_stringio())
+        try:
+            meth = numpy.getbuffer
+        except AttributeError:
+            meth = memoryview
+        from distutils.version import LooseVersion
+        import warnings
+        if LooseVersion(PIL.__version__) < LooseVersion('5.4.1'):
+            warnings.warn("You may have issues using an old version of PIL; please update it with " + \
+                          "'pip install --user --upgrade pillow'. This warning is issued when version " + \
+                          "of pillow is inferior to '5.4.1' but it may work, or not, with older versions...")
+        return PIL.Image.open(six.BytesIO(meth(self.get_data())))
 
     def _get_uint16(self, offset):
         return self.get_data()[offset:offset + 2].view(dtype=self.dtypes.uint16)[0]
@@ -270,28 +278,38 @@ class IFD(list):
         self._image = None
 
     def has_tag(self, tag):
-        """Returns True if an entry fits the tag given"""
-        result = False
-        for entry in self:
-            if entry.get_tag() == tag:
-                result = True
-        return result
+        """
+        Returns True if an entry fits the tag given
+        :param tag: tag to look for, as an integer or a name
+        :return: True if tag exists
+        """
+        if isinstance(tag, int):
+            return tag in self.get_tagValues()
+        else:
+            return tag in self.get_tagNames()
 
     def get_entry(self, tag):
-        """Returns the entry for a tag"""
+        """
+        Returns the entry for a tag
+        :param tag: tag to look for, as an integer or a name
+        :return: the entry associated to the tag
+        """
         if not self.has_tag(tag):
             raise PyexttiffError("This tag doesn't exist in this IFD.")
         for entry in self:
-            if entry.get_tag() == tag:
+            if (entry.get_tagValue() if isinstance(tag, int) else entry.get_tagName()) == tag:
                 result = entry
+                break
         return result
 
     def get_value(self, tag, human=True):
         """
         Returns the value for a tag
-        if human=True, value is modified:
-            - value[0] is retruned instead of value if array contains only one element
-            - conversion in string is achieved for arrays representing strings
+        :param tag: tag to look for, as an integer or a name
+        :param human: if True, value is modified:
+                        - value[0] is returned instead of value if array contains only one element
+                        - conversion in string is achieved for arrays representing strings
+        :return: the value associated to the tag
         """
         if not self.has_tag(tag):
             raise PyexttiffError("This tag doesn't exist in this IFD.")
@@ -307,14 +325,22 @@ class IFD(list):
             raise PyexttiffError("This IFD doesn't contain an image.")
         return self._image
 
-    def get_tags(self):
-        """Returns the list of the tags"""
-        return [entry.get_tag() for entry in self]
+    def get_tagValues(self):
+        """Returns the list of the tags as decimal values"""
+        return [entry.get_tagValue() for entry in self]
 
-    def as_dict(self):
-        """Returns a dictionary containing all entries."""
-        return dict([(entry.get_tag(), entry.get_value()) for entry in self])
+    def get_tagNames(self):
+        """Returns the list of the tag names"""
+        return [entry.get_tagName() for entry in self]
 
+    def as_dict(self, keys='value'):
+        """
+        Returns a dictionary containing all entries.
+        :param keys: keys to use for the dictionary, among ('value', 'name')
+        :return: the dictionary
+        """
+        assert keys in ('value', 'name'), "keys must be in ('value', 'name')"
+        return {entry.get_tagValue() if keys == 'value' else entry.get_tagName: entry.get_value() for entry in self}
 
 class IFDEntry(object):
     """This class represent an IFD entry"""
@@ -509,16 +535,17 @@ EXIF_ImageUniqueID a420 ASCII 33
         self._tag = tag
         self._type = entrytype
         self._value = value
+        self._name = self._tag_value2name.get(tag, 'TAG%s' % (hex(tag),))
 
     def is_image(self):
         """Returns True if content in an image"""
-        return self.get_tag() == 273
+        return self.get_tagValue() == 273
 
     def is_IFD(self):
         """Returns True if content is an IFD."""
         return isinstance(self.get_value(), IFD)
 
-    def get_tag(self):
+    def get_tagValue(self):
         """Returns the tag"""
         return self._tag
 
@@ -526,20 +553,20 @@ EXIF_ImageUniqueID a420 ASCII 33
         """
         Returns the value
         if human=True, value is modified:
-            - value[0] is retruned instead of value if array contains only one element
+            - value[0] is returned instead of value if array contains only one element
             - conversion in string is achieved for arrays representing strings
         """
         value = self._value
         if human:
             if len(value) == 1:
                 value = value[0]
-            if self.get_type() == 2:
-                value = ''.join(value.view('|S%s' % (value.nbytes // value.size)))
+            if self.get_type() == 2: #ASCII
+                value = (b''.join(value.view('|S%s' % (value.nbytes // value.size)))).decode('UTF8')
         return value
 
     def get_tagName(self):
         """Returns the tag name"""
-        return self._tag_value2name.get(self.get_tag, 'TAG%s' % (hex(self._tag),))
+        return self._name
 
     def get_type(self):
         """Returns the type of entry."""
