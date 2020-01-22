@@ -910,7 +910,7 @@ class H2DField(_H2DBasemapPlot, _H2DCartopyPlot, D3Field):
                 lon = p.geometry.grid['longitudes'][0]
                 lat = p.geometry.grid['latitudes'][0]
                 zero_radius = 3. * sigma
-                selection_points_ij = self.geometry.nearest_points(lon, lat, interpolation=('square:radius', zero_radius))
+                selection_points_ij = self.geometry.nearest_points(lon, lat, request={'radius':zero_radius, 'shape':'circle'})
                 selection_points_ll = self.geometry.ij2ll([sp[0] for sp in selection_points_ij], [sp[1] for sp in selection_points_ij])
                 selection_points_ll = [(selection_points_ll[0][k], selection_points_ll[1][k]) for k in range(len(selection_points_ll[0]))]
                 for sp in selection_points_ll:
