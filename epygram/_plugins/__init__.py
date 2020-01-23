@@ -4,27 +4,41 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 """
-Contains all fields classes.
-"""
+Plugins: add functionalities to standard epygram classes.
 
+Plugins must be packages which name starts with "with_*" and contain an
+activate() function in addition to the definition of extensions.
+"""
 from __future__ import print_function, absolute_import, unicode_literals, division
 
-import glob
-import importlib
 import os
 
-import footprints
+# actual import
+implemented = [m for m in os.listdir(os.path.dirname(os.path.abspath(__file__)))
+               if m.startswith('with_')]
+_successful_import = {}
+_failed_import = {}
+for p in implemented:
+    try:
+        import importlib
+        pkg = importlib.import_module('.' + p, __name__)
+    except ImportError as e:
+        _failed_import[p] = e
+    else:
+        _successful_import[p] = pkg
 
-epylog = footprints.loggers.getLogger(__name__)
 
-for module in glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'with_*')):
-    name, ext = os.path.splitext(module)
-    name = os.path.basename(name)
-    if ext in ('', '.py'):
-        try:
-            importlib.import_module('.' + name, __name__)
-        except ImportError as e:
-            epylog.warning("An error ('" + str(e) + "') occurred when importing the " +
-                           name + " plugin; " +
-                           "this is certainly due to a missing dependency, some " +
-                           "functionalities can be missing.")
+def available():
+    """Return the list of available plugins."""
+    return tuple(_successful_import.keys())
+
+
+def activate(plugin):
+    """Activate the required plugin."""
+    if plugin not in implemented:
+        raise NotImplementedError("plugin '{}'".format(plugin))
+    elif plugin in _failed_import:
+        raise ImportError(("An error ({}) occurred trying to import the '{}' plugin; " +
+                           "probably because of a missing dependency.").format(str(_failed_import[plugin]), plugin))
+    else:
+        _successful_import[plugin].activate()

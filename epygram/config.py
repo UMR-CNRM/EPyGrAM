@@ -262,6 +262,8 @@ silent_guess_format = False
 margin_points_within_Czone = 3
 #: Defaults for matplotlib rcparams
 default_rcparams = [(('font',), dict(family='serif')), ]
+#: Plugins to be activated by default
+activate_plugins = ['with_vtk', 'with_cartopy', 'with_basemap']
 
 
 # USER CUSTOMIZATION #

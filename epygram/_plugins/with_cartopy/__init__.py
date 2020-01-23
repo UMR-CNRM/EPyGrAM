@@ -4,13 +4,13 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 """
-Contains all classes needed to plot 3D fields through vtk.
+Contains all classes needed to plot fields using cartopy.
 """
 from __future__ import print_function, absolute_import, unicode_literals, division
 
-from . import _D3CommonField, D3VectorField
+from . import H2DField, H2DVectorField
 
 def activate():
     """Activate plugin."""
-    _D3CommonField.activate()
-    D3VectorField.activate()
+    H2DField.activate()
+    H2DVectorField.activate()

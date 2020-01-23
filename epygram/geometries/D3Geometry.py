@@ -496,7 +496,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
         self.vcoordinate = vc_self
         return result
 
-    def cartopy_CRS_reproject(self, lons, lats, projection=None):
+    def cartopy_CRS_reproject(self, lons, lats, projection=None):  # TODO: externalize to cartopy plugin
         """Reproject lons/lats onto a cartopy CRS projection coordinates."""
         from cartopy import crs as ccrs
         if projection is None:
@@ -1251,7 +1251,7 @@ class D3RectangularGridGeometry(D3Geometry):
                 result = result.squeeze()
         return result
 
-    def default_cartopy_CRS(self):
+    def default_cartopy_CRS(self):  # TODO: externalize to cartopy plugin
         """
         Create a cartopy.crs appropriate to the Geometry.
 
@@ -1629,121 +1629,6 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
         write_formatted(out, "Upper-Right corner Latitude in deg",
                         corners['ur'][1])
 
-    def make_basemap(self,
-                     gisquality='i',
-                     specificproj=None,
-                     zoom=None,
-                     ax=None,
-                     **_):
-        """
-        Returns a :class:`matplotlib.basemap.Basemap` object of the 'ad hoc'
-        projection (if available). This is designed to avoid explicit handling
-        of deep horizontal geometry attributes.
-
-        :param gisquality: defines the quality of GIS contours, cf. Basemap doc. \n
-          Possible values (by increasing quality): 'c', 'l', 'i', 'h', 'f'.
-        :param specificproj: enables to make basemap on the specified projection,
-          among: 'kav7', 'cyl', 'ortho', ('nsper', {...}) (cf. Basemap doc).
-          In 'nsper' case, the {} may contain:\n
-          - 'sat_height' = satellite height in km;
-          - 'lon' = longitude of nadir in degrees;
-          - 'lat' = latitude of nadir in degrees. \n
-          Overwritten by *zoom*.
-        :param zoom: specifies the lon/lat borders of the map, implying hereby a
-          'cyl' projection.
-          Must be a dict(lonmin=, lonmax=, latmin=, latmax=). \n
-          Overwrites *specificproj*.
-        :param ax: a matplotlib ax on which to plot; if None, plots will be done
-          on matplotlib.pyplot.gca()
-        """
-        from mpl_toolkits.basemap import Basemap
-
-        # corners
-        if self.dimensions['Y'] == 1:
-            (lon, lat) = self.get_lonlat_grid()
-            llcrnrlon = numpy.amin(lon)
-            urcrnrlon = numpy.amax(lon)
-            llcrnrlat = numpy.amin(lat)
-            urcrnrlat = numpy.amax(lat)
-        else:
-            (llcrnrlon, llcrnrlat) = self.ij2ll(*self.gimme_corners_ij()['ll'])
-            (urcrnrlon, urcrnrlat) = self.ij2ll(*self.gimme_corners_ij()['ur'])
-
-        # make basemap
-        if zoom is not None:
-            # zoom case
-            llcrnrlon = zoom['lonmin']
-            llcrnrlat = zoom['latmin']
-            urcrnrlon = zoom['lonmax']
-            urcrnrlat = zoom['latmax']
-        if specificproj is None:
-            # defaults
-            if llcrnrlat <= -89.0 or \
-               urcrnrlat >= 89.0:
-                proj = 'cyl'
-            else:
-                proj = 'merc'
-            (lons, lats) = self.get_lonlat_grid()
-            if lons.ndim == 1:
-                lonmax = lons[:].max()
-                lonmin = lons[:].min()
-            else:
-                lonmax = lons[:, -1].max()
-                lonmin = lons[:, 0].min()
-            if lats.ndim == 1:
-                latmax = lats[:].max()
-                latmin = lats[:].min()
-            else:
-                latmax = lats[-1, :].max()
-                latmin = lats[0, :].min()
-            b = Basemap(resolution=gisquality, projection=proj,
-                        llcrnrlon=lonmin,
-                        llcrnrlat=latmin,
-                        urcrnrlon=lonmax,
-                        urcrnrlat=latmax,
-                        ax=ax)
-        else:
-            # specificproj
-            if hasattr(self, '_center_lon') and hasattr(self, '_center_lat'):
-                lon0 = self._center_lon.get('degrees')
-                lat0 = self._center_lat.get('degrees')
-            else:
-                lon0 = lat0 = None
-            if specificproj == 'kav7':
-                b = Basemap(resolution=gisquality, projection=specificproj,
-                            lon_0=lon0,
-                            llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                            ax=ax)
-            elif specificproj == 'ortho':
-                b = Basemap(resolution=gisquality, projection=specificproj,
-                            lon_0=lon0,
-                            lat_0=lat0,
-                            ax=ax)
-            elif specificproj == 'cyl':
-                b = Basemap(resolution=gisquality, projection=specificproj,
-                            llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                            ax=ax)
-            elif specificproj == 'moll':
-                b = Basemap(resolution=gisquality, projection=specificproj,
-                            lon_0=lon0,
-                            llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                            ax=ax)
-            elif isinstance(specificproj, tuple) and \
-                 specificproj[0] == 'nsper' and \
-                 isinstance(specificproj[1], dict):
-                sat_height = specificproj[1].get('sat_height', 3000) * 1000.
-                b = Basemap(resolution=gisquality,
-                            projection=specificproj[0],
-                            lon_0=specificproj[1].get('lon', lon0),
-                            lat_0=specificproj[1].get('lat', lat0),
-                            satellite_height=sat_height,
-                            ax=ax)
-
-        return b
-
 
 class D3AcademicGeometry(D3RectangularGridGeometry):
     """Handles the geometry for an academic 3-Dimensions Field."""
@@ -2010,7 +1895,7 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
         """Same as plane_azimuth in this geometry."""
         return self.plane_azimuth(end1, end2)
 
-    def default_cartopy_CRS(self):
+    def default_cartopy_CRS(self):  # TODO: externalize to cartopy plugin
         """
         Create a cartopy.crs appropriate to the Geometry.
 
@@ -2349,96 +2234,6 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
             y = numpy.array(y)
         return self.ij2ll(*self.xy2ij(x, y))
 
-    def make_basemap(self,
-                     gisquality='i',
-                     subzone=None,
-                     specificproj=None,
-                     zoom=None,
-                     ax=None):
-        """
-        Returns a :class:`matplotlib.basemap.Basemap` object of the 'ad hoc'
-        projection (if available). This is designed to avoid explicit handling
-        of deep horizontal geometry attributes.
-
-        :param gisquality: defines the quality of GIS contours, cf. Basemap doc. \n
-          Possible values (by increasing quality): 'c', 'l', 'i', 'h', 'f'.
-        :param subzone: defines the LAM subzone to be included, in LAM case,
-          among: 'C', 'CI'.
-        :param specificproj: enables to make basemap on the specified projection,
-          among: 'kav7', 'cyl', 'ortho', ('nsper', {...}) (cf. Basemap doc). \n
-          In 'nsper' case, the {} may contain:\n
-          - 'sat_height' = satellite height in km;
-          - 'lon' = longitude of nadir in degrees;
-          - 'lat' = latitude of nadir in degrees. \n
-          Overwritten by *zoom*.
-        :param zoom: specifies the lon/lat borders of the map, implying hereby
-          a 'cyl' projection.
-          Must be a dict(lonmin=, lonmax=, latmin=, latmax=).\n
-          Overwrites *specificproj*.
-        :param ax: a matplotlib ax on which to plot; if None, plots will be done
-          on matplotlib.pyplot.gca()
-        """
-        from mpl_toolkits.basemap import Basemap
-
-        # corners
-        (llcrnrlon, llcrnrlat) = self.ij2ll(*self.gimme_corners_ij(subzone)['ll'])
-        (urcrnrlon, urcrnrlat) = self.ij2ll(*self.gimme_corners_ij(subzone)['ur'])
-
-        # make basemap
-        if zoom is not None:
-            # zoom case
-            llcrnrlon = zoom['lonmin']
-            llcrnrlat = zoom['latmin']
-            urcrnrlon = zoom['lonmax']
-            urcrnrlat = zoom['latmax']
-        if specificproj is None:
-            # defaults
-            if llcrnrlat <= -89.0 or \
-               urcrnrlat >= 89.0:
-                proj = 'cyl'
-            else:
-                proj = 'merc'
-            b = Basemap(resolution=gisquality, projection=proj,
-                        llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                        urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                        ax=ax)
-        else:
-            # specificproj
-            lon0 = self._center_lon.get('degrees')
-            lat0 = self._center_lat.get('degrees')
-            if specificproj == 'kav7':
-                b = Basemap(resolution=gisquality, projection=specificproj,
-                            lon_0=lon0,
-                            llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                            ax=ax)
-            elif specificproj == 'ortho':
-                b = Basemap(resolution=gisquality, projection=specificproj,
-                            lon_0=lon0,
-                            lat_0=lat0,
-                            ax=ax)
-            elif specificproj == 'cyl':
-                b = Basemap(resolution=gisquality, projection=specificproj,
-                            llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                            ax=ax)
-            elif specificproj == 'moll':
-                b = Basemap(resolution=gisquality, projection=specificproj,
-                            lon_0=lon0,
-                            llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                            ax=ax)
-            elif isinstance(specificproj, tuple) and \
-                 specificproj[0] == 'nsper' and \
-                 isinstance(specificproj[1], dict):
-                sat_height = specificproj[1].get('sat_height', 3000) * 1000.
-                b = Basemap(resolution=gisquality,
-                            projection=specificproj[0],
-                            lon_0=specificproj[1].get('lon', lon0),
-                            lat_0=specificproj[1].get('lat', lat0),
-                            satellite_height=sat_height,
-                            ax=ax)
-        return b
 
     def global_shift_center(self, longitude_shift):
         """
@@ -2901,97 +2696,6 @@ class D3RotLLGeometry(D3RegLLGeometry):
         lon_new = numpy.degrees(numpy.arctan2(y_new, x_new))
         lat_new = numpy.degrees(numpy.arcsin(z_new))
         return (lon_new, lat_new)
-
-    def make_basemap(self,
-                     gisquality='i',
-                     subzone=None,
-                     specificproj=None,
-                     zoom=None,
-                     ax=None):
-        """
-        Returns a :class:`matplotlib.basemap.Basemap` object of the 'ad hoc'
-        projection (if available). This is designed to avoid explicit handling
-        of deep horizontal geometry attributes.
-
-        :param gisquality: defines the quality of GIS contours, cf. Basemap doc. \n
-          Possible values (by increasing quality): 'c', 'l', 'i', 'h', 'f'.
-        :param subzone: defines the LAM subzone to be included, in LAM case,
-          among: 'C', 'CI'.
-        :param specificproj: enables to make basemap on the specified projection,
-          among: 'kav7', 'cyl', 'ortho', ('nsper', {...}) (cf. Basemap doc). \n
-          In 'nsper' case, the {} may contain:\n
-          - 'sat_height' = satellite height in km;
-          - 'lon' = longitude of nadir in degrees;
-          - 'lat' = latitude of nadir in degrees. \n
-          Overwritten by *zoom*.
-        :param zoom: specifies the lon/lat borders of the map, implying hereby
-          a 'cyl' projection.
-          Must be a dict(lonmin=, lonmax=, latmin=, latmax=).\n
-          Overwrites *specificproj*.
-        :param ax: a matplotlib ax on which to plot; if None, plots will be done
-          on matplotlib.pyplot.gca()
-        """
-        from mpl_toolkits.basemap import Basemap
-
-        # corners
-        (llcrnrlon, llcrnrlat) = self.ij2ll(*self.gimme_corners_ij(subzone)['ll'])
-        (urcrnrlon, urcrnrlat) = self.ij2ll(*self.gimme_corners_ij(subzone)['ur'])
-
-        # make basemap
-        if zoom is not None:
-            # zoom case
-            llcrnrlon = zoom['lonmin']
-            llcrnrlat = zoom['latmin']
-            urcrnrlon = zoom['lonmax']
-            urcrnrlat = zoom['latmax']
-        if specificproj is None:
-            # defaults
-            proj = 'rotpole'
-            north_pole = self.xy2ll(0,90)
-            b = Basemap(resolution=gisquality, projection=proj,
-                        lon_0=self.xy2ll(0,0)[0],
-                        o_lon_p=north_pole[0],
-                        o_lat_p=north_pole[1],
-                        llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                        urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                        ax=ax)
-        else:
-            # specificproj
-            lon0 = self._center_lon.get('degrees')
-            lat0 = self._center_lat.get('degrees')
-            if specificproj == 'kav7':
-                b = Basemap(resolution=gisquality, projection=specificproj,
-                            lon_0=lon0,
-                            llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                            ax=ax)
-            elif specificproj == 'ortho':
-                b = Basemap(resolution=gisquality, projection=specificproj,
-                            lon_0=lon0,
-                            lat_0=lat0,
-                            ax=ax)
-            elif specificproj == 'cyl':
-                b = Basemap(resolution=gisquality, projection=specificproj,
-                            llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                            ax=ax)
-            elif specificproj == 'moll':
-                b = Basemap(resolution=gisquality, projection=specificproj,
-                            lon_0=lon0,
-                            llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                            ax=ax)
-            elif isinstance(specificproj, tuple) and \
-                 specificproj[0] == 'nsper' and \
-                 isinstance(specificproj[1], dict):
-                sat_height = specificproj[1].get('sat_height', 3000) * 1000.
-                b = Basemap(resolution=gisquality,
-                            projection=specificproj[0],
-                            lon_0=specificproj[1].get('lon', lon0),
-                            lat_0=specificproj[1].get('lat', lat0),
-                            satellite_height=sat_height,
-                            ax=ax)
-        return b
 
     # TODO: def default_cartopy_CRS(self):
 
@@ -3543,181 +3247,6 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         m.units = 'm^2'
         return m
 
-    def make_basemap(self,
-                     gisquality='i',
-                     subzone=None,
-                     specificproj=None,
-                     zoom=None,
-                     ax=None):
-        """
-        Returns a :class:`matplotlib.basemap.Basemap` object of the 'ad hoc'
-        projection (if available). This is designed to avoid explicit handling
-        of deep horizontal geometry attributes.
-
-        .. deprecated:: 1.3.9
-
-        :param gisquality: defines the quality of GIS contours, cf. Basemap doc.
-          Possible values (by increasing quality): 'c', 'l', 'i', 'h', 'f'.
-        :param subzone: defines the LAM subzone to be included, in LAM case,
-          among: 'C', 'CI'.
-        :param specificproj: enables to make basemap on the specified projection,
-          among: 'kav7', 'cyl', 'ortho', ('nsper', {...}) (cf. Basemap doc). \n
-          In 'nsper' case, the {} may contain:\n
-          - 'sat_height' = satellite height in km;
-          - 'lon' = longitude of nadir in degrees;
-          - 'lat' = latitude of nadir in degrees. \n
-          Overwritten by *zoom*.
-        :param zoom: specifies the lon/lat borders of the map, implying hereby a
-          'cyl' projection.
-          Must be a dict(lonmin=, lonmax=, latmin=, latmax=).
-          Overwrites *specificproj*.
-        :param ax: a matplotlib ax on which to plot; if None, plots will be done
-          on matplotlib.pyplot.gca()
-        """
-        from mpl_toolkits.basemap import Basemap
-        epylog.info("The 'make_basemap' method is deprecated, please use 'default_cartopy_CRS'")
-        if zoom is not None:
-            if specificproj not in [None, 'cyl', 'merc']:
-                raise epygramError("projection can only be cyl/merc in zoom mode.")
-            specificproj = True
-
-        if specificproj is None:
-            # corners
-            if self.projection['rotation'].get('degrees') == 0.:
-                (llcrnrlon, llcrnrlat) = self.ij2ll(*self.gimme_corners_ij(subzone)['ll'])
-                (urcrnrlon, urcrnrlat) = self.ij2ll(*self.gimme_corners_ij(subzone)['ur'])
-            else:
-                (imin, jmin) = self.gimme_corners_ij(subzone)['ll']
-                (imax, jmax) = self.gimme_corners_ij(subzone)['ur']
-                border = [(imin, j) for j in range(jmin, jmax + 1)] + \
-                         [(imax, j) for j in range(jmin, jmax + 1)] + \
-                         [(i, jmin) for i in range(imin, imax + 1)] + \
-                         [(i, jmax) for i in range(imin, imax + 1)]
-                ilist, jlist = list(zip(*border))
-                (x, y) = self.ij2xy(numpy.array(ilist), numpy.array(jlist))  # in model coordinates
-                (x, y) = self._rotate_axis(x, y, direction='xy2ll')  # non-rotated coordinates
-                (llcrnrlon, llcrnrlat) = self.xy2ll(*self._rotate_axis(x.min(), y.min(), direction='ll2xy'))
-                (urcrnrlon, urcrnrlat) = self.xy2ll(*self._rotate_axis(x.max(), y.max(), direction='ll2xy'))
-            # defaults
-            if self.name == 'lambert':
-                if self.secant_projection:
-                    lat_0 = (self.projection['secant_lat1'].get('degrees') +
-                             self.projection['secant_lat2'].get('degrees')) / 2.
-                    b = Basemap(resolution=gisquality,
-                                projection='lcc',
-                                lat_1=self.projection['secant_lat1'].get('degrees'),
-                                lat_2=self.projection['secant_lat2'].get('degrees'),
-                                lat_0=lat_0,
-                                lon_0=self.projection['reference_lon'].get('degrees'),
-                                llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                                urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                                ax=ax)
-                else:
-                    b = Basemap(resolution=gisquality,
-                                projection='lcc',
-                                lat_0=self.projection['reference_lat'].get('degrees'),
-                                lon_0=self.projection['reference_lon'].get('degrees'),
-                                llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                                urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                                ax=ax)
-            elif self.name == 'mercator':
-                if self.secant_projection:
-                    lat = 'secant_lat'
-                else:
-                    lat = 'reference_lat'
-                b = Basemap(resolution=gisquality,
-                            projection='merc',
-                            lat_ts=self.projection[lat].get('degrees'),
-                            lon_0=self._center_lon.get('degrees'),
-                            llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                            ax=ax)
-            elif self.name == 'polar_stereographic':
-                if self.secant_projection:
-                    lat = 'secant_lat'
-                else:
-                    lat = 'reference_lat'
-                b = Basemap(resolution=gisquality,
-                            projection='stere',
-                            lat_ts=self.projection[lat].get('degrees'),
-                            lat_0=numpy.copysign(90., self.projection[lat].get('degrees')),
-                            lon_0=self.projection['reference_lon'].get('degrees'),
-                            llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                            ax=ax)
-            elif self.name == 'space_view':
-                b = Basemap(resolution=gisquality,
-                            projection='geos',
-                            lon_0=self.projection['satellite_lon'].get('degrees'),
-                            ax=ax)
-            else:
-                raise epygramError("Projection name unknown.")
-        else:
-            # corners
-            if zoom:
-                llcrnrlon = zoom['lonmin']
-                llcrnrlat = zoom['latmin']
-                urcrnrlon = zoom['lonmax']
-                urcrnrlat = zoom['latmax']
-                if llcrnrlat <= -89.0 or \
-                   urcrnrlat >= 89.0:
-                    specificproj = 'cyl'
-                else:
-                    specificproj = 'merc'
-            else:
-                (imin, jmin) = self.gimme_corners_ij(subzone)['ll']
-                (imax, jmax) = self.gimme_corners_ij(subzone)['ur']
-                border = [(imin, j) for j in range(jmin, jmax + 1)] + \
-                         [(imax, j) for j in range(jmin, jmax + 1)] + \
-                         [(i, jmin) for i in range(imin, imax + 1)] + \
-                         [(i, jmax) for i in range(imin, imax + 1)]
-                ilist, jlist = list(zip(*border))
-                (lons, lats) = self.ij2ll(numpy.array(ilist), numpy.array(jlist))
-                llcrnrlon, urcrnrlon = lons.min(), lons.max()
-                llcrnrlat, urcrnrlat = lats.min(), lats.max()
-            # specificproj
-            lon0 = self._center_lon.get('degrees')
-            lat0 = self._center_lat.get('degrees')
-            if specificproj == 'kav7':
-                b = Basemap(resolution=gisquality,
-                            projection=specificproj,
-                            lon_0=lon0,
-                            llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                            ax=ax)
-            elif specificproj == 'ortho':
-                b = Basemap(resolution=gisquality,
-                            projection=specificproj,
-                            lon_0=lon0,
-                            lat_0=lat0,
-                            ax=ax)
-            elif specificproj in ('cyl', 'merc'):
-                b = Basemap(resolution=gisquality,
-                            projection=specificproj,
-                            llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                            ax=ax)
-            elif specificproj == 'moll':
-                b = Basemap(resolution=gisquality,
-                            projection=specificproj,
-                            lon_0=lon0,
-                            llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                            ax=ax)
-            elif isinstance(specificproj, tuple) and \
-                 specificproj[0] == 'nsper' and \
-                 isinstance(specificproj[1], dict):
-                sat_height = specificproj[1].get('sat_height', 3000) * 1000.
-                b = Basemap(resolution=gisquality,
-                            projection=specificproj[0],
-                            lon_0=specificproj[1].get('lon', lon0),
-                            lat_0=specificproj[1].get('lat', lat0),
-                            satellite_height=sat_height,
-                            ax=ax)
-            else:
-                raise epygramError('unknown **specificproj**: ' + str(specificproj))
-
-        return b
     
     def get_cartopy_extent(self, subzone=None):
         """
@@ -3756,7 +3285,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         return (ll[0], ur[0], ll[1], ur[1])
         
 
-    def default_cartopy_CRS(self):
+    def default_cartopy_CRS(self):  # TODO: externalize to cartopy plugin
         """
         Create a cartopy.crs appropriate to the Geometry.
         """
@@ -4461,112 +3990,8 @@ class D3GaussGeometry(D3Geometry):
                 data3D[t, k, :] = data[t, k, :, :].compressed()
         return data3D
 
-    def make_basemap(self,
-                     gisquality='l',
-                     specificproj=None,
-                     zoom=None,
-                     ax=None,
-                     **_):
-        """
-        Returns a :class:`matplotlib.basemap.Basemap` object of the 'ad hoc'
-        projection (if available). This is designed to avoid explicit handling
-        of deep horizontal geometry attributes.
 
-        :param gisquality: defines the quality of GIS contours, cf. Basemap doc. \n
-          Possible values (by increasing quality): 'c', 'l', 'i', 'h', 'f'.
-          WARNING: this is forced to 'l' inside (except if a zoom is given),
-          for time-consumption reasons.
-        :param specificproj: enables to make basemap on the specified projection,
-          among: 'kav7', 'cyl', 'ortho', ('nsper', {...}) (cf. Basemap doc). \n
-          In 'nsper' case, the {} may contain:\n
-          - 'sat_height' = satellite height in km;
-          - 'lon' = longitude of nadir in degrees;
-          - 'lat' = latitude of nadir in degrees. \n
-          Overwritten by *zoom*.
-        :param zoom: specifies the lon/lat borders of the map, implying hereby a
-          'cyl' projection.
-          Must be a dict(lonmin=, lonmax=, latmin=, latmax=). \n
-          Overwrites *specificproj*.
-        :param ax: a matplotlib ax on which to plot; if None, plots will be done
-          on matplotlib.pyplot.gca()
-        """
-        # !!! **_ enables the method to receive arguments specific to
-        #     other geometries, useless here ! Do not remove.
-        from mpl_toolkits.basemap import Basemap
-        if zoom is None:
-            gisquality = 'l'  # forced for Gauss, for time-consumption reasons...
-
-        # corners
-        llcrnrlon = -180
-        llcrnrlat = -90
-        urcrnrlon = 180
-        urcrnrlat = 90
-
-        # make basemap
-        if zoom is not None:
-            # zoom case
-            llcrnrlon = zoom['lonmin']
-            llcrnrlat = zoom['latmin']
-            urcrnrlon = zoom['lonmax']
-            urcrnrlat = zoom['latmax']
-            if llcrnrlat <= -89.0 or \
-               urcrnrlat >= 89.0:
-                specificproj = 'cyl'
-            else:
-                specificproj = 'merc'
-        if specificproj is None:
-            # defaults
-            if 'rotated' in self.name:
-                lon0 = self.grid['pole_lon'].get('degrees')
-            else:
-                lon0 = 0.0
-            b = Basemap(resolution=gisquality, projection='moll',
-                        lon_0=lon0,
-                        ax=ax)
-        else:
-            # specificproj
-            if 'rotated' in self.name:
-                lon0 = self.grid['pole_lon'].get('degrees')
-                lat0 = self.grid['pole_lat'].get('degrees')
-            else:
-                lon0 = 0.0
-                lat0 = 0.0
-            if specificproj == 'kav7':
-                b = Basemap(resolution=gisquality, projection=specificproj,
-                            lon_0=lon0,
-                            llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                            ax=ax)
-            elif specificproj == 'ortho':
-                b = Basemap(resolution=gisquality, projection=specificproj,
-                            lon_0=lon0,
-                            lat_0=lat0,
-                            ax=ax)
-            elif specificproj in ('cyl', 'merc'):
-                b = Basemap(resolution=gisquality, projection=specificproj,
-                            llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                            ax=ax)
-            elif specificproj == 'moll':
-                b = Basemap(resolution=gisquality, projection=specificproj,
-                            lon_0=lon0,
-                            llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
-                            urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat,
-                            ax=ax)
-            elif isinstance(specificproj, tuple) and \
-                 specificproj[0] == 'nsper' and \
-                 isinstance(specificproj[1], dict):
-                sat_height = specificproj[1].get('sat_height', 3000) * 1000.
-                b = Basemap(resolution=gisquality,
-                            projection=specificproj[0],
-                            lon_0=specificproj[1].get('lon', lon0),
-                            lat_0=specificproj[1].get('lat', lat0),
-                            satellite_height=sat_height,
-                            ax=ax)
-
-        return b
-
-    def default_cartopy_CRS(self):
+    def default_cartopy_CRS(self):  # TODO: externalize to cartopy plugin
         """
         Create a cartopy.crs appropriate to the Geometry.
         """

@@ -81,7 +81,7 @@ import footprints
 
 __all__ = []
 
-__version__ = '1.4.2'
+__version__ = '1.4.2+'
 
 __license__ = 'CeCILL-C'
 
@@ -133,7 +133,12 @@ from . import formats
 from . import resources
 
 # Register plugins
-import epygram._plugins
+from . import _plugins
+for p in config.activate_plugins:
+    if p in _plugins.available():
+        _plugins.activate(p)
+    else:
+        epylog.info("Plugin '{}' from config.activate_plugins is not available.".format(p))
 
 # User modules
 if len(config.usermodules) > 0:

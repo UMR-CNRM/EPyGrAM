@@ -11,11 +11,11 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 import io
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 import string
 
 import epygram
 from epygram.colormapping import register_colormap_from_json
+import matplotlib.pyplot as plt
 
 here = os.path.dirname(os.path.abspath(__file__))
 doc_root = os.path.dirname(here)
