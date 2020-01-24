@@ -358,7 +358,7 @@ def cartoplot_geometry(geometry,
                                   parallels=None,
                                   cartopy_features=cartopy_features,
                                   epygram_departments=departments,
-                                  set_global=True)
+                                  extent='global')
     if lonlat_included is not None:
         ll_domain = build_lonlat_field(lonlat_included)
         ll_domain.cartoplot(fig=fig,
@@ -370,7 +370,7 @@ def cartoplot_geometry(geometry,
                             contourcolor='blue',
                             contour_kw=dict(contourwidth=4,),
                             contourlabel=False,
-                            set_global=True,
+                            extent='global',
                             meridians=None,
                             parallels=None)
     return fig

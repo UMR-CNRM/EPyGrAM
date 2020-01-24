@@ -177,11 +177,11 @@ def _cartoimage_actual_plot(cls,
                            ):
     if colorspace not in ('RGB', 'RGBA'):
         import PIL.Image
-        data = PIL.Image.fromarray(data.astype(numpy.uint8)) #astype needed especially if interpolation occurred before
+        data = PIL.Image.fromarray(data.astype(numpy.uint8)) # astype needed especially if interpolation occurred before
         data = data.convert('RGBA')
         data = numpy.array(data.getdata()).reshape(data.size[1], data.size[0], 4)
         
-    elements = ax.imshow(data / 255., transform=crs, extent=extent, origin='lower') #division because imshow does not recognize numpy.int64 as int!
+    elements = ax.imshow(data / 255., transform=crs, extent=extent, origin='lower') # division because imshow does not recognize numpy.int64 as int!
     return elements
 
 

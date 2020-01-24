@@ -508,8 +508,7 @@ def cartoplot(self,
               # geometry
               projection=None,
               subzone=None,
-              set_global=False,
-              focus_extent=True,
+              extent='__default__',
               # graphical settings
               plot_method='__default__',
               minmax=None,
@@ -566,10 +565,12 @@ def cartoplot(self,
     :param subzone: [LAM fields only] among ('C', 'CI'), plots the data
         resp. on the C or C+I zone.
         Default is no subzone, i.e. the whole field.
-    :param set_global: call cartopy GeoAxes.set_global().
-        Overrides **focus_extent**.
-    :param focus_extent: force to focus the map boundaries to the field
-        extent. Otherwise, let matplotlib decide of the map boundaries.
+    :param extent: tune the extent of the map.
+        Among ('focus', 'global', '__default__').
+        'focus' will focus on the field geometry extent.
+        'global' will de-zoom to have the whole globe, if possible
+        (call cartopy GeoAxes.set_global()).
+        '__default__' will choose one of these depending on the geometry.
 
     Graphical settings:
 
@@ -656,15 +657,18 @@ def cartoplot(self,
         natural_earth_features = self.default_NEfeatures
     if not self.geometry.grid.get('LAMzone', False):
         subzone = None
+    if extent == '__default__':
+        if self.geometry.isglobal:
+            extent = 'global'
+        else:
+            extent = 'focus'
     # 1/ geometry and figure
-    # if self.geometry.isglobal:  # FIXME: do something of that kind, or an extent='__default__'
-    #    set_global = True
     fig, ax, projection = self.cartoplot_fig_init(fig,
                                                   ax,
                                                   projection,
                                                   figsize,
                                                   rcparams,
-                                                  set_global)
+                                                  set_global=(extent == 'global'))
     result = dict(fig=fig, ax=ax)
     # 2/ background
     self.cartoplot_background(ax,
@@ -710,7 +714,7 @@ def cartoplot(self,
     x, y, data = self._cartoplot_shape(x, y,
                                        data,
                                        plot_method)
-    if focus_extent and not set_global and not self.geometry.isglobal:
+    if extent == 'focus':
         xyz = ax.projection.transform_points(projection, x, y)
         xyz = numpy.ma.masked_where(numpy.abs(xyz) == numpy.inf, xyz)
         ax.set_xlim((xyz[..., 0].min(), xyz[..., 0].max()))
@@ -754,4 +758,3 @@ def cartoplot(self,
     # 10/ texts
     self._cartoplot_text(ax, title, uniform, uniformvalue)
     return result if takeover else (fig, ax)
-
