@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Copyright (c) Météo France (2014-)
+# This software is governed by the CeCILL-C license under French law.
+# http://www.cecill.info
+"""
+Extend D3Geometry with plotting methods using cartopy.
+"""
+from __future__ import print_function, absolute_import, unicode_literals, division
+
+import cartopy.crs as ccrs
+
+import footprints
+
+epylog = footprints.loggers.getLogger(__name__)
+
+
+def activate():
+    """Activate extension."""
+    from . import __name__ as plugin_name
+    from epygram._plugins.util import notify_doc_requires_plugin
+    notify_doc_requires_plugin([default_cartopy_CRS],
+                               plugin_name)
+    from epygram.geometries.D3Geometry import D3RectangularGridGeometry
+    # defaults arguments for cartopy plots
+    D3RectangularGridGeometry.default_cartopy_CRS = default_cartopy_CRS
+
+
+def default_cartopy_CRS(self):
+    """
+    Create a cartopy.crs appropriate to the Geometry.
+
+    By default, a PlateCarree (if the domain gets close to a pole)
+    or a Miller projection is returned.
+    """
+    (lons, lats) = self.get_lonlat_grid()
+    if lons.ndim == 1:
+        lonmax = lons[:].max()
+        lonmin = lons[:].min()
+        latmax = lats[:].max()
+        latmin = lats[:].min()
+    else:
+        lonmax = lons[:, -1].max()
+        lonmin = lons[:, 0].min()
+        latmax = lats[-1, :].max()
+        latmin = lats[0, :].min()
+    center_lon = (lonmax + lonmin) / 2.
+    if latmin <= -80.0 or latmax >= 84.0:
+        crs = ccrs.PlateCarree(center_lon)
+    else:
+        crs = ccrs.Mercator(center_lon)
+    return crs

@@ -16,7 +16,12 @@ from usevtk import modify_grid, write_grid
 
 
 def activate():
-    """Activate extension of _D3CommonField."""
+    """Activate extension."""
+    from . import __name__ as plugin_name
+    from epygram._plugins.util import notify_doc_requires_plugin
+    notify_doc_requires_plugin([as_vtkGrid, vtk_guess_param_from_field,
+                                plot3DOutline, plot3DVector, plot3DStream],
+                               plugin_name)
     from epygram.fields import D3VectorField
     D3VectorField.as_vtkGrid = as_vtkGrid
     D3VectorField.vtk_guess_param_from_field = vtk_guess_param_from_field

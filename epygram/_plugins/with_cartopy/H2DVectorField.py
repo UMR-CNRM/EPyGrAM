@@ -20,6 +20,10 @@ epylog = footprints.loggers.getLogger(__name__)
 
 def activate():
     """Activate extension."""
+    from . import __name__ as plugin_name
+    from epygram._plugins.util import notify_doc_requires_plugin
+    notify_doc_requires_plugin([cartoplot, cartoimage],
+                               plugin_name)
     from epygram.fields import H2DVectorField
     # defaults arguments for cartopy plots
     H2DVectorField.default_streamplot_kw = dict(color='k', linewidth=2)

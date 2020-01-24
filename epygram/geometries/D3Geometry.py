@@ -496,19 +496,6 @@ class D3Geometry(RecursiveObject, FootprintBase):
         self.vcoordinate = vc_self
         return result
 
-    def cartopy_CRS_reproject(self, lons, lats, projection=None):  # TODO: externalize to cartopy plugin
-        """Reproject lons/lats onto a cartopy CRS projection coordinates."""
-        from cartopy import crs as ccrs
-        if projection is None:
-            projection = self.default_cartopy_CRS()
-        if isinstance(lons, (float, int)):
-            lons = [lons]
-            lats = [lats]
-        tmp = projection.transform_points(ccrs.PlateCarree(),
-                                          numpy.array(lons),
-                                          numpy.array(lats))
-        return tmp[..., 0], tmp[..., 1]
-
 ###################
 # PRE-APPLICATIVE #
 ###################
@@ -1251,32 +1238,6 @@ class D3RectangularGridGeometry(D3Geometry):
                 result = result.squeeze()
         return result
 
-    def default_cartopy_CRS(self):  # TODO: externalize to cartopy plugin
-        """
-        Create a cartopy.crs appropriate to the Geometry.
-
-        By default, a PlateCarree (if the domain gets close to a pole)
-        or a Miller projection is returned.
-        """
-        from cartopy import crs as ccrs
-        (lons, lats) = self.get_lonlat_grid()
-        if lons.ndim == 1:
-            lonmax = lons[:].max()
-            lonmin = lons[:].min()
-            latmax = lats[:].max()
-            latmin = lats[:].min()
-        else:
-            lonmax = lons[:, -1].max()
-            lonmin = lons[:, 0].min()
-            latmax = lats[-1, :].max()
-            latmin = lats[0, :].min()
-        center_lon = (lonmax + lonmin) / 2.
-        if latmin <= -80.0 or latmax >= 84.0:
-            crs = ccrs.PlateCarree(center_lon)
-        else:
-            crs = ccrs.Mercator(center_lon)
-        return crs
-
     def _what_grid_dimensions(self, out=sys.stdout,
                               arpifs_var_names=False,
                               spectral_geometry=None):
@@ -1894,15 +1855,6 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
     def azimuth(self, end1, end2):
         """Same as plane_azimuth in this geometry."""
         return self.plane_azimuth(end1, end2)
-
-    def default_cartopy_CRS(self):  # TODO: externalize to cartopy plugin
-        """
-        Create a cartopy.crs appropriate to the Geometry.
-
-        In this case, cartopy is not used but raw matplotlib,
-        so returned CRS is None.
-        """
-        return None
 
     def _what_position(self, out=sys.stdout):
         """
@@ -3247,94 +3199,6 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         m.units = 'm^2'
         return m
 
-    
-    def get_cartopy_extent(self, subzone=None):
-        """
-        Gets the extension of the geometry in the default crs
-        :param subzone: defines the LAM subzone to be included, in LAM case,
-                        among: 'C', 'CI'.
-        :return: (xmin, xmax, ymin, ymax) as expected by matplotlib's ax.set_extent
-        """
-        # Actually, this method transforms projected coordinates from pyproj to
-        # projected coordinates from cartopy's CRS
-        # Both make use of proj4 but the transformation is not exactly the same.
-        # Easiest method is to transform pyproj coordinates into lat/lon then
-        # into crs coordinates. But this method does not work when the point
-        # does not have lat/lon. This is the case in space_view where corners
-        # can be outside the sphere.
-        from cartopy import crs as ccrs
-        crs = self.default_cartopy_CRS()
-        
-        if self.name != 'space_view':
-            (llcrnrlon, llcrnrlat) = self.ij2ll(*self.gimme_corners_ij(subzone)['ll'])
-            (urcrnrlon, urcrnrlat) = self.ij2ll(*self.gimme_corners_ij(subzone)['ur'])
-            ll = crs.transform_points(ccrs.PlateCarree(), numpy.array(llcrnrlon), numpy.array(llcrnrlat))[0]
-            ur = crs.transform_points(ccrs.PlateCarree(), numpy.array(urcrnrlon), numpy.array(urcrnrlat))[0]
-        else:
-            #one point that can be viewed from satellite
-            lon0 = self.projection['satellite_lon'].get('degrees')
-            lat0 = self.projection['satellite_lat'].get('degrees')
-            #projected coordinates in both systems of this point
-            pos_crs0 = crs.transform_points(ccrs.PlateCarree(), numpy.array(lon0), numpy.array(lat0))[0]
-            pos_epy0 = self.ll2xy(lon0, lat0)
-            #Corners
-            ll = self.ij2xy(*self.gimme_corners_ij(subzone)['ll'])
-            ur = self.ij2xy(*self.gimme_corners_ij(subzone)['ur'])
-            ll = (ll[0] - pos_epy0[0] + pos_crs0[0], ll[1] - pos_epy0[1] + pos_crs0[1])
-            ur = (ur[0] - pos_epy0[0] + pos_crs0[0], ur[1] - pos_epy0[1] + pos_crs0[1])
-        return (ll[0], ur[0], ll[1], ur[1])
-        
-
-    def default_cartopy_CRS(self):  # TODO: externalize to cartopy plugin
-        """
-        Create a cartopy.crs appropriate to the Geometry.
-        """
-        from cartopy import crs as ccrs
-        if self.name == 'lambert':
-            if self.secant_projection:
-                lat_0 = (self.projection['secant_lat1'].get('degrees') +
-                         self.projection['secant_lat2'].get('degrees')) / 2.
-                secant_lats = (self.projection['secant_lat1'].get('degrees'),
-                               self.projection['secant_lat2'].get('degrees'))
-            else:
-                lat_0 = self.projection['reference_lat'].get('degrees')
-                secant_lats = (lat_0, lat_0)
-            crs = ccrs.LambertConformal(
-                central_longitude=self.projection['reference_lon'].get('degrees'),
-                central_latitude=lat_0,
-                standard_parallels=secant_lats)
-        elif self.name == 'mercator':
-            if self.secant_projection:
-                lat = 'secant_lat'
-            else:
-                lat = 'reference_lat'
-            crs = ccrs.Mercator(
-                central_longitude=self._center_lon.get('degrees'),
-                latitude_true_scale=self.projection[lat].get('degrees'))
-        elif self.name == 'polar_stereographic':
-            if self.secant_projection:
-                lat = 'secant_lat'
-            else:
-                lat = 'reference_lat'
-            crs = ccrs.Stereographic(
-                central_latitude=numpy.copysign(90., self.projection[lat].get('degrees')),
-                central_longitude=self.projection['reference_lon'].get('degrees'),
-                true_scale_latitude=self.projection[lat].get('degrees'))
-        elif self.name == 'space_view':
-            if self.projection['satellite_lat'].get('degrees') == 0.:
-                crs = ccrs.Geostationary(
-                    central_longitude=self.projection['satellite_lon'].get('degrees'),
-                    satellite_height=self.projection['satellite_height'])
-            else:
-                raise NotImplementedError("Implementatation to be tested")
-                crs = ccrs.NearsidePerspective(
-                    central_longitude=self.projection['satellite_lon'].get('degrees'),
-                    central_latitude=self.projection['satellite_lat'].get('degrees'),
-                    satellite_height=self.projection['satellite_height'])
-        else:
-            raise epygramError("Projection name unknown.")
-        return crs
-
     def linspace(self, end1, end2, num):
         """
         Returns evenly spaced points over the specified interval.
@@ -3989,19 +3853,6 @@ class D3GaussGeometry(D3Geometry):
             for k in range(data.shape[1]):
                 data3D[t, k, :] = data[t, k, :, :].compressed()
         return data3D
-
-
-    def default_cartopy_CRS(self):  # TODO: externalize to cartopy plugin
-        """
-        Create a cartopy.crs appropriate to the Geometry.
-        """
-        from cartopy import crs as ccrs
-        if 'rotated' in self.name:
-            lon_0 = self.grid['pole_lon'].get('degrees')
-        else:
-            lon_0 = 0.
-        crs = ccrs.Mollweide(central_longitude=lon_0)
-        return crs
 
     def resolution_ll(self, lon, lat):
         """

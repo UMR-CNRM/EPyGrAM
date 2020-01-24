@@ -23,6 +23,10 @@ epylog = footprints.loggers.getLogger(__name__)
 
 def activate():
     """Activate extension."""
+    from . import __name__ as plugin_name
+    from epygram._plugins.util import notify_doc_requires_plugin
+    notify_doc_requires_plugin([basemap_plot, plotfield, plotanimation],
+                               plugin_name)
     from epygram.fields import H2DVectorField
     H2DVectorField.basemap_plot = basemap_plot
     H2DVectorField.plotfield = plotfield
@@ -30,7 +34,8 @@ def activate():
 
 
 def plotfield(self, *args, **kwargs):
-        return self.basemap_plot(*args, **kwargs)
+    """Proxy to basemap_plot()."""
+    return self.basemap_plot(*args, **kwargs)
 
 
 def basemap_plot(self,
@@ -71,9 +76,9 @@ def basemap_plot(self,
                  drawgreenwich_kwargs=None,
                  rcparams=None):
     """
-    Makes a simple plot of the field, with a number of options.
+    .. note:: .. deprecated:: 1.3.11 (cf. cartoplot())
 
-    .. deprecated:: 1.3.11
+    Makes a simple plot of the field, with a number of options.
 
     :param over: to plot the vectors over an existing figure
       (e.g. colorshades).
@@ -343,10 +348,10 @@ def plotanimation(self,
                   interval=1000,
                   **kwargs):
     """
+    .. note:: .. deprecated:: 1.3.11
+
     Plot the field with animation with regards to time dimension.
     Returns a :class:`matplotlib.animation.FuncAnimation`.
-
-    .. deprecated:: 1.3.11
 
     In addition to those specified below, all :meth:`plotfield` method
     arguments can be provided.

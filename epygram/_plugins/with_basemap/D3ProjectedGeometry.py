@@ -22,6 +22,10 @@ epylog = footprints.loggers.getLogger(__name__)
 
 def activate():
     """Activate extension."""
+    from . import __name__ as plugin_name
+    from epygram._plugins.util import notify_doc_requires_plugin
+    notify_doc_requires_plugin([make_basemap,],
+                               plugin_name)
     from epygram.geometries.D3Geometry import D3ProjectedGeometry
     D3ProjectedGeometry.make_basemap = make_basemap
 

@@ -26,6 +26,11 @@ epylog = footprints.loggers.getLogger(__name__)
 
 def activate():
     """Activate extension."""
+    from . import __name__ as plugin_name
+    from epygram._plugins.util import notify_doc_requires_plugin
+    notify_doc_requires_plugin([cartoplot, cartoplot_fig_init,
+                                cartoplot_background],
+                               plugin_name)
     from epygram.fields import H2DField
     # defaults arguments for cartopy plots
     H2DField.default_NEfeatures = [dict(category='cultural',
@@ -653,7 +658,7 @@ def cartoplot(self,
         subzone = None
     # 1/ geometry and figure
     # if self.geometry.isglobal:  # FIXME: do something of that kind, or an extent='__default__'
-    #     set_global = True
+    #    set_global = True
     fig, ax, projection = self.cartoplot_fig_init(fig,
                                                   ax,
                                                   projection,
@@ -662,8 +667,7 @@ def cartoplot(self,
                                                   set_global)
     result = dict(fig=fig, ax=ax)
     # 2/ background
-    self.cartoplot_background(self.geometry,
-                              ax,
+    self.cartoplot_background(ax,
                               projection,
                               cartopy_features,
                               natural_earth_features,
@@ -750,3 +754,4 @@ def cartoplot(self,
     # 10/ texts
     self._cartoplot_text(ax, title, uniform, uniformvalue)
     return result if takeover else (fig, ax)
+
