@@ -290,22 +290,29 @@ class D3VectorField(Field):
         """
         (lon, lat) = self.geometry.get_lonlat_grid()
         assert not self.spectral
-        u = self.components[0].getdata()
-        v = self.components[1].getdata()
+        u = self.components[0].getdata(d4=True)
+        v = self.components[1].getdata(d4=True)
         if self.geometry.name == 'rotated_reduced_gauss':
-            (u, v) = self.geometry.reproject_wind_on_lonlat(u.compressed(),
-                                                            v.compressed(),
-                                                            lon.compressed(),
-                                                            lat.compressed(),
-                                                            map_factor_correction=map_factor_correction,
-                                                            reverse=reverse)
-            u = self.geometry.reshape_data(u, first_dimension='T')
-            v = self.geometry.reshape_data(v, first_dimension='T')
+            for t in range(u.shape[0]):
+                for k in range(u.shape[1]):
+                    (newu, newv) = self.geometry.reproject_wind_on_lonlat(u[t, k, ...].compressed(),
+                                                                          v[t, k, ...].compressed(),
+                                                                          lon.compressed(),
+                                                                          lat.compressed(),
+                                                                          map_factor_correction=map_factor_correction,
+                                                                          reverse=reverse)
+                    u[t, k, ...][~u[t, k, ...].mask] = newu
+                    v[t, k, ...][~v[t, k, ...].mask] = newv
+            u = self.geometry.reshape_data(u.compressed(), first_dimension='T')
+            v = self.geometry.reshape_data(v.compressed(), first_dimension='T')
         else:
-            (u, v) = self.geometry.reproject_wind_on_lonlat(u, v, lon, lat,
-                                                            map_factor_correction=map_factor_correction,
-                                                            reverse=reverse)
-        self.setdata([u, v] + self.components[2:])
+            for t in range(u.shape[0]):
+                for k in range(u.shape[1]):
+                    (u[t, k, ...], v[t, k, ...]) = self.geometry.reproject_wind_on_lonlat(u[t, k, ...], v[t, k, ...],
+                                                                                          lon, lat,
+                                                                                          map_factor_correction=map_factor_correction,
+                                                                                          reverse=reverse)
+        self.setdata([u, v] + [c.getdata(d4=True) for c in self.components[2:]])
 
     def map_factorize(self, reverse=False):
         """
