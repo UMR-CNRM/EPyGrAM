@@ -28,6 +28,10 @@ from bronx.datagrip import namelist
 from epygram.geometries.VGeometry import VGeometry
 from epygram.profiles import hybridP2fluxpressure, flux2masspressures
 
+MKVGRID_BINARY = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                              'vertical_discretization',
+                              'mkvgrid.x')
+
 
 class HybridPressureVGrid(object):
     """Handle and represent information about a Hybrid-Pressure Vertical Grid."""
@@ -48,7 +52,7 @@ class HybridPressureVGrid(object):
 
     @classmethod
     def next_color(cls):
-        return bkc.properties.value(cls.colors.next())
+        return bkc.properties.value(next(cls.colors))
 
     def __init__(self, source,
                  vertical_mean=None,
@@ -414,9 +418,9 @@ class HybridPressureVGrid(object):
                           line_color='black',
                           size=9)
         color = bokeh_kwargs.get('color', self.next_color())
-        legend = bokeh_kwargs.get('legend', self.name)
+        legend = bokeh_kwargs.get('legend_label', self.name)
         kwargs.update(color=color,
-                      legend=legend)
+                      legend_label=legend)
         kwargs.update(bokeh_kwargs)
         # figure
         if over is None:
@@ -450,8 +454,8 @@ class HybridPressureVGrid(object):
         getattr(fig, method)(**kwargs)
         # hover
         tooltips = self.complete_tooltips
-        if 'legend' in kwargs:
-            tooltips = [('GRID', kwargs['legend'])] + tooltips
+        if 'legend_label' in kwargs:
+            tooltips = [('GRID', kwargs['legend_label'])] + tooltips
         fig.add_tools(bkm.tools.HoverTool(tooltips=tooltips,
                                           mode={'circle':'mouse',
                                                 'vbar':'hline',

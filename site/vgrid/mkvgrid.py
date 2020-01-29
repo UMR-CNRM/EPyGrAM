@@ -19,10 +19,8 @@ def generate_vertical_grid(namelist_file, to_clean=default_to_clean):
     and get back the name of the so-called *infosup* file
     to read data to plot from.
     """
-    vgrid_binary = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                'vertical_discretization',
-                                'mkvgrid.x')
-    subprocess.check_call([vgrid_binary, namelist_file])
+    from vgrid import MKVGRID_BINARY
+    subprocess.check_call([MKVGRID_BINARY, namelist_file])
     infosup_file = namelist_file + '.infosup'
     for f in to_clean:
         if os.path.exists(namelist_file + f):
