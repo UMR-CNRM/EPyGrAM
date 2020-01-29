@@ -50,6 +50,7 @@ mktar.sh
 epygram/doc_sphinx/source/gallery/inputs
 epygram/doc_sphinx/source/gallery/outputs
 epygram/doc_sphinx/source/gallery/notebooks/.ipynb_checkpoints
+epygram/doc_sphinx/source/_static/cheatsheet.pdf
 
 # compiled inner libraries
 *.o
