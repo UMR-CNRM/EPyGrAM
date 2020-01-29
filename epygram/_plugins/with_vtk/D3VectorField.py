@@ -14,13 +14,15 @@ from epygram import epygramError
 from epygram.util import as_numpy_array
 from usevtk import modify_grid, write_grid
 
+from epygram.fields import D3VirtualField
 
 def activate():
     """Activate extension."""
     from . import __name__ as plugin_name
     from epygram._plugins.util import notify_doc_requires_plugin
     notify_doc_requires_plugin([as_vtkGrid, vtk_guess_param_from_field,
-                                plot3DOutline, plot3DVector, plot3DStream],
+                                plot3DOutline, plot3DVector, plot3DStream,
+                                _vtk_adjust_wind_to_proj],
                                plugin_name)
     from epygram.fields import D3VectorField
     D3VectorField.as_vtkGrid = as_vtkGrid
@@ -28,6 +30,7 @@ def activate():
     D3VectorField.plot3DOutline = plot3DOutline
     D3VectorField.plot3DVector = plot3DVector
     D3VectorField.plot3DStream = plot3DStream
+    D3VectorField._vtk_adjust_wind_to_proj = _vtk_adjust_wind_to_proj
 
 
 def as_vtkGrid(self, rendering, grid_type,
@@ -35,7 +38,8 @@ def as_vtkGrid(self, rendering, grid_type,
                filename=None, module_name='module', vector_name='vector',
                grid=None,
                version='XML', binary=True, compression='ZLib',
-               compression_level=5):
+               compression_level=5,
+               transform_wind=0):
     """
     Returns a vtkStructuredGrid filled with the field
     :param rendering: a usevtk.Usevtk instance
@@ -61,7 +65,18 @@ def as_vtkGrid(self, rendering, grid_type,
     :param compression: must be None, 'LZ4' or 'ZLib'
                         only used for binary XML
     :param compression_level: between 1 and 9, only used for binary XML Zlib-compressed
-
+    :param transform_wind: to rotate ans scale wind according to vtk coordinates:
+            0: do nothing
+            1: scale the w component to take into account the z axis expansion,
+               the total module is not preserved but the horizontal one is preserved.
+               The horizontal components must be oriented along the vtk axes.
+            2: same as option 1 but the total module is preserved whereas the horizontal
+               one is not preserved
+            3: same as option 1 but, in addition, all the components are rotated.
+               The horizontal components must be oriented along north-south and east-west axes.
+            4: same as option 3 but (as for option 2), the total module is preserved whereas
+               the horizontal one is not preserved
+    
     If grid_type is 'sgrid_point', the result is the grid; otherwise
     the result is the function is the last filter used.
     """
@@ -72,7 +87,9 @@ def as_vtkGrid(self, rendering, grid_type,
     if self.spectral:
         raise epygramError("Spectral field, please use sp2gp() before.")
 
-    data = self.getdata(d4=True, subzone=subzone)
+    field = self._vtk_adjust_wind_to_proj(rendering, transform_wind)
+
+    data = field.getdata(d4=True, subzone=subzone)
     data = [d[0, ...].flatten().astype(numpy.float32) for d in data]
     while len(data) < 3:  # We need 3 components to form a vtk vector
         data.append(data[0] * 0.)
@@ -123,11 +140,99 @@ def plot3DOutline(self, *args, **kwargs):
     return self.components[0].plot3DOutline(*args, **kwargs)
 
 
+def _vtk_adjust_wind_to_proj(self, rendering, transform_wind):
+    """
+    Return a new wind field with updated components
+    :param rendering: a usevtk.Usevtk instance
+    :param field: wind field to manipulate
+    :param transform_wind: to rotate ans scale wind according to vtk coordinates:
+            0: do nothing
+            1: scale the w component to take into account the z axis expansion,
+               the total module is not preserved but the horizontal one is preserved.
+               The horizontal components must be oriented along the vtk axes.
+            2: same as option 1 but the total module is preserved whereas the horizontal
+               one is not preserved
+            3: same as option 1 but, in addition, all the components are rotated.
+               The horizontal components must be oriented along north-south and east-west axes.
+            4: same as option 3 but (as for option 2), the total module is preserved whereas
+               the horizontal one is not preserved
+    :return: new wind field
+    """
+    assert len(self.components) == 3, 'field must have 3 components'
+    new_field = self
+
+    if transform_wind != 0:
+        assert self.geometry.vcoordinate.typeoffirstfixedsurface in (102, 103), \
+               "vertical coordinates must be expressed in meters to adjust components to projection"
+        new_field = self.deepcopy()
+        if isinstance(new_field.components[2], D3VirtualField):
+            new_field.components[2] = new_field.components[2].as_real_field()
+        else:
+            new_field.components[2] = new_field.components[2].deepcopy()
+        if transform_wind in (2, 3, 4):
+            if isinstance(new_field.components[0], D3VirtualField):
+                new_field.components[0] = new_field.components[0].as_real_field()
+            else:
+                new_field.components[0] = new_field.components[0].deepcopy()
+            if isinstance(new_field.components[1], D3VirtualField):
+                new_field.components[1] = new_field.components[1].as_real_field()
+            else:
+                new_field.components[1] = new_field.components[1].deepcopy()
+
+        lons, lats = new_field.components[2].geometry.get_lonlat_grid()
+        z = numpy.ma.empty_like(lons) * 0.
+        
+        dv_llz = 1.
+        p0_llz = lons, lats, z
+        p0_vtk = tuple(c.reshape(lons.shape) for c in rendering.proj3d(*p0_llz))
+        p1_llz = lons, lats + 1. / (60. * 1852), z #1 meter on earth
+        p1_vtk = tuple(c.reshape(lons.shape) for c in rendering.proj3d(*p1_llz))
+        if transform_wind in (3, 4):
+            p2_llz = lons + 1. / (60. * 1852), lats, z #1 meter on earth at the equator
+            p2_vtk = tuple(c.reshape(lons.shape) for c in rendering.proj3d(*p2_llz))
+        p3_llz = lons, lats, z + dv_llz
+        p3_vtk = tuple(c.reshape(lons.shape) for c in rendering.proj3d(*p3_llz))
+        
+        dh1_llz = new_field.components[2].geometry.distance(p0_llz[:2], p1_llz[:2]) #to get the exact value depending on geoid choice
+        if transform_wind in (3, 4):
+            dh2_llz = new_field.components[2].geometry.distance(p0_llz[:2], p2_llz[:2])
+    
+    if transform_wind in (3, 4):
+        u, v, w = new_field.components
+        new_components = [(p1_vtk[i] - p0_vtk[i]) * v / dh1_llz + \
+                          (p2_vtk[i] - p0_vtk[i]) * u / dh2_llz + \
+                          (p3_vtk[i] - p0_vtk[i]) * w / dv_llz
+                          for i in range(3)]
+        for i in range(3):
+            new_field.components[i].setdata(new_components[i])
+
+    elif transform_wind in (1, 2):
+        dh1_vtk = numpy.sqrt((p1_vtk[0] - p0_vtk[0]) ** 2 + \
+                             (p1_vtk[1] - p0_vtk[1]) ** 2 + \
+                             (p1_vtk[2] - p0_vtk[2]) ** 2)
+        dv_vtk = numpy.sqrt((p3_vtk[0] - p0_vtk[0]) ** 2 + \
+                            (p3_vtk[1] - p0_vtk[1]) ** 2 + \
+                            (p3_vtk[2] - p0_vtk[2]) ** 2)
+        new_field.components[2].setdata(new_field.components[2].getdata() * (dv_vtk / dv_llz) * (dh1_llz / dh1_vtk))
+
+    if transform_wind in (2, 4):
+        temp_module = new_field.to_module().getdata()
+        ratio = self.to_module().getdata() /  temp_module
+        for c in new_field.components:
+            data = c.getdata()
+            data[temp_module == 0.] = 0.
+            data[temp_module != 0.] = data[temp_module != 0.] * ratio[temp_module != 0.]
+            c.setdata(data)
+    
+    return new_field
+
+
 def plot3DVector(self, rendering,
                  samplerate=None, arrowScaleFactor=1.,
                  color='Blue', opacity=1.,
                  colorbar=True,
-                 subzone=None):
+                 subzone=None,
+                 transform_wind=0):
     """
     This method adds contour lines and/or colorize the field. If
     the field is 3D, contours appear as isosurface.
@@ -144,14 +249,29 @@ def plot3DVector(self, rendering,
     :param subzone: optional, among ('C', 'CI'), for LAM grids only, returns
                     the grid resp. for the C or C+I zone off the C+I+E zone. \n
                     Default is no subzone, i.e. the whole field.
+    :param transform_wind: to rotate ans scale wind according to vtk coordinates:
+            0: do nothing
+            1: scale the w component to take into account the z axis expansion,
+               the total module is not preserved but the horizontal one is preserved.
+               The horizontal components must be oriented along the vtk axes.
+            2: same as option 1 but the total module is preserved whereas the horizontal
+               one is not preserved
+            3: same as option 1 but, in addition, all the components are rotated.
+               The horizontal components must be oriented along north-south and east-west axes.
+            4: same as option 3 but (as for option 2), the total module is preserved whereas
+               the horizontal one is not preserved
     :return: actor, mapper, colorbaractor
+
+    Note: the wind components, whatever is the transform_wind option, must contain
+          the map factor corrections.
     """
     import vtk # @UnresolvedImport
 
     # generate grid and seed grid
     if samplerate is None:
         samplerate = dict()
-    grid = self.as_vtkGrid(rendering, 'sgrid_point', subzone)
+    grid = self.as_vtkGrid(rendering, 'sgrid_point', subzone,
+                           transform_wind=transform_wind)
     seedGrid = vtk.vtkExtractGrid()
     seedGrid.SetInputData(grid)
     seedGrid.SetSampleRate(samplerate.get('x', 1),
@@ -185,12 +305,13 @@ def plot3DVector(self, rendering,
 
 def plot3DStream(self, rendering,
                  samplerate=None,
-                 maxTime=None, tubesRadius=0.1,
+                 maxLength=None, tubesRadius=0.1,
                  color='Blue',
                  opacity=1.,
                  plot_tube=False,
                  colorbar=True,
-                 subzone=None):
+                 subzone=None,
+                 transform_wind=0):
     """
     This method adds contour lines and/or colorize the field. If
     the field is 3D, contours appear as isosurface.
@@ -199,7 +320,7 @@ def plot3DStream(self, rendering,
                     'x', 'y' and 'z' and values are the sample rate in the given
                     direction. For example {'x':3} means take one over 3 points
                     in the x direction
-    :param maxTime: integration time to build the stream lines and tubes
+    :param maxLength: integration length to build the stream lines and tubes
     :param tubesRadius: radius of the tubes
     :param color: a color name, a vtk.vtkColorTransferFunction or a vtk.vtkLookupTable
                   to associate colors to the stream lines or tubes
@@ -209,14 +330,29 @@ def plot3DStream(self, rendering,
     :param subzone: optional, among ('C', 'CI'), for LAM grids only, returns
                     the grid resp. for the C or C+I zone off the C+I+E zone. \n
                     Default is no subzone, i.e. the whole field.
+    :param transform_wind: to rotate ans scale wind according to vtk coordinates:
+            0: do nothing
+            1: scale the w component to take into account the z axis expansion,
+               the total module is not preserved but the horizontal one is preserved.
+               The horizontal components must be oriented along the vtk axes.
+            2: same as option 1 but the total module is preserved whereas the horizontal
+               one is not preserved
+            3: same as option 1 but, in addition, all the components are rotated.
+               The horizontal components must be oriented along north-south and east-west axes.
+            4: same as option 3 but (as for option 2), the total module is preserved whereas
+               the horizontal one is not preserved
     :return: actor, mapper, colorbaractor
+    
+    Note: the wind components, whatever is the transform_wind option, must contain
+          the map factor corrections.
     """
     import vtk # @UnresolvedImport
 
     # generate grid and seed grid
     if samplerate is None:
         samplerate = dict()
-    grid = self.as_vtkGrid(rendering, 'sgrid_point', subzone)
+    grid = self.as_vtkGrid(rendering, 'sgrid_point', subzone,
+                           transform_wind=transform_wind)
     seedGrid = vtk.vtkExtractGrid()
     seedGrid.SetInputData(grid)
     seedGrid.SetSampleRate(samplerate.get('x', 1),
@@ -231,14 +367,14 @@ def plot3DStream(self, rendering,
 
     scalarRange = list(grid.GetPointData().GetScalars().GetRange())
 
-    if maxTime is None:
+    if maxLength is None:
         maxVelocity = grid.GetPointData().GetVectors().GetMaxNorm()
-        maxTime = 4.0 * grid.GetLength() / maxVelocity
+        maxLength = 4.0 * grid.GetLength() / maxVelocity
     streamers = vtk.vtkStreamTracer()
     streamers.DebugOn()
     streamers.SetInputData(grid)
     streamers.SetSourceConnection(seedGeom.GetOutputPort())
-    streamers.SetMaximumPropagation(maxTime)
+    streamers.SetMaximumPropagation(maxLength)
     streamers.SetInitialIntegrationStep(.2)
     streamers.SetMinimumIntegrationStep(.01)
     streamers.Update()
