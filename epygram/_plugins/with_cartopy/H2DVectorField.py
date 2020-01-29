@@ -89,7 +89,6 @@ def _cartoplot_mask(self,
     return u, v, lons, lats
 
 
-@classmethod
 def _cartoplot_subsample(cls,
                          u, v,
                          lons, lats,
@@ -140,7 +139,6 @@ def _cartoplot_reproject_wind(self,
     return u_ll, v_ll
 
 
-@classmethod
 def _cartoplot_actual_plot(cls,
                            ax,
                            lons, lats,
@@ -168,7 +166,6 @@ def _cartoplot_actual_plot(cls,
     return elements
 
 
-@classmethod
 def _cartoimage_actual_plot(cls,
                             ax,
                             colorspace,
