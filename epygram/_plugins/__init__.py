@@ -23,7 +23,7 @@ for p in implemented:
     try:
         import importlib
         pkg = importlib.import_module('.' + p, __name__)
-    except ImportError as e:
+    except Exception as e:  # Exception: we need to catch any exception raised when an import fails
         if fatal:
             raise e
         else:
