@@ -1401,9 +1401,6 @@ class _D3CommonField(Field):
 # [so that, subject to continuation through updated versions,
 #  including suggestions/developments by users...]
 
-    def plotfield(self):
-        raise NotImplementedError("plot of 3D field is not implemented")
-
     def stats(self, subzone=None):
         """
         Computes some basic statistics on the field, as a dict containing:
