@@ -2015,7 +2015,16 @@ class GRIBmessage(RecursiveObject, dict):
             elif self['timeRangeIndicator'] in (113, 123,):
                 epylog.warning('not able to interpret timeRangeIndicator={}'.format(self['timeRangeIndicator']))
         else:
-            raise NotImplementedError("'timeRangeIndicator' not in {}.".format(accepted_tRI))
+            if config.GRIB_ignore_validity_decoding_errors:
+                try:
+                    term = self['endStep']
+                    termunit = {k:v * term for k,v in unit.items()}
+                    term = datetime.timedelta(**termunit)
+                except Exception:
+                    term = None
+                epylog.warning('not able to interpret timeRangeIndicator={}'.format(self['timeRangeIndicator']))
+            else:
+                raise NotImplementedError("'timeRangeIndicator' not in {}.".format(accepted_tRI))
         validity = FieldValidity(basis=basis, term=term, cumulativeduration=cum)
         return validity
 
