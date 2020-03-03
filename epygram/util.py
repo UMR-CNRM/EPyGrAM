@@ -295,6 +295,20 @@ class Angle(RecursiveObject):
     def __hash__(self):
         return hash(self._origin_value) + hash(self._origin_unit)
 
+    def __mul__(self, factor):
+        return Angle(self.get('radians') * factor, 'radians')
+    
+    def __div__(self, factor):
+        return Angle(self.get('radians') / factor, 'radians')
+    
+    def __add__(self, other):
+        assert isinstance(other, Angle)
+        return Angle(self.get('radians') + other.get('radians'), 'radians')
+    
+    def __sub__(self, other):
+        assert isinstance(other, Angle)
+        return Angle(self.get('radians') - other.get('radians'), 'radians')
+
     def get(self, unit=None):
         """
         Returns the angle in the requested unit.

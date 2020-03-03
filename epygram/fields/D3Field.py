@@ -1017,6 +1017,7 @@ class _D3CommonField(Field):
                           deepcopy=True):
         """
         Extract a subsample from field by decreasing resolution.
+        
         :param sample_x: take one over <sample_x> points in the x direction
         :param sample_y: same for the y direction
         :param sample_z: same for the z direction
