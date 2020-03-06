@@ -2197,9 +2197,12 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
         if abs(abs(degrees_nearest_mod(corners['ur'][0] -
                                        corners['ul'][0], 0.)) -
                self.grid['X_resolution'].get('degrees')) < config.epsilon:
-            if abs(longitude_shift % self.grid['X_resolution'].get('degrees')) > config.epsilon:
-                raise epygramError("*longitude_shift* has to be a multiple" +
-                                   " of the grid's resolution in longitude.")
+            as_int = 1e6
+            if abs((longitude_shift * as_int) %
+                   (self.grid['X_resolution'].get('degrees') * as_int)) > config.epsilon:
+                raise epygramError(("*longitude_shift* ({}) has to be a multiple" +
+                                    " of the grid's resolution in longitude ({}).").
+                                   format(longitude_shift, self.grid['X_resolution'].get('degrees')))
             self._center_lon = Angle(self._center_lon.get('degrees') + longitude_shift,
                                      'degrees')
             self.grid['input_lon'] = Angle(self.grid['input_lon'].get('degrees') + longitude_shift,
