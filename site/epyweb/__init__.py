@@ -7,6 +7,7 @@
 from __future__ import print_function, absolute_import, unicode_literals, division
 
 import os
+import getpass
 import sys
 import socket
 
@@ -50,7 +51,8 @@ if not os.path.exists(vortex_cache):
     os.makedirs(vortex_cache)
 
 # Epyweb workdir for tmp files (basemap pickle, resources hardlinks and figures)
-epyweb_workdir = os.path.join(vortex_cache, 'epyweb', os.getlogin())
+epyweb_workdir = os.path.join(vortex_cache, 'epyweb', getpass.getuser())
+# epyweb_workdir = os.path.join(vortex_cache, 'epyweb', os.getlogin())
 basemap_pickle_path = os.path.join(epyweb_workdir, 'basemap.pickle')
 
 # Debug mode
