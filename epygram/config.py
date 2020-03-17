@@ -62,6 +62,8 @@ epygram_colormaps_scaling_labels = {'ptype':[int(l) for l in epygram_colormaps_s
 default_Ptop = 0.
 #: Epsilon
 epsilon = sys.float_info.epsilon
+#: Rounding decimal in FP operations
+rounding_decimal = 12
 #: Maximum number of truncations handled (setup spectral transforms)
 KNUMMAXRESOL = 10
 #: Plots sizes (in inches)

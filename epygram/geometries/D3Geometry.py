@@ -22,6 +22,7 @@ from bronx.syntax.arrays import stretch_array
 from bronx.syntax.decorators import nicedeco
 
 from epygram import epygramError, config
+from epygram.config import rounding_decimal as _rd
 from epygram.util import (RecursiveObject, degrees_nearest_mod, Angle,
                           separation_line, write_formatted,
                           nearlyEqual, set_map_up,
@@ -1982,41 +1983,41 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
             self._center_lon = self.grid['input_lon']
             self._center_lat = self.grid['input_lat']
         elif self.grid['input_position'] == (0, 0):
-            self._center_lon = Angle(self.grid['input_lon'].get('degrees') +
-                                     self.grid['X_resolution'].get('degrees') *
-                                     (self.dimensions['X'] - 1) / 2,
+            self._center_lon = Angle(round(self.grid['input_lon'].get('degrees') +
+                                           self.grid['X_resolution'].get('degrees') *
+                                           (self.dimensions['X'] - 1) / 2, _rd),
                                      'degrees')
-            self._center_lat = Angle(self.grid['input_lat'].get('degrees') +
-                                     self.grid['Y_resolution'].get('degrees') *
-                                     (self.dimensions['Y'] - 1) / 2,
+            self._center_lat = Angle(round(self.grid['input_lat'].get('degrees') +
+                                           self.grid['Y_resolution'].get('degrees') *
+                                           (self.dimensions['Y'] - 1) / 2, _rd),
                                      'degrees')
         elif self.grid['input_position'] == (0, self.dimensions['Y'] - 1):
-            self._center_lon = Angle(self.grid['input_lon'].get('degrees') +
-                                     self.grid['X_resolution'].get('degrees') *
-                                     (self.dimensions['X'] - 1) / 2,
+            self._center_lon = Angle(round(self.grid['input_lon'].get('degrees') +
+                                           self.grid['X_resolution'].get('degrees') *
+                                           (self.dimensions['X'] - 1) / 2, _rd),
                                      'degrees')
-            self._center_lat = Angle(self.grid['input_lat'].get('degrees') -
-                                     self.grid['Y_resolution'].get('degrees') *
-                                     (self.dimensions['Y'] - 1) / 2,
+            self._center_lat = Angle(round(self.grid['input_lat'].get('degrees') -
+                                           self.grid['Y_resolution'].get('degrees') *
+                                           (self.dimensions['Y'] - 1) / 2, _rd),
                                      'degrees')
         elif self.grid['input_position'] == (self.dimensions['X'] - 1, 0):
-            self._center_lon = Angle(self.grid['input_lon'].get('degrees') -
-                                     self.grid['X_resolution'].get('degrees') *
-                                     (self.dimensions['X'] - 1) / 2,
+            self._center_lon = Angle(round(self.grid['input_lon'].get('degrees') -
+                                           self.grid['X_resolution'].get('degrees') *
+                                           (self.dimensions['X'] - 1) / 2, _rd),
                                      'degrees')
-            self._center_lat = Angle(self.grid['input_lat'].get('degrees') +
-                                     self.grid['Y_resolution'].get('degrees') *
-                                     (self.dimensions['Y'] - 1) / 2,
+            self._center_lat = Angle(round(self.grid['input_lat'].get('degrees') +
+                                           self.grid['Y_resolution'].get('degrees') *
+                                           (self.dimensions['Y'] - 1) / 2, _rd),
                                      'degrees')
         elif self.grid['input_position'] == (self.dimensions['X'] - 1,
                                              self.dimensions['Y'] - 1):
-            self._center_lon = Angle(self.grid['input_lon'].get('degrees') -
-                                     self.grid['X_resolution'].get('degrees') *
-                                     (self.dimensions['X'] - 1) / 2,
+            self._center_lon = Angle(round(self.grid['input_lon'].get('degrees') -
+                                           self.grid['X_resolution'].get('degrees') *
+                                           (self.dimensions['X'] - 1) / 2, _rd),
                                      'degrees')
-            self._center_lat = Angle(self.grid['input_lat'].get('degrees') -
-                                     self.grid['Y_resolution'].get('degrees') *
-                                     (self.dimensions['Y'] - 1) / 2,
+            self._center_lat = Angle(round(self.grid['input_lat'].get('degrees') -
+                                           self.grid['Y_resolution'].get('degrees') *
+                                           (self.dimensions['Y'] - 1) / 2, _rd),
                                      'degrees')
         else:
             raise NotImplementedError("this 'input_position': " +
@@ -2081,8 +2082,8 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
         # origin of coordinates is the center of domain
         i0 = float(Xpoints - 1) / 2.
         j0 = float(Ypoints - 1) / 2.
-        x = Xorigin + (i - i0 + oi) * Xresolution
-        y = Yorigin + (j - j0 + oj) * Yresolution
+        x = numpy.round(Xorigin + (i - i0 + oi) * Xresolution, _rd)
+        y = numpy.round(Yorigin + (j - j0 + oj) * Yresolution, _rd)
         return (x, y)
 
     def xy2ij(self, x, y, position=None):
@@ -2194,10 +2195,11 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
         longitude.
         """
         corners = self.gimme_corners_ll()
-        if abs(abs(degrees_nearest_mod(corners['ur'][0] -
-                                       corners['ul'][0], 0.)) -
-               self.grid['X_resolution'].get('degrees')) < config.epsilon:
-            as_int = 1e6
+        zip_width = abs(degrees_nearest_mod(corners['ur'][0] - corners['ul'][0], 0.))
+        zip_minus_resolution = round(zip_width - self.grid['X_resolution'].get('degrees'),
+                                     _rd)
+        if abs(zip_minus_resolution) < config.epsilon:
+            as_int = 1e6  # decimal error
             if abs((longitude_shift * as_int) %
                    (self.grid['X_resolution'].get('degrees') * as_int)) > config.epsilon:
                 raise epygramError(("*longitude_shift* ({}) has to be a multiple" +
@@ -2209,7 +2211,7 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
                                            'degrees')
         else:
             raise epygramError("unable to shift center if " +
-                               "lon_max - lon_min != X_resolution.")
+                               "lon_max - lon_min != X_resolution")
 
     def linspace(self, end1, end2, num):
         """
@@ -2420,41 +2422,41 @@ class D3RotLLGeometry(D3RegLLGeometry):
             self._center_rlon = self.grid['input_lon']
             self._center_rlat = self.grid['input_lat']
         elif self.grid['input_position'] == (0, 0):
-            self._center_rlon = Angle(self.grid['input_lon'].get('degrees') +
-                                      self.grid['X_resolution'].get('degrees') *
-                                      (self.dimensions['X'] - 1) / 2,
+            self._center_rlon = Angle(round(self.grid['input_lon'].get('degrees') +
+                                            self.grid['X_resolution'].get('degrees') *
+                                            (self.dimensions['X'] - 1) / 2, _rd),
                                       'degrees')
-            self._center_rlat = Angle(self.grid['input_lat'].get('degrees') +
-                                      self.grid['Y_resolution'].get('degrees') *
-                                      (self.dimensions['Y'] - 1) / 2,
+            self._center_rlat = Angle(round(self.grid['input_lat'].get('degrees') +
+                                            self.grid['Y_resolution'].get('degrees') *
+                                            (self.dimensions['Y'] - 1) / 2, _rd),
                                       'degrees')
         elif self.grid['input_position'] == (0, self.dimensions['Y'] - 1):
-            self._center_rlon = Angle(self.grid['input_lon'].get('degrees') +
-                                      self.grid['X_resolution'].get('degrees') *
-                                      (self.dimensions['X'] - 1) / 2,
+            self._center_rlon = Angle(round(self.grid['input_lon'].get('degrees') +
+                                            self.grid['X_resolution'].get('degrees') *
+                                            (self.dimensions['X'] - 1) / 2, _rd),
                                       'degrees')
-            self._center_rlat = Angle(self.grid['input_lat'].get('degrees') -
-                                      self.grid['Y_resolution'].get('degrees') *
-                                      (self.dimensions['Y'] - 1) / 2,
+            self._center_rlat = Angle(round(self.grid['input_lat'].get('degrees') -
+                                            self.grid['Y_resolution'].get('degrees') *
+                                            (self.dimensions['Y'] - 1) / 2, _rd),
                                       'degrees')
         elif self.grid['input_position'] == (self.dimensions['X'] - 1, 0):
-            self._center_rlon = Angle(self.grid['input_lon'].get('degrees') -
-                                      self.grid['X_resolution'].get('degrees') *
-                                      (self.dimensions['X'] - 1) / 2,
+            self._center_rlon = Angle(round(self.grid['input_lon'].get('degrees') -
+                                            self.grid['X_resolution'].get('degrees') *
+                                            (self.dimensions['X'] - 1) / 2, _rd),
                                       'degrees')
-            self._center_rlat = Angle(self.grid['input_lat'].get('degrees') +
-                                      self.grid['Y_resolution'].get('degrees') *
-                                      (self.dimensions['Y'] - 1) / 2,
+            self._center_rlat = Angle(round(self.grid['input_lat'].get('degrees') +
+                                            self.grid['Y_resolution'].get('degrees') *
+                                            (self.dimensions['Y'] - 1) / 2, _rd),
                                       'degrees')
         elif self.grid['input_position'] == (self.dimensions['X'] - 1,
                                              self.dimensions['Y'] - 1):
-            self._center_rlon = Angle(self.grid['input_lon'].get('degrees') -
-                                      self.grid['X_resolution'].get('degrees') *
-                                      (self.dimensions['X'] - 1) / 2,
+            self._center_rlon = Angle(round(self.grid['input_lon'].get('degrees') -
+                                            self.grid['X_resolution'].get('degrees') *
+                                            (self.dimensions['X'] - 1) / 2, _rd),
                                       'degrees')
-            self._center_rlat = Angle(self.grid['input_lat'].get('degrees') -
-                                      self.grid['Y_resolution'].get('degrees') *
-                                      (self.dimensions['Y'] - 1) / 2,
+            self._center_rlat = Angle(round(self.grid['input_lat'].get('degrees') -
+                                            self.grid['Y_resolution'].get('degrees') *
+                                            (self.dimensions['Y'] - 1) / 2, _rd),
                                       'degrees')
         else:
             raise NotImplementedError("this 'input_position': " +
@@ -2747,8 +2749,12 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                 # offset between center and input points is known in rotated proj
                 # dx, dy is the offset in non rotated proj
                 (dx, dy) = self._rotate_axis(
-                    (center[0] - self.grid['input_position'][0]) * self.grid['X_resolution'],
-                    (center[1] - self.grid['input_position'][1]) * self.grid['Y_resolution'],
+                    round((center[0] - self.grid['input_position'][0]) *
+                          self.grid['X_resolution'],
+                          _rd),
+                    round((center[1] - self.grid['input_position'][1]) *
+                          self.grid['Y_resolution'],
+                          _rd),
                     'xy2ll')
                 # xc, yc: coordinates of center point in non rotated proj
                 xc = x1 + dx
