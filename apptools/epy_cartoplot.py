@@ -38,12 +38,12 @@ def read_and_preprocess(resource,
                   'Add it to ~/.epygram/user_Field_Dict_FA.csv ?']).format(fid)
     if field.spectral:
         field.sp2gp()
+    if global_shift_center is not None:
+        field.global_shift_center(global_shift_center)
     if zoom is not None:
         field = field.extract_zoom(zoom)
     if operation is not None:
         field.operation(**operation)
-    if global_shift_center is not None:
-        field.global_shift_center(global_shift_center)
     if pressure_pa2hpa:
         field.operation('/', 100.)
     return field
