@@ -153,7 +153,7 @@ def read_gribdef(filename):
     re_num_g = re_int_g + '|' + re_real_g
     re_keyvalue = re.compile('(?P<key>\w+)\s*=\s*' + re_num_g + '\s*;')
     # read file
-    with io.open(filename, 'r') as f:
+    with io.open(filename, 'r', encoding='utf-8') as f:
         lines_unfold = [l.strip() for l in f.readlines()]
         lines = []
         for line in lines_unfold:
