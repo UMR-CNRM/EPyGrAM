@@ -43,7 +43,7 @@ def nearest_greater_FFT992compliant_int(guess):
     return result
 
 
-def truncation_from_gridpoint_dims(dimensions, grid='linear'):
+def truncation_from_gridpoint_dims(dimensions, grid='linear', stretching_coef=1.):
     """
     Compute truncation from gridpoint dimensions, according to the kind of
     **grid**.
@@ -53,6 +53,8 @@ def truncation_from_gridpoint_dims(dimensions, grid='linear'):
                        {'lat_number':..., 'max_lon_number':...} for Gauss grids
     :param grid: how to choose the truncation, among ('linear', 'quadratic',
                  'cubic')
+    :param stretching_coef: stretching or dilatation coefficient for stretched
+        Gauss grids (has an impact on the gridpoint/spectral dimensions)
 
     Formula taken from "Spectral transforms in the cycle 45 of ARPEGE/IFS",
     http://www.umr-cnrm.fr/gmapdoc/IMG/pdf/ykts45.pdf
@@ -66,12 +68,24 @@ def truncation_from_gridpoint_dims(dimensions, grid='linear'):
     elif all([k in dimensions.keys() for k in ('lat_number',
                                                'max_lon_number')]):
         # Gauss
-        truncation['max'] = min(2 * dimensions['lat_number'] - 3,
-                                dimensions['max_lon_number'] - 1) // spfactor
+        if stretching_coef > 1.:
+            truncation['max'] = min(2 * dimensions['lat_number'] - 3,
+                                    dimensions['max_lon_number'] - 1) // spfactor
+        else:
+            truncation['max'] = (dimensions['max_lon_number'] - 1) // spfactor
     return truncation
 
 
-def gridpoint_dims_from_truncation(truncation, grid='linear'):
+def _guess_compliant_lonlat(nlon):
+    nlon = nearest_greater_FFT992compliant_int(nlon)
+    if nlon % 4 != 0:
+        nlat = nlon // 2 + 1
+    else:
+        nlat = nlon // 2
+    return nlon, nlat
+
+
+def gridpoint_dims_from_truncation(truncation, grid='linear', stretching_coef=1.):
     """
     Compute truncation from gridpoint dimensions, according to the kind of
     **grid**.
@@ -81,6 +95,8 @@ def gridpoint_dims_from_truncation(truncation, grid='linear'):
                        {'max':...} for Gauss grids
     :param grid: how to choose the truncation, among ('linear', 'quadratic',
                  'cubic')
+    :param stretching_coef: stretching or dilatation coefficient for stretched
+        Gauss grids (has an impact on the gridpoint/spectral dimensions)
 
     Formula taken from "Spectral transforms in the cycle 45 of ARPEGE/IFS",
     http://www.umr-cnrm.fr/gmapdoc/IMG/pdf/ykts45.pdf
@@ -96,11 +112,10 @@ def gridpoint_dims_from_truncation(truncation, grid='linear'):
     elif all([k in truncation.keys() for k in ('max',)]):
         # Gauss
         nlon = spfactor * truncation['max'] + 1
-        nlon = nearest_greater_FFT992compliant_int(nlon)
-        if nlon % 4 != 0:
-            nlat = nlon // 2 + 1
-        else:
-            nlat = nlon // 2
+        nlon, nlat = _guess_compliant_lonlat(nlon)
+        if stretching_coef > 1. and truncation['max'] > min(2*nlat-3, nlon) // spfactor:
+            nlon, nlat = _guess_compliant_lonlat(nlon + 1)
+            epylog.warning("Grid will be sub-{}: nlon > 2*tronc + 1 because of stretching !".format(grid))
         dimensions['max_lon_number'] = nlon
         dimensions['lat_number'] = nlat
     return dimensions

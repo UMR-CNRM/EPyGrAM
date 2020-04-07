@@ -278,8 +278,7 @@ fields_management = {
         '--GRIB2_packing',
         dict(help="packing for writing GRIB2s.\
                    Defaults to " +
-                   str(_defaults.get('GRIB2_default_packing',
-                                     {2:'undefined'}).get(2, 'undefined')) + ".",
+                   str(griberies.defaults.GRIB2_keyvalue[5]) + ".",
              default=None)],
     'netCDF_compression':[
         '--nc_comp',

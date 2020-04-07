@@ -210,7 +210,9 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
         else:
             # default: linear truncation...
             KTRONC = truncation_from_gridpoint_dims(geometry.dimensions,
-                                                    grid='linear')['max']
+                                                    grid='linear',
+                                                    stretching_coef=geometry.grid['dilatation_coef']
+                                                    )['max']
         KNLATI = geometry.dimensions['lat_number']
         KNXLON = geometry.dimensions['max_lon_number']
         KNLOPA = numpy.zeros(JPXPAH, dtype=numpy.int64)
@@ -1498,7 +1500,7 @@ class FA(FileResource):
                                          self._FAsoftware_cst['JPXNIV'],
                                          self.headername)[:-1]))
             for ab in [8, 9, 10]:  # 'KNLOPA', 'KNOZPA', 'PSINLA'
-                zvars[ab] = (zvars[ab][0], zvars[ab][1][:(zvars[6][1] + 1) / 2])  # 6 == KNLATI
+                zvars[ab] = (zvars[ab][0], zvars[ab][1][:zvars[6][1] // 2])  # 6 == KNLATI
             for ab in [13, 14]:  # 'PAHYBR', 'PBHYBR'
                 zvars[ab] = (zvars[ab][0], zvars[ab][1][:zvars[11][1] + 1])  # 11 == KNIVER
             for v in zvars:

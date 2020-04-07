@@ -1859,7 +1859,8 @@ class GRIBmessage(RecursiveObject, dict):
             projection = None
             spgeom = self._read_spectralgeometry()
             gpdims = gridpoint_dims_from_truncation(spgeom.truncation,
-                                                    grid='linear')
+                                                    grid='linear',
+                                                    stretching_coef=1.)
             latitudes = gauss_latitudes(gpdims['lat_number'])
             grid = {'latitudes':FPList([Angle(l, 'degrees')
                                         for l in latitudes]),
