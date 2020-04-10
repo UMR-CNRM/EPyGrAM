@@ -121,6 +121,25 @@ def gridpoint_dims_from_truncation(truncation, grid='linear', stretching_coef=1.
     return dimensions
 
 
+def complete_gridpoint_dimensions(longitudes, latitudes,
+                                  truncation, grid, stretching_coef):
+    """Complete missing gridpoint dimensions from guessing values."""
+    if latitudes is None and longitudes is None:
+        dims = gridpoint_dims_from_truncation({'max': truncation},
+                                              grid=grid,
+                                              stretching_coef=stretching_coef)
+        latitudes = dims['lat_number']
+        longitudes = dims['max_lon_number']
+    elif longitudes is None:
+        longitudes = 2 * self.latitudes
+    elif latitudes is None:
+        if longitudes % 4 != 0:
+            latitudes = longitudes // 2 + 1
+        else:
+            latitudes = longitudes // 2
+    return longitudes, latitudes
+
+
 class SpectralGeometry(RecursiveObject, FootprintBase):
     """Handles the spectral geometry and transforms for a H2DField."""
 

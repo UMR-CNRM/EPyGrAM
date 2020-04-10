@@ -10,6 +10,8 @@ Contains functions for outing a LAM domain to namelists, plot, summary.
 from __future__ import print_function, absolute_import, unicode_literals, division
 
 import six
+import math
+import io
 
 import footprints
 from bronx.datagrip import namelist
@@ -21,6 +23,94 @@ from .util import Ezone_minimum_width
 from .build import compute_lonlat_included, build_CIE_field, build_lonlat_field
 
 epylog = footprints.loggers.getLogger(__name__)
+
+
+def gauss_rgrid2namelists(rgrid_namelist,
+                          geometry_tag,
+                          latitudes,
+                          longitudes,
+                          truncation,
+                          stretching,
+                          orography_grid,
+                          pole):
+    """
+    Read rgrid output namelist and transforms to PGD, c923 and c927
+    namelist blocks.
+
+    :param rgrid_namelist: filename of rgrid output namelist to read
+    :param geometry_tag: name of geometry, for output namelists filenames
+
+     All other arguments are geometry attributes from Vortex's
+     common.algo.clim.MakeGaussGeometry
+    """
+    # complete scalar parameters
+    nam = namelist.NamelistSet()
+    nam.add(namelist.NamelistBlock('NAM_PGD_GRID'))
+    nam.add(namelist.NamelistBlock('NAMDIM'))
+    nam.add(namelist.NamelistBlock('NAMGEM'))
+    nam['NAM_PGD_GRID']['CGRID'] = 'GAUSS'
+    nam['NAMDIM']['NDGLG'] = latitudes
+    nam['NAMDIM']['NDLON'] = longitudes
+    nam['NAMDIM']['NSMAX'] = truncation
+    nam['NAMGEM']['NHTYP'] = 2
+    nam['NAMGEM']['NSTTYP'] = 2 if pole != {'lon': 0., 'lat': 90.} else 1
+    nam['NAMGEM']['RMUCEN'] = math.sin(math.radians(float(pole['lat'])))
+    nam['NAMGEM']['RLOCEN'] = math.radians(float(pole['lon']))
+    nam['NAMGEM']['RSTRET'] = stretching
+    # numbers of longitudes
+    with io.open(rgrid_namelist, 'r') as n:
+        namrgri = namelist.namparse(n)
+        nam.merge(namrgri)
+    # PGD namelist
+    nam_pgd = copy.deepcopy(nam)
+    nam_pgd['NAMGEM'].delvar('NHTYP')
+    nam_pgd['NAMGEM'].delvar('NSTTYP')
+    nam_pgd['NAMDIM'].delvar('NSMAX')
+    nam_pgd['NAMDIM'].delvar('NDLON')
+    with io.open('.'.join([geometry_tag,
+                           'namel_buildpgd',
+                           'geoblocks']),
+                 'w') as out:
+        out.write(nam_pgd.dumps(sorting=namelist.SECOND_ORDER_SORTING))
+    del nam['NAM_PGD_GRID']
+    # C923 namelist
+    with io.open('.'.join([geometry_tag,
+                           'namel_c923',
+                           'geoblocks']),
+                 'w') as out:
+        out.write(nam.dumps(sorting=namelist.SECOND_ORDER_SORTING))
+    # subtruncated grid for orography
+    trunc_nsmax = truncation_from_gridpoint_dims({'lat_number': latitudes,
+                                                  'max_lon_number': longitudes},
+                                                 grid=orography_grid,
+                                                 stretching_coef=stretching
+                                                 )['max']
+    nam['NAMDIM']['NSMAX'] = trunc_nsmax
+    with io.open('.'.join([geometry_tag,
+                           'namel_c923_orography',
+                           'geoblocks']),
+                 'w') as out:
+        out.write(nam.dumps(sorting=namelist.SECOND_ORDER_SORTING))
+    # C927 (fullpos) namelist
+    nam = namelist.NamelistSet()
+    nam.add(namelist.NamelistBlock('NAMFPD'))
+    nam.add(namelist.NamelistBlock('NAMFPG'))
+    nam['NAMFPD']['NLAT'] = latitudes
+    nam['NAMFPD']['NLON'] = longitudes
+    nam['NAMFPG']['NFPMAX'] = truncation
+    nam['NAMFPG']['NFPHTYP'] = 2
+    nam['NAMFPG']['NFPTTYP'] = 2 if pole != {'lon': 0., 'lat': 90.} else 1
+    nam['NAMFPG']['FPMUCEN'] = math.sin(math.radians(float(pole['lat'])))
+    nam['NAMFPG']['FPLOCEN'] = math.radians(float(pole['lon']))
+    nam['NAMFPG']['FPSTRET'] = stretching
+    nrgri = [v for _, v in sorted(namrgri['NAMRGRI'].items())]
+    for i in range(len(nrgri)):
+        nam['NAMFPG']['NFPRGRI({:>4})'.format(i + 1)] = nrgri[i]
+    with io.open('.'.join([geometry_tag,
+                           'namel_c927',
+                           'geoblocks']),
+                 'w') as out:
+        out.write(nam.dumps(sorting=namelist.SECOND_ORDER_SORTING))
 
 
 def lam_geom2namelists(geometry,
