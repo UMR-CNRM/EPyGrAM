@@ -2246,6 +2246,12 @@ class GRIB(FileResource):
         if not self.fmtdelayedopen:
             self.open()
 
+    def __iter__(self):
+        self.close()
+        self.open()
+        for _ in range(len(self)):
+            yield self.iter_fields(getdata=True)
+
     def open(self, openmode=None):
         """
         Opens a GRIB and initializes some attributes.
