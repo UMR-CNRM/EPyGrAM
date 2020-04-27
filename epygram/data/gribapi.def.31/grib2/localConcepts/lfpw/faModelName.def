@@ -285,6 +285,7 @@
 'arpege-courtfr-production-dble-fc'      = { generatingProcessIdentifier = 150; }
 'arpege-courtfr-production-oper-fc'      = { generatingProcessIdentifier =  80; }
 'arpege-ctpinifr-production-oper-fc'     = { generatingProcessIdentifier = 173; }
+'arpege-4dvarfr-production-oper-fabec'   = { generatingProcessIdentifier =  31; subCentre = 1;}
 'arpege-pearp-production-dble-fc_m000'   = { generatingProcessIdentifier = 212; numberOfForecastsInEnsemble = 035; perturbationNumber = 000; productDefinitionTemplateNumber = 11; }
 'arpege-pearp-production-dble-fc_m001'   = { generatingProcessIdentifier = 212; numberOfForecastsInEnsemble = 035; perturbationNumber = 001; productDefinitionTemplateNumber = 11; }
 'arpege-pearp-production-dble-fc_m002'   = { generatingProcessIdentifier = 212; numberOfForecastsInEnsemble = 035; perturbationNumber = 002; productDefinitionTemplateNumber = 11; }

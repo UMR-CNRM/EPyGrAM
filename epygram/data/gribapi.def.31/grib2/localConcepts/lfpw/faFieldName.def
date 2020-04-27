@@ -1848,6 +1848,19 @@
     scaleFactorOfCentralWaveNumber=2 ;
 }
 
+# Température de brillance GOES15 Canal 2
+"C002_GOES_15_IMA" = {
+    discipline = 0 ;
+    level = 67 ;
+    parameterCategory = 5 ;
+    parameterNumber = 7 ;
+    productDefinitionTemplateNumber = 32 ;
+    tablesVersion = 15 ;
+    NB=1 ;
+    scaledValueOfCentralWaveNumber=14925373 ;
+    scaleFactorOfCentralWaveNumber=2 ;
+}
+
 # Température de brillance GOES12 Canal 2
 "C002_GOES_12_IMA" = {
     discipline = 0 ;
@@ -1906,6 +1919,20 @@
 
 # Température de brillance GOES11 Canal 3
 "C003_GOES_11_IMA" = {
+    discipline = 0 ;
+    level = 107 ;
+    parameterCategory = 5 ;
+    parameterNumber = 7 ;
+    productDefinitionTemplateNumber = 32 ;
+    tablesVersion = 15 ;
+    typeOfGeneratingProcess = 2 ;
+    NB=1 ;
+    scaledValueOfCentralWaveNumber=9345794 ;
+    scaleFactorOfCentralWaveNumber=2 ;
+}
+
+# Température de brillance GOES15 Canal 3
+"C003_GOES_15_IMA" = {
     discipline = 0 ;
     level = 107 ;
     parameterCategory = 5 ;
@@ -2883,5 +2910,124 @@
     tablesVersion = 15 ;
     typeOfFirstFixedSurface = 103 ;
 }
-
+# Turbulence CAT indice Ellrod1
+"CAT.TI1"= {
+    discipline = 0 ;
+    parameterCategory = 19 ;
+    parameterNumber = 204 ;
+    tablesVersion = 15 ;
+}
+# Medium-levels Ellrod1
+"CAT.TI1.M"= {
+    discipline = 0 ;
+    parameterCategory = 19 ;
+    parameterNumber = 204 ;
+    typeOfFirstFixedSurface = 100 ;
+    typeOfSecondFixedSurface = 100 ;
+    productDefinitionTemplateNumber = 15 ;
+    scaledValueOfFirstFixedSurface = 69680 ;
+    scaledValueOfSecondFixedSurface  = 46560 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaleFactorOfSecondFixedSurface  = 0 ; 
+    statisticalProcess = 2 ;
+    spatialProcessing = 0 ;
+    tablesVersion = 15 ;
+}
+# High-levels Ellrod1
+"CAT.TI1.H"= {
+    discipline = 0 ;
+    parameterCategory = 19 ;
+    parameterNumber = 204 ;
+    typeOfFirstFixedSurface = 100 ;
+    typeOfSecondFixedSurface = 100 ;
+    productDefinitionTemplateNumber = 15 ;
+    scaledValueOfFirstFixedSurface = 46560  ;
+    scaledValueOfSecondFixedSurface  = 7170 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaleFactorOfSecondFixedSurface  = 0 ; 
+    statisticalProcess = 2 ;
+    spatialProcessing = 0 ;
+    tablesVersion = 15 ;
+}
+# Turbulence CAT indice EDR diagnostic
+"EDRDC"= {
+    discipline = 0 ;
+    parameterCategory = 19 ;
+    parameterNumber = 29 ;
+    typeOfFirstFixedSurface = 100 ;
+    typeOfSecondFixedSurface = 255 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    tablesVersion = 15 ;
+}
+# High_levels EDR diagnostic
+"EDRDCH"= {
+    discipline = 0 ;
+    parameterCategory = 19 ;
+    parameterNumber = 29 ;
+    typeOfFirstFixedSurface = 100 ;
+    typeOfSecondFixedSurface = 100 ;
+    productDefinitionTemplateNumber = 15 ;
+    scaledValueOfFirstFixedSurface = 46560 ;
+    scaledValueOfSecondFixedSurface = 7170 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaleFactorOfSecondFixedSurface = 0 ;
+    statisticalProcess = 2 ;
+    spatialProcessing = 0 ;
+    tablesVersion = 15 ;
+}
+# Medium-levels EDR diagnostic
+"EDRDCM"= {
+    discipline = 0 ;
+    parameterCategory = 19 ;
+    parameterNumber = 29 ;
+    typeOfFirstFixedSurface = 100 ;
+    typeOfSecondFixedSurface = 100 ;
+    productDefinitionTemplateNumber = 15 ;
+    scaledValueOfFirstFixedSurface = 69680 ;
+    scaledValueOfSecondFixedSurface = 46560 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaleFactorOfSecondFixedSurface = 0 ;
+    statisticalProcess = 2 ;
+    spatialProcessing = 0 ;
+    tablesVersion = 15 ;
+}
+# Low-levels EDR diagnostic
+"EDRDCL"= {
+    discipline = 0 ;
+    parameterCategory = 19 ;
+    parameterNumber = 29 ;
+    typeOfFirstFixedSurface = 100 ;
+    typeOfSecondFixedSurface = 100 ;
+    productDefinitionTemplateNumber = 15 ;
+    scaledValueOfFirstFixedSurface = 101330 ;
+    scaledValueOfSecondFixedSurface = 69680 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaleFactorOfSecondFixedSurface = 0 ;
+    statisticalProcess = 2 ;
+    spatialProcessing = 0 ;
+    tablesVersion = 15 ;
+}
+# Icing for Aviation
+"ICING.AERO"= {
+    discipline = 0 ;
+    parameterNumber = 20 ;
+    parameterCategory = 19 ;
+    tablesVersion = 15 ;
+}
+# Maximum of icing for Aviation
+"ICINGX.AERO"= {
+    discipline = 0 ;
+    parameterNumber = 20 ;
+    parameterCategory = 19 ;
+    typeOfFirstFixedSurface = 100 ;
+    typeOfSecondFixedSurface = 100 ;
+    productDefinitionTemplateNumber = 15 ;
+    scaledValueOfFirstFixedSurface = 101330 ;
+    scaledValueOfSecondFixedSurface = 30090 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaleFactorOfSecondFixedSurface = 0 ;
+    statisticalProcess = 2 ;
+    spatialProcessing = 0 ;
+    tablesVersion = 15 ;
+}
 
