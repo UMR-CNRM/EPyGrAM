@@ -50,7 +50,7 @@ class H2DGeometry(D3Geometry):
         """Build GRIB2 sample name."""
         from griberies.tables import typeoffixedsurface2sample as levels
         return '_'.join([prefix,
-                         levels[self.vcoordinate.typeoffirstfixedsurface],
+                         levels.get(self.vcoordinate.typeoffirstfixedsurface, 'sfc'),
                          'grib2'])
 
 
