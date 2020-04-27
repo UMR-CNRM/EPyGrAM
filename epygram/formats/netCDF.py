@@ -658,9 +658,17 @@ class netCDF(FileResource):
                             if hasattr(grid_mapping, 'rotation'):
                                 kwargs_geom['projection']['rotation'] = Angle(grid_mapping.rotation, 'degrees')
                             kwargs_geom['projection']['reference_lat'] = Angle(grid_mapping.latitude_of_projection_origin, 'degrees')
-                            lat_ts = grid_mapping.standard_parallel
-                            if grid_mapping.standard_parallel != grid_mapping.latitude_of_projection_origin:
-                                kwargs_geom['projection']['secant_lat'] = Angle(lat_ts, 'degrees')
+                            # CF-1.4
+                            if hasattr(grid_mapping, 'scale_factor_at_projection_origin'):
+                                if grid_mapping.scale_factor_at_projection_origin == 1.:
+                                    lat_ts = grid_mapping.latitude_of_projection_origin
+                                else:
+                                    raise NotImplementedError("CF-1.4 encoding of secant parallel using 'scale_factor_at_projection_origin'.")
+                            # CF-1.6
+                            elif hasattr(grid_mapping, 'standard_parallel'):
+                                lat_ts = grid_mapping.standard_parallel
+                                if grid_mapping.standard_parallel != grid_mapping.latitude_of_projection_origin:
+                                    kwargs_geom['projection']['secant_lat'] = Angle(lat_ts, 'degrees')
                             fe = grid_mapping.false_easting
                             fn = grid_mapping.false_northing
                             # compute x_0, y_0...
