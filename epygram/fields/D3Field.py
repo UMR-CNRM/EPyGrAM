@@ -910,7 +910,7 @@ class _D3CommonField(Field):
         # zoom_field.fid = fid
         
         shp = zoom_geom.get_datashape(dimT=len(self.validity), d4=True)
-        data = numpy.empty(shp)
+        data = numpy.ma.empty(shp)
         values = self.getdata(d4=True)
         for t in range(len(self.validity)):
             for k in range(len(self.geometry.vcoordinate.levels)):
