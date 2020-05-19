@@ -13,6 +13,8 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 import ctypes
 import numpy
 import subprocess
+import os
+import re
 
 from _ctypes import dlclose
 
@@ -20,6 +22,37 @@ from _ctypes import dlclose
 IN = 1
 OUT = 2
 INOUT = 3
+
+
+def get_dynamic_libs(obj):
+    libs = {}
+    osname = str(os.uname()[0])
+    if osname == 'Linux':
+        _re = re.compile('((?P<libname>lib.*) => )?(?P<libpath>/.*/.*\.so(\.\d+)?)\s\\(0x.*\)')
+        ldd_out = [line.decode().strip() for line in
+                     subprocess.Popen(['ldd', obj],
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE).stdout.readlines()]
+        for line in ldd_out:
+            match = _re.match(line)
+            if match:
+                matchdict = match.groupdict()
+                if matchdict.get('libname') is None:
+                    matchdict['libname'] = matchdict.get('libpath').split('/')[-1]
+                libs[matchdict['libname']] = matchdict.get('libpath')
+    elif osname == 'Darwin':
+        _re = re.compile('\s*(?P<libdir>/.*/)(?P<libname>.*(\.\d+)?\.dylib)\s+.*')
+        otool_out = [line.decode().strip() for line in
+                     subprocess.Popen(['otool', '-L', obj],
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE).stdout.readlines()]
+        for line in otool_out:
+            match = _re.match(line)
+            if match:
+                libs[match.group('libname')] = match.group('libdir') + match.group('libname')
+    else:
+        raise NotImplementedError("OS: " + osname)
+    return libs
 
 
 def ctypesForFortranFactory(solib):
@@ -372,15 +405,12 @@ def ctypesForFortranFactory(solib):
     else:
         my_solib = solib
         filename = my_solib._name
-
-    ldd_output = subprocess.Popen(["ldd", filename],
-                                  stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE).stdout.readlines()
     compiler = set()
-    for line in ldd_output:
-        if line.strip().startswith(b'libgfortran.so'):
+    libs = get_dynamic_libs(filename)
+    for lib in libs.keys():
+        if lib.startswith('libgfortran'):
             compiler.add('gfortran')
-        if line.strip().startswith(b'libifport.so'):
+        if lib.startswith('libifport'):
             compiler.add('ifort')
     if len(compiler) == 0:
         raise IOError("Don't know which compiler was used to build the shared library")

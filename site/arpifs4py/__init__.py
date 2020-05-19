@@ -172,15 +172,8 @@ def init_env(omp_num_threads=None,
 
 def _GRIB_samples_path_from_dynamic_gribapi(lib, reset=False):
     """If needed, set adequate path to the used low level library."""
-    import subprocess
-    import re
-    ldd_out = subprocess.check_output(['ldd', lib])
     libs_grib_api = {}
     for apilib in ('grib_api', 'eccodes'):
-        for line in ldd_out.splitlines():
-            _re = '.*\s*(lib{}.*) => (.*)(/lib/lib{}.*\.so.*)\s\(0x.*'.format(apilib, apilib)
-            match = re.match(_re, str(line))
-            if match:
-                libs_grib_api[match.group(1)] = match.group(2)
-    for l in set(libs_grib_api.values()):
-        griberies.complete_grib_paths(l, apilib, reset=reset)
+        for l, libpath in ctypesForFortran.get_dynamic_libs(lib).items():
+            if l.startswith('lib' + apilib):
+                griberies.complete_grib_paths(libpath, apilib, reset=reset)
