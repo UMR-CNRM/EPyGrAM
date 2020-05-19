@@ -153,10 +153,6 @@ class netCDF(FileResource):
 
         return fieldslist
 
-    def _listfields(self):
-        """Returns the fid list of the fields inside the resource."""
-        return list(self._variables.keys())
-
     @FileResource._openbeforedelayed
     def ncinfo_field(self, fid):
         """
@@ -529,17 +525,26 @@ class netCDF(FileResource):
                 return Xgrid, Ygrid
 
             # projection or grid
-            if hasattr(variable, 'grid_mapping') and \
-               (hasattr(self._variables[variable.grid_mapping], 'grid_mapping_name') and
-                (self._variables[variable.grid_mapping].grid_mapping_name in ('lambert_conformal_conic',
-                                                                              'mercator',
-                                                                              'polar_stereographic',
-                                                                              'latitude_longitude') or
-                 'gauss' in self._variables[variable.grid_mapping].grid_mapping_name.lower()) or
-                (variable.grid_mapping == 'GeosCoordinateSystem' and
-                  'geos' in self._variables
-                  and hasattr(self._variables['geos'], 'grid_mapping_name')
-                  and self._variables['geos'].grid_mapping_name == 'vertical_perspective') and False):
+            def grid_mapping_ok():
+                ok = False
+                if hasattr(variable, 'grid_mapping'):
+                    if variable.grid_mapping in self._variables:
+                        if hasattr(self._variables[variable.grid_mapping], 'grid_mapping_name'):
+                            gmm = self._variables[variable.grid_mapping].grid_mapping_name
+                            if gmm in ('lambert_conformal_conic',
+                                       'mercator',
+                                       'polar_stereographic',
+                                       'latitude_longitude') or 'gauss' in gmm.lower():
+                                ok = True
+                    elif variable.grid_mapping == 'GeosCoordinateSystem':
+                        if 'geos' in self._variables:
+                            if hasattr(self._variables['geos'], 'grid_mapping_name'):
+                                gmm = self._variables['geos'].grid_mapping_name
+                                if gmm == 'vertical_perspective':
+                                    ok = True
+                return ok
+
+            if grid_mapping_ok():
                 # geometry described as "grid_mapping" meta-data
                 if (variable.grid_mapping == 'GeosCoordinateSystem' and
                     'geos' in self._variables
@@ -1333,82 +1338,80 @@ class netCDF(FileResource):
         """
         self.behaviour.update(kwargs)
 
-    def what(self, out=sys.stdout, **_):
-        """Writes in file a summary of the contents of the GRIB."""
+    # adapted from http://schubert.atmos.colostate.edu/~cslocum/netcdf_example.html
+    def ncdump(self, out):
+        """
+        Outputs dimensions, variables and their attribute information.
+        The information is similar to that of NCAR's ncdump utility.
 
-        # adapted from http://schubert.atmos.colostate.edu/~cslocum/netcdf_example.html
-        def ncdump(nc, out):
-            '''
-            ncdump outputs dimensions, variables and their attribute information.
-            The information is similar to that of NCAR's ncdump utility.
-            ncdump requires a valid instance of Dataset.
+        :param out: IO where nc_attrs, nc_dims, and nc_vars are printed
+
+        Returns
+        -------
+        nc_attrs : list
+            A Python list of the NetCDF file global attributes
+        nc_dims : list
+            A Python list of the NetCDF file dimensions
+        nc_vars : list
+            A Python list of the NetCDF file variables
+        """
+        nc = self._nc
+        
+        def outwrite(*items):
+            items = list(items)
+            stritem = items.pop(0)
+            for i in items:
+                stritem += ' ' + str(i)
+            out.write(stritem + '\n')
+
+        def print_ncattr(key):
+            """
+            Prints the NetCDF file attributes for a given key
 
             Parameters
             ----------
-            nc : netCDF4.Dataset
-                A netCDF4 dateset object
-            verb : Boolean
-                whether or not nc_attrs, nc_dims, and nc_vars are printed
+            key : unicode
+                a valid netCDF4.Dataset.variables key
+            """
+            try:
+                outwrite("\t\ttype:", repr(nc.variables[key].dtype))
+                for ncattr in nc.variables[key].ncattrs():
+                    outwrite('\t\t%s:' % ncattr,
+                             repr(nc.variables[key].getncattr(ncattr)))
+            except KeyError:
+                outwrite("\t\tWARNING: %s does not contain variable attributes" % key)
 
-            Returns
-            -------
-            nc_attrs : list
-                A Python list of the NetCDF file global attributes
-            nc_dims : list
-                A Python list of the NetCDF file dimensions
-            nc_vars : list
-                A Python list of the NetCDF file variables
-            '''
+        # NetCDF global attributes
+        nc_attrs = nc.ncattrs()
+        outwrite("NetCDF Global Attributes:")
+        for nc_attr in nc_attrs:
+            outwrite('\t%s:' % nc_attr, repr(nc.getncattr(nc_attr)))
+        nc_dims = [dim for dim in nc.dimensions]  # list of nc dimensions
+        # Dimension shape information.
+        outwrite("NetCDF dimension information:")
+        for dim in nc_dims:
+            outwrite("\tName:", dim)
+            outwrite("\t\tsize:", len(nc.dimensions[dim]))
+            # print_ncattr(dim)
+        # Variable information.
+        nc_vars = [var for var in nc.variables]  # list of nc variables
+        outwrite("NetCDF variable information:")
+        for var in nc_vars:
+            outwrite('\tName:', var)
+            outwrite("\t\tdimensions:", nc.variables[var].dimensions)
+            outwrite("\t\tsize:", nc.variables[var].size)
+            print_ncattr(var)
+        return nc_attrs, nc_dims, nc_vars
 
-            def outwrite(*items):
-                items = list(items)
-                stritem = items.pop(0)
-                for i in items:
-                    stritem += ' ' + str(i)
-                out.write(stritem + '\n')
-
-            def print_ncattr(key):
-                """
-                Prints the NetCDF file attributes for a given key
-
-                Parameters
-                ----------
-                key : unicode
-                    a valid netCDF4.Dataset.variables key
-                """
-                try:
-                    outwrite("\t\ttype:", repr(nc.variables[key].dtype))
-                    for ncattr in nc.variables[key].ncattrs():
-                        outwrite('\t\t%s:' % ncattr,
-                                 repr(nc.variables[key].getncattr(ncattr)))
-                except KeyError:
-                    outwrite("\t\tWARNING: %s does not contain variable attributes" % key)
-
-            # NetCDF global attributes
-            nc_attrs = nc.ncattrs()
-            outwrite("NetCDF Global Attributes:")
-            for nc_attr in nc_attrs:
-                outwrite('\t%s:' % nc_attr, repr(nc.getncattr(nc_attr)))
-            nc_dims = [dim for dim in nc.dimensions]  # list of nc dimensions
-            # Dimension shape information.
-            outwrite("NetCDF dimension information:")
-            for dim in nc_dims:
-                outwrite("\tName:", dim)
-                outwrite("\t\tsize:", len(nc.dimensions[dim]))
-                # print_ncattr(dim)
-            # Variable information.
-            nc_vars = [var for var in nc.variables]  # list of nc variables
-            outwrite("NetCDF variable information:")
-            for var in nc_vars:
-                outwrite('\tName:', var)
-                outwrite("\t\tdimensions:", nc.variables[var].dimensions)
-                outwrite("\t\tsize:", nc.variables[var].size)
-                print_ncattr(var)
-            return nc_attrs, nc_dims, nc_vars
-
+    def what(self, out=sys.stdout, **_):
+        """Writes in file a summary of the contents of the GRIB."""
         out.write("### FORMAT: " + self.format + "\n")
         out.write("\n")
-        ncdump(self._nc, out)
+        self.ncdump(out)
+
+    def _listfields(self):
+        """Returns the fid list of the fields inside the resource."""
+        return list(self._variables.keys())
 
     @property
     @FileResource._openbeforedelayed

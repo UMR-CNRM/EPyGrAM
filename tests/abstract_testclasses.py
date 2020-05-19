@@ -81,6 +81,8 @@ class Test_GeometryInterfaces(TestCase):
             f_rwr = out.readfield(fid)
             out.close()
             os.remove(tmp)
+            if f_r.geometry != f_rwr.geometry:
+                print(f_r.geometry.recursive_diff(f_rwr.geometry))
             self.assertEqual(f_r.geometry, f_rwr.geometry,
                              '\n<>\n'.join([str(f_r.geometry),
                                             str(f_rwr.geometry)]))

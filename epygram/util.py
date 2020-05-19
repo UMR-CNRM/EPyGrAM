@@ -138,7 +138,7 @@ class RecursiveObject(object):
                             if all([isinstance(obj, RecursiveObject)
                                     for obj in [self.__dict__[attr],
                                                 other.__dict__[attr]]]):
-                                diff[attr] = self.__dict__[attr].diff(other.__dict__[attr])
+                                diff[attr] = self.__dict__[attr].recursive_diff(other.__dict__[attr])
                             else:
                                 diff[attr] = Comparator.diff(self.__dict__[attr],
                                                              other.__dict__[attr])
