@@ -56,6 +56,7 @@ suffixes = {'FA': 'fa',
             'GRIB1':'grb1',
             'GRIB2':'grb2',
             'netCDF':'nc',
+            'netCDFMNH':'ncMNH',
             'LFI':'lfi'}
 
 delta_assertAlmostEqual = 1e-12

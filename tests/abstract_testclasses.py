@@ -108,6 +108,7 @@ class Test_H2DGeometry(Test_GeometryInterfaces):
                    'GRIB1':{'indicatorOfParameter':6},
                    'GRIB2':{'shortName':'orog'},
                    'netCDF':'SURFGEOPOTENTIEL',
+                   'netCDFMNH':'TS_WATER',
                    'LFI':('ZS', 0)}
     fileprefix = ''  # to be defined in real classes
 

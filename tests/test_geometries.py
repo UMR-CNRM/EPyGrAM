@@ -46,6 +46,13 @@ class Test_lambertHN(abtc.Test_H2DGeometry):
     fileprefix = 'lambert_HN'
 
 
+fmts = ['netCDFMNH']
+@skipIf(len(util.activate(*fmts)) == 0, "format not activated")
+@util.add_tests_for_attrs(*util.activate(*fmts))
+class Test_lambertHN_sec(abtc.Test_H2DGeometry):
+    fileprefix = 'lambert_HN_secant'
+
+
 fmts = ['FA', 'GRIB2', 'netCDF', 'LFI']
 @skipIf(len(util.activate(*fmts)) == 0, "format not activated")
 @util.add_tests_for_attrs(*util.activate(*fmts))
@@ -74,7 +81,7 @@ class Test_mercatorHS(abtc.Test_H2DGeometry):
     fileprefix = 'mercator_HS'
 
 
-fmts = ['LFI']
+fmts = ['LFI',]
 @skipIf(len(util.activate(*fmts)) == 0, "format not activated")
 @util.add_tests_for_attrs(*util.activate(*fmts))
 class Test_mercatorHN_rot_sec(abtc.Test_H2DGeometry):

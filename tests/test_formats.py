@@ -36,6 +36,12 @@ class TestnetCDF(abtc.TestFMT):
     len = 9
 
 
+@skipIf('netCDFMNH' not in epygram.config.implemented_formats, "format not activated")
+class TestnetCDFMNH(abtc.TestFMT):
+    basename = 'netCDFMNH'
+    len = 2
+
+
 @skipIf('DDHLFA' not in epygram.config.implemented_formats, "format not activated")
 class TestDDHLFA(abtc.TestFMT):
     basename = 'ddh.LFA'
