@@ -11,6 +11,7 @@ Some of which may be dynamically needed only, i.e. needed at actual use of some 
 - :mod:`cartopy_plus`
 - :mod:`distutils`
 - :mod:`eccodes`
+- :mod:`getpass`
 - :mod:`gribapi`
 - :mod:`matplotlib`
 - :mod:`mpl_toolkits`

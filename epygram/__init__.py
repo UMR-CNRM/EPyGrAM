@@ -39,7 +39,7 @@ using: ``pip install --user <packagename>``
 
 ********************************************************************************
 
-Copyright Météo France (2014 - 2018),
+Copyright Météo France (2014 - 2020),
 contributors :
 A. Mary <Météo France, CNRM/GMAP/COOPE, alexandre.mary@meteo.fr> ||
 S. Riette
@@ -81,7 +81,7 @@ import footprints
 
 __all__ = []
 
-__version__ = '1.4.4'
+__version__ = '1.4.5'
 
 __license__ = 'CeCILL-C'
 
