@@ -1,7 +1,0 @@
-- duplicate points in Gauss grids plots
-- overflow in some Gauss grids processing ?
-- H2DVectorField.comute_direction: #TOBECHECKED:
-- mask_threshold in V2D plots does not work properly
-- GRIB: several problems due to gribapi... 
-- pb with contourlines in some geometries
-- D3Field.extract_subdomain don't work with varying in space/time levels
