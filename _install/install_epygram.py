@@ -53,7 +53,8 @@ elif any([hostname.startswith(h) for h in
           ['epona', 'belenos', 'taranis']]):
     localhost = 'bull_sequana'
 elif any([h in hostname for h in
-          ['alose', 'pagre', 'orphie', 'rason', 'guppy']]):
+          ['alose', 'pagre', 'orphie', 'rason', 'guppy'] +
+          ['sotrtm{}-sidev'.format(n) for n in range(31, 35)]]):
     localhost = 'dsidev'
 elif any([hostname.startswith(h) for h in
           ['cca', 'ccb']]):
