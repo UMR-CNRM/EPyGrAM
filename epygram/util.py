@@ -1154,3 +1154,13 @@ def call_before(mtd, hook_mtd):
         getattr(self, hook_mtd)()
         return mtd(self, *args, **kwargs)
     return hooked
+
+
+def mpl_interactive_backend():
+    """Return whether the matplotlib backend is an interactive one or not."""
+    import matplotlib
+    noninteractive_backends = ('agg', 'cairo', 'pdf', 'pgf', 'ps', 'svg', 'template')
+    if matplotlib.get_backend().lower() in noninteractive_backends:
+        return False
+    else:
+        return True

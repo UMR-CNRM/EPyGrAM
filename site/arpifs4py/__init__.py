@@ -127,7 +127,6 @@ from . import wtransforms
 ################
 def init_env(omp_num_threads=None,
              no_mpi=False,
-             unlimited_stack=False,
              lfi_C=False,
              mute_FA4py=False,
              ensure_consistent_GRIB_paths=False,
@@ -137,7 +136,6 @@ def init_env(omp_num_threads=None,
 
     :param int omp_num_threads: sets OMP_NUM_THREADS
     :param bool no_mpi: environment variable DR_HOOK_NOT_MPI set to 1
-    :param bool unlimited_stack: stack size unlimited on Bull supercomputers
     :param bool lfi_C: if True, LFI_HNDL_SPEC set to ':1', to use the C version of LFI
     :param bool mute_FA4py: mute messages from FAIPAR in FA4py library
     :param bool ensure_consistent_GRIB_paths: complete GRIB samples/definition
@@ -151,12 +149,6 @@ def init_env(omp_num_threads=None,
         os.environ['OMP_NUM_THREADS'] = str(omp_num_threads)
     if no_mpi:
         os.environ['DR_HOOK_NOT_MPI'] = '1'
-    # because Legendre stuff may need large stack memory
-    if unlimited_stack and ('beaufix' in os.getenv('HOSTNAME', '') or
-                            'prolix' in os.getenv('HOSTNAME', '')):
-        # FIXME: seems to have no effect => pb with T1800 (need a proper ulimit -s unlimited)
-        resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY,
-                                                   resource.RLIM_INFINITY))
     # use the C library for LFI
     if lfi_C:
         os.environ['LFI_HNDL_SPEC'] = ':1'

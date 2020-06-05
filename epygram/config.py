@@ -68,17 +68,8 @@ rounding_decimal = 12
 KNUMMAXRESOL = 10
 #: Plots sizes (in inches)
 plotsizes = (16., 12.)
-#: Interactive graphical backend.
-#: If False, X11 is the graphical device. Non-interactive backends
-#: such as 'Agg' can be used, especially without export DISPLAY
-noninteractive_backend = False
 #: Default output for apptools
-default_graphical_output = False
-if os.getenv('DISPLAY', '') == '' or \
-   'beaufix' in platform.node() or \
-   'prolix' in platform.node():
-    noninteractive_backend = 'Agg'
-    default_graphical_output = 'png'
+default_graphical_output = 'png'
 #: Cache directory for internet requests
 internet_cache_dir = None
 

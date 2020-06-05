@@ -38,7 +38,7 @@ def main(mode,
     print("################")
     print("# DOMAIN MAKER #")
     print("################")
-    if epygram.config.noninteractive_backend and epygram.config.default_graphical_output:
+    if not epygram.util.mpl_interactive_backend():
         out = 'domain_maker.out.' + epygram.config.default_graphical_output
     else:
         out = None

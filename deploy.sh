@@ -24,7 +24,7 @@ pagre=1  # COMPAS server, from which it is replicated onto the others
 beaufix=1
 prolix=1
 epona=1
-belenos=0
+belenos=1
 taranis=0
 
 

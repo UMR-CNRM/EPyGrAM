@@ -17,7 +17,7 @@ arguments.
 
 from __future__ import print_function, absolute_import, unicode_literals, division
 
-from epygram import config
+from epygram import config, util
 import griberies
 import multiprocessing
 
@@ -300,14 +300,16 @@ output_options = {
                    among ('png', pdf). Pdf is kind of disadvised, for it is\
                    very slow and produces much too big files...",
              choices=['png', 'pdf'],
-             default=_defaults.get('default_graphical_output', False))],
+             default=_defaults.get('default_graphical_output')
+                     if not util.mpl_interactive_backend() else False)],
     'outputfmt':[
         '-o', '--outputfmt',
         dict(help="specify format for output file,\
                    among ('png', pdf). Pdf is kind of disadvised, for it is\
                    very slow and produces much too big files...",
              choices=['png', 'pdf'],
-             default=_defaults.get('default_graphical_output', False))],
+             default=_defaults.get('default_graphical_output')
+                     if not util.mpl_interactive_backend() else False)],
     'savefig':[
         '--sf', '--savefig',
         dict(help="save figure in file.",
@@ -1037,7 +1039,7 @@ domain_maker_options = {
         '-n', '--no_display',
         dict(action='store_true',
              help="run without displaying the domain.",
-             default=_defaults.get('noninteractive_backend', False))],
+             default=False)],
     'maximize_CI_in_E':[
         '-m', '--maximize_CI_in_E',
         dict(action='store_true',

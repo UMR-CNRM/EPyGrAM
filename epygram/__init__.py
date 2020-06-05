@@ -111,12 +111,6 @@ else:
 
 # config
 from . import config
-if config.noninteractive_backend:
-    try:
-        import matplotlib
-        matplotlib.use(config.noninteractive_backend)
-    except ImportError:
-        pass
 
 # COMPONENTS (modules) #
 from . import util
@@ -185,7 +179,6 @@ def showconfig():
 
 def init_env(omp_num_threads=1,
              no_mpi=True,
-             unlimited_stack=True,
              lfi_C=True,
              mute_FA4py=None,
              ensure_consistent_GRIB_paths=True,
@@ -196,7 +189,6 @@ def init_env(omp_num_threads=1,
 
     :param omp_num_threads: sets OMP_NUM_THREADS
     :param no_mpi: environment variable DR_HOOK_NOT_MPI set to 1
-    :param unlimited_stack: stack size unlimited on Bull supercomputers
     :param lfi_C: if True, LFI_HNDL_SPEC set to ':1', to use the C version of LFI
     :param mute_FA4py: mute messages from FAIPAR in FA4py library
     :param bool ensure_consistent_GRIB_paths: complete GRIB samples/definition
@@ -212,7 +204,6 @@ def init_env(omp_num_threads=1,
         if mute_FA4py is None:
             mute_FA4py = config.FA_mute_FA4py
         arpifs4py.init_env(omp_num_threads=omp_num_threads, no_mpi=no_mpi,  # common
-                           unlimited_stack=unlimited_stack,  # transforms
                            lfi_C=lfi_C, mute_FA4py=mute_FA4py,  # LFI/FA
                            ensure_consistent_GRIB_paths=ensure_consistent_GRIB_paths,  # GRIB paths
                            ignore_gribenv_paths=ignore_gribenv_paths)
@@ -222,7 +213,6 @@ def init_env(omp_num_threads=1,
     from .geometries.SpectralGeometry import transforms_lib_init_env_kwargs
     transforms_lib_init_env_kwargs.update(omp_num_threads=omp_num_threads,
                                           no_mpi=no_mpi,
-                                          unlimited_stack=unlimited_stack,
                                           trigger=True)
     # 3. grib_api or eccodes
     # need some special environment setting
