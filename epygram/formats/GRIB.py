@@ -517,6 +517,7 @@ class GRIBmessage(RecursiveObject, dict):
         else:
             lowlevelgrib.set_missing(self._gid, key)
         super(GRIBmessage, self).__setitem__(key, value)
+        epylog.debug("DEBUG: set {} = {}".format(key, value))
 
     # Low level methods --------------------------------------------------------
 
@@ -1141,6 +1142,9 @@ class GRIBmessage(RecursiveObject, dict):
         # FIXME: ? pre-set values before packing seems necessary if packing different from sample
         if any([self[k] != v for k, v in packing.items()]):
             self._GRIB2_set_section6_7(field, **other_GRIB_options)
+        if packing.get('packingType') == 'grid_simple':
+            self._untouch.add('dataRepresentationTemplateNumber')
+            self._untouch.add('bitsPerValue')
         for k in order:
             if k in packing:
                 try:
