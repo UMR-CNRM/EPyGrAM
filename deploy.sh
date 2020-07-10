@@ -21,9 +21,9 @@ EPYGRAM_DIR="public/EPyGrAM-$VERSION"
 sxcoope1=1  # from which are synchronised all CNRM workstations
 vxdev64=0  # vxdev64: development server @ CNRM (OS updates)
 pagre=1  # COMPAS server, from which it is replicated onto the others
+sotrtm33sidev=1  # COMPAS server, from which it is replicated onto the others
 beaufix=1
 prolix=1
-epona=1
 belenos=1
 taranis=0
 
@@ -73,6 +73,12 @@ if [ "$pagre" == 1 ]; then
   logger="$logger - pagre\n"
 fi
 echo "------------------------------------------------------"
+if [ "$sotrtm33sidev" == 1 ]; then
+  echo "...sotrtm33-sidev..."
+  rsync -avL * sotrtm33-sidev:$EPYGRAM_DIR $to_exclude4pagre
+  logger="$logger - sotrtm33-sidev\n"
+fi
+echo "------------------------------------------------------"
 if [ "$beaufix" == 1 ]; then
   echo "...beaufix..."
   rsync -avL * beaufix:$EPYGRAM_DIR $to_exclude4bull
@@ -83,12 +89,6 @@ if [ "$prolix" == 1 ]; then
   echo "...prolix..."
   rsync -avL * prolix:$EPYGRAM_DIR $to_exclude4bull
   logger="$logger - prolix\n"
-fi
-echo "------------------------------------------------------"
-if [ "$epona" == 1 ]; then
-  echo "...epona..."
-  rsync -avL * epona:$EPYGRAM_DIR $to_exclude4bull
-  logger="$logger - epona\n"
 fi
 echo "------------------------------------------------------"
 if [ "$belenos" == 1 ]; then
