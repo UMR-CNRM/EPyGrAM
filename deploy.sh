@@ -15,6 +15,7 @@ if [ "$VERSION" == "" ]; then
     VERSION=`grep __version__ epygram/__init__.py | awk '{print $3}' | awk -F "'" '{print $2}'`
 fi
 EPYGRAM_DIR="public/EPyGrAM-$VERSION"
+EPYGRAM_DIR_BIS="public/epygram/$VERSION"  # nouvel emplacement pour belenos & co
 
 
 # Platforms to push onto
@@ -91,6 +92,9 @@ if [ "$prolix" == 1 ]; then
   logger="$logger - prolix\n"
 fi
 echo "------------------------------------------------------"
+
+EPYGRAM_DIR=$EPYGRAM_DIR_BIS
+
 if [ "$belenos" == 1 ]; then
   echo "...belenos..."
   rsync -avL * belenos:$EPYGRAM_DIR $to_exclude4bull
