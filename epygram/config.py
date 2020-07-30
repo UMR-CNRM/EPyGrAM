@@ -15,7 +15,6 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 
 import os
 import sys
-import platform
 
 from . import __version__
 
