@@ -8,6 +8,6 @@ export PYTHONPATH
 
 # EPyGrAM
 # go to site-packages directory (site.getusersitepackages())
-# link EPyGrAM directory
-# and copy EPyGrAM.pth therein
+# copy EPyGrAM.pth therein
+# link EPyGrAM directory (ln -s /path/to/EPyGrAM EPyGrAM)
 # add [absolute path to site-packages]/apptools to $PATH (export PATH=$PATH:...)

@@ -13,12 +13,13 @@ import site
 EPyGrAM = 'EPyGrAM'
 
 epygram_repositories = {
-    'cnrm':'/home/common/epygram',
-    'bullx':'/home/gmap/mrpe/mary/public',
-    'bull_sequana':'/home/gmap/mrpe/mary/public',
-    'dsidev':'/soprano/home/marp999/epygram',
-    'ecmwf_cc':'/home/ms/fr/rm9/public',
-    'ecgate':'/home/ms/fr/rm9/public',}
+    'cnrm':'/home/common/epygram/public/EPyGrAM',
+    'bullx':'/home/gmap/mrpe/mary/public/EPyGrAM',
+    'bull_sequana':'/home/gmap/mrpe/mary/public/EPyGrAM',
+    'dsidev':'/soprano/home/marp999/epygram/EPyGrAM',
+    'ecmwf_cc':'/home/ms/fr/rm9/public',  # TODO: move /EPyGrAM
+    'ecgate':'/home/ms/fr/rm9/public',  # TODO: move /EPyGrAM
+    }
 vortex_repositories = {
     'cnrm':'/home/common/sync/vortex',
     'bullx':'/home/mf/dp/marp/verolive/vortex',
@@ -76,14 +77,11 @@ _vortex_install_profile = 'vortex_profile'
 
 def _version_():
     realpath = os.path.realpath(__file__)
-    epygramversion = realpath.split(os.path.sep)[-3]
-    version = re.match('EPyGrAM-?(.+)?', epygramversion).group(1)
-    if version is None:
-        version = ''
+    version = realpath.split(os.path.sep)[-3]
     return version
 
 
-def main(version='',
+def main(version='stable',
          fromdir=epygram_repo,
          update_epygram_profile=False,
          update_bash_profile=False,
@@ -94,20 +92,18 @@ def main(version='',
     """
     Link to **version** from **fromdir**, copy adequate profile and
     make .bash_profile source it.
+    
+    :param version: must be a label (e.g. 'dev') or an actual version number
+        (e.g. '1.4.5')
     """
     # EPyGrAM version
-    if version != '':
-        if version.startswith(EPyGrAM):
-            version = version[7:]
-        elif not version.startswith('-'):
-            version = '-' + version
     # link sources in site-packages
     if not os.path.exists(usersite):
         os.makedirs(usersite)
     os.chdir(usersite)
     if os.path.islink(EPyGrAM):
         os.remove(EPyGrAM)
-    os.symlink(os.path.join(fromdir, EPyGrAM + version),
+    os.symlink(os.path.join(fromdir, version),
                EPyGrAM)
     epygram_in_site = os.path.join(usersite, EPyGrAM)
     shutil.copy(os.path.join(EPyGrAM, '_install', EPyGrAM + '.pth'),
@@ -130,8 +126,6 @@ def main(version='',
     if update_epygram_profile or not os.path.exists(profile):
         with open(os.path.join(epygram_in_site, '_install', _install_profile), 'r') as p:
             lines = p.readlines()
-        lines.append("# EPyGrAM apptools\n")
-        lines.append('export PATH=$PATH:{}'.format(os.path.join(epygram_in_site, 'apptools')))
         lines.insert(0, "export EPYGRAM_DIR={}\n\n".format(epygram_in_site))
         lines.append("\n# EPyGrAM apptools\n")
         lines.append('export PATH=$PATH:$EPYGRAM_DIR/{}\n'.format('apptools'))

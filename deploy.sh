@@ -14,14 +14,13 @@ VERSION=$1
 if [ "$VERSION" == "" ]; then
     VERSION=`grep __version__ epygram/__init__.py | awk '{print $3}' | awk -F "'" '{print $2}'`
 fi
-EPYGRAM_DIR="public/EPyGrAM-$VERSION"
-EPYGRAM_DIR_BIS="public/epygram/$VERSION"  # nouvel emplacement pour belenos & co
+EPYGRAM_DIR="public/EPyGrAM/$VERSION"
 
 
 # Platforms to push onto
 sxcoope1=1  # from which are synchronised all CNRM workstations
 vxdev64=0  # vxdev64: development server @ CNRM (OS updates)
-pagre=1  # COMPAS server, from which it is replicated onto the others
+pagre=0  # COMPAS server, from which it is replicated onto the others ! DEPRECATED !
 sotrtm33sidev=1  # COMPAS server, from which it is replicated onto the others
 beaufix=1
 prolix=1
@@ -31,7 +30,7 @@ taranis=0
 
 # Filters
 to_exclude4all=''
-for elem in playground tests VERSIONing.txt deploy.sh mktar.sh apptools/*.pyc site/arpifs4py/libs4py_*.so epygram/doc_sphinx/source/gallery/inputs *.ipynb_checkpoints*
+for elem in playground tests deploy.sh mktar.sh apptools/*.pyc site/arpifs4py/libs4py_*.so epygram/doc_sphinx/source/gallery/inputs *.ipynb_checkpoints*
 do
   to_exclude4all="$to_exclude4all --exclude $elem"
 done
@@ -54,13 +53,7 @@ to_exclude4bull="$to_exclude4all $no_pyc $no_source_doc $no_libs4py $no_epyweb"
 
 
 # Rsync
-logger="EPyGrAM-$VERSION deployed on:\n"
-echo "------------------------------------------------------"
-if [ "$sxcoope1" == 1 ]; then
-  echo "...sxcoope1..."
-  rsync -avL * sxcoope1:$EPYGRAM_DIR $to_exclude4sxcoope1
-  logger="$logger - sxcoope1\n"
-fi
+logger="EPyGrAM:$VERSION deployed on:\n"
 echo "------------------------------------------------------"
 if [ "$vxdev64" == 1 ]; then
   echo "...vxdev64..."
@@ -72,12 +65,6 @@ if [ "$pagre" == 1 ]; then
   echo "...pagre..."
   rsync -avL * pagre:$EPYGRAM_DIR $to_exclude4pagre
   logger="$logger - pagre\n"
-fi
-echo "------------------------------------------------------"
-if [ "$sotrtm33sidev" == 1 ]; then
-  echo "...sotrtm33-sidev..."
-  rsync -avL * sotrtm33-sidev:$EPYGRAM_DIR $to_exclude4pagre
-  logger="$logger - sotrtm33-sidev\n"
 fi
 echo "------------------------------------------------------"
 if [ "$beaufix" == 1 ]; then
@@ -93,8 +80,19 @@ if [ "$prolix" == 1 ]; then
 fi
 echo "------------------------------------------------------"
 
-EPYGRAM_DIR=$EPYGRAM_DIR_BIS
 
+if [ "$sxcoope1" == 1 ]; then
+  echo "...sxcoope1..."
+  rsync -avL * sxcoope1:$EPYGRAM_DIR $to_exclude4sxcoope1
+  logger="$logger - sxcoope1\n"
+fi
+echo "------------------------------------------------------"
+if [ "$sotrtm33sidev" == 1 ]; then
+  echo "...sotrtm33-sidev..."
+  rsync -avL * sotrtm33-sidev:$EPYGRAM_DIR $to_exclude4pagre
+  logger="$logger - sotrtm33-sidev\n"
+fi
+echo "------------------------------------------------------"
 if [ "$belenos" == 1 ]; then
   echo "...belenos..."
   rsync -avL * belenos:$EPYGRAM_DIR $to_exclude4bull
