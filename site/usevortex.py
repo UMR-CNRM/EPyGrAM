@@ -158,7 +158,7 @@ def get_resources(getmode='epygram',
     elif description.get('suite', None) in ('oper', 'dble') and 'namespace' not in description.keys():
         description['namespace'] = '.'.join(['oper', _domain, 'fr'])  # set namespace if not given
     if not description.get('local', None):
-        description['local'] = str(uuid.uuid4()) + "_[term]"  # unique local
+        description['shouldfly'] = True
     if description.get('kind', None) in ('analysis', 'historic'):
         description['nativefmt'] = 'fa'  # set nativefmt if recognized
     elif description.get('nativefmt', None) == 'grib':
