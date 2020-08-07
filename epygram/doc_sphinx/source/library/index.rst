@@ -39,6 +39,7 @@ Utilities
 .. toctree::
    :maxdepth: 2
 
+   colormapping
    profiles
    spectra
    args_catalog
