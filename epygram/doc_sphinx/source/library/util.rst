@@ -9,6 +9,8 @@ Functions
 
 .. autofunction:: find_re_in_list
 .. autofunction:: degrees_nearest_mod
+.. autofunction:: positive_longitudes
+.. autofunction:: longitudes_between_minus180_180
 .. autofunction:: positive_longitude
 .. autofunction:: load_cmap
 .. autofunction:: write_formatted
