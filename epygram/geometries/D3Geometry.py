@@ -24,6 +24,7 @@ from bronx.syntax.decorators import nicedeco
 from epygram import epygramError, config
 from epygram.config import rounding_decimal as _rd
 from epygram.util import (RecursiveObject, degrees_nearest_mod, Angle,
+                          positive_longitudes, longitudes_between_minus180_180,
                           separation_line, write_formatted,
                           nearlyEqual, set_map_up,
                           as_numpy_array, moveaxis,
@@ -680,7 +681,8 @@ class D3RectangularGridGeometry(D3Geometry):
                         subzone=None,
                         position=None,
                         d4=False,
-                        nb_validities=0):
+                        nb_validities=0,
+                        force_longitudes=None):
         """
         Returns a tuple of two tables containing one the longitude of each
         point, the other the latitude, with 2D shape.
@@ -694,6 +696,8 @@ class D3RectangularGridGeometry(D3Geometry):
                    - if False, shape of returned values is determined with
                      respect to geometry. d4=True requires nb_validities > 0
         :param nb_validities: number of validities represented in data values
+        :param force_longitudes: if 'positive', the longitudes will be forced positive
+                                 if ']-180,180]', the longitudes will be in the ]-180, 180] interval
 
         Shape of 2D data on Rectangular grids: \n
           - grid[0,0] is SW, grid[-1,-1] is NE \n
@@ -707,6 +711,10 @@ class D3RectangularGridGeometry(D3Geometry):
         else:
             lons = lons.squeeze()
             lats = lats.squeeze()
+        if force_longitudes == 'positive':
+            lons = positive_longitudes(lons)
+        elif force_longitudes == ']-180,180]':
+            lons = longitudes_between_minus180_180(lons)
         return (lons, lats)
 
     def extract_subzone(self, data, subzone):
@@ -1365,7 +1373,8 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
                         subzone=None,
                         position=None,
                         d4=False,
-                        nb_validities=0):
+                        nb_validities=0,
+                        force_longitudes=None):
         """
         Returns a tuple of two tables containing one the longitude of each
         point, the other the latitude, with 2D shape.
@@ -1379,6 +1388,8 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
                    - if False, shape of returned values is determined with respect to geometry.
                        d4=True requires nb_validities > 0
         :param nb_validities: number of validities represented in data values
+        :param force_longitudes: if 'positive', the longitudes will be forced positive
+                                 if ']-180,180]', the longitudes will be in the ]-180, 180] interval
 
         Shape of 2D data on Rectangular grids: \n
           - grid[0,0] is SW, grid[-1,-1] is NE \n
@@ -1406,7 +1417,10 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
         else:
             lons = lons.squeeze()
             lats = lats.squeeze()
-
+        if force_longitudes == 'positive':
+            lons = positive_longitudes(lons)
+        elif force_longitudes == ']-180,180]':
+            lons = longitudes_between_minus180_180(lons)
         return (lons, lats)
 
     def ij2ll(self, i, j, position=None):
@@ -3693,6 +3707,7 @@ class D3GaussGeometry(D3Geometry):
                         position=None,
                         d4=False,
                         nb_validities=0,
+                        force_longitudes=None,
                         **_):
         """
         Returns a tuple of two tables containing one the longitude of each
@@ -3709,6 +3724,8 @@ class D3GaussGeometry(D3Geometry):
                    - if False, shape of returned values is determined with respect to geometry.
                       d4=True requires nb_validities > 0
         :param nb_validities: number of validities represented in data values
+        :param force_longitudes: if 'positive', the longitudes will be forced positive
+                                 if ']-180,180]', the longitudes will be in the ]-180, 180] interval
         """
         # !!! **_ enables the method to receive arguments specific to
         #     other geometries but useless here ! Do not remove.
@@ -3739,6 +3756,10 @@ class D3GaussGeometry(D3Geometry):
             lons, lats = self._reshape_lonlat_4d(lons, lats, nb_validities)
         elif not d4 and nb_validities != 0:
             raise ValueError("*nb_validities* must be 0 when d4==False")
+        if force_longitudes == 'positive':
+            lons = positive_longitudes(lons)
+        elif force_longitudes == ']-180,180]':
+            lons = longitudes_between_minus180_180(lons)
         return (lons, lats)
 
     def get_datashape(self, force_dimZ=None, dimT=None, d4=False, **_):

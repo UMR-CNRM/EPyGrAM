@@ -1162,7 +1162,7 @@ class _D3CommonField(Field):
                                  You can install it locally using:\n
                                  'pip install --user pyresample'""")
         # PART 0: computation of parameters for PARTS 1 & 2
-        target_geo = GridDefinition(*target_geometry.get_lonlat_grid())
+        target_geo = GridDefinition(*target_geometry.get_lonlat_grid(force_longitudes=']-180,180]'))
 
         def _resolution():
             if 'gauss' in self.geometry.name:
@@ -1178,7 +1178,8 @@ class _D3CommonField(Field):
 
         # PART 1: computation of neighbours
         if neighbour_info in (True, None, False):
-            source_geo = GridDefinition(*self.geometry.get_lonlat_grid(subzone=subzone))
+            source_geo = GridDefinition(*self.geometry.get_lonlat_grid(subzone=subzone,
+                                                                       force_longitudes=']-180,180]'))
             if radius_of_influence is None:
                 radius_of_influence = 4. * _resolution()
             if weighting == 'nearest':
@@ -1290,6 +1291,8 @@ class _D3CommonField(Field):
         Other kwargs to be passed to resample() method.
         """
         DX = borders['lonmax'] - borders['lonmin']
+        if DX < 0.:
+            DX += 360. 
         DY = borders['latmax'] - borders['latmin']
         X = int(DX / resolution_in_degrees) + 1
         Y = int(DY / resolution_in_degrees) + 1

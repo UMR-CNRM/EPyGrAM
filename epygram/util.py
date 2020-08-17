@@ -505,6 +505,23 @@ def degrees_nearest_mod(d, ref):
     return result
 
 
+def positive_longitudes(lons):
+    """Returns numpy array *lons* forced (modulo) in [0;360[."""
+    positive = lons + 360.
+    mask = lons >= 0.
+    positive[mask] = lons[mask]
+    return positive
+
+
+def longitudes_between_minus180_180(lons):
+    """Returns numpy array *lons* forced (modulo) in ]-180;180]."""
+    newlons = positive_longitudes(lons)
+    negative_lons = newlons - 360.
+    mask = newlons > 180.
+    newlons[mask] = negative_lons[mask]
+    return newlons
+
+
 def positive_longitude(lon, unit='degrees'):
     """Returns *lon* shifted in [0;360[ or [0;2pi[ (depending on *unit*)."""
     if lon < 0.:
