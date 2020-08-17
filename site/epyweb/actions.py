@@ -134,7 +134,17 @@ class GetFile(object):
                 del vortexArgs['fromid']
             except Exception:
                 fromid = "A"
-
+            
+            # Nom local; cannot use shouldfly, for directory/rights reasons
+            localname = os.path.join(epyweb_workdir,
+                                     '.'.join(["[date::ymdh]",
+                                               "[term]",
+                                               memberstr,
+                                               fromid,
+                                               str(uuid.uuid4())
+                                               ]))
+            vortexArgs.update(local=localname)
+                        
             # Test de complétude de la description
             ressources = usevortex.get_resources(getmode='check',
                                                  **vortexArgs)
@@ -152,15 +162,8 @@ class GetFile(object):
                                                          **vortexArgs)
                     reponse['existence'] = all([False not in m for m in ressources])
                 if mode == 'get':
-                    # Rapatriement + nom local
+                    # Rapatriement
                     ressources = usevortex.get_resources(getmode='fetch',
-                                                         local=os.path.join(epyweb_workdir,
-                                                                            '.'.join(["[date::ymdh]",
-                                                                                      "[term]",
-                                                                                      memberstr,
-                                                                                      fromid,
-                                                                                      str(uuid.uuid4())
-                                                                                      ])),
                                                          **vortexArgs)
                     reponse['localpath'] = [str(m) for m in ressources]  # str(m[0])
             return json.dumps(reponse)
