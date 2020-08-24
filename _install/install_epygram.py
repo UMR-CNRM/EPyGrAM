@@ -76,8 +76,8 @@ _vortex_install_profile = 'vortex_profile'
 
 
 def _version_():
-    realpath = os.path.realpath(__file__)
-    version = realpath.split(os.path.sep)[-3]
+    abspath = os.path.abspath(__file__)
+    version = abspath.split(os.path.sep)[-3]
     return version
 
 
