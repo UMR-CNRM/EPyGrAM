@@ -12,6 +12,7 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 import six
 import math
 import io
+import copy
 
 import footprints
 from bronx.datagrip import namelist
