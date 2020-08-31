@@ -110,7 +110,8 @@ def cartoplot_background(self,
                          parallels='auto',
                          gridlines_kw=None,
                          epygram_departments=False,
-                         subzone=None):
+                         subzone=None,
+                         extent='focus'):
     """Set cartography features, such as borders, coastlines, meridians and parallels..."""
     if natural_earth_features == '__default__':
         natural_earth_features = self.default_NEfeatures,
@@ -130,7 +131,8 @@ def cartoplot_background(self,
     # meridians and parallels
     meridians, parallels = util.auto_meridians_parallels(self.geometry,
                                                          meridians,
-                                                         parallels)
+                                                         parallels,
+                                                         extent=extent)
     if gridlines_kw is None:
         gridlines_kw = copy.copy(self.default_gridlines_kw)
     if (meridians, parallels) != ([], []):
@@ -679,7 +681,8 @@ def cartoplot(self,
                               parallels,
                               gridlines_kw,
                               epygram_departments,
-                              subzone=subzone)
+                              subzone=subzone,
+                              extent=extent)
     # 3/ get data to plot
     if self.spectral:
         self.sp2gp()

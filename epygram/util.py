@@ -838,7 +838,8 @@ def add_meridians_and_parallels_to(bm,
 
 def auto_meridians_parallels(geometry,
                              meridians='auto',
-                             parallels='auto'):
+                             parallels='auto',
+                             extent='focus'):
     """
     Compute meridians and parallels.
 
@@ -849,6 +850,8 @@ def auto_meridians_parallels(geometry,
       - a list of values
       - a grid step, e.g. 5 to plot each 5 degree.
       - None: no one is plot
+    
+    :param extent: among 'focus' or 'global', used to determine outer limits
     """
     def Delta2delta(Delta):
         if Delta <= 10:
@@ -869,7 +872,10 @@ def auto_meridians_parallels(geometry,
                                    geometry.name == 'polar_stereographic')):
         meridians = numpy.arange(0, 370, 10)
     elif meridians == 'auto' or isinstance(meridians, int) or isinstance(meridians, float):
-        minmax = geometry.minmax_ll()
+        if extent == 'focus':
+            minmax = geometry.minmax_ll()
+        else:
+            minmax = {'lonmax':180, 'lonmin':-180, 'latmax':90, 'latmin':-90}
         if meridians == 'auto':
             delta_lon = Delta2delta(minmax['lonmax'] - minmax['lonmin'])
         else:
@@ -886,7 +892,10 @@ def auto_meridians_parallels(geometry,
     elif parallels == 'default' or ('gauss' in geometry.name and parallels == 'auto'):
         parallels = numpy.arange(-90, 90, 10)
     elif parallels == 'auto' or isinstance(parallels, int) or isinstance(parallels, float):
-        minmax = geometry.minmax_ll()
+        if extent == 'focus':
+            minmax = geometry.minmax_ll()
+        else:
+            minmax = {'lonmax':180, 'lonmin':-180, 'latmax':90, 'latmin':-90}
         if parallels == 'auto':
             delta_lat = Delta2delta(minmax['latmax'] - minmax['latmin'])
         else:
