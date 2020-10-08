@@ -38,6 +38,7 @@ geometries.rst
 .settings
 .project
 .pydevproject
+.idea
 
 # Locals
 epygram/doc_sphinx/html

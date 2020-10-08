@@ -8,15 +8,15 @@ Distribution/Installation is available:
 
 - At Météo France:
 
-  - on CNRM-GAME linux workstations: under ``/home/common/epygram/EPyGrAM``;
+  - on CNRM-GAME linux workstations: under ``/home/common/epygram/public/``;
     just ask CTI for synchronization of both (``/home/common/epygram``,
     ``/home/common/sync``) on your linux PC. Installation instructions
     to be found then at
-    ``/home/common/epygram/EPyGrAM/_install/INSTALL_README_cnrm_bull.txt``
+    ``/home/common/epygram/public/EPyGrAM/stable/_install/INSTALL_README_cnrm_bull.txt``
   - on BULL supercomputers: under 
-    ``/home/gmap/mrpe/mary/public/EPyGrAM``; installation instructions
+    ``/home/gmap/mrpe/mary/public/EPyGrAM/``; installation instructions
     to be found then at
-    ``/home/gmap/mrpe/mary/public/EPyGrAM/_install/INSTALL_README_cnrm_bull.txt``
+    ``/home/gmap/mrpe/mary/public/EPyGrAM/stable/_install/INSTALL_README_cnrm_bull.txt``
   - else, on demand (alexandre.mary@meteo.fr).
 
 - For partners of ALADIN/HIRLAM consortia: elements are available either:

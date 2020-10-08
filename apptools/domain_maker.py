@@ -5,6 +5,7 @@
 # http://www.cecill.info
 
 from __future__ import print_function, absolute_import, unicode_literals, division
+from six.moves import input
 
 import argparse
 
@@ -59,7 +60,7 @@ def main(mode,
             print("Compute domain...")
             print(dm.output.summary(geometry))
             if display:
-                plot_lonlat_included = raw_input("Plot a lon/lat domain over model domain ? [n]: ")
+                plot_lonlat_included = input("Plot a lon/lat domain over model domain ? [n]: ")
                 if plot_lonlat_included in ('y', 'Y', 'yes'):
                     plot_lonlat_included = True
                 else:
@@ -78,7 +79,7 @@ def main(mode,
                                         background=background,
                                         plotlib='cartopy')
             # retry ?
-            retry = raw_input("Do you want to modify something ? [n] ")
+            retry = input("Do you want to modify something ? [n] ")
             if retry in ('yes', 'y', 'Y'):
                 retry = True
             else:
@@ -107,7 +108,7 @@ def main(mode,
                                         background=background,
                                         plotlib='cartopy')
             # retry ?
-            retry = raw_input("Do you want to modify something ? [n] ")
+            retry = input("Do you want to modify something ? [n] ")
             if retry in ('yes', 'y', 'Y'):
                 retry = True
             else:

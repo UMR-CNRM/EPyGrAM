@@ -11,6 +11,7 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 
 import math
 import numpy
+from six.moves import input
 
 from footprints import FPDict
 from footprints import proxy as fpx
@@ -134,7 +135,7 @@ def build_geometry(center_lon, center_lat,
             print("Advised projection for this center and these dimensions is:")
         print("=>", projections_g2p[projname], '(', projections_g2s[projname], ')')
         print("Other choices:", projections_s2p)
-        force_projection = raw_input("Chosen projection [" + projections_g2s[projname] + "]: ")
+        force_projection = input("Chosen projection [" + projections_g2s[projname] + "]: ")
         if force_projection != '':
             projname = projections_s2g[force_projection]
     assert (not (pole_in_domain and projname != 'polar_stereographic')), \
@@ -153,7 +154,7 @@ def build_geometry(center_lon, center_lat,
     elif projname == 'lambert':
         if interactive:
             print("Advised reference latitude for Lambert domain is center latitude:")
-            accepted_lat = raw_input("Reference latitude [" + str(center_lat) + "]: ")
+            accepted_lat = input("Reference latitude [" + str(center_lat) + "]: ")
             if accepted_lat != '':
                 reference_lat = float(accepted_lat)
             else:
@@ -295,7 +296,7 @@ def build_geometry_fromlonlat(lonmin, lonmax,
         print("Advised projection with regards to domain center latitude is:")
         print("=>", projections_g2p[projname], '(', projections_g2s[projname], ')')
         print("Other choices:", projections_s2p)
-        accepted_projection = raw_input("Chosen projection [" + projections_g2s[projname] + "]: ")
+        accepted_projection = input("Chosen projection [" + projections_g2s[projname] + "]: ")
         if accepted_projection != '':
             projname = projections_s2g[accepted_projection]
     if force_projection is not None:
@@ -308,13 +309,13 @@ def build_geometry_fromlonlat(lonmin, lonmax,
     elif projname == 'lambert':
         if interactive:
             print("Advised center latitude for Lambert domain is mean(Northern, Southern):")
-            accepted_lat = raw_input("Center latitude [" + str(center_lat) + "]: ")
+            accepted_lat = input("Center latitude [" + str(center_lat) + "]: ")
             if accepted_lat != '':
                 center_lat = float(accepted_lat)
         reference_lat = center_lat
         if interactive:
             print("Advised reference latitude for Lambert domain is center latitude:")
-            accepted_lat = raw_input("Reference latitude [" + str(reference_lat) + "]: ")
+            accepted_lat = input("Reference latitude [" + str(reference_lat) + "]: ")
             if accepted_lat != '':
                 reference_lat = float(accepted_lat)
 

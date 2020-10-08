@@ -8,6 +8,7 @@ Contains functions for interactive build of a LAM domain.
 """
 
 from __future__ import print_function, absolute_import, unicode_literals, division
+from six.moves import input
 
 from .util import default_Iwidth
 from .build import build_geometry, build_geometry_fromlonlat
@@ -25,41 +26,41 @@ def ask_and_build_geometry(defaults,
     """
     # ask for geometry
     try:
-        resolution = float(raw_input("Resolution in m [" + str(defaults['resolution']) + "]: "))
+        resolution = float(input("Resolution in m [" + str(defaults['resolution']) + "]: "))
     except ValueError:
         if defaults['resolution'] != '':
             resolution = defaults['resolution']
         else:
             raise ValueError("Invalid resolution.")
     try:
-        center_lon = float(raw_input("Center of domain / longitude in degrees [" + str(defaults['center_lon']) + "]: "))
+        center_lon = float(input("Center of domain / longitude in degrees [" + str(defaults['center_lon']) + "]: "))
     except ValueError:
         if defaults['center_lon'] != '':
             center_lon = defaults['center_lon']
         else:
             raise ValueError("Invalid longitude.")
     try:
-        center_lat = float(raw_input("Center of domain / latitude in degrees [" + str(defaults['center_lat']) + "]: "))
+        center_lat = float(input("Center of domain / latitude in degrees [" + str(defaults['center_lat']) + "]: "))
     except ValueError:
         if defaults['center_lat'] != '':
             center_lat = defaults['center_lat']
         else:
             raise ValueError("Invalid latitude.")
     try:
-        tilting = float(raw_input("Optional counterclockwise tilting in degrees (lon0-lonC) [" + str(defaults['tilting']) + "]: "))
+        tilting = float(input("Optional counterclockwise tilting in degrees (lon0-lonC) [" + str(defaults['tilting']) + "]: "))
     except ValueError:
         tilting = defaults['tilting']
 
     # and dimensions
     try:
-        Xpoints_CI = int(raw_input("C+I zonal (X) dimension in pts [" + str(defaults['Xpoints_CI']) + "]: "))
+        Xpoints_CI = int(input("C+I zonal (X) dimension in pts [" + str(defaults['Xpoints_CI']) + "]: "))
     except ValueError:
         if defaults['Xpoints_CI'] != '':
             Xpoints_CI = defaults['Xpoints_CI']
         else:
             raise ValueError("Invalid dimension.")
     try:
-        Ypoints_CI = int(raw_input("C+I meridian (Y) dimension in pts [" + str(defaults['Ypoints_CI']) + "]: "))
+        Ypoints_CI = int(input("C+I meridian (Y) dimension in pts [" + str(defaults['Ypoints_CI']) + "]: "))
     except ValueError:
         if defaults['Ypoints_CI'] != '':
             Ypoints_CI = defaults['Ypoints_CI']
@@ -68,7 +69,7 @@ def ask_and_build_geometry(defaults,
     if defaults['Iwidth'] is None:
         defaults['Iwidth'] = default_Iwidth(resolution)
     try:
-        Iwidth = int(raw_input("I-zone width in pts [" + str(defaults['Iwidth']) + "]: "))
+        Iwidth = int(input("I-zone width in pts [" + str(defaults['Iwidth']) + "]: "))
     except Exception:
         Iwidth = defaults['Iwidth']
 
@@ -96,28 +97,28 @@ def ask_and_build_geometry(defaults,
 def ask_lonlat(defaults):
     """Ask a lon/lat geometry."""
     try:
-        lonmin = float(raw_input("Minimum (Western) longitude in degrees [" + str(defaults['lonmin']) + "]: "))
+        lonmin = float(input("Minimum (Western) longitude in degrees [" + str(defaults['lonmin']) + "]: "))
     except ValueError:
         if str(defaults['lonmin']) != '':
             lonmin = defaults['lonmin']
         else:
             raise ValueError("Invalid longitude.")
     try:
-        lonmax = float(raw_input("Maximum (Eastern) longitude in degrees [" + str(defaults['lonmax']) + "]: "))
+        lonmax = float(input("Maximum (Eastern) longitude in degrees [" + str(defaults['lonmax']) + "]: "))
     except ValueError:
         if str(defaults['lonmax']) != '':
             lonmax = defaults['lonmax']
         else:
             raise ValueError("Invalid longitude.")
     try:
-        latmin = float(raw_input("Minimum (Southern) latitude in degrees [" + str(defaults['latmin']) + "]: "))
+        latmin = float(input("Minimum (Southern) latitude in degrees [" + str(defaults['latmin']) + "]: "))
     except ValueError:
         if str(defaults['latmin']) != '':
             latmin = defaults['latmin']
         else:
             raise ValueError("Invalid latitude.")
     try:
-        latmax = float(raw_input("Maximum (Northern) latitude in degrees [" + str(defaults['latmax']) + "]: "))
+        latmax = float(input("Maximum (Northern) latitude in degrees [" + str(defaults['latmax']) + "]: "))
     except ValueError:
         if str(defaults['latmax']) != '':
             latmax = defaults['latmax']
@@ -139,7 +140,7 @@ def ask_lonlat_and_build_geometry(defaults,
     """
     # ask for geometry
     try:
-        resolution = float(raw_input("Model resolution in m [" + str(defaults['resolution']) + "]: "))
+        resolution = float(input("Model resolution in m [" + str(defaults['resolution']) + "]: "))
     except ValueError:
         if defaults['resolution'] != '':
             resolution = defaults['resolution']
@@ -154,7 +155,7 @@ def ask_lonlat_and_build_geometry(defaults,
     if defaults['Iwidth'] is None:
         defaults['Iwidth'] = default_Iwidth(resolution)
     try:
-        Iwidth = int(raw_input("I-zone width in pts [" + str(defaults['Iwidth']) + "]: "))
+        Iwidth = int(input("I-zone width in pts [" + str(defaults['Iwidth']) + "]: "))
     except Exception:
         Iwidth = defaults['Iwidth']
 
