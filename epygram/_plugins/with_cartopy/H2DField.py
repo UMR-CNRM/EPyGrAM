@@ -150,8 +150,8 @@ def cartoplot_background(self,
         gl = ax.gridlines(xlocs=meridians,
                           ylocs=parallels,
                           **gridlines_kw)
-        gl.xlabels_top = False
-        gl.ylabels_right = False
+        gl.top_labels = False
+        gl.right_labels = False
         gl.xformatter = LONGITUDE_FORMATTER
         gl.yformatter = LATITUDE_FORMATTER
         # stereo-polar, get more round circles
