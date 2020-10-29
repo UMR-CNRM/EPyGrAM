@@ -150,8 +150,8 @@ def cartoplot_background(self,
         gl = ax.gridlines(xlocs=meridians,
                           ylocs=parallels,
                           **gridlines_kw)
-        gl.xlabels_top = False
-        gl.ylabels_right = False
+        gl.top_labels = False
+        gl.right_labels = False
         gl.xformatter = LONGITUDE_FORMATTER
         gl.yformatter = LATITUDE_FORMATTER
         # stereo-polar, get more round circles
@@ -278,6 +278,9 @@ def _cartoplot_get_coords(self,
         x = (lons - lons.min()) * self.geometry.grid['X_resolution']
         y = (lats - lats.min()) * self.geometry.grid['Y_resolution']
     else:
+        if isinstance(lons, numpy.ma.masked_array):
+            lons.data[lons.mask] = 0.
+            lats.data[lats.mask] = 0.
         xyz = projection.transform_points(ccrs.PlateCarree(), lons, lats)
         x = numpy.ma.array(xyz[..., 0])
         y = numpy.ma.array(xyz[..., 1])
