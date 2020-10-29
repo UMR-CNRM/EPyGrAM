@@ -274,8 +274,31 @@ class Field(RecursiveObject, FootprintBase):
         """
         refmin = ref.min()
         refmax = ref.max()
-        normalizedself = (self - refmin).__div__(refmax - refmin)  # FIXME: why not classical operators ?
-        normalizedref = (ref - refmin).__div__(refmax - refmin)
+        selfmin = self.min()
+        selfmax = self.max()
+        if abs(refmax - refmin) <= config.epsilon:
+            # ref is constant
+            if refmin <= config.epsilon:
+                normalizedref = ref
+                if abs(selfmax - selfmin) <= config.epsilon:
+                    # test is also constant
+                    if selfmin <= config.epsilon:
+                        # both 0. : no normalization required
+                        normalizedself = self
+                    else:
+                        # test is not 0. vs. ref is 0.
+                        normalizedself = self / selfmin  # so that normalized error = 1.
+                else:
+                    # test is not constant but ref is constant 0. : normalize by itself
+                    normalizedself = (self - selfmin).__div__(selfmax - selfmin)  # FIXME: classical operators seem to fail ?
+            else:
+                # ref is constant not 0.
+                normalizedref = ref / refmin
+                normalizedself = self / refmin
+        else:
+            # ref is not constant
+            normalizedself = (self - refmin).__div__(refmax - refmin)  # FIXME: classical operators seem to fail ?
+            normalizedref = (ref - refmin).__div__(refmax - refmin)  # FIXME: classical operators seem to fail ?
         return normalizedself.compare_to(normalizedref)
 
     def _masked_data(self, mask_outside=config.mask_outside):

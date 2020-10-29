@@ -2359,11 +2359,16 @@ class GRIB(FileResource):
             if gid is None:
                 break
             n = lowlevelgrib.get(gid, 'editionNumber')
+            particularities = {}
             if n == 2:
                 t = lowlevelgrib.get(gid, 'productDefinitionTemplateNumber')
+                if t not in (32, 33):
+                    particularities['scaleFactorOfFirstFixedSurface'] = lowlevelgrib.get(gid, 'scaleFactorOfFirstFixedSurface')
+                    if lowlevelgrib.get(gid, 'typeOfSecondFixedSurface') != 255:
+                        particularities['scaleFactorOfSecondFixedSurface'] = lowlevelgrib.get(gid, 'scaleFactorOfSecondFixedSurface')
             else:
                 t = None
-            for k in GRIBmessage.fid_keys_for(n, t):
+            for k in GRIBmessage.fid_keys_for(n, t, **particularities):
                 gid_key_to_fid(gid, k, fid)
             for k in additional_keys:  # FIXME: here we mix additional, if present, and select/filter
                 try:

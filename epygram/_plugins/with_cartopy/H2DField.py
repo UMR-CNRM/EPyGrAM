@@ -13,8 +13,6 @@ import numpy
 import copy
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
-from cartopy.mpl.gridliner import (LATITUDE_FORMATTER,
-                                   LONGITUDE_FORMATTER)
 
 import footprints
 
@@ -113,6 +111,8 @@ def cartoplot_background(self,
                          subzone=None,
                          extent='focus'):
     """Set cartography features, such as borders, coastlines, meridians and parallels..."""
+    from cartopy.mpl.gridliner import (LATITUDE_FORMATTER,
+                                       LONGITUDE_FORMATTER)
     if natural_earth_features == '__default__':
         natural_earth_features = self.default_NEfeatures,
     if 'gauss' in self.geometry.name:
