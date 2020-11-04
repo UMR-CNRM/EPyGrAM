@@ -478,7 +478,7 @@ def _cartoplot_colorbar(cls,
                       orientation=orientation,
                       ticks=ticks_position,
                       cax=cax)
-    if ticks_label != ticks_position:
+    if not all(ticks_label == ticks_position):
         cax.set_yticklabels(ticks_label)
     if minmax_along_colorbar:
         cb.set_label(minmax_along_colorbar)
