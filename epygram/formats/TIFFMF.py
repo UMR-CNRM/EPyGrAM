@@ -436,17 +436,22 @@ class TIFFMF(FileResource):
             Lop = Angle(int(Lop) / 1000., 'degrees')
             Nx = int(Nx)
             Ny = int(Ny)
-            rmajor = 6378169.0
-            rminor = 6356583.8
+            #rmajor, rminor = 6378169.0, 6356583.8 #old values used by an old version of the ASPIC software
+            rmajor, rminor = 6378160, 6356775 #new version of ASPIC
+            geoid = {'a':rmajor, 'b':rminor}
             h = int(nr) * rmajor / 1E6 - rmajor
             resolx = h * 2 * numpy.arcsin(1E6 / int(nr)) / int(dx)
             resoly = h * 2 * numpy.arcsin(1E6 / int(nr)) / int(dy)
+            
+            #Xp, Yp, Xo and YO are integers
+            #We guess the exact position of the satellite from the parity of the apparent diameter
+            #If the numbers of grid-cells is even, satellite is in between two pixels 
             grid = {'LAMzone':None,
                     'X_resolution':resolx,
                     'Y_resolution':resoly,
                     'input_lon':Lop, 'input_lat':Lap,
-                    'input_position':(int(Xp) - int(Xo),
-                                      int(Yo) - int(Yp) + Ny - 1)
+                    'input_position':(int(Xp) - int(Xo) - (int(dx) + 1) % 2 * 0.5,
+                                      int(Yo) - int(Yp) + Ny - 1 + (int(dy) + 1) % 2 * 0.5)
                     }
             if scan != 0:
                 raise NotImplementedError("Space view projection with scan != 0 is not implemented.")
@@ -463,7 +468,8 @@ class TIFFMF(FileResource):
                                dimensions=FPDict(dimensions),
                                projection=FPDict(projection),
                                position_on_horizontal_grid='center',
-                               vcoordinate=vcoordinate
+                               vcoordinate=vcoordinate,
+                               geoid=geoid,
                                )
             self.geometry = fpx.geometry(**kwargs_geom)
         elif projection == 15:

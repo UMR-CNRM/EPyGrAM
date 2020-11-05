@@ -2866,14 +2866,16 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                 raise epygramError("Only space views with satellite_lat=0 are allowed")
             p = pyproj.Proj(proj=proj,
                             h=height,
-                            lon_0=lonSat)
+                            lon_0=lonSat,
+                            **self.geoid)
             compute_center_proj(p, centerPoint)
             x0, y0 = p(self._center_lon.get('degrees'),
                        self._center_lat.get('degrees'))
             self._proj = pyproj.Proj(proj=proj,
                                      h=height,
                                      lon_0=lonSat,
-                                     x_0=-x0, y_0=-y0)
+                                     x_0=-x0, y_0=-y0,
+                                     **self.geoid)
         else:
             raise NotImplementedError("projection: " + self.name)
 
