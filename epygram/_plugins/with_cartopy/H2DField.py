@@ -382,10 +382,16 @@ def _cartoplot_actualplot(self,
                           clabel_kw):
     """Actual call to matplotlib plotting functions."""
     from matplotlib.colors import cnames
+    from matplotlib import tri
     if plot_method == 'contourf':
         if not self.geometry.rectangular_grid or self.geometry.dimensions['Y'] == 1:
             # triangulate for plotting
-            pf = ax.tricontourf(x, y, data,
+            triangulation = tri.Triangulation(x, y)
+            if isinstance(data.mask, numpy.ndarray):  # masked values
+                triangles_summits_mask = numpy.where(data.mask[triangulation.triangles], True, False)
+                mask = numpy.any(triangles_summits_mask, axis=1)  # any masked summit masks triangle
+                triangulation.set_mask(mask)
+            pf = ax.tricontourf(triangulation, data,
                                 **plot_kwargs)
         else:
             pf = ax.contourf(x, y, data,
@@ -478,7 +484,7 @@ def _cartoplot_colorbar(cls,
                       orientation=orientation,
                       ticks=ticks_position,
                       cax=cax)
-    if not all(ticks_label == ticks_position):
+    if not numpy.all(ticks_label == ticks_position):
         cax.set_yticklabels(ticks_label)
     if minmax_along_colorbar:
         cb.set_label(minmax_along_colorbar)
