@@ -130,6 +130,8 @@ class LowLevelGRIB(object):
 
     #  BELOW: gribapi str/unicode incompatibility
     def set(self, gid, key, value):
+        if isinstance(value, (numpy.int64, numpy.int32)):
+            value = int(value)  # eccodes does not accept numpy.int...
         return self._set(gid, str(key), value)
 
     def set_missing(self, gid, key):
