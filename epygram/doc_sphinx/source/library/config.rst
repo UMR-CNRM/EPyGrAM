@@ -24,7 +24,6 @@ Parameters
 .. autodata:: epsilon
 .. autodata:: KNUMMAXRESOL
 .. autodata:: plotsizes
-.. autodata:: noninteractive_backend
 .. autodata:: default_graphical_output
 
 -----------------------------------------------------------

@@ -33,7 +33,8 @@ Un peu de blabla:
    Tutorial <tutorial/index>
    FAQ
    AppTools <apptools>
-   Gallery (use-cases) <gallery/index>
+   Gallery (deprecated) <gallery/index>
+   New Gallery (use-cases) <new_gallery/index>
    Colormaps <cmaps>
 
 Annexes

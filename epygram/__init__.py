@@ -116,6 +116,7 @@ from . import config
 from . import util
 from . import base
 from . import containers
+from . import moves
 
 from . import args_catalog
 from . import profiles

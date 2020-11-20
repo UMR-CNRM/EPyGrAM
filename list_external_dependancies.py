@@ -18,6 +18,7 @@ import io
 
 inner_packages = [
     'arpifs4py',
+    'cartopy_plus',
     'ctypesForFortran',
     'epygram',
     'epyweb',
@@ -25,6 +26,7 @@ inner_packages = [
     'pyexttiff',
     'userconfig',
     'usevortex',
+    'usevtk',
     'vgrid',]
 
 vortex_site_packages = [
@@ -42,7 +44,9 @@ stdlib_packages = [
     '_ctypes',
     'datetime',
     'datetime',
+    'distutils',
     'ftplib',
+    'getpass',
     'glob',
     'hashlib',
     'imp',
@@ -68,6 +72,7 @@ stdlib_packages = [
     'threading',
     'time',
     'uuid',
+    'warnings',
     'webbrowser',]
 
 

@@ -51,7 +51,13 @@ mktar.sh
 epygram/doc_sphinx/source/gallery/inputs
 epygram/doc_sphinx/source/gallery/outputs
 epygram/doc_sphinx/source/gallery/notebooks/.ipynb_checkpoints
-epygram/doc_sphinx/source/_static/cheatsheet.pdf
+epygram/doc_sphinx/source/new_gallery/inputs
+epygram/doc_sphinx/source/new_gallery/outputs
+epygram/doc_sphinx/source/new_gallery/notebooks/.ipynb_checkpoints
+epygram/doc_sphinx/source/new_gallery/notebooks/*/.ipynb_checkpoints
+epygram/doc_sphinx/source/*cheatsheet.pdf
+epygram/doc_sphinx/source/*cheatsheet.aux
+epygram/doc_sphinx/source/*cheatsheet.log
 
 # compiled inner libraries
 *.o

@@ -27,7 +27,8 @@ import os
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.imgmath', 'sphinx.ext.viewcode',
-              'sphinx.ext.intersphinx', 'nbsphinx']
+              'sphinx.ext.intersphinx', 'nbsphinx',
+              'IPython.sphinxext.ipython_console_highlighting']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -67,7 +68,7 @@ release = epygram.__version__
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = []
+exclude_patterns = ['_build', '**.ipynb_checkpoints']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
@@ -90,11 +91,11 @@ pygments_style = 'sphinx'
 #modindex_common_prefix = []
 
 # List of intersphinx mapping docs
-intersphinx_mapping = {'mpl_toolkits.basemap': ('https://matplotlib.org/basemap', None),
-                       'numpy': ('https://docs.scipy.org/doc/numpy', None),
-                       #'scipy': ('http://docs.scipy.org/doc/scipy', None),
-                       #'matplotlib': ('http://matplotlib.org/api', None),
-                       }
+#intersphinx_mapping = {#'mpl_toolkits.basemap': ('https://matplotlib.org/basemap', None),
+#                       #'numpy': ('https://docs.scipy.org/doc/numpy', None),
+#                       #'scipy': ('http://docs.scipy.org/doc/scipy', None),
+#                       #'matplotlib': ('http://matplotlib.org/api', None),
+#                       }
 
 # -- Options for HTML output ---------------------------------------------------
 

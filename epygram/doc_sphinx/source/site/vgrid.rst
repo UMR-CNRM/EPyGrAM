@@ -20,8 +20,8 @@ Standard atmosphere
 
 .. automodule:: vgrid.standard_atmosphere
 
-.. autofunction:: pressure_at
-.. autofunction:: altitude_at
+.. autofunction:: vgrid.standard_atmosphere.pressure_at
+.. autofunction:: vgrid.standard_atmosphere.altitude_at
 
 It uses underlying Fortran routines that may need to be recompiled (to .so)
 platform-wise. Sources and Makefile are provided in the sub-directory
