@@ -868,8 +868,8 @@ def auto_meridians_parallels(geometry,
     if meridians is None or meridians == 0.:
         meridians = []
     elif meridians == 'default' or (meridians == 'auto' and
-                                  ('gauss' in geometry.name or
-                                   geometry.name == 'polar_stereographic')):
+                                    ('gauss' in geometry.name or
+                                     geometry.name == 'polar_stereographic')):
         meridians = numpy.arange(0, 370, 10)
     elif meridians == 'auto' or isinstance(meridians, int) or isinstance(meridians, float):
         if extent == 'focus':
@@ -883,14 +883,14 @@ def auto_meridians_parallels(geometry,
         lonmin = minmax['lonmin'] - minmax['lonmin'] % delta_lon
         lonmax = minmax['lonmax'] - minmax['lonmax'] % delta_lon + 2 * delta_lon
         lonmax = min(lonmax, lonmin + 360.) #space-view geometry returns 1.E30 as lonmax
-        meridians = numpy.arange(lonmin, lonmax, delta_lon)
-        if max(meridians > 180.):
+        meridians = numpy.arange(lonmin, lonmax + delta_lon, delta_lon)
+        if max(meridians) > 180.:
             meridians = meridians - 180.  # FIXME: cartopy does not plot meridians > 180°
     # parallels
     if parallels is None or parallels == 0.:
         parallels = []
     elif parallels == 'default' or ('gauss' in geometry.name and parallels == 'auto'):
-        parallels = numpy.arange(-90, 90, 10)
+        parallels = numpy.arange(-90, 100, 10)
     elif parallels == 'auto' or isinstance(parallels, int) or isinstance(parallels, float):
         if extent == 'focus':
             minmax = geometry.minmax_ll()
@@ -907,7 +907,7 @@ def auto_meridians_parallels(geometry,
         latmax = min(latmax, 90. )#space-view geometry returns 1.E30 as latmax
         if latmax >= 90:
             latmax -= delta_lat
-        parallels = numpy.arange(latmin, latmax, delta_lat)
+        parallels = numpy.arange(latmin, latmax + delta_lat, delta_lat)
     return list(meridians), list(parallels)
 
 

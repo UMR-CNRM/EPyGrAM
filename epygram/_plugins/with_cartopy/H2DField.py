@@ -111,8 +111,10 @@ def cartoplot_background(self,
                          subzone=None,
                          extent='focus'):
     """Set cartography features, such as borders, coastlines, meridians and parallels..."""
+    import cartopy
     from cartopy.mpl.gridliner import (LATITUDE_FORMATTER,
                                        LONGITUDE_FORMATTER)
+    import matplotlib.ticker as mticker
     if natural_earth_features == '__default__':
         natural_earth_features = self.default_NEfeatures,
     if 'gauss' in self.geometry.name:
@@ -140,7 +142,7 @@ def cartoplot_background(self,
             # only these projections have labels available in cartopy
             gridlines_kw.pop('draw_labels', False)
             # home-made workaround for Lambert
-            if isinstance(projection, ccrs.LambertConformal):
+            if isinstance(projection, ccrs.LambertConformal) and not 'gauss' in self.geometry.name:
                 from cartopy_plus import lambert_parallels_meridians_labels
                 lambert_parallels_meridians_labels(ax, self.geometry, projection,
                                                    meridians, parallels,
@@ -150,15 +152,20 @@ def cartoplot_background(self,
         gl = ax.gridlines(xlocs=meridians,
                           ylocs=parallels,
                           **gridlines_kw)
-        gl.top_labels = False
-        gl.right_labels = False
+        if cartopy.__version__ <= '0.17.0':
+            gl.xlabels_top = False
+            gl.ylabels_right = False
+        else:
+            gl.top_labels = False
+            gl.right_labels = False
         gl.xformatter = LONGITUDE_FORMATTER
         gl.yformatter = LATITUDE_FORMATTER
         # stereo-polar, get more round circles
         if isinstance(projection, (ccrs.Stereographic,
                                    ccrs.NorthPolarStereo,
-                                   ccrs.SouthPolarStereo)):
-            gl.n_steps = 90
+                                   ccrs.SouthPolarStereo,
+                                   ccrs.NearsidePerspective)):
+            gl.n_steps = 360
     if epygram_departments:
         if not isinstance(epygram_departments, dict):
             epygram_departments = dict(color='k')

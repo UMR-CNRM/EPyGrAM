@@ -18,6 +18,7 @@ __all__ = []
 logger = loggers.getLogger(__name__)
 
 _loaded_colormaps = {}
+loaded_ColormapHelpers = {}
 
 
 def register_colormap_from_json(filename):
@@ -58,6 +59,15 @@ def load_colormap(colormap):
         cmap = plt.get_cmap(colormap)
     return cmap
 
+
+def get_ColormapHelper(colormap):
+    if colormap in config.colormaps:
+        colormap_file = config.colormaps[colormap]
+    else:
+        raise ValueError("unknown colormap: {}".format(colormap))
+    return get_ColormapHelper_fromfile(colormap_file)
+
+
 def get_ColormapHelper_fromfile(filename):
     """Get colormap from file (json) and build ad hoc ColormapHelper."""
     if filename in _loaded_colormaps:
@@ -80,6 +90,7 @@ def get_ColormapHelper_fromfile(filename):
                             explicit_ticks=ticks)
     else:
         ch = ColormapHelper(colormap, normalize=False)
+    loaded_ColormapHelpers[colormap] = ch
     return ch
 
 
