@@ -1,10 +1,11 @@
 # Variables
 TEST_DIR	= tests
 DOC_DIR		= epygram/doc_sphinx
+VGRID_DIR	= site/vgrid/vertical_discretization
 SUBDIRS		= tests epygram/doc_sphinx
 CLEANDIRS 	= $(SUBDIRS:%=clean-%)
 
-.PHONY: tests doc mktar pushdev pushrelease clean $(CLEANDIRS)
+.PHONY: tests doc vgrid mktar pushdev pushrelease clean $(CLEANDIRS)
 
 # TARGETS:
 # Run all the test suite using nose
@@ -15,6 +16,10 @@ tests:
 # Build the sphinx documentation
 doc:
 	$(MAKE) -C $(DOC_DIR)
+
+# Vgrid binary compilation
+vgrid:
+	$(MAKE) -C $(VGRID_DIR)
 
 # Pushes
 pushdev:
