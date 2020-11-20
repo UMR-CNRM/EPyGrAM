@@ -243,6 +243,8 @@ class MultiValiditiesResource(Resource):
             kwargs_field['geometry'] = geometry
             sameProcesstype = sameProcesstype and kwargs_field['processtype'] == fieldset[0].processtype
             kwargs_field['processtype'] = fieldset[0].processtype  # we exclude processtype from the comparison
+            kwargs_field['fid'] = field.fid
+            # change FPDict to dict
             for k, v in kwargs_field.items():
                 if isinstance(v, FPDict):
                     kwargs_field[k] = dict(v)
