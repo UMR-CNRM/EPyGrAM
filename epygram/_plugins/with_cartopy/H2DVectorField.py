@@ -163,6 +163,8 @@ def _cartoplot_actual_plot(cls,
             vector_plot_kwargs['linewidth'] = 4 * numpy.sqrt(u ** 2 + v ** 2) / min(u.max(), v.max())
         elements = ax.streamplot(lons, lats, u, v, transform=ccrs.PlateCarree(),
                                  **vector_plot_kwargs)
+    else:
+        raise NotImplementedError('vector_plot_method={}'.format(vector_plot_method))
     return elements
 
 
