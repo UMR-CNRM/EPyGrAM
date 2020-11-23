@@ -301,7 +301,8 @@ class Field(RecursiveObject, FootprintBase):
             normalizedref = (ref - refmin).__div__(refmax - refmin)  # FIXME: classical operators seem to fail ?
         return normalizedself.compare_to(normalizedref)
 
-    def _masked_data(self, mask_outside=config.mask_outside):
+    def _masked_data(self, mask_outside=config.mask_outside,
+                     **kwargs):
         """
         Return self field data as a masked array.
 
@@ -309,17 +310,18 @@ class Field(RecursiveObject, FootprintBase):
                              else, mask data outside +/- this value
         """
         if isinstance(self._data, numpy.ma.masked_array):
-            mdata = self._data
+            mdata = self.getdata(**kwargs)
         else:
             if mask_outside is not None:
-                mdata = numpy.ma.masked_outside(self._data,
+                mdata = numpy.ma.masked_outside(self.getdata(**kwargs),
                                                 -mask_outside,
                                                 mask_outside)
             else:
-                mdata = numpy.ma.masked_array(self._data)
+                mdata = numpy.ma.masked_array(self.getdata(**kwargs))
         return mdata
 
-    def _masked_any(self, other, mask_outside=config.mask_outside):
+    def _masked_any(self, other, mask_outside=config.mask_outside,
+                    **kwargs):
         """
         Get a copy of self data and **other** data, with masked data where any
         of them is masked.
@@ -327,8 +329,8 @@ class Field(RecursiveObject, FootprintBase):
         :param mask_outside: if None, mask is empty;
                              else, mask data outside +/- this value
         """
-        data = self._masked_data(mask_outside)
-        otherdata = other._masked_data(mask_outside)
+        data = self._masked_data(mask_outside, **kwargs)
+        otherdata = other._masked_data(mask_outside, **kwargs)
         cmask = numpy.logical_or(data.mask, otherdata.mask)
         data.mask = cmask
         otherdata.mask = cmask

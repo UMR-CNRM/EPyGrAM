@@ -1637,23 +1637,58 @@ class _D3CommonField(Field):
             return fig, ax
 
     def scatter_with(self, other,
-                     over=(None, None),
+                     fig=None,
+                     ax=None,
                      figsize=None,
-                     mask_outside=config.mask_outside):
+                     mask_outside=config.mask_outside,
+                     subzone=None,
+                     fidkey=None,
+                     xlabel='__auto__',
+                     ylabel='__auto__',
+                     bisect=True,
+                     **scatter_kwargs):
         """
         Make a scatter plot of self data against other data.
 
+        :param fig: a preexisting figure on which to plot
+        :param ax: a preexisting axis on which to plot
         :param figsize: figure sizes in inches, e.g. (5, 8.5).
                         Default figsize is config.plotsizes.
+        :param mask_outside: threshold to mask values outside (-mask_outside, +mask_outside)
+        :param subzone: LAM subzone
+        :param fidkey: fid key to be written on axes labels
+        :param xlabel: custom x label
+        :param ylabel: custom y label
+        :param bisect: plot x=y line
+
+        Other kwargs are passed to scatter() method.
         """
         for f in (self, other):
             if f.spectral:
                 f.sp2gp()
-        data, otherdata = self._masked_any(other, mask_outside)
+        data, otherdata = self._masked_any(other, mask_outside, subzone=subzone)
         otherdata = otherdata.compressed()
         data = data.compressed()
-        fig, ax = set_figax(*over, figsize=figsize)
-        ax.scatter(data, otherdata)
+        fig, ax = set_figax(fig, ax, figsize=figsize)
+        ax.scatter(data, otherdata, **scatter_kwargs)
+        if xlabel is not None:
+            if xlabel == '__auto__':
+                if fidkey is None:
+                    xlabel = str(self.fid)
+                else:
+                    xlabel = str(self.fid[fidkey])
+            ax.set_xlabel(xlabel)
+        if ylabel is not None:
+            if ylabel == '__auto__':
+                if fidkey is None:
+                    ylabel = str(other.fid)
+                else:
+                    ylabel = str(other.fid[fidkey])
+            ax.set_ylabel(ylabel)
+        if bisect:
+            xmin = min(data.min(), otherdata.min())
+            xmax = max(data.max(), otherdata.max())
+            ax.plot((xmin, xmax), (xmin, xmax), color='red')
         return fig, ax
 
     def global_shift_center(self, longitude_shift):
