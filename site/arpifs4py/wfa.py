@@ -384,7 +384,7 @@ def wfandax(KNUMER, KDATEF):
 
 
 @treatReturnCode
-@ctypesFF
+@ctypesFF()
 @addReturnCode
 def wfacile(KSIZE, KNUMER, CDPREF, KNIVAU, CDSUFF, LDCOSP):
     """
