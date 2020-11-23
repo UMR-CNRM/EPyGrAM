@@ -803,8 +803,24 @@ class netCDF(FileResource):
                 # grid only in variables
                 Xgrid, Ygrid = find_grid_in_variables()
                 if behaviour.get('grid_is_lonlat', False):
-                    grid = {'longitudes':Xgrid,
-                            'latitudes':Ygrid}
+                    regll = False
+                    if len(Xgrid.shape) == 2 and len(Ygrid.shape) == 2:
+                        loose_epsilon = 1e-12  # config.epsilon was potentially too narrow
+                        x_res = Xgrid[:,1:] - Xgrid[:,:-1]
+                        y_res = Ygrid[1:,:] - Ygrid[:-1,:]
+                        x_regular = numpy.all(x_res - x_res[0, 0] <= loose_epsilon)
+                        y_regular = numpy.all(y_res - y_res[0, 0] <= loose_epsilon)
+                        regll = x_regular and y_regular
+                    if regll:
+                        kwargs_geom['name'] = 'regular_lonlat'
+                        grid = {'input_lon': Angle(Xgrid[0, 0], 'degrees'),
+                                'input_lat': Angle(Ygrid[0, 0], 'degrees'),
+                                'input_position': (0, 0),
+                                'X_resolution': Angle(x_res[0, 0], 'degrees'),
+                                'Y_resolution': Angle(y_res[0, 0], 'degrees')}
+                    else:
+                        grid = {'longitudes':Xgrid,
+                                'latitudes':Ygrid}
                 else:
                     # grid is not lon/lat and no other metadata available : Academic
                     kwargs_geom['name'] = 'academic'
