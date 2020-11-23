@@ -24,6 +24,10 @@ A.1 - H2D Plots
 A.2 - Other plots
 -----------------
 
+#. `Plot profile(s) <A.2-other_plots/01.profile.ipynb>`_
+#. `Plot a section <A.2-other_plots/02.section.ipynb>`_
+#. `Comparison of 2 fields through a scatter-plot <A.2-other_plots/03.2fields_scatter_plot.ipynb>`_
+#. `Histogram of field(s) <A.2-other_plots/04.histogram.ipynb>`_
 
 B - Dimensions
 --------------
