@@ -25,7 +25,7 @@ sotrtm33sidev=1  # COMPAS server, from which it is replicated onto the others
 beaufix=1
 prolix=1
 belenos=1
-taranis=0
+taranis=1
 
 
 # Filters
