@@ -31,11 +31,11 @@ Un peu de blabla:
    Distribution <distribution>
    Some examples <examples>
    Tutorial <tutorial/index>
-   Gallery of use-cases <new_gallery/index>
+   Gallery of use-cases <gallery/index>
    FAQ
    AppTools <apptools>
    Colormaps <cmaps>
-   Old Gallery (deprecated) <gallery/index>
+   Old Gallery (deprecated) <old_gallery/index>
 
 Annexes
 -------

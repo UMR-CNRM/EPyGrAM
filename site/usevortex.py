@@ -69,7 +69,6 @@ def quiet_get(loggers=['vortex.data.stores',
 
 def get_resources(getmode='epygram',
                   uselocalcache=False,
-                  # meta_rtype=None,
                   **description):
     """
     Get resources, given their description.
@@ -89,10 +88,6 @@ def get_resources(getmode='epygram',
                      automatically cleaned, take care) defined either (and by
                      priority order) in $MTOOL_STEP_CACHE, $MTOOLDIR, $FTDIR,
                      $WORKDIR, $TMPDIR.
-    :param meta_rtype: if not None and **getmode** is 'epygram', return the
-                       resource(s) as meta_resource.
-                       Cf. epygram.resources.meta_resources() for
-                       documentation. [Not implemented yet]
 
     Examples:
 

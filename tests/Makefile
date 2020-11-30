@@ -5,6 +5,7 @@ TEST_ALL      = test_formats.py test_geometries.py test_geometry_methods.py test
 TEST_BASE     = test_formats.py test_geometries.py test_spectral.py test_util.py
 NOSE_OPTS     = --verbosity=2 --no-byte-compile
 APPTOOLS_DIR  = test_apptools
+NB_DIR        = ../epygram/doc_sphinx/source/gallery
 
 .PHONY: all tests tests27 tests3 tests_all clean apptools2 apptools3 apptools
 
@@ -36,6 +37,10 @@ apptools2:
 
 apptools3:
 	$(MAKE) -C $(APPTOOLS_DIR) all3
+
+# notebooks gallery
+notebooks2check:
+	$(MAKE) -C $(NB_DIR) nb2check
 
 clean:
 	rm -f *.log
