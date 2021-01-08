@@ -1,22 +1,17 @@
-:mod:`epygram` --- About the Package
-====================================
+:mod:`epygram`
+==============
 
-.. automodule:: epygram
-   :synopsis: About the Package
 
-Miscellaneous
--------------
-
-.. autoclass:: epygramError
+.. autoclass:: epygram.epygramError
    :show-inheritance:
    :members:
    :member-order: alphabetical
 
 -----------------------------------------------------------
 
-.. autofunction:: init_env
+.. autofunction:: epygram.init_env
 
 -----------------------------------------------------------
 
-.. autofunction:: showconfig
+.. autofunction:: epygram.showconfig
 

@@ -1,6 +1,8 @@
 Gallery
 =======
 
+.. _gallery-index:
+
 A collection of use-cases of the `epygram` library.
 
 This place is dedicated to grow with users, please contribute with more
@@ -53,12 +55,22 @@ C - Data
 #. `Compute vor/div from u/v <C-data/06.wind_transformations_vordiv.ipynb>`_
 #. `Shaving: cut values over a threshold down to this threshold <C-data/07.shave.ipynb>`_
 
-
 D.1 - Horizontal Geometry
 -------------------------
 
+#. `Extract a zoom <D.1-horizontal_geometry/01.zoom.ipynb>`_
+#. `Extract a sub-array from a Rectangular domain, keeping projection properties <D.1-horizontal_geometry/02.subarray.ipynb>`_
+#. `Resample: project/interpolate a field onto another geometry using resampling <D.1-horizontal_geometry/03.resample.ipynb>`_
+#. `Resample on an "on-the-fly created" regular lon/lat geometry <D.1-horizontal_geometry/04.resample_on_ll.ipynb>`_
+#. `Get Gauss grid resolution <D.1-horizontal_geometry/05.gauss_resolution.ipynb>`_
+
 D.2 - Vertical Geometry
 -----------------------
+
+#. `Get 3D pressure field at all hybrid-pressure levels <D.2-vertical_geometry/01.3D_pressure.ipynb>`_
+#. `Convert profiles vertical coordinate from Hybrid-Pressure to Pressure <D.2-vertical_geometry/02.profiles_vertical_coords_2pressure.ipynb>`_
+#. `Convert profiles vertical coordinate from Hybrid-Pressure to Altitude <D.2-vertical_geometry/03.profiles_vertical_coords_2altitude.ipynb>`_
+#. `Plot the z/p characteristics of a Hybrid-Pressure vertical coordinate <D.2-vertical_geometry/04.hybridP_vertical_grid.ipynb>`_
 
 E - Formats specificities
 -------------------------

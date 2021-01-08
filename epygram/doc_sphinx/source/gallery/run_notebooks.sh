@@ -18,5 +18,5 @@ fi
 for f in `ls */*.ipynb`
 do
   jupyter nbconvert --execute $cmdline $f >> /dev/null
-  exit
+  #exit
 done

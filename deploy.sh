@@ -30,7 +30,7 @@ taranis=1
 
 # Filters
 to_exclude4all=''
-for elem in playground tests deploy.sh mktar.sh apptools/*.pyc site/arpifs4py/libs4py_*.so epygram/doc_sphinx/source/gallery/inputs *.ipynb_checkpoints*
+for elem in playground tests deploy.sh mktar.sh apptools/*.pyc site/arpifs4py/libs4py_*.so epygram/doc_sphinx/source/gallery/inputs *.ipynb_checkpoints* epygram/doc_sphinx/source/gallery/inputs/* gallery/inputs/*
 do
   to_exclude4all="$to_exclude4all --exclude $elem"
 done

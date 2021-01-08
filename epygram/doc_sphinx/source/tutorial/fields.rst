@@ -265,40 +265,7 @@ so on...).
 Plots
 -----
 
-The :meth:`Field.plotfield` method may be one of the most useful methods,
-with a number of options continually growing...
-Although referring to each kind of field actual documentation is highly
-recommended, here is a short introduction:
-
->>> t = r.readfield('CLSTEMPERATURE')  # 2m temperature
->>> fig, ax = t.plotfield()
-
-then either
-
->>> fig.show()
->>> fig.savefig('my_figure.png')
-
-.. note::
-    as the most time-consuming part of creating the plot is the creation of
-    the underlying Basemap object (:mod:`mpl_toolkits.basemap`), when creating
-    several plots one should save and reuse the basemap object
-    (cf. :doc:`../library/geometries_lib`). This will save much time.
-
-	>>> temp = r.readfields('S00*TEMPERATURE')  # read highest levels temperature
-	>>> bm = temp[0].geometry.make_basemap()  # specific basemap can be addressed through optional arguments
-	>>> for t in temp:
-	...     t.sp2gp()
-	...     fig, ax = t.plotfield(use_basemap=bm, ...)
-	...     fig.savefig(t.fid['FA'] + '.png')
-
-Similarly, superposition of plots can be done:
-
->>> t = r.readfield('CLSTEMPERATURE')
->>> geop = r.readfield('SPECSURFGEOPOTEN')
->>> geop.sp2gp()
->>> bm = t.geometry.make_basemap()
->>> fig, ax = geop.plotfield(use_basemap=bm, graphicmode='contourlines')
->>> fig, ax = t.plotfield(use_basemap=bm, over=(fig, ax))
+Cf. *Plots* sections of the `Gallery <../gallery/index.rst>`_.
 
 -----------------------------------------------------------
 

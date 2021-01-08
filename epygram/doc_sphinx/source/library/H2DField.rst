@@ -6,12 +6,6 @@
 
 --------------------------------------------------------------------------------
 
-.. autoclass:: _H2DCartopyPlot
-   :members:
-   :member-order: alphabetical
-
---------------------------------------------------------------------------------
-
 .. autoclass:: H2DField
    :show-inheritance:
    :members:
@@ -19,6 +13,3 @@
 
 --------------------------------------------------------------------------------
 
-.. autoclass:: _H2DBasemapPlot
-   :members:
-   :member-order: alphabetical

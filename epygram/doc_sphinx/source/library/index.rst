@@ -1,24 +1,24 @@
-The epygram library
-===================
+:mod:`epygram` --- Package
+==========================
 
 :Release: |release|
 :Date: |today|
 
+Core library
+------------
+
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    epygram
-
-Configuration
--------------
-
-.. toctree::
-   :maxdepth: 2
-
+   geometries_lib
+   fields
+   formats
+   resources
    config
 
-Modules
--------
+Inner utilities
+---------------
 
 .. toctree::
    :maxdepth: 1
@@ -27,13 +27,8 @@ Modules
    moves
    base
    containers
-   
-   geometries_lib
-   fields
-   formats
-   resources
 
-Utilities
+Outer utilities
 ---------
 
 .. toctree::

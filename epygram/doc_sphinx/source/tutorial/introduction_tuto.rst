@@ -47,26 +47,3 @@ formatted info to the stdout (or to a file-like object):
 
 >>> my_object.what() # to stdout
 
-
-Customize installation
-^^^^^^^^^^^^^^^^^^^^^^
-
-(Advanced use)
-
-The ``epygram`` library is designed to be customized easily by a given user:
-modifying defaults, bringing modifications to existing classes (Fields, Formats,
-Geometries) or adding new (fields, formats) classes to be used "on the fly" by
-the library. 
-
-Yet, for a cleaner partitioning of installations and avoid unwanted overwriting
-of files, the library is able to look for source files in *user* directory(ies).
-
-Declaration:
-
-- *configuration*: values of :mod:`epygram.config` can be modified in
-  ``$HOME/.epygram/userconfig.py``
-- *classes* (modified or new): fill the **usermodules** variable in
-  ``$HOME/.epygram/userconfig.py``, with the below formalism:
->>> usermodules = [{'name':'module1', 'abspath':'/path/to/module1.py'},
->>>                {'name':'module2', 'abspath':'/path/to/module2.py'}
->>>                ]

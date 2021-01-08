@@ -5,8 +5,9 @@ Some examples
 handling and use of the library, as well as a quick glance at its
 possibilities.*
 
-Fore more detailed examples, please refer to the :ref:`tutorial <tuto-index>`
-and more advanced Notebooks section.
+For a more comprehensive introduction to the package, please refer to the :ref:`Tutorial <tuto-index>`.
+
+For more advanced examples, please refer to the :ref:`Gallery <tuto-index>`.
 
 About Resources
 ---------------
@@ -47,7 +48,7 @@ About Resources
 
 And many other features depending on the format...
 
-
+--------------------------------------------------------------------------------
 
 FA: Some specific features
 ..........................
@@ -73,7 +74,8 @@ FA: Some specific features
                                              cdiden=fcst5.cdiden,
                                              default_compression=fcst5.default_compression,
                                              processtype=fcst5.processtype)
-    
+
+--------------------------------------------------------------------------------
 
 About Fields
 ------------
@@ -123,7 +125,7 @@ About Fields
     1.3670194410302572
     >>> rot.plotfield() # rot is still a Field object
 
-- Compute the windspeed and plot it, together with wind barbs:
+- Compute the windspeed:
 
   .. code-block:: python
 
@@ -133,10 +135,8 @@ About Fields
     >>> vectwind = epygram.fields.make_vector_field(u, v)
     >>> vectwind.sp2gp()
     >>> FF = vectwind.to_module()
-    >>> fig, ax = FF.plotfield()
-    >>> fig, ax = vectwind.plotfield(over=(fig, ax))
-    >>> plt.show()
 
+--------------------------------------------------------------------------------
 
 About Geometry
 --------------

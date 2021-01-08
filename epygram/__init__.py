@@ -32,17 +32,19 @@ library.
 Complete dependencies to be found in :ref:`Dependancies <dependancies>`.
 
 It is recalled that packages available on Pypi.org can be installed locally
-using: ``pip install --user <packagename>``
-
-
-.. _license:
+using: ``pip[2|3] install --user <packagename>``
 
 ********************************************************************************
 
-Copyright Météo France (2014 - 2020),
-contributors :
-A. Mary <Météo France, CNRM/GMAP/COOPE, alexandre.mary@meteo.fr> ||
-S. Riette
+.. _license:
+
+License
+-------
+
+Copyright Météo France (2014 - 2021), authors:
+
+* A. Mary - Météo France, CNRM/GMAP/COOPE - alexandre.mary@meteo.fr
+* S. Riette - Météo France
 
 This software is governed by the CeCILL-C license under French law and
 abiding by the rules of distribution of free software.  You can  use,

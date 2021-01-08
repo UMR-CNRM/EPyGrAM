@@ -3,7 +3,7 @@ Tutorial
 
 .. _tuto-index:
 
-Don't forget to read the :ref:`general-design` of the library, at first !
+Don't forget to read the :ref:`general-design` of the package, at first !
 
 .. toctree::
    :numbered:
@@ -13,5 +13,6 @@ Don't forget to read the :ref:`general-design` of the library, at first !
    Resources <resources>
    Fields <fields>
    Geometries <geometries_tuto>
-   More advanced examples (Notebooks) <notebooks_index>
+
+Then refer to the :ref:`Gallery <gallery-index>` for more examples of use.
    

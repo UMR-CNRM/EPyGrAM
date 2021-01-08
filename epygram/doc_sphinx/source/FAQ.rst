@@ -3,165 +3,81 @@ FAQ --- Frequently Asked Questions
 
 .. highlight:: python
 
-Errors
-------
+-----------------------------------------------------------
 
-+ I have rather esoterical errors when I try to read a FA file...
++ **ecCodes does not seem to be found by Python**
 
-   => the :func:`epygram.init_env` may be initialized at the beginning of your
-   script(s), to be sure the :mod:`arpifs4py` library do not use MPI, or uses
-   OpenMP with an initialized environment.
+    => (re-)install eccodes support for Python : ``pip3 install --user eccodes``
 
-+ There is a field in my FA file, unknown by ``epygram``
-  (or it seems to be recognized as a MiscField); how can I manage to read it ?
+    if that is not enough, reinstall epygram:
 
-   => edit ``$HOME/.epygram/user_Field_Dict_FA.csv``, and add your field in the
-   manner of the examples given therein.
-   And warn the ``epygram`` team about it, so that it will enter next version
-   default ``Field_Dict_FA.csv``.
-
-+ My PC does not have enough memory to deal with these global spectral fields...
-  
-   >>> Legendre spectral transforms need XX.XX MB
-   >>> memory, while only YY.YY MB is available:
-   >>> SWAPPING prevented !
-  
-   => either:
-  
-   - run your script on beaufix/prolix usiang the alias
-     ``s1batch='sbatch -N 1 -p normal64 --mem 60000 -t 00:30:00'``
-     e.g.: ``s1batch myscript.py options -of -my --script``
-   - use the ``fa_sp2gp.py`` tool on Bull (using the above alias) to convert your
-     file to all-gridpoint then work in gridpoint space
-
-+ I have a brutal crash while working with some T1800-or-so global files on beaufix/prolix...
-   
-   => before running Python, you need to raise the stack size limit: ``ulimit -s unlimited``
-
-+ How to hide LFI/FA messages ?
-
-   => either:
-  
-   - ``export FA4PY_MUTE=1``
-   - edit ``$HOME/.epygram/userconfig.py`` and set ``FA_mute_FA4py = True``
+    - clean any reference to ``epygram`` in your environment
+    - ``unset PYTHONPATH``
+    - @ CNRM, reinstall epygram running ``$EPYGRAM_INSTALL_DIR/_install/install_epygram.py -e``
 
 -----------------------------------------------------------
 
-How can I... ?
---------------
++ **I have rather esoterical errors when I try to read a FA file...**
 
-+ How can I plot the sum of several fields ?
-   
-   7 lines !
-   
-   >>> import epygram
-   >>> epygram.init_env()
-   >>> r = epygram.formats.resource('myfile', 'r')
-   >>> fld1 = r.readfield('FLD1')
-   >>> fld2 = r.readfield('FLD2')
-   >>> fld_s = fld1 + fld2
-   >>> fld_s.plotfield(...)
-   
+    => the :func:`epygram.init_env` may be initialized at the beginning of your
+    script(s), to be sure the :mod:`arpifs4py` library do not use MPI, or uses
+    OpenMP with an initialized environment.
 
 -----------------------------------------------------------
 
-How does it work ?
-------------------
++ **There is a field in my Surfex FA file, recognized as MiscField by** ``epygram``
+  **whereas it is H2D, or vice-versa; how can I manage to read it ?**
 
-+ How do ``epygram`` and ``vortex`` interconnect ?
-
-   => Well ! Here is an example (having ``vortex`` installed),
-   that fetches a resource on the archive and returns an ``epygram`` resource:
-   
-   >>> import epygram
-   >>> epygram.init_env()
-   >>> import usevortex
-   >>> r = usevortex.get_resources(getmode='epygram',                # for the function to return the resource as an epygram object
-                                   experiment='864G',                # XPID
-                                   block='forecast',                 # Olive/Perl 'forecast' block (directory in archive)
-                                   kind='gridpoint',                 # post-processed fields
-                                   nativefmt='grib',                 # GRIBbed files
-                                   date='2015041500',                # initial date and time
-                                   cutoff='prod',                    # production cutoff
-                                   term=3,                           # forecast term
-                                   geometry='frangp0025',            # BDAP domain
-                                   origin='hst',                     # some obscure historical characteristic...
-                                   model='arome',                    # resource from the AROME model (to be distinguished from the SURFEX file for instance)
-                                   local='fcst_[term].[nativefmt]')  # local filename, once fetched
-   >>> r[0].listfields()
-   >>> ...
-      
-   Other resource descriptors are available, cf. :func:`usevortex.get_resources` documentation.
-      
-   ``vortex`` also is able to use ``epygram`` in order to handle a file's content, cf. Vortex doc.
+    => edit ``$HOME/.epygram/sfxflddesc_mod.F90``, and add your field in the
+    manner of the examples given therein or in ``$EPYGRAM_INSTALL_DIR/epygram/data/sfxflddesc_mod.F90``.
+    And warn the ``epygram`` team about it, so that it will enter next version
+    default ``sfxflddesc_mod.F90``.
 
 -----------------------------------------------------------
 
-Evolutivity
------------
++ **I need to overwrite the faFieldName.def ecCodes definition file for FA fieldnames conversion to GRIB2 parameters:**
 
-+ I have built a new format class ``FMFILE`` (or whatever else) for ``epygram``,
-  and I want it to be "fully" integrated in the package locally on my platform
-  (so that the :func:`epygram.formats.resource` can return it). How can I do ?
-   
-   => edit ``$HOME/.epygram/userconfig.py``, and:
-     - add
-     
-       >>> usermodules = [{'name':'FMFILE', 'abspath':'/path/to/FMFILE.py'}]
-     - copy the variable :obj:`epygram.config.implemented_formats` in it, adding ``FMFILE``
+    => copy ``$HOME/.epygram/gribapi.def.0/`` as ``$HOME/.epygram/gribapi.def.99/``,
+    then edit ``$HOME/.epygram/gribapi.def.99/grib2/localConcepts/lfpw/faFieldName.def``
+    and set any field therein.
 
-+ I want to add new features or methods to a class,
-  :class:`epygram.fields.H2DField` for instance, and be sure that my
-  modifications will not be overwritten at the next upgrade of ``epygram``...
+-----------------------------------------------------------
+
++ **My PC does not have enough memory to deal with these global spectral fields...**
   
-   => build your class ``myH2DField`` in ``/path/to/myH2DField.py``, making it inherit from :class:`epygram.fields.H2DField`, as follows:
+    >>> Legendre spectral transforms need XX.XX MB
+    >>> memory, while only YY.YY MB is available:
+    >>> SWAPPING prevented !
   
-     .. code-block:: python
-     
-       #!/usr/bin/env python
-       # -*- coding: utf-8 -*-
-       import copy
-       import footprints
-       footprints.priorities.set_after('default','user')
-       from epygram.fields import H2DField
-       
-       class myH2DField(H2DField):
-           _footprint = dict(
-               priority = dict(
-                   level = footprints.priorities.top.level('user')
-               )
-           )
+    => either:
+  
+    - run your script on supercomputers using the alias
+      ``s1batch='sbatch -N 1 -p normal256 --mem 250000 -t 00:30:00'``
+      e.g.: ``s1batch myscript.py options -of -my --script``
+    - use the ``fa_sp2gp.py`` tool on Bull (using the above alias) to convert your
+      file to all-gridpoint then work in gridpoint space
 
-     For this class to be used by ``epygram``, you simply have to add it in ``$HOME/.epygram/userconfig.py``:
-     
-     >>> usermodules = [{'name':'myH2DField', 'abspath':'/path/to/myH2DField.py'}]
-    
-    Anyway, if your modifications may be useful to others, propose to the ``epygram`` team its integration in the next version !
+-----------------------------------------------------------
+
++ **I have a brutal crash (e.g. SegFault) while working with some large size fields...**
    
-+ I want to add a personal colormap to be used by ``epygram``.
+    => before running Python, you need to raise the stack size limit: ``ulimit -s unlimited``
 
-   => write your colormap as RGB as below
-    
-    .. code-block:: python
-    
-        r1,g1,b1;
-        r2,g2,b2;
-        ...
-        rn,gn,bn
-    
-    into file ``mycolormap.cmap``.
-    
-    Then in ``$HOME/.epygram/userconfig.py`` add:
-    
-    >>> usercolormaps = {'mycolormap':'/path/to/mycolormap.cmap'}
-    
-    and the colormap is now accesible to ``epygram``.
-    
-    If you also want to scale it (i.e. associate the changes of color to discrete, specific values:
-    
-    in ``$HOME/.epygram/userconfig.py`` add:
-    
-    >>> usercolormaps_scaling = {'mycolormap':[val_min, val1, val2, ..., val_max]}
+-----------------------------------------------------------
+
++ **How to hide LFI/FA messages ?**
+
+    => either:
+  
+    - ``export FA4PY_MUTE=1``
+    - edit ``$HOME/.epygram/userconfig.py`` and set ``FA_mute_FA4py = True``
+
+-----------------------------------------------------------
+
++ **How to modify values of parameters or options of ``epygram`` *configuration* ?**
+
+    => values of :mod:`epygram.config` can be modified in
+    ``$HOME/.epygram/userconfig.py``
 
 -----------------------------------------------------------
 

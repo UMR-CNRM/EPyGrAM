@@ -88,13 +88,6 @@ Most useful methods
   >>> g_aro.ij2ll(669, 674)  # grid indexes to lon/lat
   (1.2472761341493812, 45.668753485393296)
 
-- create a Basemap object (:mod:`mpl_toolkits.basemap`), as much appropriate
-  to the geometry or with requested specificities
-
-  >>> g_aro.make_basemap()
-  >>> # or
-  >>> g_arp.make_basemap(specificproj='kav7')
-
 ...
 
 -----------------------------------------------------------
@@ -122,7 +115,7 @@ Vertical kind of geometries are usually built from either resources or
 
 Cf. http://apps.ecmwf.int/codes/grib/format/grib2/ctables/4/5 for vertical coordinate types.
 
-These V1D fields are also *plottable*, by the way:
+These V1D fields are also *plotable*, by the way:
 
 >>> p.plotfield(title='A simple profile') 
 

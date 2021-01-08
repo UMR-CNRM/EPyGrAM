@@ -2,43 +2,10 @@ Distribution
 ============
 
 The package is distributed freely within Météo France and partners of the 
-ALADIN and HIRLAM consortia. 
+ACCORD consortium (formerly ALADIN/LACE/HIRLAM).
 
-Distribution/Installation is available:
+Source code and Installation directives available on https://opensource.umr-cnrm.fr/projects/epygram
 
-- At Météo France:
-
-  - on CNRM-GAME linux workstations: under ``/home/common/epygram/public/``;
-    just ask CTI for synchronization of both (``/home/common/epygram``,
-    ``/home/common/sync``) on your linux PC. Installation instructions
-    to be found then at
-    ``/home/common/epygram/public/EPyGrAM/stable/_install/INSTALL_README_cnrm_bull.txt``
-  - on BULL supercomputers: under 
-    ``/home/gmap/mrpe/mary/public/EPyGrAM/``; installation instructions
-    to be found then at
-    ``/home/gmap/mrpe/mary/public/EPyGrAM/stable/_install/INSTALL_README_cnrm_bull.txt``
-  - else, on demand (alexandre.mary@meteo.fr).
-
-- For partners of ALADIN/HIRLAM consortia: elements are available either:
-
-  - on https://opensource.umr-cnrm.fr/projects/epygram/files
-  - on the MF archive machine **hendrix**, under /home/mary/public/
-  - (soon, to be confirmed: on https://hirlam.org/trac/browser/)
-
-- Elsewhere:
-
-  - You won't be able to support (and you certainly don't need) the FA and LFA
-    formats; you must exclude them from the list of implemented formats:
-    
-      - create a $HOME/.epygram directory
-      - copy the samples userconfig.py and user_Field_Dict_FA.csv, provided in _install directory, to it
-      - copy the 'implemented_formats' from epygram/config.py into userconfig.py and remove FA and LFA from the list
-      
-  - If you don't want to support the LFI format, you can suppress it along with the FA and LFA formats.
-    Otherwise, you need to compile a shared library containing the LFI fortran subroutines. A way
-    of doing this is through the compilation of the Meso-NH model. Then the libs4py.so file must be put
-    in the EPyGrAM/site/arpifs4py directory.
- 
 Dependancies
 ------------
 
@@ -70,4 +37,3 @@ trunk of the code and the official releases.
 
 New releases will be distributed with the above conditions, with information
 to be delivered through the Redmine project and epygram@meteo.fr mailing-list.
-
