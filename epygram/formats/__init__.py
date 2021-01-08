@@ -52,6 +52,8 @@ def available_format(fmt):
             import netCDF4
         elif fmt == 'TIFFMF':
             import pyexttiff
+        elif fmt == 'HDF5SAF':
+            import h5py
     except Exception as e:
         available = False
         reason = str(e)

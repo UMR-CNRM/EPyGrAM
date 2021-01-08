@@ -1027,8 +1027,15 @@ class D3RectangularGridGeometry(D3Geometry):
         ilist, jlist = list(zip(*border))
         (lons, lats) = self.ij2ll(numpy.array(ilist),
                                   numpy.array(jlist))
-        return {'lonmin':lons.min(), 'lonmax':lons.max(),
-                'latmin':lats.min(), 'latmax':lats.max()}
+        lonmin, lonmax = lons.min(), lons.max()
+        latmin, latmax = lats.min(), lats.max()
+        if numpy.ma.masked in (lonmin, lonmax, latmin, latmax):
+            #space-view geometry for example
+            lons, lats = self.get_lonlat_grid(subzone=subzone)
+            lonmin, lonmax = lons.min(), lons.max()
+            latmin, latmax = lats.min(), lats.max()
+        return {'lonmin':lonmin, 'lonmax':lonmax,
+                'latmin':latmin, 'latmax':latmax}
 
     def point_is_inside_domain_ll(self, lon, lat,
                                   margin=-0.1,
