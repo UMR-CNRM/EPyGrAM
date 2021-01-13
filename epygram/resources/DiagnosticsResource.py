@@ -33,7 +33,7 @@ Fields are identified using their generic fid which is the GRIB code. Some codes
 are not well defined. Here are some explanations on how they are used in this module:
     - graupel and hail are not difficult to use because GRIB code does not make difference
                        between mixing-ratio and specific contents for this categories
-                       We choose specific content of graupel to be parameter 32
+                       We choose specific content of graupel to be parameter 201
                                  mixing ratio of graupel to be 253
                                  specific content of hail to be 31
                                  mixing ratio of hail to be 252
@@ -799,7 +799,7 @@ class DiagnosticsResource(Resource):
         fid_qr = {'discipline':0, 'parameterCategory':1, 'parameterNumber':85, 'productDefinitionTemplateNumber':0}
         fid_qi = {'discipline':0, 'parameterCategory':1, 'parameterNumber':84, 'productDefinitionTemplateNumber':0}
         fid_qs = {'discipline':0, 'parameterCategory':1, 'parameterNumber':86, 'productDefinitionTemplateNumber':0}
-        fid_qg = {'discipline':0, 'parameterCategory':1, 'parameterNumber':32, 'productDefinitionTemplateNumber':0}
+        fid_qg = {'discipline':0, 'parameterCategory':1, 'parameterNumber':201, 'productDefinitionTemplateNumber':0}
         fid_qh = {'discipline':0, 'parameterCategory':1, 'parameterNumber':31, 'productDefinitionTemplateNumber':0}
         fid_qt = {'discipline':0, 'parameterCategory':1, 'parameterNumber':251, 'productDefinitionTemplateNumber':0}
 
@@ -962,7 +962,7 @@ class DiagnosticsResource(Resource):
 
     def diag_qg_from_rg(self, fids=[], dolist=False, getdata=True):
         fid_r = {'discipline':0, 'parameterCategory':1, 'parameterNumber':253, 'productDefinitionTemplateNumber':0}
-        fid_q = {'discipline':0, 'parameterCategory':1, 'parameterNumber':32, 'productDefinitionTemplateNumber':0}
+        fid_q = {'discipline':0, 'parameterCategory':1, 'parameterNumber':201, 'productDefinitionTemplateNumber':0}
         return self._diag_q_from_r_qt(fid_r, fid_q, fids, dolist, getdata)
 
     def diag_qh_from_rh(self, fids=[], dolist=False, getdata=True):
@@ -985,7 +985,7 @@ class DiagnosticsResource(Resource):
         fid_qr = {'discipline':0, 'parameterCategory':1, 'parameterNumber':85, 'productDefinitionTemplateNumber':0}
         fid_qi = {'discipline':0, 'parameterCategory':1, 'parameterNumber':84, 'productDefinitionTemplateNumber':0}
         fid_qs = {'discipline':0, 'parameterCategory':1, 'parameterNumber':86, 'productDefinitionTemplateNumber':0}
-        fid_qg = {'discipline':0, 'parameterCategory':1, 'parameterNumber':32, 'productDefinitionTemplateNumber':0}
+        fid_qg = {'discipline':0, 'parameterCategory':1, 'parameterNumber':201, 'productDefinitionTemplateNumber':0}
         fid_qh = {'discipline':0, 'parameterCategory':1, 'parameterNumber':31, 'productDefinitionTemplateNumber':0}
         fid_R = {'discipline':0, 'parameterCategory':1, 'parameterNumber':254, 'productDefinitionTemplateNumber':0}
 
@@ -1347,7 +1347,7 @@ class DiagnosticsAROMEResource(DiagnosticsResource):
         self._diag_checks(fids, dolist)
         fid_Ps = {'discipline':0, 'parameterCategory':3, 'parameterNumber':0, 'typeOfFirstFixedSurface':1, 'productDefinitionTemplateNumber':0}
         fid_T = {'discipline':0, 'parameterCategory':0, 'parameterNumber':0, 'typeOfFirstFixedSurface':119, 'productDefinitionTemplateNumber':0}
-        fid_Pdep = {'discipline':0, 'parameterCategory':3, 'parameterNumber':8, 'typeOfFirstFixedSurface':119, 'productDefinitionTemplateNumber':0}
+        fid_Pdep = {'discipline':0, 'parameterCategory':193, 'parameterNumber':4, 'typeOfFirstFixedSurface':119, 'productDefinitionTemplateNumber':0}
         fid_R = {'discipline':0, 'parameterCategory':1, 'parameterNumber':254, 'typeOfFirstFixedSurface': 119, 'productDefinitionTemplateNumber':0}
         fid_PhiSurf = {'discipline':0, 'parameterCategory':3, 'parameterNumber':4, 'typeOfFirstFixedSurface': 1, 'productDefinitionTemplateNumber':0}
         fid_HGeopot = {'discipline':0, 'parameterCategory':3, 'parameterNumber':5, 'typeOfFirstFixedSurface':119, 'productDefinitionTemplateNumber':0}
