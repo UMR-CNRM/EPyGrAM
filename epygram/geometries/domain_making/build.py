@@ -236,14 +236,9 @@ def build_lonlat_field(ll_boundaries,
     Build a lonlat field empty except on the border, given lon/lat boundaries
     and optionally resolution in degrees.
     """
-    llgeometry = build_lonlat_geometry(ll_boundaries, resolution=resolution)
-    lldomain = fpx.field(structure='H2D',
-                         geometry=llgeometry,
-                         fid=FPDict(fid))
-    data = numpy.zeros((llgeometry.dimensions['Y'], llgeometry.dimensions['X']))
-    data[1:-1, 1:-1] = 1.
-    lldomain.setdata(data)
-    return lldomain
+    ll_geometry = build_lonlat_geometry(ll_boundaries, resolution=resolution)
+    ll_domain = ll_geometry.make_field(fid=fid)
+    return ll_domain
 
 
 def build_geometry_fromlonlat(lonmin, lonmax,

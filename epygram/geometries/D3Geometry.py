@@ -505,10 +505,47 @@ class D3Geometry(RecursiveObject, FootprintBase):
 # [so that, subject to continuation through updated versions,
 #  including suggestions/developments by users...]
 
+    def make_field(self, fid=None):
+        """Make a field out of the geometry."""
+        if fid is None:
+            fid = self.name
+        ll_field = fpx.field(structure='H2D',
+                             geometry=self,
+                             fid=FPDict({'geometry': fid}))
+        data = numpy.zeros((self.dimensions['Y'], self.dimensions['X']))
+        data[1:-1, 1:-1, ...] = 1.
+        ll_field.setdata(data)
+        return ll_field
+
     def plotgeometry(self,
-                     color='blue',
-                     borderonly=True,
+                     plotlib='basemap',
                      **kwargs):
+        """
+        Makes a simple plot of the geometry, with a number of options.
+
+        :param plotlib: library to be used for plotting: 'basemap' is default but DEPRECATED;
+            'cartopy' is recommended !
+        """
+        if plotlib == 'cartopy':
+            return self.cartoplot_geometry(**kwargs)
+        else:
+            return self.basemap_plot_geometry(**kwargs)
+
+    def cartoplot_geometry(self, **kwargs):
+        """
+        Makes a simple plot of the geometry, using cartopy.
+        For kwargs please refer to epygram.geometries.domain_making.output.cartoplot_rect_geometry
+        """
+        from epygram.geometries.domain_making.output import cartoplot_rect_geometry
+        if 'color' in kwargs:  # compatibility dirty-fix
+            kwargs['contourcolor'] = kwargs.pop('color')
+        fig, ax = cartoplot_rect_geometry(self, **kwargs)
+        return fig, ax
+
+    def basemap_plot_geometry(self,
+                              color='blue',
+                              borderonly=True,
+                              **kwargs):
         """
         Makes a simple plot of the geometry, with a number of options.
 
@@ -518,7 +555,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
 
         For other options, cf. plotfield() method of :class:`epygram.fields.H2DField`.
 
-        This method uses (hence requires) 'matplotlib' and 'basemap' libraries.
+        :DEPRECATED:
         """
         import matplotlib.pyplot as plt
         plt.rc('font', family='serif')
@@ -563,7 +600,6 @@ class D3Geometry(RecursiveObject, FootprintBase):
             ax.set_title(str(self.name))
         else:
             ax.set_title(kwargs.get('title'))
-
         return fig, ax
 
     def what(self, out=sys.stdout,

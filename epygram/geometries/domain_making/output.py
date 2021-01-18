@@ -21,7 +21,7 @@ from epygram.config import epsilon
 from epygram.geometries.SpectralGeometry import truncation_from_gridpoint_dims
 
 from .util import Ezone_minimum_width
-from .build import compute_lonlat_included, build_CIE_field, build_lonlat_field
+from .build import compute_lonlat_included, build_CIE_field, build_lonlat_field, build_lonlat_geometry
 
 epylog = footprints.loggers.getLogger(__name__)
 
@@ -451,20 +451,49 @@ def cartoplot_geometry(geometry,
                                   epygram_departments=departments,
                                   extent='global')
     if lonlat_included is not None:
-        ll_domain = build_lonlat_field(lonlat_included)
-        ll_domain.cartoplot(fig=fig,
-                            ax=ax,
-                            projection=projection,
-                            plot_method='contour',
-                            title='Domain: C+I+E \n Blue contour: required lon/lat',
-                            colorsnumber=1,
-                            contourcolor='blue',
-                            contour_kw=dict(linewidths=4,),
-                            contourlabel=False,
-                            extent='global',
-                            meridians=None,
-                            parallels=None)
+        ll_geometry = build_lonlat_geometry(lonlat_included)
+        cartoplot_rect_geometry(ll_geometry,
+                                background=False,
+                                departments=False,
+                                title='Domain: C+I+E \n Blue contour: required lon/lat',
+                                fig=fig, ax=ax)
     return fig
+
+
+def cartoplot_rect_geometry(ll_geometry,
+                            background=True,
+                            departments=False,
+                            **cartoplot_kwargs):
+    import cartopy.crs as ccrs
+    import cartopy.feature as cfeature
+    ll_field = ll_geometry.make_field()
+    center = ll_geometry.getcenter()
+    sat_height = ll_geometry.distance(ll_geometry.gimme_corners_ll()['ll'],
+                                      ll_geometry.gimme_corners_ll()['ur'])
+    projection = ccrs.NearsidePerspective(central_longitude=center[0].get('degrees'),
+                                          central_latitude=center[1].get('degrees'),
+                                          satellite_height=sat_height)
+    if background:
+        cartopy_features = [cfeature.LAND, cfeature.OCEAN,
+                            cfeature.LAKES, cfeature.RIVERS]
+    else:
+        cartopy_features = []
+    defaults = dict(projection=projection,
+                    plot_method='contour',
+                    title='geometry',
+                    colorsnumber=1,
+                    contourcolor='blue',
+                    contour_kw=dict(linewidths=4,),
+                    contourlabel=False,
+                    extent='global',
+                    cartopy_features=cartopy_features,
+                    epygram_departments=departments,
+                    meridians=None,
+                    parallels=None)
+    for k, v in defaults.items():
+        cartoplot_kwargs.setdefault(k,v)
+    fig, ax = ll_field.cartoplot(**cartoplot_kwargs)
+    return fig, ax
 
 
 def basemap_plot_geometry(geometry,
