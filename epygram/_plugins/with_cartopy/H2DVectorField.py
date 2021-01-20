@@ -187,7 +187,7 @@ def _cartoimage_actual_plot(cls,
 def cartoplot(self,
               map_factor_correction=True,
               subsampling=1,
-              components_are_projected_on='grid',
+              components_are_projected_on=None,
               vector_plot_method='quiver',
               vector_plot_kwargs=None,
               quiverkey=None,
@@ -209,6 +209,7 @@ def cartoplot(self,
         Ex: *subsampling* = 10 will only plot one gridpoint upon 10.
     :param components_are_projected_on: inform the plot on which axes the
         vector components are already projected on ('grid' or 'lonlat').
+        If None, look for information in the field, and raise error if not found.
     :param vector_plot_method: the matplotlib Axes method to be used to
         plot, among ('quiver', 'barbs', 'streamplot').
     :param vector_plot_kwargs: arguments to be passed to the associated
@@ -225,6 +226,10 @@ def cartoplot(self,
     if self.spectral:
         raise epygramError("please convert to gridpoint with sp2gp()" +
                            " method before plotting.")
+    if components_are_projected_on is None:
+        components_are_projected_on = self.components_are_projected_on
+        if components_are_projected_on is None:
+            raise epygramError("Unable to plot if arg **components_are_projected_on/wind_projected_on** is undefined")
     # 1/ Ask module to prepare figure, and plot module if required
     result = self._cartoplot_set_figure_and_module(map_factor_correction,
                                                    **module_plot_kwargs)

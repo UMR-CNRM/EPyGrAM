@@ -86,7 +86,7 @@ def main(filename,
          # wind/vectors
          vectors_subsampling=20,
          vector_plot_method='quiver',
-         wind_components_are_projected_on='grid',
+         wind_components_are_projected_on=None,
          quiverkey=None,
          map_factor_correction=False,
          # output
@@ -159,8 +159,8 @@ def main(filename,
     :param vectors_subsampling: subsampling ratio of vectors plots.
     :param vector_plot_method: among ('quiver', 'barbs', 'streamplot') for vector plots.
     :param wind_components_are_projected_on: inform the plot on which axes the
-        vector components are projected on
-        ('grid' or 'lonlat').
+        vector components are projected on ('grid' or 'lonlat').
+        If None (default), look for information in the field, or raise error.
     :param quiverkey: options to be passed to plotfield to activate a quiver key
         (cf. pyplot.quiverkey).
     :param map_factor_correction: if True, applies a correction of magnitude
