@@ -194,8 +194,11 @@ def build_lonlat_geometry(ll_boundaries, resolution=None):
     resolution in degrees.
     """
     if resolution is not None:
-        xres = resolution
-        yres = resolution
+        if isinstance(resolution, (list, tuple)):
+            xres, yres = resolution
+        else:
+            xres = resolution
+            yres = resolution
         xwidth = (ll_boundaries['lonmax'] - ll_boundaries['lonmin']) / xres
         ywidth = (ll_boundaries['latmax'] - ll_boundaries['latmin']) / yres
         if (xwidth - round(xwidth)) > 1e-6:
