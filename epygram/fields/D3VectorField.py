@@ -118,6 +118,18 @@ class D3VectorField(Field):
     def geometry(self):
         return self.components[0].geometry
 
+    @property
+    def components_are_projected_on(self):
+        components = [f.misc_metadata.get('uvRelativeToGrid', None) for f in self.components]
+        proj = components[0]
+        if len(set(components)) > 1:
+            proj = None
+        elif proj == 0:
+            proj = 'lonlat'
+        elif proj == 1:
+            proj = 'grid'
+        return proj
+
     def attach_components(self, *components):
         """
         Attach components of the vector to the VectorField.

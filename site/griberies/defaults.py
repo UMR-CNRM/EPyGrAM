@@ -53,6 +53,7 @@ GRIB2_metadata_to_embark = ['typeOfGeneratingProcess',
                             'timeIncrement',
                             'bitsPerValue',
                             'dataRepresentationTemplateNumber',
+                            'uvRelativeToGrid',
                             ]
 
 # GRIB1 ------------------------------------------------------------------------

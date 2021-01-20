@@ -500,7 +500,7 @@ misc_options = {
     'wind_components_are_projected_on':[
         '--wpo', '--wind_projected_on',
         dict(help="specify on which coordinates the wind components are projected.",
-             default='lonlat',
+             default=None,
              choices=['lonlat', 'grid'],
              dest='wind_components_are_projected_on')],
                 }
