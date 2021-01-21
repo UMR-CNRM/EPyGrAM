@@ -24,13 +24,12 @@ import footprints
 from footprints import proxy as fpx
 from bronx.system.unistd import stderr_redirected
 
-from epygram import config, epygramError, util
+from epygram import config, epygramError
+from . import fafields
 
 __all__ = []
 
 epylog = footprints.loggers.getLogger(__name__)
-
-from . import fafields
 
 
 def available_format(fmt):
@@ -57,7 +56,7 @@ def available_format(fmt):
     except Exception as e:
         available = False
         reason = str(e)
-    return (available, reason)
+    return available, reason
 
 
 # Formats loading used to have to follow an order,
@@ -85,7 +84,7 @@ for f in _formats_in_loading_order:
         if f not in [m['name'] for m in config.usermodules]:
             importlib.import_module('.' + f, __name__)
     else:
-        epylog.warning(("Format: {} is deactivated at runtime ({}). " +
+        epylog.warning(("Format: {} is deactivated at runtime (Error: {}). " +
                         "Please deactivate from config.implemented_formats or fix error.").format(f, _reason))
 
 
@@ -99,7 +98,7 @@ def guess(filename):
     """
 
     formats_in_guess_order = copy.copy(runtime_available_formats)
-    _guess_last_formats = ['DDHLFA', 'LFA', 'FA', 'LFI', ]  # because they might not be very clean at catching exceptions
+    _guess_last_formats = ['DDHLFA', 'LFA', 'FA', 'LFI', ]  # because they may not be very clean at catching exceptions
     for glf in _guess_last_formats:
         if glf in formats_in_guess_order:
             formats_in_guess_order = [f for f in formats_in_guess_order

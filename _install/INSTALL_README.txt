@@ -2,7 +2,7 @@ EPyGrAM installation
 ====================
 
 # 0. EVENTUAL PRE-REQUISITES
--------------------------
+----------------------------
 0.1 if you don't have packages 'footprints' and 'bronx' already installed,
 	install them beforehand (ideally in the site-packages)
 0.2 it is advised to uninstall older version before installing, i.e.:
@@ -12,9 +12,18 @@ EPyGrAM installation
 0.3 de-tar new version EPyGrAM-x.x.x.tar into the directory of your choice,
     hereafter named $EPYGRAM_INSTALL_DIR
 
+# A. Automatic installation
+---------------------------
+
+* run:
+python3 $EPYGRAM_INSTALL_DIR/_install/setup_epygram.py [-v][-b] [-h for help about arguments]
+and cf. complementary information printed out.
+
+B. Manual installation
+----------------------
 
 # 1. LINK SOURCES IN SITE-PACKAGES
-------------------------------- 
+---------------------------------- 
 1.1 go to the site-packages directory,
     usually ~/.local/lib/pythonX.Y/site_packages/ (X.Y depending on your python version)
     but also accessible in python through site.getusersitepackages()

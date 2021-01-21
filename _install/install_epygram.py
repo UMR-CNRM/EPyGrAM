@@ -170,6 +170,7 @@ def main(version='stable',
 
 
 if __name__ == '__main__':
+    print ("DEPRECATED: this install_epygram.py script is deprecated, please use setup_epygram.py.")
     parser = argparse.ArgumentParser('Helper to install or update EPyGrAM @ CNRM')
     parser.add_argument('-v', '--version_to_be_linked',
                         help=' '.join(['version to be linked, within available'
@@ -205,7 +206,13 @@ if __name__ == '__main__':
                         help='link eccodes python2 interface installation in .local (CNRM workstations and beaufix/prolix only)',
                         action='store_true',
                         default=False)
+    parser.add_argument('-F', '--force_deprecated_install_script',
+                        help='To force this DEPRECATED script to be used.',
+                        action='store_true',
+                        default=False)
     args = parser.parse_args()
+    if not args.force_deprecated_install_script:
+        raise DeprecationWarning("Stop. Use -F to force using this DEPRECATED script.")
     main(args.version_to_be_linked,
          fromdir=args.fromdir,
          update_epygram_profile=args.epygram_profile,

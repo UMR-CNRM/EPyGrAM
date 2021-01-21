@@ -137,7 +137,7 @@ for p in config.activate_plugins:
     else:
         epylog.info("Plugin '{}' from config.activate_plugins is not available.".format(p))
 
-# User modules
+# User modules  # TODO: ? CLEANME
 if len(config.usermodules) > 0:
     footprints.priorities.set_before('debug', 'user')
     for m in config.usermodules:
@@ -162,19 +162,15 @@ def showconfig():
     Print current config.
     """
     import copy
-
     cfg = copy.copy(config.__dict__)
-
     header = "### " + cfg['__name__'] + " ###"
     print("#" * len(header))
     print(header)
     print("#" * len(header))
-
-    toberemoved = ['os', 'sys', 'imp', 'platform', 'footprints',
-                   '__name__', '__doc__', '__package__', '__file__',
-                   '__builtins__']
-
-    for p in toberemoved:
+    to_be_removed = ['os', 'sys', 'imp', 'platform', 'footprints',
+                     '__name__', '__doc__', '__package__', '__file__',
+                     '__builtins__']
+    for p in to_be_removed:
         cfg.pop(p, None)
     for k in sorted(cfg.keys()):
         print('- ' + k + ' = ' + str(cfg[k]))

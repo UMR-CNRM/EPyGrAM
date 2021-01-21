@@ -1,18 +1,22 @@
 EPyGrAM installation
 ====================
 
-A. automatic installation (recommended)
--------------------------
 
-1.1 Load python2.7 at least:
-    module load python
-1.2 Execute epygram install script:
-    python2 /home/gmap/mrpe/mary/public/EPyGrAM/_install/install_epygram.py -b -e --link_eccodes
-    (-h for details about options)
-    You may need to execute with both python2 and python3 if needed.
+A. Automatic installation (recommended)
+---------------------------------------
+
+* On supercomputers:
+module load python
+
+then
+
+* (given an EPyGrAM repository $EPYGRAM_INSTALL_DIR), run:
+python3 $EPYGRAM_INSTALL_DIR/_install/setup_epygram.py [-v][-b] [-h for help about arguments]
+and cf. complementary information printed out.
+You may need to execute with both python2 and python3 if needed.
 
 
-B. manual installation
+B. Manual installation
 ----------------------
 
 # 1. LINK SOURCES IN SITE-PACKAGES
