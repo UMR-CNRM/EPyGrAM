@@ -22,8 +22,8 @@ sxcoope1=1  # from which are synchronised all CNRM workstations
 vxdev64=0  # vxdev64: development server @ CNRM (OS updates)
 pagre=0  # COMPAS server, from which it is replicated onto the others ! DEPRECATED !
 sotrtm33sidev=1  # COMPAS server, from which it is replicated onto the others
-beaufix=1
-prolix=1
+beaufix=0
+prolix=0
 belenos=1
 taranis=1
 

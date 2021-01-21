@@ -73,7 +73,7 @@ class _LocalHost(object):
         install_dirs = {
             'default': '/home/common/sync/vortex/vortex',
             'bullx': '/home/mf/dp/marp/verolive/vortex/vortex-olive',
-            'bull_sequana': '/home/mf/dp/marp/verolive/vortex/vortex-olive',
+            'atos_sequana': '/home/mf/dp/marp/verolive/vortex/vortex-olive',
             'dsidev': '/soprano/home/marp999/vortex/vortex',
             'ecmwf_cc': '/home/ms/fr/sos/vortex/vortex-olive',
             'ecgate': '/home/ms/fr/sos/vortex/vortex-olive'}
