@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Make a tarball of EPyGrAM
+# Make a tarball of EPyGrAM (without tests nor doc, to be tared separately)
 
 if [ "$1" == "-h" ]; then
     echo "Usage: mktar.sh [/path/to/vortex]"
@@ -16,7 +16,7 @@ VERSION=`grep __version__ epygram/__init__.py | awk '{print $3}' | awk -F "'" '{
 
 # Filters
 to_exclude=''
-for elem in playground tests deploy.sh mktar.sh apptools/*.pyc site/arpifs4py/libs4py_*.so epygram/doc_sphinx/source/gallery/inputs *__pycache__* */.ipynb_checkpoints/* site/usevortex.py
+for elem in tests deploy.sh mktar.sh apptools/*.pyc site/arpifs4py/libs4py_*.so epygram/doc_sphinx/html epygram/doc_sphinx/source/gallery/inputs *__pycache__* */.ipynb_checkpoints/* site/usevortex.py
 do
   to_exclude="$to_exclude --exclude $elem"
 done
@@ -47,7 +47,7 @@ done
 # Tar
 tgz="$HOME/tmp/EPyGrAM-$VERSION.tgz"
 tar -czf $tgz *
-echo "=> $tgz"
+ls -lh $tgz
 
 # Come back and clean
 cd $here

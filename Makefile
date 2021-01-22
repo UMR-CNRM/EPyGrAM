@@ -35,6 +35,14 @@ pushrelease:
 tar:
 	. ./mktar.sh
 
+# Tarball for export
+tar_doc:
+	. ./mktar_doc.sh
+
+# Tarball for export
+tar_tests:
+	. ./mktar_tests.sh
+
 # Clean all the directories, then locally
 clean: $(CLEANDIRS)
 	find . -name "*.pyc"       -print0 | xargs -0r rm
