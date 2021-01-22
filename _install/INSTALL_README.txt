@@ -16,7 +16,7 @@ EPyGrAM installation
 ---------------------------
 
 * run:
-python3 $EPYGRAM_INSTALL_DIR/_install/setup_epygram.py [-v][-b] [-h for help about arguments]
+python3 $EPYGRAM_INSTALL_DIR/_install/setup_epygram.py [-b] [-h for help about arguments]
 and cf. complementary information printed out.
 
 B. Manual installation

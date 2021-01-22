@@ -110,7 +110,7 @@ class EpygramInstaller(object):
     def __init__(self):
         self.host = _LocalHost()
         # this file is /path/to/EPyGrAM/_install/setup_epygram.py
-        self.this_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+        self.this_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         # user custom dir: ~/.epygram
         if not os.path.exists(self.epygram_home):
             os.mkdir(self.epygram_home)
