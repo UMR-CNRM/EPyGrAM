@@ -808,6 +808,10 @@ class netCDF(FileResource):
                         loose_epsilon = 1e-12  # config.epsilon was potentially too narrow
                         x_res = Xgrid[:,1:] - Xgrid[:,:-1]
                         y_res = Ygrid[1:,:] - Ygrid[:-1,:]
+                        if Xgrid.shape[0] == 1:  # dim 1 on Y
+                            y_res = x_res
+                        elif Ygrid.shape[1] == 1:  # dim 1 on X
+                            x_res = y_res
                         x_regular = numpy.all(x_res - x_res[0, 0] <= loose_epsilon)
                         y_regular = numpy.all(y_res - y_res[0, 0] <= loose_epsilon)
                         regll = x_regular and y_regular

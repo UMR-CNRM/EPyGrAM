@@ -17,6 +17,7 @@ quote USER $LOGIN
 quote PASS $PASSWORD
 bin
 prompt
+get aladin.197901.nc
 get analysis.full-arpege.tl149-c24.fa
 get glob01.grib
 get grid.arome-forecast.guyane0025+0000:00.grib
