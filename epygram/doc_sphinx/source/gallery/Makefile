@@ -7,3 +7,5 @@ nb4doc:
 nb2check:
 	. ./run_notebooks.sh check_errors
 
+get_inputs:
+	. ./get_inputs.sh
