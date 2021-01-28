@@ -205,7 +205,7 @@ class ColormapHelper(object):
         if plot_method not in ('scatter', 'pcolormesh'):
             kwargs['levels'] = self.colorbounds(minmax=minmax,
                                                 **colorbounds_kw)
-        if self.explicit_colorbounds:
+        if self.explicit_colorbounds is not None:
             if self.normalize:
                 kwargs['norm'] = self.norm()
             kwargs['vmin'] = None
