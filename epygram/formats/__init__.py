@@ -66,9 +66,10 @@ def available_format(fmt):
 # There is also known issues between netCDF and FA/GRIB on some platforms:
 # - GRIB and arpifs4py formats need to be loaded before netCDF/netCDF;
 # - netCDF crash later on if arpifs4py is loaded...
+# - HDF5 currently to be loaded before FA&co
 
 # _loaded_first_formats = ['FA', 'LFI', 'DDHLFA', 'LFA', 'GRIB']
-_loaded_first_formats = ['GRIB', 'FA', 'LFI', 'DDHLFA', 'LFA']
+_loaded_first_formats = ['HDF5SAF', 'GRIB', 'FA', 'LFI', 'DDHLFA', 'LFA']
 _formats_in_loading_order = copy.copy(config.implemented_formats)
 # set ordering
 for lff in _loaded_first_formats[::-1]:

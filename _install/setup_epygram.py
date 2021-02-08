@@ -16,11 +16,15 @@ EPyGrAM = 'EPyGrAM'
 class _LocalHost(object):
     """Object to handle locations specific to host platform."""
 
-    def __init__(self):
-        # user site, where link is done
-        self.user_site = site.getusersitepackages()
-        if isinstance(self.user_site, list):
-            self.user_site = self.user_site[0]
+    @property
+    def user_site(self):
+        """Python user site, where packages are looked for"""
+        user_site = site.getusersitepackages()
+        if isinstance(user_site, list):
+            user_site = user_site[0]
+        if not os.path.exists(user_site):
+            os.makedirs(user_site)
+        return user_site
 
     @property
     def kind(self):
