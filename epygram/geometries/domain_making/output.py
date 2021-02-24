@@ -398,7 +398,7 @@ def plot_geometry(geometry,
                   out=None,
                   background=True,
                   departments=False,
-                  plotlib='basemap',
+                  plotlib='cartopy',
                   **_):
     """
     Plot the built geometry, along with lonlat included domain if given.
