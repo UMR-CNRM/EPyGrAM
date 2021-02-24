@@ -456,7 +456,7 @@ def cartoplot_geometry(geometry,
                                 background=False,
                                 departments=False,
                                 title='Domain: C+I+E \n Blue contour: required lon/lat',
-                                fig=fig, ax=ax)
+                                fig=fig, ax=ax, projection=ax.projection)
     return fig
 
 

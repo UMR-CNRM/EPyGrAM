@@ -65,7 +65,8 @@ class HDF5SAF(FileResource):
                                                        'SUB_SATELLITE_POINT_END_LON',
                                                        'SUB_SATELLITE_POINT_START_LAT',
                                                        'SUB_SATELLITE_POINT_START_LON']]):
-                raise epygramError('HDF5 file is not a HDF5SAF file')
+                self.hdf5.close()
+                raise IOError('HDF5 file is not a HDF5SAF file')
             self.isopen = True
         else:
             raise NotImplementedError("HDF5SAF is only implemented for reading")
