@@ -466,7 +466,8 @@ def _cartoplot_colorbar(cls,
                         minmax_along_colorbar,
                         m, M,
                         colorsnumber,
-                        colorstep):
+                        colorstep,
+                        colorbar_kwargs):
     """Add colorbar."""
     import matplotlib.pyplot as plt
     from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -490,7 +491,8 @@ def _cartoplot_colorbar(cls,
     cb = plt.colorbar(pf,
                       orientation=orientation,
                       ticks=ticks_position,
-                      cax=cax)
+                      cax=cax,
+                      **colorbar_kwargs)
     if not numpy.all(ticks_label == ticks_position):
         cax.set_yticklabels(ticks_label)
     if minmax_along_colorbar:
@@ -554,6 +556,7 @@ def cartoplot(self,
               colorbar='right',
               colorbar_over=None,
               colorbar_ax_kw=None,
+              colorbar_kw={},
               minmax_along_colorbar=True,
               # takeover
               takeover=False
@@ -657,6 +660,7 @@ def cartoplot(self,
     :param colorbar_over: an optional existing ax to plot the colorbar on.
     :param colorbar_ax_kw: kwargs to be passed to
         make_axes_locatable(ax).append_axes(colorbar, **kwargs)
+    :param colorbar_kw: kwargs to be passed to matpltolib's colorbar()
     :param minmax_along_colorbar: if True and minmax is not None,
         adds min and max values along colorbar.
         
@@ -772,7 +776,8 @@ def cartoplot(self,
                                           minmax_along_colorbar,
                                           pmin, pmax,
                                           colorsnumber,
-                                          colorstep)
+                                          colorstep,
+                                          colorbar_kw)
             result['colorbar'] = cb
     # 10/ texts
     self._cartoplot_text(ax, title, uniform, uniformvalue)
