@@ -63,6 +63,7 @@ epygram/doc_sphinx/source/*cheatsheet.aux
 epygram/doc_sphinx/source/*cheatsheet.log
 tests/*.png
 tests/*.log
+tests/data
 
 # compiled inner libraries
 *.o

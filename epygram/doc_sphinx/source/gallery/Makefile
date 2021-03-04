@@ -1,10 +1,10 @@
 
-.PHONY: all nb4doc nb2check
+.PHONY: nb4doc nb_check get_inputs
 
 nb4doc:
 	. ./run_notebooks.sh in_place
 
-nb2check:
+nb_check:
 	. ./run_notebooks.sh check_errors
 
 get_inputs:

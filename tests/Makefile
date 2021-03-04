@@ -9,7 +9,11 @@ NB_DIR        = ../epygram/doc_sphinx/source/gallery
 
 .PHONY: all tests tests27 tests3 tests_all clean apptools2 apptools3 apptools
 
-all: tests apptools
+all: tests apptools notebooks_check
+
+# Get data for tests on dedicated repo
+get_data:
+	. ./get_data.sh
 
 # Run all test with nose
 tests: tests3
@@ -21,7 +25,7 @@ tests3:
 	($(NOSE3) $(TEST_BASE) $(NOSE_OPTS) 2>&1) | tee $@.log
 
 # Complete series
-tests_all: tests_all27 tests_all3 apptools2 apptools3
+tests_all: tests_all3
 
 tests_all27:
 	($(NOSE2) $(TEST_ALL) $(NOSE_OPTS) 2>&1) | tee $@.log
@@ -39,8 +43,11 @@ apptools3:
 	$(MAKE) -C $(APPTOOLS_DIR) all3
 
 # notebooks gallery
-notebooks2check:
-	$(MAKE) -C $(NB_DIR) nb2check
+notebooks_get_inputs:
+	$(MAKE) -C $(NB_DIR) get_inputs
+
+notebooks_check:
+	$(MAKE) -C $(NB_DIR) nb_check
 
 clean:
 	rm -f *.log

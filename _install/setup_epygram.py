@@ -9,6 +9,7 @@ import argparse
 from collections import defaultdict
 import sys
 import site
+import socket
 
 EPyGrAM = 'EPyGrAM'
 
@@ -34,7 +35,7 @@ class _LocalHost(object):
     @staticmethod
     def _kind():
         """Kind == category of host."""
-        hostname = os.environ.get('HOSTNAME', '')
+        hostname = socket.gethostname()
         if any([hostname.startswith(h) for h in
                 ['beaufix', 'prolix']]):
             host_kind = 'bullx'

@@ -16,7 +16,8 @@ import numpy
 
 import epygram
 
-from .util import datadir, suffixes, delta_assertAlmostEqual
+from . import datadir, delta_assertAlmostEqual
+from .formats import suffixes, tolerances
 
 timing = False
 
@@ -73,19 +74,16 @@ class Test_GeometryInterfaces(TestCase):
         """Generic test Read/Write/Read and check identity."""
         with epygram.formats.resource(filename, 'r') as r:
             f_r = r.readfield(fid)
-            tmp = tempfile.mktemp()
-            out = epygram.formats.resource(tmp, 'w', fmt=r.format)
-            out.writefield(f_r)
-            out.close()
-            out.open(openmode='r')
-            f_rwr = out.readfield(fid)
-            out.close()
-            os.remove(tmp)
-            if f_r.geometry != f_rwr.geometry:
-                print(f_r.geometry.recursive_diff(f_rwr.geometry))
-            self.assertEqual(f_r.geometry, f_rwr.geometry,
-                             '\n<>\n'.join([str(f_r.geometry),
-                                            str(f_rwr.geometry)]))
+        tmp = tempfile.mktemp()
+        out = epygram.formats.resource(tmp, 'w', fmt=r.format)
+        out.writefield(f_r)
+        out.close()
+        out.open(openmode='r')
+        f_rwr = out.readfield(fid)
+        out.close()
+        os.remove(tmp)
+        self.assertTrue(f_r.geometry.tolerant_equal(f_rwr.geometry, tolerances.get(r.format, 0.)),
+                        f_r.geometry.recursive_diff(f_rwr.geometry))
 
     def _test_pickled(self, filename, fid, picklename):
         """Generic test whatever the actual domain type."""

@@ -11,14 +11,13 @@ import numpy
 
 import epygram
 
-from . import abstract_testclasses as abtc
+from .util import abstract_testclasses as abtc
 from .util import delta_assertAlmostEqual, delta_assertAlmostEqual4pyproj
 
 epygram.init_env()
 
 epsilon = delta_assertAlmostEqual
 fast = False  # skips some slow tests
-basemap_ok = True
 
 
 # H2D
@@ -41,7 +40,7 @@ class Test_gauss(abtc.Test_GeometryMethods):
     def test_distance(self):
         self.assertAlmostEqual(self.geo.distance(*self.transect),
                                1626205.6610029594,
-                               delta=epsilon)
+                               delta=delta_assertAlmostEqual4pyproj)
 
     @skipIf(fast, 'slow test')
     def test_get_lonlat_grid(self):
@@ -98,7 +97,7 @@ class Test_gauss(abtc.Test_GeometryMethods):
 
     def test_resolution_ll(self):
         self.assertAlmostEqual(self.geo.resolution_ll(*self.point),
-                               118865.76537925933, delta=epsilon)
+                               118865.76537925933, delta=delta_assertAlmostEqual4pyproj)
 
 
 @skipIf('FA' not in epygram.config.implemented_formats, "format not activated")
@@ -362,7 +361,7 @@ class Test_regLL(abtc.Test_RectGeometryMethods):
     def test_distance(self):
         self.assertAlmostEqual(self.geo.distance(*self.transect),
                                134997.0069967294,
-                               delta=epsilon)
+                               delta=delta_assertAlmostEqual4pyproj)
 
     @skipIf(fast, 'slow test')
     def test_get_lonlat_grid(self):
@@ -407,7 +406,7 @@ class Test_regLL(abtc.Test_RectGeometryMethods):
 
     def test_resolution_ll(self):
         self.assertAlmostEqual(self.geo.resolution_ll(*self.point),
-                               1860.1650768394161, delta=epsilon)
+                               1860.1650768394161, delta=delta_assertAlmostEqual4pyproj)
 
 
 @skipIf('GRIB' not in epygram.config.implemented_formats, "format not activated")
@@ -428,7 +427,7 @@ class Test_rotLL(abtc.Test_RectGeometryMethods):
     def test_distance(self):
         self.assertAlmostEqual(self.geo.distance(*self.transect),
                                128585.15940057031,
-                               delta=epsilon)
+                               delta=delta_assertAlmostEqual4pyproj)
 
     @skipIf(fast, 'slow test')
     def test_get_lonlat_grid(self):
@@ -472,7 +471,7 @@ class Test_rotLL(abtc.Test_RectGeometryMethods):
 
     def test_resolution_ll(self):
         self.assertAlmostEqual(self.geo.resolution_ll(*self.point),
-                               11094.141774775859, delta=epsilon)
+                               11094.141774775859, delta=delta_assertAlmostEqual4pyproj)
 
 
 if __name__ == '__main__':

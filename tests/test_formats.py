@@ -11,7 +11,7 @@ from unittest import main, skipIf
 import epygram
 from epygram import epylog
 
-from . import abstract_testclasses as abtc
+from .util import abstract_testclasses as abtc
 
 epygram.init_env()
 epylog.setLevel('WARNING')

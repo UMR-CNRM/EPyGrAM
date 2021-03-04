@@ -17,7 +17,7 @@ from footprints import proxy as fpx
 #: minimum width of Extension zone
 Ezone_minimum_width = 11
 #: threshold in degrees towards Equator for the domain center, to choose lambert/mercator
-threshold_mercator_lambert = 1.
+threshold_mercator_lambert = 5.
 #: threshold in degrees towards Pole for the min/max latitude, to choose lambert/polar_stereographic
 threshold_pole_distance_lambert = 1.
 #: default width of Izone, to compute width in number of points according to resolution

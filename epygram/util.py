@@ -7,7 +7,7 @@
 Some useful utilities...
 """
 
-from __future__ import print_function, absolute_import, division , unicode_literals
+from __future__ import print_function, absolute_import, division, unicode_literals
 import six
 
 import math
@@ -42,6 +42,9 @@ class RecursiveObject(object):
     - test of (in)equality: the a == b test will be true if a and b have the
       same attributes and *a.attr == b.attr* for each attribute.
     """
+
+    # ghost attributes are ignored when comparing 2 objects between them
+    _ghost_attributes = []
 
     def _strItem(self, item, reclevel=1):
         """Recursive display of object attributes."""
@@ -99,17 +102,22 @@ class RecursiveObject(object):
         Test of equality by recursion on the object's attributes,
         with a **tolerance**.
         """
-        if self.__class__ == other.__class__ and \
-           set(self.__dict__.keys()) == set(other.__dict__.keys()):
-            ok = True
-            for attr in self.__dict__.keys():
-                if attr in ('_puredict', '_observer'):  # footprints special attributes
-                    continue
-                else:
+        ok = True
+        if self.__class__ == other.__class__:
+            self_attrs = set([k for k in self.__dict__.keys() if k not in self._ghost_attributes])
+            other_attrs = set([k for k in other.__dict__.keys() if k not in other._ghost_attributes])
+            if self_attrs != other_attrs:
+                ok = False
+            else:
+                for attr in self_attrs:
                     if not Comparator.are_equal(self.__dict__[attr],
                                                 other.__dict__[attr],
                                                 tolerance):
                         ok = False
+                        #print(attr)
+                        #print(ok)
+                        #print(Comparator.diff(self.__dict__[attr],
+                        #                      other.__dict__[attr]))
                         break
         else:
             ok = False
@@ -127,21 +135,16 @@ class RecursiveObject(object):
         """Recursively list what differs from **other**."""
         if not self.__eq__(other):
             diff = {}
-            if self.__class__ == other.__class__ and \
-               set(self.__dict__.keys()) == set(other.__dict__.keys()):
-                for attr in self.__dict__.keys():
-                    if attr in ('_puredict', '_observer'):  # footprints special attributes
-                        continue
-                    else:
-                        if not Comparator.are_equal(self.__dict__[attr],
-                                                    other.__dict__[attr]):
-                            if all([isinstance(obj, RecursiveObject)
-                                    for obj in [self.__dict__[attr],
-                                                other.__dict__[attr]]]):
-                                diff[attr] = self.__dict__[attr].recursive_diff(other.__dict__[attr])
-                            else:
-                                diff[attr] = Comparator.diff(self.__dict__[attr],
-                                                             other.__dict__[attr])
+            if self.__class__ == other.__class__:
+                if isinstance(self, FootprintBase):
+                    self_dict = self._attributes
+                    other_dict = other._attributes
+                else:
+                    self_dict = {k:v for k,v in self.__dict__.items() if k not in self.ignored_attrs}
+                    other_dict = {k:v for k,v in other.__dict__.items() if k not in self.ignored_attrs}
+                diff = Comparator.diff(self_dict, other_dict)
+            else:
+                diff['__class__'] = (str(self.__class__), str(other.__class__))
             return diff
 
 
@@ -159,19 +162,20 @@ class Comparator(object):
             return numpy.all(array1 == array2)
         else:
             if (array1.dtype == array2.dtype and
-                array1.dtype in [numpy.dtype(d)
-                                 for d in ['float16', 'float32', 'float64']]):
+                    array1.dtype in [numpy.dtype(d)
+                                     for d in ['float16', 'float32', 'float64']]):
                 # tolerance for floats
                 return numpy.all(nearlyEqualArray(array1, array2, tolerance))
             else:
                 return numpy.all(array1 == array2)
 
     @classmethod
-    def _dict_are_equal(cls, dict1, dict2):
+    def _dict_are_equal(cls, dict1, dict2, tolerance):
         if set(dict1.keys()) == set(dict2.keys()):
             ok = True
             for k in dict1.keys():
-                if not cls.are_equal(dict1[k], dict2[k]):
+                if not cls.are_equal(dict1[k], dict2[k], tolerance):
+                    # print("------------not equal", k)
                     ok = False
                     break
             return ok
@@ -180,26 +184,27 @@ class Comparator(object):
 
     @classmethod
     def _dict_diff(cls, dict1, dict2):
-        if not cls.are_equal(dict1, dict2):
+        if not cls.are_equal(dict1, dict2, 1e-17):
             diff = {}
-            if set(dict1.keys()) == set(dict2.keys()):
-                for k in dict1.keys():
-                    if not cls.are_equal(dict1[k], dict2[k]):
-                        diff[k] = cls.diff(dict1[k], dict2[k])
-            else:
-                diff = (str(dict1), str(dict2))
-        else:
-            diff = None
-        return diff
+            keys1 = set(dict1.keys())
+            keys2 = set(dict2.keys())
+            for k in keys1.intersection(keys2):
+                if not cls.are_equal(dict1[k], dict2[k], 1e-17):
+                    diff[k] = cls.diff(dict1[k], dict2[k])
+            for k in keys1.difference(keys2):
+                diff[k] = (dict1[k], None)
+            for k in keys2.difference(keys1):
+                diff[k] = (None, dict2[k])
+            return diff
 
     @classmethod
-    def _list_are_equal(cls, list1, list2):
+    def _list_are_equal(cls, list1, list2, tolerance):
         if len(list1) != len(list2):
             return False
         else:
             ok = True
             for i in range(len(list1)):
-                if not cls.are_equal(list1[i], list2[i]):
+                if not cls.are_equal(list1[i], list2[i], tolerance):
                     ok = False
                     break
             return ok
@@ -212,25 +217,24 @@ class Comparator(object):
         elif isinstance(obj1, numpy.ndarray) and isinstance(obj2, numpy.ndarray):
             return cls._array_are_equal(obj1, obj2, tolerance)
         elif isinstance(obj1, dict) and isinstance(obj2, dict):
-            return cls._dict_are_equal(obj1, obj2)
-        elif isinstance(obj1, list) and isinstance(obj2, list):
-            return cls._list_are_equal(obj1, obj2)
+            return cls._dict_are_equal(obj1, obj2, tolerance)
+        elif isinstance(obj1, (list, tuple)) and isinstance(obj2, (list, tuple)):
+            return cls._list_are_equal(obj1, obj2, tolerance)
+        elif isinstance(obj1, RecursiveObject) and isinstance(obj2, RecursiveObject):
+            return obj1.tolerant_equal(obj2, tolerance)
         else:
             return obj1 == obj2
-            # CLEANME: why did I do that ?
-            """try:
-                return obj1.__eq__(obj2)
-            except AttributeError:
-                return obj1 == obj2"""
 
     @classmethod
     def diff(cls, obj1, obj2):
         """Inspect differences between objects."""
-        if not cls.are_equal(obj1, obj2):
-            if isinstance(obj1, dict) and isinstance(obj2, dict):
+        if not cls.are_equal(obj1, obj2, 1e-17):
+            if isinstance(obj1, RecursiveObject) and isinstance(obj2, RecursiveObject):
+                return obj1.recursive_diff(obj2)
+            elif isinstance(obj1, dict) and isinstance(obj2, dict):
                 return cls._dict_diff(obj1, obj2)
             else:
-                return (obj1, obj2)
+                return obj1, obj2
 
 
 class Angle(RecursiveObject):
@@ -275,36 +279,19 @@ class Angle(RecursiveObject):
         self._origin_unit = unit
         self._origin_value = value
 
-    def __eq__(self, other):
-        """
-        Redefinition because of dynamism of buffering new computed values...
-        """
-        if not isinstance(other, Angle):
-            return False
-        if abs(self.get('degrees') -
-               degrees_nearest_mod(other.get('degrees'),
-                                   self.get('degrees'))) <= config.epsilon:
-            ok = True
-        else:
-            ok = False
-        return ok
-
-    def __ne__(self, other):
-        return not self == other
-
     def __hash__(self):
         return hash(self._origin_value) + hash(self._origin_unit)
 
     def __mul__(self, factor):
         return Angle(self.get('radians') * factor, 'radians')
-    
+
     def __div__(self, factor):
         return Angle(self.get('radians') / factor, 'radians')
-    
+
     def __add__(self, other):
         assert isinstance(other, Angle)
         return Angle(self.get('radians') + other.get('radians'), 'radians')
-    
+
     def __sub__(self, other):
         assert isinstance(other, Angle)
         return Angle(self.get('radians') - other.get('radians'), 'radians')
@@ -335,7 +322,7 @@ class Angle(RecursiveObject):
             elif self._origin_unit == Angle.trig:
                 self.__dict__['_' + unit] = math.degrees(
                     math.copysign(math.acos(self._origin_value[0]),
-                                            self._origin_value[1]))
+                                  self._origin_value[1]))
             elif self._origin_unit == Angle.dms:
                 self.__dict__['_' + unit] = (self._origin_value[0] +
                                              self._origin_value[1] / 60. +
@@ -406,6 +393,25 @@ class Angle(RecursiveObject):
             raise NotImplementedError("conversion to this unit (" + unit +
                                       ") is not coded.")
 
+    def tolerant_equal(self, other, tolerance=config.epsilon):
+        """
+        Redefinition because of dynamism of buffering new computed values...
+        """
+        if not isinstance(other, Angle):
+            return False
+        if abs(self.get('degrees') -
+               degrees_nearest_mod(other.get('degrees'),
+                                   self.get('degrees'))) <= tolerance:
+            ok = True
+        else:
+            ok = False
+        return ok
+
+    def recursive_diff(self, other):
+        if self != other:
+            return {'_origin_unit': Comparator.diff(self._origin_unit, other._origin_unit),
+                    '_origin_value': Comparator.diff(self._origin_value, other._origin_value)}
+
 
 # FUNCTIONS #
 #############
@@ -423,7 +429,8 @@ def as_numpy_array(x):
     if isinstance(x, list):
         missing = set([item.fill_value for item in x if isinstance(item, numpy.ma.masked_array)])
         if len(missing) > 0:
-            return numpy.ma.array(x, copy=False, ndmin=1, subok=True, fill_value=missing.pop() if len(missing) == 1 else None)
+            return numpy.ma.array(x, copy=False, ndmin=1, subok=True,
+                                  fill_value=missing.pop() if len(missing) == 1 else None)
         else:
             return numpy.array(x, copy=False, ndmin=1, subok=True)
     else:
@@ -439,10 +446,11 @@ def find_re_in_list(regexp, a_list):
     - tuples with the same length
     - dictionnaries: all regexp keys must be keys of the list
     """
+
     def check_string_pattern(pattern, element):
         import re
         if not isinstance(pattern, six.string_types) or \
-           not isinstance(element, six.string_types):
+                not isinstance(element, six.string_types):
             raise epygramError("pattern and element must be strings in \
                                 check_string_pattern function.")
         # protect '.'
@@ -554,6 +562,7 @@ def get_file(url, filename, authorize_cache=True, subst=None):
              subst={'${z}': 4, '${x}': 8, '${y}': 5}
              will get the file https://a.tile.openstreetmap.org/4/8/5.png
     """
+
     def md5(s):
         h = hashlib.md5()
         h.update(s)
@@ -682,7 +691,7 @@ def write_formatted_table(dest, table,
         for elem in table[i][1:]:
             if isinstance(elem, six.string_types):
                 elements.append(elem)
-            elif isinstance(elem, float) or isinstance(elem, int) :
+            elif isinstance(elem, float) or isinstance(elem, int):
                 elements.append(float_style.format(elem,
                                                    precision=precision,
                                                    type=float_type))
@@ -853,6 +862,7 @@ def auto_meridians_parallels(geometry,
     
     :param extent: among 'focus' or 'global', used to determine outer limits
     """
+
     def Delta2delta(Delta):
         if Delta <= 10:
             delta = 1
@@ -875,14 +885,14 @@ def auto_meridians_parallels(geometry,
         if extent == 'focus':
             minmax = geometry.minmax_ll()
         else:
-            minmax = {'lonmax':180, 'lonmin':-180, 'latmax':90, 'latmin':-90}
+            minmax = {'lonmax': 180, 'lonmin': -180, 'latmax': 90, 'latmin': -90}
         if meridians == 'auto':
             delta_lon = Delta2delta(minmax['lonmax'] - minmax['lonmin'])
         else:
             delta_lon = float(meridians)
         lonmin = minmax['lonmin'] - minmax['lonmin'] % delta_lon
         lonmax = minmax['lonmax'] - minmax['lonmax'] % delta_lon + 2 * delta_lon
-        lonmax = min(lonmax, lonmin + 360.) #space-view geometry returns 1.E30 as lonmax
+        lonmax = min(lonmax, lonmin + 360.)  # space-view geometry returns 1.E30 as lonmax
         meridians = numpy.arange(lonmin, lonmax + delta_lon, delta_lon)
         if max(meridians) > 180.:
             meridians = meridians - 180.  # FIXME: cartopy does not plot meridians > 180°
@@ -895,7 +905,7 @@ def auto_meridians_parallels(geometry,
         if extent == 'focus':
             minmax = geometry.minmax_ll()
         else:
-            minmax = {'lonmax':180, 'lonmin':-180, 'latmax':90, 'latmin':-90}
+            minmax = {'lonmax': 180, 'lonmin': -180, 'latmax': 90, 'latmin': -90}
         if parallels == 'auto':
             delta_lat = Delta2delta(minmax['latmax'] - minmax['latmin'])
         else:
@@ -904,7 +914,7 @@ def auto_meridians_parallels(geometry,
         if latmin <= -90:
             latmin += delta_lat
         latmax = minmax['latmax'] - minmax['latmax'] % delta_lat + 2 * delta_lat
-        latmax = min(latmax, 90. )#space-view geometry returns 1.E30 as latmax
+        latmax = min(latmax, 90.)  # space-view geometry returns 1.E30 as latmax
         if latmax >= 90:
             latmax -= delta_lat
         parallels = numpy.arange(latmin, latmax + delta_lat, delta_lat)
@@ -1176,9 +1186,11 @@ def moveaxis(a, source, destination):
 @nicedeco
 def call_before(mtd, hook_mtd):
     """Decorator for methods: call method hook_mtd before actually calling method."""
+
     def hooked(self, *args, **kwargs):
         getattr(self, hook_mtd)()
         return mtd(self, *args, **kwargs)
+
     return hooked
 
 

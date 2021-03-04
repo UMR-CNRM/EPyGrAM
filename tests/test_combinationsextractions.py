@@ -8,19 +8,21 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy
 from unittest import main, TestCase, skipIf
+import os
 
 from footprints import proxy as fpx
 
 import epygram
 import matplotlib.pyplot as plt
 
+from .util import datadir
+
 epygram.init_env()
 
 # Test configuration
 test_plot = False  # To plot some figures during the test
-terms = range(2)  # terms of the run to use
-# Distant Directory in which ICMSHAROM+* files are stored:
-baseDir = "/cnrm/phynh/data1/riette/Public/epygram/smallRunFa"
+terms = list(range(2))  # terms of the run to use
+baseDir = os.path.join(datadir, 'combinationsextractions')
 coords_profile = (8.77, 41.9)
 coords_section = (8.77, 41.9), (8.9, 41.4)
 FA_name = 'S*TEMPERATURE'
@@ -35,9 +37,7 @@ class TestMisc(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.resources = [epygram.formats.resource('/'.join([baseDir,
-                                                            'ICMSHAROM+{:04}'.format(term)]),
-                                                  'r')
+        cls.resources = [epygram.formats.resource( os.path.join(baseDir, 'ICMSHAROM+{:04}'.format(term)), 'r')
                          for term in terms]
 
     @classmethod

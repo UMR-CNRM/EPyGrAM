@@ -12,5 +12,4 @@ VERSION=`grep __version__ epygram/__init__.py | awk '{print $3}' | awk -F "'" '{
 tgz="$HOME/tmp/EPyGrAM-${VERSION}_tests.tgz"
 tar -czf $tgz tests
 ls -lh $tgz
-cd ../..
 

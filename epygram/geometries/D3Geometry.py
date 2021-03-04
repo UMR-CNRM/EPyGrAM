@@ -28,7 +28,7 @@ from epygram.util import (RecursiveObject, degrees_nearest_mod, Angle,
                           separation_line, write_formatted,
                           nearlyEqual, set_map_up,
                           as_numpy_array, moveaxis,
-                          is_scalar)
+                          is_scalar, Comparator)
 
 from .VGeometry import VGeometry
 
@@ -96,6 +96,9 @@ class D3Geometry(RecursiveObject, FootprintBase):
                 info="To specify geoid shape.")
         )
     )
+
+    # ghost attributes are ignored when comparing 2 objects between them
+    _ghost_attributes = RecursiveObject._ghost_attributes + ['_puredict', '_observer']  # footprints special attributes
 
     def __init__(self, *args, **kwargs):
         super(D3Geometry, self).__init__(*args, **kwargs)
@@ -1357,12 +1360,13 @@ class D3RectangularGridGeometry(D3Geometry):
                             dimensions['Y'])
         out.write(separation_line)
 
-    def __eq__(self, other):
-        """Test of equality by recursion on the object's attributes."""
-        if self.__class__ == other.__class__ and \
+    #FIXME: cleanme def __eq__(self, other):
+    #    """Test of equality by recursion on the object's attributes."""
+    """    if self.__class__ == other.__class__ and \
            set(self._attributes.keys()) == set(other._attributes.keys()):
             for attr in self._attributes.keys():
                 if attr == 'grid':
+                    # the same grid could be defined from different inputs
                     selfgrid = {k:v for k, v in self.grid.items() if
                                 k not in ['input_lon',
                                           'input_lat',
@@ -1383,7 +1387,7 @@ class D3RectangularGridGeometry(D3Geometry):
 
     def __hash__(self):
         # known issue __eq__/must be defined both or none, else inheritance is broken
-        return super(D3RectangularGridGeometry, self).__hash__()
+        return super(D3RectangularGridGeometry, self).__hash__()"""
 
 
 class D3UnstructuredGeometry(D3RectangularGridGeometry):
@@ -1674,6 +1678,25 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
             raise NotImplementedError("For now, only input_position = (0, 0) is allowed for academic geometries.")
         self._center_lon = (self.dimensions['X'] - 1) / 2.
         self._center_lat = (self.dimensions['Y'] - 1) / 2.
+
+    def tolerant_equal(self, other, tolerance=config.epsilon):
+        if self.__class__ == other.__class__:
+            # create copies of inner objects to filter some ghost attributes
+            almost_self = {k:copy.deepcopy(self.__dict__[k])
+                           for k in self.__dict__.keys()
+                           if k not in self._ghost_attributes}
+            almost_other = {k: copy.deepcopy(other.__dict__[k])
+                            for k in other.__dict__.keys()
+                            if k not in other._ghost_attributes}
+            # (the same grid could be defined from different inputs)
+            for almost in (almost_self, almost_other):
+                for k in ('input_lon', 'input_lat', 'input_position'):
+                    almost['_attributes']['grid'].pop(k)
+            almost_self['_attributes']['grid']['center'] = self.getcenter()
+            almost_other['_attributes']['grid']['center'] = other.getcenter()
+            return Comparator.are_equal(almost_self, almost_other, tolerance)
+        else:
+            return False
 
     def _rotate_axis(self, x, y, direction):
         """
@@ -2088,6 +2111,25 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
             self._earthround = True
         else:
             self._earthround = False
+
+    def tolerant_equal(self, other, tolerance=config.epsilon):
+        if self.__class__ == other.__class__:
+            # create copies of inner objects to filter some ghost attributes
+            almost_self = {k:copy.deepcopy(self.__dict__[k])
+                           for k in self.__dict__.keys()
+                           if k not in self._ghost_attributes}
+            almost_other = {k: copy.deepcopy(other.__dict__[k])
+                            for k in other.__dict__.keys()
+                            if k not in other._ghost_attributes}
+            # (the same grid could be defined from different inputs)
+            for almost in (almost_self, almost_other):
+                for k in ('input_lon', 'input_lat', 'input_position'):
+                    almost['_attributes']['grid'].pop(k)
+            almost_self['_attributes']['grid']['center'] = self.getcenter()
+            almost_other['_attributes']['grid']['center'] = other.getcenter()
+            return Comparator.are_equal(almost_self, almost_other, tolerance)
+        else:
+            return False
 
     def getcenter(self):
         """
@@ -2785,6 +2827,8 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         )
     )
 
+    _ghost_attributes = D3RectangularGridGeometry._ghost_attributes + ['_proj']
+
     @property
     def secant_projection(self):
         """ Is the projection secant to the sphere ? (or tangent)"""
@@ -2921,6 +2965,25 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                                      **self.geoid)
         else:
             raise NotImplementedError("projection: " + self.name)
+
+    def tolerant_equal(self, other, tolerance=config.epsilon):
+        if self.__class__ == other.__class__:
+            # create copies of inner objects to filter some ghost attributes
+            almost_self = {k:copy.deepcopy(self.__dict__[k])
+                           for k in self.__dict__.keys()
+                           if k not in self._ghost_attributes}
+            almost_other = {k: copy.deepcopy(other.__dict__[k])
+                            for k in other.__dict__.keys()
+                            if k not in other._ghost_attributes}
+            # (the same grid could be defined from different inputs)
+            for almost in (almost_self, almost_other):
+                for k in ('input_lon', 'input_lat', 'input_position'):
+                    almost['_attributes']['grid'].pop(k)
+            almost_self['_attributes']['grid']['center'] = self.getcenter()
+            almost_other['_attributes']['grid']['center'] = other.getcenter()
+            return Comparator.are_equal(almost_self, almost_other, tolerance)
+        else:
+            return False
 
     def _rotate_axis(self, x, y, direction):
         """
@@ -3596,12 +3659,13 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                         "Upper-Right corner (of C+I) Latitude in deg",
                         corners['ur'][1])
 
-    def __eq__(self, other):
-        """Test of equality by recursion on the object's attributes."""
-        if self.__class__ == other.__class__ and \
+    # FIXME: cleanme def __eq__(self, other):
+    #    """Test of equality by recursion on the object's attributes."""
+    """    if self.__class__ == other.__class__ and \
            set(self._attributes.keys()) == set(other._attributes.keys()):
             for attr in self._attributes.keys():
                 if attr == 'grid':
+                    # the same grid could be defined from different inputs
                     selfgrid = {k:v for k, v in self.grid.items() if
                                 k not in ['input_lon',
                                           'input_lat',
@@ -3621,8 +3685,8 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         return ok
 
     def __hash__(self):
-        # known issue __eq__/must be defined both or none, else inheritance is broken
-        return super(D3ProjectedGeometry, self).__hash__()
+        # known issue __eq__/__hash__ must be defined both or none, else inheritance is broken
+        return super(D3ProjectedGeometry, self).__hash__()"""
 
 
 class D3GaussGeometry(D3Geometry):
@@ -3637,6 +3701,8 @@ class D3GaussGeometry(D3Geometry):
                 values=set(['rotated_reduced_gauss', 'reduced_gauss', 'regular_gauss'])),
         )
     )
+
+    _ghost_attributes = D3Geometry._ghost_attributes + ['_buffered_gauss_grid']
 
     @property
     def isglobal(self):
@@ -4629,22 +4695,5 @@ class D3GaussGeometry(D3Geometry):
         if spectral_geometry is not None:
             write_formatted(out, "Truncation",
                             spectral_geometry['max'])
-
-    def __eq__(self, other):
-        """Test of equality by recursion on the object's attributes."""
-        if self.__class__ == other.__class__ and \
-           set(self._attributes.keys()) == set(other._attributes.keys()):
-            for attr in self._attributes.keys():
-                ok = self._attributes[attr] == other._attributes[attr]
-                if not ok:
-                    break
-        else:
-            ok = False
-        return ok
-
-    def __hash__(self):
-        # known issue __eq__/must be defined both or none, else inheritance is broken
-        return super(D3GaussGeometry, self).__hash__()
-
 
 footprints.collectors.get(tag='geometrys').fasttrack = ('structure', 'name')
