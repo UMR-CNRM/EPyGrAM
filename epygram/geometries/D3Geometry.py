@@ -521,13 +521,13 @@ class D3Geometry(RecursiveObject, FootprintBase):
         return ll_field
 
     def plotgeometry(self,
-                     plotlib='basemap',
+                     plotlib='cartopy',
                      **kwargs):
         """
         Makes a simple plot of the geometry, with a number of options.
 
-        :param plotlib: library to be used for plotting: 'basemap' is default but DEPRECATED;
-            'cartopy' is recommended !
+        :param plotlib: library to be used for plotting: 'basemap' is DEPRECATED;
+            'cartopy' (default) is recommended !
         """
         if plotlib == 'cartopy':
             return self.cartoplot_geometry(**kwargs)
