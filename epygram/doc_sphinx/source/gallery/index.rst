@@ -75,8 +75,8 @@ D.2 - Vertical Geometry
 E - Formats specificities
 -------------------------
 
-#. `GRIB specificities <E-Formats/01.GRIB_specificities.ipynb>`_
-#. `netCDF specificities <E-Formats/01.netCDF_specificities.ipynb>`_
+#. `GRIB specificities <E-formats/01.GRIB_specificities.ipynb>`_
+#. `netCDF specificities <E-formats/02.netCDF_specificities.ipynb>`_
 
 F - Applications
 ----------------
