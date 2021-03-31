@@ -429,6 +429,8 @@ def wfacilo(KSIZE, KNUMER, CDPREF, KNIVAU, CDSUFF, LDCOSP):
 
     Returns:\n
     1) PCHAMP: float values read
+    2) LDUNDEF: true if the field has undef values
+    3) PDUNDEF: undef value
     """
     return ([KSIZE, KNUMER, CDPREF, KNIVAU, CDSUFF, LDCOSP],
             [(np.int64, None, IN),
@@ -437,7 +439,9 @@ def wfacilo(KSIZE, KNUMER, CDPREF, KNIVAU, CDSUFF, LDCOSP):
              (np.int64, None, IN),
              (np.str, (12,), IN),
              (np.float64, (KSIZE,), OUT),
-             (np.bool, None, IN)],
+             (np.bool, None, IN),
+             (np.bool, None, OUT),
+             (np.float64, None, OUT)],
             None)
 
 
@@ -471,7 +475,7 @@ def wfaienc(KNUMER, CDPREF, KNIVAU, CDSUFF, KSIZE, PCHAMP, LDCOSP):
 @treatReturnCode
 @ctypesFF()
 @addReturnCode
-def wfaieno(KNUMER, CDPREF, KNIVAU, CDSUFF, KSIZE, PCHAMP, LDCOSP):
+def wfaieno(KNUMER, CDPREF, KNIVAU, CDSUFF, KSIZE, PCHAMP, LDCOSP, LDUNDEF, PDUNDEF):
     """
     Write a 2D field. With reordering of spectral fields.
 
@@ -483,15 +487,19 @@ def wfaieno(KNUMER, CDPREF, KNIVAU, CDSUFF, KSIZE, PCHAMP, LDCOSP):
     5) KSIZE: size of PCHAMP
     6) PCHAMP: float values to write
     7) LDCOSP: true if spectral
+    8) LDUNDEF: true if the field has undef values
+    9) PDUNDEF: undef value
     """
-    return ([KNUMER, CDPREF, KNIVAU, CDSUFF, KSIZE, PCHAMP, LDCOSP],
+    return ([KNUMER, CDPREF, KNIVAU, CDSUFF, KSIZE, PCHAMP, LDCOSP, LDUNDEF, PDUNDEF],
             [(np.int64, None, IN),
              (np.str, (4,), IN),
              (np.int64, None, IN),
              (np.str, (12,), IN),
              (np.int64, None, IN),
              (np.float64, (KSIZE,), IN),
-             (np.bool, None, IN)],
+             (np.bool, None, IN),
+             (np.bool, None, IN),
+             (np.float64, None, IN),],
             None)
 
 
