@@ -352,7 +352,7 @@ class GRIBmessage(RecursiveObject, dict):
         """
         if productDefinitionTemplateNumber in (32, 33):
             specific_keys = cls._satellite_imagery_keys
-        elif productDefinitionTemplateNumber == 8:
+        elif productDefinitionTemplateNumber in (8, 11):
             specific_keys = ['lengthOfTimeRange',
                              # 'indicatorOfUnitForTimeRange',  # FIXME: pb with eccodes index
                              'typeOfStatisticalProcessing',  # FIXME: pb with eccodes index
@@ -388,7 +388,7 @@ class GRIBmessage(RecursiveObject, dict):
                            'typeOfSecondFixedSurface',
                            'bottomLevel']
             add_keys = cls.specific_fid_keys_for(productDefinitionTemplateNumber=productDefinitionTemplateNumber)
-        elif productDefinitionTemplateNumber == 8:
+        elif productDefinitionTemplateNumber in (8, 11):
             add_keys = cls.specific_fid_keys_for(productDefinitionTemplateNumber=productDefinitionTemplateNumber)
         if scaleFactorOfFirstFixedSurface != 0 or scaleFactorOfSecondFixedSurface != 0:
             add_keys = cls.specific_fid_keys_for(scaleFactorOfFirstFixedSurface=scaleFactorOfFirstFixedSurface,
@@ -2015,7 +2015,7 @@ class GRIBmessage(RecursiveObject, dict):
             term = self['endStep']
             termunit = {k:v * term for k,v in unit.items()}
             term = datetime.timedelta(**termunit)
-            if self['timeRangeIndicator'] in (2, 4) or self['productDefinitionTemplateNumber'] == 8:
+            if self['timeRangeIndicator'] in (2, 4) or self['productDefinitionTemplateNumber'] in (8, 11):
                 cum = self['endStep'] - self['startStep']
                 cumunit = {k:v * cum for k,v in unit.items()}
                 cum = datetime.timedelta(**cumunit)
