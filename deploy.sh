@@ -22,8 +22,6 @@ sxcoope1=1  # from which are synchronised all CNRM workstations
 vxdev64=0  # vxdev64: development server @ CNRM (OS updates)
 pagre=0  # COMPAS server, from which it is replicated onto the others ! DEPRECATED !
 sotrtm33sidev=1  # COMPAS server, from which it is replicated onto the others
-beaufix=0
-prolix=0
 belenos=1
 taranis=1
 
@@ -67,20 +65,6 @@ if [ "$pagre" == 1 ]; then
   logger="$logger - pagre\n"
 fi
 echo "------------------------------------------------------"
-if [ "$beaufix" == 1 ]; then
-  echo "...beaufix..."
-  rsync -avL * beaufix:$EPYGRAM_DIR $to_exclude4bull
-  logger="$logger - beaufix\n"
-fi
-echo "------------------------------------------------------"
-if [ "$prolix" == 1 ]; then
-  echo "...prolix..."
-  rsync -avL * prolix:$EPYGRAM_DIR $to_exclude4bull
-  logger="$logger - prolix\n"
-fi
-echo "------------------------------------------------------"
-
-
 if [ "$sxcoope1" == 1 ]; then
   echo "...sxcoope1..."
   rsync -avL * sxcoope1:$EPYGRAM_DIR $to_exclude4sxcoope1
