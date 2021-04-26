@@ -39,6 +39,8 @@ def activate():
                                    'marker':',',
                                    'linewidths':0}
     H2DField.default_contour_kw = {'linewidths':1}
+    H2DField.default_contourf_kw = {}
+    H2DField.default_pcolormesh_kw = {}
     H2DField.default_clabel_kw = {'fmt':'%0i'}
     H2DField.default_gridlines_kw = {'draw_labels':True,
                                      'linewidth':1,
@@ -187,7 +189,8 @@ def _cartoplot_treat_minmax(cls,
                             mask_threshold,
                             minmax,
                             colormap_helper,
-                            minmax_along_colorbar):
+                            minmax_along_colorbar,
+                            mask_outside_minmax):
     """Mask according to threshold, get min/max, mask according to colormap."""
     # 1/ mask values or explicit thresholding
     mask_outside = {'min':-config.mask_outside,
@@ -221,7 +224,8 @@ def _cartoplot_treat_minmax(cls,
         pmin = min(colormap_helper.explicit_colorbounds)
         pmax = max(colormap_helper.explicit_colorbounds)
     # 3/ mask outside colorbounds/minmax
-    data = numpy.ma.masked_outside(data, pmin, pmax)
+    if mask_outside_minmax:
+        data = numpy.ma.masked_outside(data, pmin, pmax)
     return data, pmin, pmax, minmax_along_colorbar
 
 
@@ -385,12 +389,17 @@ def _cartoplot_actualplot(self,
                           colormap_helper,
                           scatter_kw,
                           contour_kw,
+                          contourf_kw,
+                          pcolormesh_kw,
                           contourlabel,
                           clabel_kw):
     """Actual call to matplotlib plotting functions."""
     from matplotlib.colors import cnames
     from matplotlib import tri
     if plot_method == 'contourf':
+        if contourf_kw is None:
+            contourf_kw = self.default_contourf_kw
+        plot_kwargs.update(contourf_kw)
         if not self.geometry.rectangular_grid or self.geometry.dimensions['Y'] == 1:
             # triangulate for plotting
             triangulation = tri.Triangulation(x, y)
@@ -419,6 +428,9 @@ def _cartoplot_actualplot(self,
         pf = ax.scatter(x, y, c=colors,
                         **plot_kwargs)
     elif plot_method == 'pcolormesh':
+        if pcolormesh_kw is None:
+            pcolormesh_kw = self.default_pcolormesh_kw
+        plot_kwargs.update(pcolormesh_kw)
         if any([isinstance(arr, numpy.ma.masked_array) for arr in [x, y]]):
             # pcolormesh cannot plot if x or y contain masked values
             # We mask data values instead of x or y
@@ -535,6 +547,8 @@ def cartoplot(self,
               mask_threshold=None,
               scatter_kw=None,
               contour_kw=None,
+              contourf_kw=None,
+              pcolormesh_kw=None,
               contourlabel=False,
               clabel_kw=None,
               # cartography
@@ -608,6 +622,10 @@ def cartoplot(self,
         Only for plot_method = 'scatter'.
     :param contour_kw: kwargs to be passed to matplotlib's ax.contour().
         Only for plot_method = 'contour'.
+    :param contourf_kw: kwargs to be passed to matplotlib's ax.contourf().
+        Only for plot_method = 'contourf'.
+    :param pcolormesh_kw: kwargs to be passed to matplotlib's ax.pcolormesh().
+        Only for plot_method = 'pcolormesh'.
     :param contourlabel: displays labels on contours.
         Only for plot_method = 'contour'.
     :param clabel_kw: kwargs to be passed to matplotlib's ax.clabel().
@@ -715,7 +733,8 @@ def cartoplot(self,
                                                                            mask_threshold,
                                                                            minmax,
                                                                            colormap_helper,
-                                                                           minmax_along_colorbar)
+                                                                           minmax_along_colorbar,
+                                                                           plot_method != 'contourf')
     if abs(float(pmin) - float(pmax)) < config.epsilon and plot_method is not None:
         epylog.warning("uniform field: plot as 'points'.")
         plot_method = 'scatter'
@@ -762,6 +781,8 @@ def cartoplot(self,
                                               colormap_helper,
                                               scatter_kw,
                                               contour_kw,
+                                              contourf_kw,
+                                              pcolormesh_kw,
                                               contourlabel,
                                               clabel_kw)
         result['plot_elements'] = elements

@@ -35,7 +35,7 @@ def read_and_preprocess(resource,
     field = resource.readfield(fid)
     assert isinstance(field, (epygram.fields.H2DField, epygram.fields.H2DVectorField)), \
         ' '.join(['Oops ! Looks like {} is not known as a horizontal 2D Field by epygram.',
-                  'Add it to ~/.epygram/user_Field_Dict_FA.csv ?']).format(fid)
+                  'Add it to ~/.epygram/user_Field_Dict_{}.csv ?']).format(fid, resource.format)
     if field.spectral:
         field.sp2gp()
     if global_shift_center is not None:

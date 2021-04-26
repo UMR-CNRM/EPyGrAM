@@ -151,7 +151,7 @@ def main(filename,
                    ' '.join(['Oops ! Looks like',
                              str(fieldseed),
                              'is not known as a horizontal 2D Field by epygram.',
-                             'Add it to ~/.epygram/user_Field_Dict_FA.csv ?'])
+                             'Add it to ~/.epygram/user_Field_Dict_' + resource.format + '.csv ?'])
             if not field.geometry.grid.get('LAMzone', False):
                 subzone = None
             if field.spectral:
