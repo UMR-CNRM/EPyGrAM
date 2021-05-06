@@ -7,8 +7,14 @@
 from __future__ import print_function, absolute_import, unicode_literals, division
 from six.moves import input
 
+import os
+import sys
 import argparse
 
+# Automatically set the python path
+package_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.insert(0, package_path)
+sys.path.insert(0, os.path.join(package_path, 'site'))
 import epygram
 from epygram import epylog
 from epygram.geometries import domain_making as dm

@@ -6,10 +6,15 @@
 
 from __future__ import print_function, unicode_literals
 
-import argparse
 import os
+import sys
+import argparse
 import webbrowser
 
+# Automatically set the python path
+package_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.insert(0, package_path)
+sys.path.insert(0, os.path.join(package_path, 'site'))
 import epygram
 
 if __name__ == '__main__':

@@ -7,11 +7,17 @@
 from __future__ import print_function, absolute_import, unicode_literals, division
 import six
 
+import os
+import sys
 import argparse
 
 from bronx.syntax.parsing import str2dict
 from bronx.syntax.pretty import smooth_string
 
+# Automatically set the python path
+package_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.insert(0, package_path)
+sys.path.insert(0, os.path.join(package_path, 'site'))
 import epygram
 from epygram import epylog, epygramError
 

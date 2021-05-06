@@ -7,9 +7,15 @@
 from __future__ import print_function, absolute_import, unicode_literals, division
 import six
 
+import os
+import sys
 import argparse
 import sys
 
+# Automatically set the python path
+package_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.insert(0, package_path)
+sys.path.insert(0, os.path.join(package_path, 'site'))
 import epygram
 from epygram import epylog
 from epygram.args_catalog import (add_arg_to_parser,
