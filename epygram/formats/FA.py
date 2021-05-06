@@ -783,14 +783,12 @@ class FA(FileResource):
                 data = dataOut
             elif ftype == 'H2D':
                 if config.spectral_coeff_order == 'model':
-                    data, masked, masked_value = numpy.array(wfa.wfacilo(datasize,
-                                                             self._unit,
-                                                             fieldname[0:4],
-                                                             0,
-                                                             fieldname[4:],
-                                                             spectral))
-                    if masked:
-                        data = numpy.ma.masked_equal(data, masked_value)
+                    data = numpy.array(wfa.wfacilo(datasize,
+                                                   self._unit,
+                                                   fieldname[0:4],
+                                                   0,
+                                                   fieldname[4:],
+                                                   spectral))
                 else:
                     # FIXME: next export version CLEANME: when everybody can use facilo (CY41T1_op1 onwards)
                     data = numpy.array(wfa.wfacile(datasize,
@@ -965,17 +963,12 @@ class FA(FileResource):
                 modified_compression = False
                 compression = self._getrunningcompression()
             data = field.getdata(d4=True)
-            masked = False
-            fill_value = 1e20
             if isinstance(data, numpy.ma.core.MaskedArray):
-                if compression.get('KNGRIB') > 4:  # GRIB2 compression: deal with bitmap
-                    fill_value = data.fill_value
-                elif compression.get('KNGRIB') != 0:  # old school compression, need smooth fields
+                if compression.get('KNGRIB') == 0:
+                    fill_value = 1e20
+                else:
                     fill_value = field.mean()
                 data = field.geometry.fill_maskedvalues(data, fill_value=fill_value)
-                if compression.get('KNGRIB') > 4:  # GRIB2 compression: if actually masked, activate a bitmap
-                    if fill_value in data:
-                        masked = True
             data = stretch_array(data.squeeze())
             if compression.get('KNBPDG', config.FA_max_encoding) > config.FA_max_encoding:
                 epylog.warning(('FA compression higher than {} ' +
@@ -990,9 +983,7 @@ class FA(FileResource):
                             0,
                             field.fid[self.format][4:],
                             len(data), data,
-                            field.spectral,
-                            masked,
-                            fill_value)
+                            field.spectral)
             else:
                 # FIXME: next export version CLEANME: when everybody can use faieno (CY41T1_op1 onwards)
                 wfa.wfaienc(self._unit,
