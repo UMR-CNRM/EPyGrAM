@@ -140,8 +140,8 @@ class RecursiveObject(object):
                     self_dict = self._attributes
                     other_dict = other._attributes
                 else:
-                    self_dict = {k:v for k,v in self.__dict__.items() if k not in self.ignored_attrs}
-                    other_dict = {k:v for k,v in other.__dict__.items() if k not in self.ignored_attrs}
+                    self_dict = {k:v for k,v in self.__dict__.items() if k not in self._ghost_attributes}
+                    other_dict = {k:v for k,v in other.__dict__.items() if k not in self._ghost_attributes}
                 diff = Comparator.diff(self_dict, other_dict)
             else:
                 diff['__class__'] = (str(self.__class__), str(other.__class__))
