@@ -10,12 +10,13 @@ import os
 import json
 from six.moves import cPickle as pickle  # @UnresolvedImport
 import uuid
+import web
 
 import matplotlib
 matplotlib.use("Agg")
 from mpl_toolkits.basemap import Basemap
 
-from . import web
+#from . import web
 
 from footprints.util import rangex
 import epygram
@@ -220,7 +221,7 @@ class GetMinMax(object):
 
             return json.dumps(stats)
 
-        except Exception, ex:
+        except Exception as ex:
             if all_fatal_exceptions:
                 raise
             print(ex.__str__())
@@ -258,7 +259,7 @@ class GetDomain(object):
 
             return json.dumps(monzoom)
 
-        except Exception, ex:
+        except Exception as ex:
             if all_fatal_exceptions:
                 raise
             print(ex.__str__())

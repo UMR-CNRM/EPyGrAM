@@ -10,11 +10,12 @@ import os
 import getpass
 import sys
 import socket
+import web
 
 import matplotlib
 matplotlib.use("Agg")
 
-from . import web
+#from . import web
 
 import epygram
 from epygram import epylog

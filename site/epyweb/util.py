@@ -10,11 +10,12 @@ import json
 import datetime
 import copy
 import six
+import web
 
 import matplotlib
 matplotlib.use("Agg")
 
-from . import web
+#from . import web
 
 import epygram
 
