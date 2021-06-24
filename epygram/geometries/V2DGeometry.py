@@ -39,11 +39,15 @@ class V2DGeometry(D3Geometry):
             raise epygramError("V2DGeometry must have only one point in y-direction.")
         super(V2DGeometry, self)._consistency_check()
 
-    def what(self, out=sys.stdout, **_):
+    def what(self, out=sys.stdout,
+             vertical_geometry=True,
+             **_):
         """
         Writes in file a summary of the geometry.
 
         :param out: the output open file-like object
+        :param vertical_geometry: if True, writes the vertical geometry of the
+          field.
         """
         out.write("###########################\n")
         out.write("### HORIZONTAL GEOMETRY ###\n")
@@ -52,7 +56,8 @@ class V2DGeometry(D3Geometry):
         self._what_grid(out)
         out.write(separation_line)
         out.write("\n")
-        self.vcoordinate.what(out)
+        if vertical_geometry:
+            self.vcoordinate.what(out)
 
     def _what_grid(self, out):
         """
@@ -70,7 +75,7 @@ class V2DGeometry(D3Geometry):
 
 class V2DRectangularGridGeometry(V2DGeometry, D3RectangularGridGeometry):
     """
-    Handles the geometry for a Verical 2-Dimensions Field for which the surface points
+    Handles the geometry for a Vertical 2-Dimensions Field for which the surface points
     come from a rectangular grid.
     Abstract.
     """
@@ -105,7 +110,7 @@ class V2DUnstructuredGeometry(V2DRectangularGridGeometry, D3UnstructuredGeometry
 
 
 class V2DAcademicGeometry(D3AcademicGeometry, V2DRectangularGridGeometry):
-    """Handles the geometry for a Projected Horizontal 2-Dimensions Field."""
+    """Handles the geometry for an academic Horizontal 2-Dimensions Field."""
 
     _collector = ('geometry',)
     _footprint = dict(

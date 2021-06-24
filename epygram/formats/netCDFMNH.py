@@ -113,6 +113,7 @@ class netCDFMNH(FileResource):
                              'BETA':dict(long_name='BETA', comment='Rotation angle for conformal projection', units='degree'),
                              'IMAX':dict(long_name='IMAX', comment='x-dimension of the physical domain'),
                              'JMAX':dict(long_name='JMAX', comment='y-dimension of the physical domain'),
+                             'JPHEXT':dict(long_name='JPHEXT', comment='Number of horizontal external points on each side'),
                              'KMAX':dict(long_name='KMAX', comment='z-dimension of the physical domain'),
                              'SLEVE':dict(long_name='SLEVE', comment="Logical for SLEVE coordinate", grid=numpy.int32(4)),
                              'XHAT':dict(standard_name='projection_x_coordinate', long_name='XHAT', units='m',
@@ -265,7 +266,10 @@ class netCDFMNH(FileResource):
         """Returns the type of field from the dimensions"""
         dimensions = self._nc[fieldname].dimensions
         if len(dimensions) > 0 and dimensions[0] == 'time':
+            has_time = True
             dimensions = dimensions[1:]
+        else:
+            has_time = False
         if len(dimensions) > 0 and dimensions[0] in ['level', 'level_w']:
             has_level = True
             dimensions = dimensions[1:]
@@ -274,8 +278,11 @@ class netCDFMNH(FileResource):
         if dimensions in [('nj', 'ni'), ('nj_u', 'ni_u'),
                           ('nj_v', 'ni_v'), ('nj_v', 'ni_u')]:
             return '3D' if has_level else 'H2D'
-        elif dimensions in [('nj',), ('ni'), ('nj_u',), ('ni_u'), ('nj_v',), ('ni_v')]:
+        elif dimensions in [('nj',), ('ni',), ('nj_u',), ('ni_u',), ('nj_v',), ('ni_v'),
+                            ('size1', 'ni_u'), ('size1', 'ni_v'), ('size1', 'ni')]:
             return 'V2D' if has_level else 'H1D'
+        elif len(dimensions) == 0:
+            return 'V1D' if has_level else 'Point'
         else:
             return 'Misc'
 
@@ -403,7 +410,7 @@ class netCDFMNH(FileResource):
         var = self._nc.variables[fieldidentifier]
         field_info = inquire_field_dict(fieldidentifier)
         field_info['type'] = self._get_type(fieldidentifier)
-        if field_info['type'] in ['V1D', 'H2D', '3D']:
+        if field_info['type'] in ['H1D', 'V1D', 'V2D', 'H2D', '3D']:
             if self.geometry is None:
                 self._read_geometry()
             if self.validity is None:
@@ -433,7 +440,7 @@ class netCDFMNH(FileResource):
                         kwargs_vcoord['typeoffirstfixedsurface'] = field_info[k]
                     elif k == 'level':
                         kwargs_vcoord['levels'] = [field_info[k]]
-                if field_info['type'] != '3D':
+                if field_info['type'] not in ('V1D', 'V2D', '3D'):
                     kwargs_vcoord.pop('grid', None)
 
         # Get field metadata
@@ -458,13 +465,13 @@ class netCDFMNH(FileResource):
             comment = None
 
         # Create field
-        if field_info['type'] in ['V1D', 'H2D', '3D']:
+        if field_info['type'] in ['H1D', 'V1D', 'V2D', 'H2D', '3D']:
             # Create H2D field
             fid = {self.format: fieldidentifier,
                    'generic':FPDict(self._get_generic_fid(fieldidentifier))
                    }
             kwargs_geom['position_on_horizontal_grid'] = gridIndicator['horizontal']
-            if field_info['type'] in ['H1D', '3D'] and gridIndicator['vertical'] == 'flux' and self.moveOnMass:
+            if field_info['type'] in ['V1D', 'V2D', '3D'] and gridIndicator['vertical'] == 'flux' and self.moveOnMass:
                 kwargs_vcoord['position_on_grid'] = 'mass'
             else:
                 kwargs_vcoord['position_on_grid'] = gridIndicator['vertical']
@@ -495,10 +502,10 @@ class netCDFMNH(FileResource):
             field.geometry = geometry
         if getdata:
             data = var[...]
-            if field_info['type'] == 'H2D':
+            if field_info['type'] in('H1D', 'H2D'):
                 # Only one horizontal level
                 data = geometry.reshape_data(data.flatten())
-            elif field_info['type'] == '3D':
+            elif field_info['type'] in ('V1D', 'V2D', '3D'):
                 # 3D data
                 data = data.reshape((len(self.geometry.vcoordinate.grid['gridlevels']) + 1,
                                     self.geometry.dimensions['X'] * self.geometry.dimensions['Y']))
@@ -808,8 +815,8 @@ class netCDFMNH(FileResource):
         secondcolumn_width = 16
         sepline = '{:-^{width}}'.format('', width=firstcolumn_width + secondcolumn_width + 1) + '\n'
 
-        first_H2DField = [f for f in self.listfields() if self._get_type(f) in ['H2D', '3D']][0]
-        firstfield = self.readfield(first_H2DField, getdata=False)
+        first_MTOField = [f for f in self.listfields() if self._get_type(f) in ['V1D', 'H2D', '3D']][0]
+        firstfield = self.readfield(first_MTOField, getdata=False)
 
         listfields = self.listfields()
         listoffields = listfields
@@ -942,6 +949,7 @@ class netCDFMNH(FileResource):
             cartesian = False
         imax = int(v('IMAX'))
         jmax = int(v('JMAX'))
+        jphext = int(v('JPHEXT'))
         xhat = v('XHAT')
         yhat = v('YHAT')
         if 'KMAX' in listnames:
@@ -951,16 +959,16 @@ class netCDFMNH(FileResource):
                 kmax += 2
         else:
             kmax = 0
-        dimensions = {'X':imax + 2,
-                      'Y':1 if (cartesian and jmax == 1) else jmax + 2,
+        dimensions = {'X':1 if (cartesian and imax == 1) else imax + 2 * jphext,
+                      'Y':1 if (cartesian and jmax == 1) else jmax + 2 * jphext,
                       'X_CIzone':imax,
                       'Y_CIzone':jmax,
                       'X_Iwidth':0,
                       'Y_Iwidth':0,
                       'X_Czone':imax,
                       'Y_Czone':jmax,
-                      'X_CIoffset':1,
-                      'Y_CIoffset':1
+                      'X_CIoffset':jphext,
+                      'Y_CIoffset':jphext
                       }
 
         if cartesian:
@@ -990,8 +998,14 @@ class netCDFMNH(FileResource):
         else:
             lat0 = v('LAT0')
             lon0 = v('LON0')
-            lat1 = v('LATORI' if 'LATORI' in listnames else 'LATOR')
-            lon1 = v('LONORI' if 'LONORI' in listnames else 'LONOR')
+            if 'LATORI' in listnames and 'LONORI' in listnames:
+                lat1 = v('LATORI')
+                lon1 = v('LONORI')
+                input_position = (jphext - 1, jphext - 1) #deduced from run output
+            else:
+                lat1 = v('LATOR')
+                lon1 = v('LONOR')
+                input_position = (0, 0)
             rpk = v('RPK')
             beta = v('BETA')
 
@@ -1016,7 +1030,7 @@ class netCDFMNH(FileResource):
                     'LAMzone':'CIE',
                     'input_lon':Angle(float(lon1), 'degrees'),
                     'input_lat':Angle(float(lat1), 'degrees'),
-                    'input_position':(0, 0),
+                    'input_position':input_position,
                     }
             if abs(rpk) <= config.epsilon:
                 geometryname = 'mercator'
@@ -1086,6 +1100,7 @@ class netCDFMNH(FileResource):
         """
         Write special records that control geometry and validity
         """
+        jphext = records.get('JPHEXT', None) #not available when writing special fields representing the validity
         for name, value in records.items():
             meta = self._specialFieldComments[name]
             if name in ['DTEXP', 'DTCUR', 'time']:
@@ -1103,20 +1118,20 @@ class netCDFMNH(FileResource):
             elif name in ['level_w']:
                 meta['c_grid_dynamic_range'] = '2:' + str(len(value))
             elif name in ['ni', 'ni_v']:
-                meta['c_grid_dynamic_range'] = '2:' + str(len(value) - 1)
+                meta['c_grid_dynamic_range'] = str(jphext + 1) + ':' + str(len(value) - jphext)
             elif name in ['ni_u']:
-                meta['c_grid_dynamic_range'] = '2:' + str(len(value))
+                meta['c_grid_dynamic_range'] = str(jphext + 1) + ':' + str(len(value))
             elif name in ['nj', 'nj_u']:
-                meta['c_grid_dynamic_range'] = '2:' + str(len(value) - 1)
+                meta['c_grid_dynamic_range'] = str(jphext + 1) + ':' + str(len(value) - jphext)
             elif name in ['nj_v']:
-                meta['c_grid_dynamic_range'] = '2:' + str(len(value))
+                meta['c_grid_dynamic_range'] = str(jphext + 1) + ':' + str(len(value))
             if numpy.array(value).dtype == numpy.bool:
                 value = numpy.where(numpy.array(value), numpy.array(1, dtype=numpy.int8),
                                                         numpy.array(0, dtype=numpy.int8))
             if name in self._nc.variables:
                 #Variable already stored in file, we check equality
                 recordedValue = self._nc.variables[name][...]
-                if name in ['CARTESIAN', 'SLEVE'] + ['IMAX', 'JMAX', 'KMAX']:
+                if name in ['CARTESIAN', 'SLEVE'] + ['IMAX', 'JMAX', 'KMAX', 'JPHEST']:
                     #boolean or integer
                     check = self._nc.variables[name][...] == value
                 elif name in ['LAT0', 'LON0', 'LATOR', 'LATORI', 'LONOR', 'LONORI',
@@ -1207,7 +1222,7 @@ class netCDFMNH(FileResource):
         if g.vcoordinate is not None and \
             hasattr(g.vcoordinate, 'grid') and \
            'gridlevels' in g.vcoordinate.grid and \
-           g.structure in ['3D', 'H2D', 'V1D']:
+           g.structure in ['3D', 'H2D', 'V1D', 'H1D', 'V2D']:
             specialFieldValues['SLEVE'] = g.vcoordinate.typeoffirstfixedsurface != 118
             kmax = len(g.vcoordinate.grid['gridlevels']) + 1
             if kmax > 1:
@@ -1232,37 +1247,52 @@ class netCDFMNH(FileResource):
         
         #Horizontal grid
         if hasattr(g, 'dimensions') and hasattr(g, 'grid'):
-            specialFieldValues['IMAX'] = numpy.int32(g.dimensions['X'] - 2)
-            specialFieldValues['JMAX'] = numpy.int32(1 if g.dimensions['Y'] == 1 else g.dimensions['Y'] - 2)
-            dimX = g.dimensions['X']
-            if dimX == 1:
-                dimX += 2
-            specialFieldValues['XHAT'] = numpy.arange(-g.grid['X_resolution'] / 2.,
-                                                 g.grid['X_resolution'] * (dimX - 1),
-                                                 g.grid['X_resolution'])
+            jphext = g.dimensions['X_CIoffset']
+            specialFieldValues['JPHEXT'] = jphext
+            assert g.dimensions['Y_CIoffset'] == jphext, 'JPHEXT must have the same value on both horizontal dimensions'
+            #Meso-NH format is not consistent. dimensions['X']/dimensions['Y'] include
+            #the jphext points except if it has a length of one
+            #dimX/dimY always contain the jphext points
+            dimX = (1 + 2 * jphext) if g.dimensions['X'] == 1 else g.dimensions['X']
+            dimY = (1 + 2 * jphext) if g.dimensions['Y'] == 1 else g.dimensions['Y']
+            specialFieldValues['IMAX'] = numpy.int32(dimX - 2 * jphext)
+            specialFieldValues['JMAX'] = numpy.int32(dimY - 2 * jphext)
+            specialFieldValues['XHAT'] = numpy.arange(1 / 2. - jphext,
+                                                      dimX - jphext,
+                                                      1.) * g.grid['X_resolution']
             for d in ['ni', 'ni_u', 'ni_v']:
                 if d not in self._nc.dimensions:
-                    self._nc.createDimension(d, g.dimensions['X'])    
+                    self._nc.createDimension(d, dimX)    
             specialFieldValues['ni_u'] = specialFieldValues['XHAT']
             specialFieldValues['ni'] = f2m(specialFieldValues['ni_u'])
             specialFieldValues['ni_v'] = specialFieldValues['ni']
-            dimY = g.dimensions['Y']
-            if dimY == 1:
-                dimY += 2
-            specialFieldValues['YHAT'] = numpy.arange(-g.grid['Y_resolution'] / 2.,
-                                                 g.grid['Y_resolution'] * (dimY - 1),
-                                                 g.grid['Y_resolution'])
+            specialFieldValues['YHAT'] = numpy.arange(1 / 2. - jphext,
+                                                      dimY - jphext,
+                                                      1.) * g.grid['Y_resolution']
             for d in ['nj', 'nj_u', 'nj_v']:
                 if d not in self._nc.dimensions:
-                    self._nc.createDimension(d, g.dimensions['Y'])    
+                    self._nc.createDimension(d, dimY)    
             specialFieldValues['nj_v'] = specialFieldValues['YHAT']
             specialFieldValues['nj'] = f2m(specialFieldValues['nj_v'])
             specialFieldValues['nj_u'] = specialFieldValues['nj']
-            dim.extend({'center':('nj', 'ni'), #1, 4
-                        'center-left':('nj_u', 'ni_u'), #2, 6
-                        'lower-center':('nj_v', 'ni_v'), #3, 7
-                        'lower-left':('nj_v', 'ni_u'), #5, 8
-                       }[field.geometry.position_on_horizontal_grid])
+            if g.structure in ('Point', 'V1D'):
+                #Meso-NH file does not contain horizontal dimensions for V1D fields
+                pass
+            elif g.structure in ('H1D', 'V2D'):
+                #Meso-NH file does not contain y-dimension for V2D fields
+                dim.extend({'center':('ni',), #1, 4
+                            'center-left':('ni_u',), #2, 6
+                            'lower-center':('ni_v',), #3, 7
+                            'lower-left':('ni_u'), #5, 8
+                           }[field.geometry.position_on_horizontal_grid])
+                if 'size1' not in self._nc.dimensions:
+                    self._nc.createDimension('size1', 1)
+            else:
+                dim.extend({'center':('nj', 'ni'), #1, 4
+                            'center-left':('nj_u', 'ni_u'), #2, 6
+                            'lower-center':('nj_v', 'ni_v'), #3, 7
+                            'lower-left':('nj_v', 'ni_u'), #5, 8
+                           }[field.geometry.position_on_horizontal_grid])
             specialFieldValues['LON'],  specialFieldValues['LAT'] = g.get_lonlat_grid(position='center')
             specialFieldValues['longitude'] = specialFieldValues['LON']
             specialFieldValues['latitude'] = specialFieldValues['LAT']
@@ -1305,15 +1335,20 @@ class netCDFMNH(FileResource):
                     t2 = math.tan(math.pi / 4. - math.radians(latin2) / 2.)
                     specialFieldValues['LAT0'] = latin1
                     specialFieldValues['RPK'] = (math.log(m1) - math.log(m2)) / (math.log(t1) - math.log(t2))
+            if g.grid['input_position'] == (jphext - 1, jphext - 1):
+                specialFieldValues['LONORI'] = g.grid['input_lon'].get('degrees')
+                specialFieldValues['LATORI'] = g.grid['input_lat'].get('degrees')
             if g.grid['input_position'] == (0, 0):
                 specialFieldValues['LONOR'] = g.grid['input_lon'].get('degrees')
                 specialFieldValues['LATOR'] = g.grid['input_lat'].get('degrees')
-            else:
-                originPoint = g.gimme_corners_ll(subzone='CIE', position='center')['ll']
-                specialFieldValues['LONOR'] = originPoint[0]
-                specialFieldValues['LATOR'] = originPoint[1]
-            specialFieldValues['LONORI'] = specialFieldValues['LONOR']
-            specialFieldValues['LATORI'] = specialFieldValues['LATOR']
+            if any([k not in specialFieldValues for k in ['LONORI', 'LATORI', 'LONOR', 'LATOR']]):
+                lon, lat = g.get_lonlat_grid(position='center')
+                if 'LONOR' not in specialFieldValues:
+                    specialFieldValues['LONOR'] = lon[0, 0]
+                    specialFieldValues['LATOR'] = lat[0, 0]
+                if 'LONORI' not in specialFieldValues:
+                    specialFieldValues['LONORI'] = lon[jphext - 1, jphext - 1]
+                    specialFieldValues['LATORI'] = lat[jphext - 1, jphext - 1]
 
         self._write_special_records(specialFieldValues, field)
         return dim

@@ -13,10 +13,12 @@ import sys
 
 from epygram import epygramError
 from epygram.util import write_formatted
-from .V2DGeometry import V2DUnstructuredGeometry
+from .V2DGeometry import (V2DGeometry, V2DRectangularGridGeometry,
+                          V2DUnstructuredGeometry, V2DProjectedGeometry,
+                          V2DAcademicGeometry)
 
 
-class V1DGeometry(V2DUnstructuredGeometry):
+class V1DGeometry(V2DGeometry):
     """
     Handles the geometry for a Vertical 1-Dimension Field.
     Abstract mother class.
@@ -55,10 +57,11 @@ class V1DGeometry(V2DUnstructuredGeometry):
 
         :param out: the output open file-like object
         """
-        (lons, lats) = (self.grid['longitudes'], self.grid['latitudes'])
         write_formatted(out, "Kind of Geometry", 'Unstructured')
-        write_formatted(out, "Longitude in deg", lons[0])
-        write_formatted(out, "Latitude in deg", lats[0])
+        if 'longitudes' in self.grid and 'latitudes' in self.grid:
+            (lons, lats) = (self.grid['longitudes'], self.grid['latitudes'])
+            write_formatted(out, "Longitude in deg", lons[0])
+            write_formatted(out, "Latitude in deg", lats[0])
 
     def __eq__(self, other):
         """Test of equality by recursion on the object's attributes."""
@@ -75,3 +78,67 @@ class V1DGeometry(V2DUnstructuredGeometry):
     def __hash__(self):
         # known issue __eq__/must be defined both or none, else inheritance is broken
         return super(V1DGeometry, self).__hash__()
+
+
+class V1DRectangularGridGeometry(V1DGeometry, V2DRectangularGridGeometry):
+    """
+    Handles the geometry for a Vertical 1-Dimension Field for which the surface points
+    come from a rectangular grid.
+    Abstract.
+    """
+
+    _abstract = True
+    _collector = ('geometry',)
+    _footprint = dict(
+        attr=dict(
+            structure=dict(
+                values=set(['V1D'])),  # inheritance priority problem
+            name=dict(
+                values=set(['lambert', 'mercator', 'polar_stereographic', 'space_view', 'unstructured']))
+        )
+    )
+
+
+class V1DUnstructuredGeometry(V1DRectangularGridGeometry, V2DUnstructuredGeometry):
+    """Handles the geometry for an unstructured Vertical 1-Dimension Field."""
+
+    _collector = ('geometry',)
+    _footprint = dict(
+        attr=dict(
+            structure=dict(
+                values=set(['V1D'])),  # inheritance priority problem
+            name=dict(
+                values=set(['unstructured'])),
+            position_on_horizontal_grid=dict(
+                default='center',
+                values=set(['center'])),
+        )
+    )
+
+
+class V1DAcademicGeometry(V1DRectangularGridGeometry, V2DAcademicGeometry):
+    """Handles the geometry for a Vertical academic 1-Dimension Field."""
+
+    _collector = ('geometry',)
+    _footprint = dict(
+        attr=dict(
+            structure=dict(
+                values=set(['V1D'])),  # inheritance priority problem
+            name=dict(
+                values=set(['academic']))
+        )
+    )
+
+
+class V1DProjectedGeometry(V1DRectangularGridGeometry, V2DProjectedGeometry):
+    """Handles the geometry for a Projected Horizontal vertical Field."""
+
+    _collector = ('geometry',)
+    _footprint = dict(
+        attr=dict(
+            structure=dict(
+                values=set(['V1D'])),  # inheritance priority problem
+            name=dict(
+                values=set(['lambert', 'mercator', 'polar_stereographic', 'space_view']))
+        )
+    )
