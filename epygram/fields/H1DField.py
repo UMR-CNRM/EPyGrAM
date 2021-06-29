@@ -402,7 +402,7 @@ def plottransects(transects,
         transects.append(p)
     t0 = transects[0]
     x = numpy.zeros((t0.geometry.dimensions['X'],))
-    lonlat = zip(*t0.geometry.get_lonlat_grid())
+    lonlat = list(zip(*t0.geometry.get_lonlat_grid()))
     p0 = lonlat[0]
     plast = p0
     distance = 0
