@@ -343,9 +343,8 @@ def _cartoplot_get_ColormapHelper(cls,
         cmapfile = config.colormaps[colormap]
         if cmapfile.endswith('.json'):
             colormaphelper = colormapping.get_ColormapHelper_fromfile(cmapfile)  # potentially already loaded
-        elif cmapfile.endswith('.cmap'):
-            # deprecated
-            raise epygramError(util._deprecated_cmap)
+        else:
+            raise NotImplementedError("colormaps taken from config must be .json files (and be suffixed so)")
     else:
         colormaphelper = colormapping.ColormapHelper(colormap,
                                                      explicit_colorbounds=colorbounds)
@@ -635,7 +634,7 @@ def cartoplot(self,
 
     :param meridians: enable to fine-tune the choice of lines to
         plot, with either:
-          - 'auto': automatic scaling to the basemap extents
+          - 'auto': automatic scaling to the map extents
           - 'default': every 10 degree
           - a list of values
           - a grid step, e.g. 5 to plot each 5 degree.

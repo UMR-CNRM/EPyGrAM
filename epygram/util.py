@@ -703,148 +703,6 @@ def write_formatted_table(dest, table,
         dest.write(line + '\n')
 
 
-def add_meridians_and_parallels_to(bm,
-                                   meridians='auto',
-                                   parallels='auto',
-                                   ax=None,
-                                   drawparallels_kwargs=None,
-                                   drawmeridians_kwargs=None,
-                                   drawequator_kwargs=None,
-                                   drawgreenwich_kwargs=None):
-    """
-    Adds meridians and parallels to a basemap instance *bm*.
-
-    *meridians* and *parallels* enable to fine-tune the choice of lines to
-    plot, with either:
-      - 'auto': automatic scaling to the basemap extents
-      - 'default': range(0,360,10) and range(-90,90,10)
-      - a list of values
-      - a grid step, e.g. 5 to plot each 5 degree.
-      - None: no one is plot
-      - *meridian* == 'greenwich' // 'datechange' // 'greenwich+datechange'
-        *parallel* == 'equator' // 'polarcircles' // 'tropics' or any
-        combination (,) will plot only these.
-
-    :param ax: the ax to be plotted on
-    :param drawparallels_kwargs: kwargs to be passed to basemap.drawparallels()
-    :param drawmeridians_kwargs: kwargs to be passed to basemap.drawgreenwich()
-    :param drawequator_kwargs: draw kwargs to emphasize equator parallel
-    :param drawgreenwich_kwargs: draw kwargs to emphasize greenwich meridian
-    """
-    try:
-        parallels = float(parallels)
-    except (TypeError, ValueError):
-        parallels = parallels
-    try:
-        meridians = float(meridians)
-    except (TypeError, ValueError):
-        meridians = meridians
-    drawparallels_kwargs = ifNone_emptydict(drawparallels_kwargs)
-    drawmeridians_kwargs = ifNone_emptydict(drawmeridians_kwargs)
-    drawequator_kwargs = ifNone_emptydict(drawequator_kwargs)
-    drawgreenwich_kwargs = ifNone_emptydict(drawgreenwich_kwargs)
-
-    if bm.projection == 'rotpole':
-        Delta_lat = bm.ymax - bm.ymin
-    else:
-        Delta_lat = bm.latmax - bm.latmin
-    if parallels == 'auto' or isinstance(parallels, int) or isinstance(parallels, float):
-        if Delta_lat <= 10:
-            delta_lat = 1
-        elif 10 < Delta_lat <= 30:
-            delta_lat = 5
-        else:
-            delta_lat = 10
-        if isinstance(parallels, int) or isinstance(parallels, float):
-            delta_lat = parallels
-        latmin = bm.latmin - bm.latmin % delta_lat
-        latmax = bm.latmax - bm.latmax % delta_lat + delta_lat
-        parallels = numpy.arange(latmin, latmax, delta_lat)
-    elif parallels == 'default':
-        parallels = numpy.arange(-90, 90, 10)
-    elif isinstance(parallels, six.string_types) or isinstance(parallels, list):
-        pl = []
-        if 'equator' in parallels:
-            pl.append(0.)
-        if 'polarcircles' in parallels:
-            pl.extend([-66.5628, 66.5628])
-        if 'tropics' in parallels:
-            pl.extend([-23.4372, 23.4372])
-        if isinstance(parallels, list):
-            for p in parallels:
-                try:
-                    pl.append(float(p))
-                except (ValueError, TypeError):
-                    pass
-        pl.sort()
-        parallels = pl
-
-    if bm.projection == 'rotpole':
-        Delta_lon = bm.xmax - bm.xmin
-    else:
-        Delta_lon = bm.lonmax - bm.lonmin
-    if meridians == 'auto' or isinstance(meridians, int) or isinstance(meridians, float):
-        if Delta_lon <= 10:
-            delta_lon = 1
-        elif 10 < Delta_lon <= 30:
-            delta_lon = 5
-        elif 30 < Delta_lon <= 180:
-            delta_lon = 10
-        else:
-            delta_lon = 20
-        if isinstance(meridians, int) or isinstance(meridians, float):
-            delta_lon = meridians
-        lonmin = bm.lonmin - bm.lonmin % delta_lon
-        lonmax = bm.lonmax - bm.lonmax % delta_lon + delta_lon
-        meridians = numpy.arange(lonmin, lonmax, delta_lon)
-    elif meridians == 'default':
-        meridians = numpy.arange(0, 360, 10)
-    elif isinstance(meridians, six.string_types) or isinstance(meridians, list):
-        ml = []
-        if 'greenwich' in meridians:
-            ml.append(0.)
-        if 'datechange' in meridians:
-            ml.append(180.)
-        if isinstance(meridians, list):
-            for m in meridians:
-                try:
-                    ml.append(float(m))
-                except (ValueError, TypeError):
-                    pass
-        ml.sort()
-        meridians = ml
-
-    if parallels is not None:
-        if bm.projection in ('ortho', 'nsper'):
-            if 'labels' not in drawparallels_kwargs.keys():
-                drawparallels_kwargs['labels'] = [False, False, False, False]
-        else:
-            if 'labels' not in drawparallels_kwargs.keys():
-                drawparallels_kwargs['labels'] = [True, False, False, False]
-        bm.drawparallels(parallels, ax=ax, **drawparallels_kwargs)
-        if 0. in parallels or 0 in parallels:
-            if 'dashes' not in drawequator_kwargs.keys():
-                drawequator_kwargs['dashes'] = [10, 1]
-            drawequator_kwargs['labels'] = [False] * 4
-            bm.drawparallels([0], ax=ax, **drawequator_kwargs)
-    if meridians is not None:
-        if bm.projection in ('spstere', 'npstere', 'stere'):
-            if 'labels' not in drawmeridians_kwargs.keys():
-                drawmeridians_kwargs['labels'] = [True, False, False, True]
-        elif bm.projection in ('ortho', 'moll', 'nsper'):
-            if 'labels' not in drawmeridians_kwargs.keys():
-                drawmeridians_kwargs['labels'] = [False, False, False, False]
-        else:
-            if 'labels' not in drawmeridians_kwargs.keys():
-                drawmeridians_kwargs['labels'] = [False, False, False, True]
-        bm.drawmeridians(meridians, ax=ax, **drawmeridians_kwargs)
-        if 0. in meridians or 0 in meridians:
-            if 'dashes' not in drawgreenwich_kwargs.keys():
-                drawgreenwich_kwargs['dashes'] = [10, 1]
-            drawgreenwich_kwargs['labels'] = [False] * 4
-            bm.drawmeridians([0], ax=ax, **drawgreenwich_kwargs)
-
-
 def auto_meridians_parallels(geometry,
                              meridians='auto',
                              parallels='auto',
@@ -854,12 +712,12 @@ def auto_meridians_parallels(geometry,
 
     *meridians* and *parallels* enable to fine-tune the choice of lines to
     plot, with either:
-      - 'auto': automatic scaling to the basemap extents
+      - 'auto': automatic scaling to the map extents
       - 'default': range(0,360,10) and range(-90,90,10)
       - a list of values
       - a grid step, e.g. 5 to plot each 5 degree.
       - None: no one is plot
-    
+
     :param extent: among 'focus' or 'global', used to determine outer limits
     """
 
@@ -944,23 +802,6 @@ def nearlyEqual(a, b, epsilon=config.epsilon):
 
 nearlyEqualArray = numpy.vectorize(nearlyEqual)
 nearlyEqualArray.__doc__ = "Vector version of nearlyEqual()."
-
-
-def scale_colormap(cmap, max_val=None):
-    """
-    .. deprecated:: 1.3.9
-
-    Creates a matplotlib.colors.BoundaryNorm object tuned for scaled colormaps,
-    i.e. discrete, irregular colorshades.
-
-    :param cmap: name of the colormap, as found in config.colormaps_scaling
-    :param max_val: if given, replaces the upper bound.
-
-    :return: a tuple (norm, scaling), scaling being eventually modified
-             according to **max_val**
-    """
-    bounds = copy.copy(config.colormaps_scaling.get(cmap, None))
-    return get_norm4colorscale(bounds, max_val=max_val)
 
 
 def restrain_to_index_i_of_dim_d(a, i, d, n=None):
@@ -1078,75 +919,6 @@ def ifNone_emptydict(arg):
     if arg is None:
         arg = {}
     return arg
-
-
-def set_map_up(bm, ax,
-               drawrivers=False,
-               drawcoastlines=True,
-               drawcountries=True,
-               meridians='auto',
-               parallels='auto',
-               departments=False,
-               bluemarble=0.0,
-               background=False,
-               drawmapboundary_kwargs=None,
-               fillcontinents_kwargs=None,
-               drawcoastlines_kwargs=None,
-               drawcountries_kwargs=None,
-               drawparallels_kwargs=None,
-               drawmeridians_kwargs=None,
-               drawequator_kwargs=None,
-               drawgreenwich_kwargs=None):
-    """Cf. :meth:`H2DField.plotfield` documentation."""
-    epylog.warning("DEPRECATED: the basemap package is deprecated")
-    if drawmapboundary_kwargs is None:
-        drawmapboundary_kwargs = dict(fill_color='lightskyblue')
-    if fillcontinents_kwargs is None:
-        fillcontinents_kwargs = dict(color='wheat', lake_color='skyblue',
-                                     zorder=0)
-    drawcoastlines_kwargs = ifNone_emptydict(drawcoastlines_kwargs)
-    drawcountries_kwargs = ifNone_emptydict(drawcountries_kwargs)
-    if background:
-        bm.drawmapboundary(ax=ax, **drawmapboundary_kwargs)
-        bm.fillcontinents(ax=ax, **fillcontinents_kwargs)
-    if bluemarble:
-        bm.bluemarble(alpha=bluemarble, ax=ax)
-    if drawcoastlines:
-        bm.drawcoastlines(ax=ax, **drawcoastlines_kwargs)
-    if departments:
-        if not hasattr(bm, '_epygram_departments'):
-            import json
-            with open(config.installdir + '/data/french_departments.json', 'r') as dp:
-                depts = json.load(dp)[1]
-            bm._epygram_departments = depts
-        else:
-            depts = bm._epygram_departments
-        for d in range(len(depts)):
-            for part in range(len(depts[d])):
-                dlon = depts[d][part][0]
-                dlat = depts[d][part][1]
-                (x, y) = bm(dlon, dlat)
-                bm.plot(x, y, color=drawcountries_kwargs.get('color', 'k'), ax=ax)
-    elif drawcountries:
-        bm.drawcountries(ax=ax, **drawcountries_kwargs)
-    if drawrivers:
-        bm.drawrivers(color='blue', ax=ax)
-    add_meridians_and_parallels_to(bm,
-                                   parallels=parallels,
-                                   meridians=meridians,
-                                   ax=ax,
-                                   drawparallels_kwargs=drawparallels_kwargs,
-                                   drawmeridians_kwargs=drawmeridians_kwargs,
-                                   drawequator_kwargs=drawequator_kwargs,
-                                   drawgreenwich_kwargs=drawgreenwich_kwargs)
-
-
-def datetimerange(*_, **__):
-    """
-    .. deprecated:: 1.2.11
-    """
-    raise DeprecationWarning("You should use function daterange/daterangex " +
-                             "from bronx.stdtypes.date")
 
 
 def fmtfid(fmt, fid):

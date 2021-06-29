@@ -36,24 +36,6 @@ epygram_colormaps = {'aspect':os.path.join(installdir, 'data', 'colormaps', 'asp
                      'ptype':os.path.join(installdir, 'data', 'colormaps', 'ptype.json'),
                      'ptype0':os.path.join(installdir, 'data', 'colormaps', 'ptype0.json'),
                      }
-# CLEANME: 1.4.0 ?
-#: .. deprecated:: 1.3.9
-#: epygram colormaps scalings
-epygram_colormaps_scaling = {'radar':[0., 0.1, 1., 3., 5., 7., 10., 15., 20., 30., 50., 70., 100., 150., 300.],
-                             'rr1h':[0., 0.2, 0.5, 1, 1.5, 2., 4., 10., 25., 50., 100., 300.],
-                             'rr6h':[0., 0.2, 0.5, 1, 1.5, 2., 4., 10., 25., 50., 100., 300.],
-                             'rr24h':[0., 0.2, 1., 2., 4., 10., 25., 50., 100., 150., 200., 300., 500.],
-                             'ptype':[0.1, 1.1, 3.1, 5.1, 6.1, 7.1, 8.1, 9.1, 10.1, 11.1, 12.1,
-                                      193.1, 201.1, 205.1, 206.1, 207.1, 213.1],
-                             'ptype0':[0., 0.1, 1.1, 3.1, 5.1, 6.1, 7.1, 8.1, 9.1, 10.1, 11.1, 12.1,
-                                       193.1, 201.1, 205.1, 206.1, 207.1, 213.1],
-                             }
-# CLEANME: 1.4.0 ?
-#: .. deprecated:: 1.3.9
-#: epygram colormaps scalings labels
-epygram_colormaps_scaling_labels = {'ptype':[int(l) for l in epygram_colormaps_scaling['ptype'][1:]],
-                                    'ptype0':[int(l) for l in epygram_colormaps_scaling['ptype0'][1:]]
-                                    }
 
 # PARAMETERS #
 ##############
@@ -255,7 +237,7 @@ margin_points_within_Czone = 3
 #: Defaults for matplotlib rcparams
 default_rcparams = [(('font',), dict(family='serif')), ]
 #: Plugins to be activated by default
-activate_plugins = ['with_vtk', 'with_cartopy', 'with_basemap']
+activate_plugins = ['with_vtk', 'with_cartopy']
 
 
 # USER CUSTOMIZATION #
@@ -270,15 +252,8 @@ usermodules = []  # TODO: ? CLEANME
 # usercolormaps should also remain empty here
 #: In userconfig, this should be a dict whose keys are the colormap name and
 #: values the source absolute path of the colormap definition;
-#: e.g. {'aspect', '/home/mary/.epygram/aspect.cmap'}.
+#: e.g. {'aspect', '/home/mary/.epygram/aspect.json'}.
 usercolormaps = {}
-# usercolormaps_scaling should also remain empty here
-# CLEANME: 1.4.0 ?
-#: .. deprecated:: 1.3.9
-#: In userconfig, this should be a dict whose keys are the colormap name and
-#: values the bounds of the steps between colors,
-#: e.g. cf. epygram_colormaps_scaling
-usercolormaps_scaling = {}
 
 
 # OVERWRITE WITH USER CONFIG #
@@ -291,9 +266,3 @@ if os.path.exists(os.path.join(userlocaldir, 'userconfig.py')):
 colormaps = {}
 colormaps.update(epygram_colormaps)
 colormaps.update(usercolormaps)
-# CLEANME: 1.4.0 ?
-#: .. deprecated:: 1.3.9
-#: colormaps_scaling gathers epygram and user colormaps_scaling
-colormaps_scaling = {}
-colormaps_scaling.update(epygram_colormaps_scaling)
-colormaps_scaling.update(usercolormaps_scaling)

@@ -532,7 +532,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
         if plotlib == 'cartopy':
             return self.cartoplot_geometry(**kwargs)
         else:
-            return self.basemap_plot_geometry(**kwargs)
+            raise NotImplementedError("'basemap' plotlib has been removed, only remains 'cartopy'")
 
     def cartoplot_geometry(self, **kwargs):
         """
@@ -543,66 +543,6 @@ class D3Geometry(RecursiveObject, FootprintBase):
         if 'color' in kwargs:  # compatibility dirty-fix
             kwargs['contourcolor'] = kwargs.pop('color')
         fig, ax = cartoplot_rect_geometry(self, **kwargs)
-        return fig, ax
-
-    def basemap_plot_geometry(self,
-                              color='blue',
-                              borderonly=True,
-                              **kwargs):
-        """
-        Makes a simple plot of the geometry, with a number of options.
-
-        :param color: color of the plotting.
-        :param borderonly: if True, only plot the border of the grid, else the
-          whole grid. Ignored for global geometries.
-
-        For other options, cf. plotfield() method of :class:`epygram.fields.H2DField`.
-
-        :DEPRECATED:
-        """
-        import matplotlib.pyplot as plt
-        plt.rc('font', family='serif')
-        epylog.warning("DEPRECATED: the plotgeometry() method uses basemap, which is deprecated !")  # FIXME: ?
-        fig, ax = set_figax(*kwargs.get('over', (None, None)),
-                            figsize=kwargs.get('figsize', config.plotsizes))
-        if self.name == 'academic':
-            raise epygramError("We cannot plot lon/lat of an academic grid.")
-        sat_height = self.distance(self.gimme_corners_ll()['ll'],
-                                   self.gimme_corners_ll()['ur']) / 1000
-        kwargs.setdefault('specificproj', ('nsper', {'sat_height':sat_height * 3}))
-        if kwargs.get('use_basemap') is None:
-            bm_args = {k:kwargs[k]
-                       for k in ('gisquality', 'subzone', 'specificproj', 'zoom')
-                       if k in kwargs}
-            bm = self.make_basemap(**bm_args)
-        else:
-            bm = kwargs.get('use_basemap')
-        map_args = {k:kwargs[k]
-                    for k in ('drawrivers', 'drawcoastlines', 'drawcountries',
-                              'meridians', 'parallels',
-                              'departments', 'boundariescolor',
-                              'bluemarble', 'background')
-                    if k in kwargs}
-        set_map_up(bm, ax, **map_args)
-        (lons, lats) = self.get_lonlat_grid(subzone=kwargs.get('subzone'))
-        if borderonly and 'gauss' not in self.name:
-            lons = numpy.array(list(lons[0, :]) + list(lons[-1, :]) +
-                               list(lons[1:-1, 0]) + list(lons[1:-1, -1]))
-            lats = numpy.array(list(lats[0, :]) + list(lats[-1, :]) +
-                               list(lats[1:-1, 0]) + list(lats[1:-1, -1]))
-        x, y = bm(lons, lats)
-        xf = x.flatten()
-        yf = y.flatten()
-        bm.scatter(xf, yf,
-                   s=kwargs.get('pointsize', 20),
-                   marker=',',
-                   color=color,
-                   linewidths=0,
-                   ax=ax)
-        if kwargs.get('title') is None:
-            ax.set_title(str(self.name))
-        else:
-            ax.set_title(kwargs.get('title'))
         return fig, ax
 
     def what(self, out=sys.stdout,

@@ -683,7 +683,7 @@ graphical_options = {
     'parallels':[
         '--parallels',
         dict(help="""tune the choice of lines to plot, among:
-                     'auto': automatic scaling to the basemap extents (default) |
+                     'auto': automatic scaling to the map extents (default) |
                      'default': range(0,360,10) and range(-90,90,10) |
                      a list of values |
                      a grid step, e.g. 5 to plot each 5 degree |
