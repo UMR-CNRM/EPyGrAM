@@ -11,12 +11,17 @@
 	{% for kpearp in range(defs.n_members_pearp) %}
 		{% set kpearpstr = '{:03d}'.format(kpearp) %}
 		'arpege-pearp-production-oper-fc_m{{kpearpstr}}' = { generatingProcessIdentifier = 211; numberOfForecastsInEnsemble = 035; perturbationNumber = {{kpearpstr}}; productDefinitionTemplateNumber = 11; }
+		'arpege-pearp-production-oper-aero_m{{kpearpstr}}' = { generatingProcessIdentifier = 211; subCentre = 1; numberOfForecastsInEnsemble = 035; perturbationNumber = {{kpearpstr}}; productDefinitionTemplateNumber = 11; }
 		'arpege-pearp-production-dble-fc_m{{kpearpstr}}' = { generatingProcessIdentifier = 212; numberOfForecastsInEnsemble = 035; perturbationNumber = {{kpearpstr}}; productDefinitionTemplateNumber = 11; }
+		'arpege-pearp-production-dble-aero_m{{kpearpstr}}' = { generatingProcessIdentifier = 212; subCentre = 1; numberOfForecastsInEnsemble = 035; perturbationNumber = {{kpearpstr}}; productDefinitionTemplateNumber = 11; }
 	{% endfor %}
 ## CTPINI
 	'arpege-ctpinifr-production-oper-fc' = { generatingProcessIdentifier = 173; }
 ## FABEC
         'arpege-4dvarfr-production-oper-fabec' = { generatingProcessIdentifier = 31; subCentre = 1;}
+## AERO (Ex FABEC)
+        'arpege-4dvarfr-production-oper-aero' = { generatingProcessIdentifier = 31; subCentre = 1;}
+        'arpege-4dvarfr-production-dble-aero' = { generatingProcessIdentifier = 38; subCentre = 0;}
 
 ######## vapp=aladin ########
 ## Antilles-Guyane

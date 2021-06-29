@@ -2000,6 +2000,41 @@
     scaledValueOfSecondFixedSurface = 3000 ;
     scaleFactorOfSecondFixedSurface = 0 ;
 }
+"ATMOMLCAPE.POS" = {
+    discipline = 0 ;
+    parameterCategory = 7 ;
+    parameterNumber = 200 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfSecondFixedSurface = 103 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaledValueOfSecondFixedSurface = 5500 ;
+    scaleFactorOfSecondFixedSurface = 0 ;
+}
+"SURFCIEN.POS.F00" = {
+    discipline = 0 ;
+    parameterCategory = 7 ;
+    parameterNumber = 7 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfSecondFixedSurface = 103 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaledValueOfSecondFixedSurface = 5500 ;
+    scaleFactorOfSecondFixedSurface = 0 ;
+}
+"SURFDIAG.FLASH" = {
+    discipline = 0 ;
+    parameterCategory = 17 ;
+    parameterNumber = 4 ;
+    productDefinitionTemplateNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    typeOfStatisticalProcessing = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    LSTCUM = 1 ;
+}
 
 # Ice cloud specific content
 "ICE_CRYSTA" = {
@@ -2578,7 +2613,46 @@
     typeOfFirstFixedSurface = 12 ;
     scaledValueOfFirstFixedSurface = 0;
 }
-
+"ATMOCLD.TOP.P" = {
+    discipline = 0 ;
+    parameterCategory = 3;
+    parameterNumber = 0 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 3 ;
+    scaledValueOfFirstFixedSurface = 0;
+}
+"ATMOCLD.CEIL.P" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 0 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 13 ;
+    scaledValueOfFirstFixedSurface = 50;
+}
+"ATMOCLD.CEIL.H" = {
+    discipline = 0 ;
+    parameterCategory = 6 ;
+    parameterNumber = 13 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 50;
+}
+"ATMOCLD.BASE.P" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 0 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 2 ;
+    scaledValueOfFirstFixedSurface = 0;
+}
+"ATMOCLD.BASE.H" = {
+    discipline = 0 ;
+    parameterCategory = 6 ;
+    parameterNumber = 11 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0;
+}
 # Radar reflectivity in dbZ
 "REFLEC_DBZ" = {
     discipline = 0 ;
@@ -2949,6 +3023,35 @@
     spatialProcessing = 0 ;
     tablesVersion = 15 ;
 }
+# Medium-levels Ellrod1 for ensemble forecast
+"CAT.TI1.M.ENS"= {
+    discipline = 0 ;
+    parameterCategory = 19 ;
+    parameterNumber = 205 ;
+    typeOfFirstFixedSurface = 100 ;
+    typeOfSecondFixedSurface = 100 ;
+    productDefinitionTemplateNumber = 1 ;
+    scaledValueOfFirstFixedSurface = 69680 ;
+    scaledValueOfSecondFixedSurface  = 46560 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaleFactorOfSecondFixedSurface  = 0 ; 
+    tablesVersion = 15 ;
+}
+# High-levels Ellrod1 for ensemble forecast
+"CAT.TI1.H.ENS"= {
+    discipline = 0 ;
+    parameterCategory = 19 ;
+    parameterNumber = 205 ;
+    typeOfFirstFixedSurface = 100 ;
+    typeOfSecondFixedSurface = 100 ;
+    productDefinitionTemplateNumber = 1 ;
+    scaledValueOfFirstFixedSurface = 46560  ;
+    scaledValueOfSecondFixedSurface  = 7170 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaleFactorOfSecondFixedSurface  = 0 ; 
+    tablesVersion = 15 ;
+}
+
 # Turbulence CAT indice EDR diagnostic
 "EDRDC"= {
     discipline = 0 ;
@@ -3007,6 +3110,48 @@
     spatialProcessing = 0 ;
     tablesVersion = 15 ;
 }
+# High_levels EDR diagnostic for ensemble forecast
+"EDRDCH.ENS"= {
+    discipline = 0 ;
+    parameterCategory = 19 ;
+    parameterNumber = 206 ;
+    typeOfFirstFixedSurface = 100 ;
+    typeOfSecondFixedSurface = 100 ;
+    productDefinitionTemplateNumber = 1 ;
+    scaledValueOfFirstFixedSurface = 46560 ;
+    scaledValueOfSecondFixedSurface = 7170 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaleFactorOfSecondFixedSurface = 0 ;
+    tablesVersion = 15 ;
+}
+# Medium-levels EDR diagnostic for ensemle forecast
+"EDRDCM.ENS"= {
+    discipline = 0 ;
+    parameterCategory = 19 ;
+    parameterNumber = 206 ;
+    typeOfFirstFixedSurface = 100 ;
+    typeOfSecondFixedSurface = 100 ;
+    productDefinitionTemplateNumber = 1 ;
+    scaledValueOfFirstFixedSurface = 69680 ;
+    scaledValueOfSecondFixedSurface = 46560 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaleFactorOfSecondFixedSurface = 0 ;
+    tablesVersion = 15 ;
+}
+# Low-levels EDR diagnostica for ensemble forecast
+"EDRDCL.ENS"= {
+    discipline = 0 ;
+    parameterCategory = 19 ;
+    parameterNumber = 206 ;
+    typeOfFirstFixedSurface = 100 ;
+    typeOfSecondFixedSurface = 100 ;
+    productDefinitionTemplateNumber = 1 ;
+    scaledValueOfFirstFixedSurface = 101330 ;
+    scaledValueOfSecondFixedSurface = 69680 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaleFactorOfSecondFixedSurface = 0 ;
+    tablesVersion = 15 ;
+}
 # Icing for Aviation
 "ICING.AERO"= {
     discipline = 0 ;
@@ -3030,4 +3175,26 @@
     spatialProcessing = 0 ;
     tablesVersion = 15 ;
 }
-
+# Maximum of icing for Aviation for ensemble forecast
+"ICINGX.AERO.ENS"= {
+    discipline = 0 ;
+    parameterNumber = 20 ;
+    parameterCategory = 233 ;
+    typeOfFirstFixedSurface = 100 ;
+    typeOfSecondFixedSurface = 100 ;
+    productDefinitionTemplateNumber = 1 ;
+    scaledValueOfFirstFixedSurface = 101330 ;
+    scaledValueOfSecondFixedSurface = 30090 ;
+    scaleFactorOfFirstFixedSurface = 0 ;
+    scaleFactorOfSecondFixedSurface = 0 ;
+    tablesVersion = 15 ;
+}
+# Sea Ice Fraction
+"SEA.ICE.COVER"= {
+    discipline = 10 ;
+    parameterNumber = 0 ;
+    parameterCategory = 2 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 101 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
