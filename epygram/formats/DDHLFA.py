@@ -69,6 +69,12 @@ class DDHLFA(LFA):
         super(LFA, self).__init__(*args, **kwargs)
         if not wlfa.wlfatest(self.container.abspath):
             raise IOError("This resource is not a LFA one.")
+        if self.openmode in ('r', 'a'):
+            guess = LFA(filename=self.container.abspath, openmode=self.openmode)
+            if not all([v in guess.listfields() for v in ['ECHEANCE', 'DATE', 'DOCFICHIER',
+                                                          'VPP0', 'VPP1']]):
+                raise IOError("this resource is not a DDHLFA one.")
+            guess.close()
         if self.openmode != 'r':
             raise NotImplementedError("openmode != 'r' for DDHLFA.")
         elif self.openmode == 'r':
