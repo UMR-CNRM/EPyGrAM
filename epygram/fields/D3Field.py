@@ -2513,8 +2513,12 @@ class D3VirtualField(_D3CommonField):
         else:
             if self.resource is None or self.resource_fids == FPList():
                 raise epygramError("If you do not set fieldset, you need to provide resource and resource_fids.")
-            fidlist = self.resource.find_fields_in_resource(seed=self.resource_fids,
-                                                            fieldtype=['Point', 'V1D', 'V2D', 'H2D', '3D'])
+            if all([k in self.resource.listfields() for k in self.resource_fids]):
+                fidlist = self.resource_fids
+            else:
+                #There could be pattern to search for instead of true fid 
+                fidlist = self.resource.find_fields_in_resource(seed=self.resource_fids,
+                                                                fieldtype=['Point', 'V1D', 'V2D', 'H2D', '3D'])
             if len(fidlist) == 0:
                 raise epygramError("There is no field in resource matching with resource_fids")
 
