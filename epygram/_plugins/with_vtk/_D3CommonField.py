@@ -343,11 +343,9 @@ def vtk_guess_param_from_field(self,
     hCoord can be:
       - 'geoid'
       - 'll'
-      - None to use the field geometry
-      - a basemap object
-      - a name of a proj to use among \
-            ('kav7', 'ortho', 'cyl', 'moll',\
-             'nsper[,sat_height=3000,lon=15.0,lat=55]')
+      - None to use the field projection
+      - a basemap/pyproj-like object
+      - a cratopy.crs object
     """
     
     if reverseZ is None:
@@ -355,13 +353,17 @@ def vtk_guess_param_from_field(self,
     
     if hCoord in ('geoid', 'll'):
         pass
-    elif hCoord is not None and not isinstance(hCoord, six.string_types):
-        #Should be a basemap but we do not test it explicitly to not
-        #introduce a dependency on a deprecated module
+    elif callable(hCoord):
+        #Should be a basemap/pyproj-like object or a cartopy.crs object
+        #but we do not test it explicitly to not
+        #introduce unnecessary dependency
         pass
+    elif hCoord is None:
+        #hCoord = self.geometry.default_cartopy_CRS()
+        def hCoord(x, y, inverse=False):
+            return self.geometry.xy2ll(x, y) if inverse else  self.geometry.ll2xy(x, y)
     else:
-        #None or a name of a specific proj
-        hCoord = self.geometry.make_basemap(specificproj=hCoord)
+        raise ValueError("hCoord must be 'geoid', 'll', None, a basemap/pyproj-like object or a cartopy.crs")
     
     #Guess z_factor
     if z_factor is None:

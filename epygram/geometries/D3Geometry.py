@@ -26,7 +26,7 @@ from epygram.config import rounding_decimal as _rd
 from epygram.util import (RecursiveObject, degrees_nearest_mod, Angle,
                           positive_longitudes, longitudes_between_minus180_180,
                           separation_line, write_formatted,
-                          nearlyEqual, set_map_up,
+                          nearlyEqual,
                           as_numpy_array, moveaxis,
                           is_scalar, Comparator)
 

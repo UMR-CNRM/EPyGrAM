@@ -35,6 +35,7 @@ def default_cartopy_CRS(self):
     """
     Create a cartopy.crs appropriate to the Geometry.
     """
+    globe = ccrs.Globe(semimajor_axis=self.geoid['a'], semiminor_axis=self.geoid['b'])
     if self.name == 'lambert':
         if self.secant_projection:
             lat_0 = (self.projection['secant_lat1'].get('degrees') +
@@ -47,7 +48,8 @@ def default_cartopy_CRS(self):
         crs = ccrs.LambertConformal(
             central_longitude=self.projection['reference_lon'].get('degrees'),
             central_latitude=lat_0,
-            standard_parallels=secant_lats)
+            standard_parallels=secant_lats,
+            globe=globe)
     elif self.name == 'mercator':
         if self.secant_projection:
             lat = 'secant_lat'
@@ -55,7 +57,8 @@ def default_cartopy_CRS(self):
             lat = 'reference_lat'
         crs = ccrs.Mercator(
             central_longitude=self._center_lon.get('degrees'),
-            latitude_true_scale=self.projection[lat].get('degrees'))
+            latitude_true_scale=self.projection[lat].get('degrees'),
+            globe=globe)
     elif self.name == 'polar_stereographic':
         if self.secant_projection:
             lat = 'secant_lat'
@@ -64,14 +67,18 @@ def default_cartopy_CRS(self):
         crs = ccrs.Stereographic(
             central_latitude=numpy.copysign(90., self.projection[lat].get('degrees')),
             central_longitude=self.projection['reference_lon'].get('degrees'),
-            true_scale_latitude=self.projection[lat].get('degrees'))
+            true_scale_latitude=self.projection[lat].get('degrees'),
+            globe=globe)
     elif self.name == 'space_view':
         if self.projection['satellite_lat'].get('degrees') == 0.:
             crs = ccrs.Geostationary(
                 central_longitude=self.projection['satellite_lon'].get('degrees'),
-                satellite_height=self.projection['satellite_height'])
+                satellite_height=self.projection['satellite_height'],
+                globe=globe)
         else:
-            raise NotImplementedError("Implementatation to be tested")
+            raise NotImplementedError("Implementation to be tested")
+            #NearsidePerspective projection does not handle elliptical globes
+            #Thus, we do not set the globe attribute from the geometry geoid
             crs = ccrs.NearsidePerspective(
                 central_longitude=self.projection['satellite_lon'].get('degrees'),
                 central_latitude=self.projection['satellite_lat'].get('degrees'),

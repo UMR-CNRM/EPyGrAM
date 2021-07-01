@@ -531,16 +531,11 @@ graphical_options = {
     'specific_map_projection':[
         '-j', '--projection',
         dict(help="specific graphical projection of plots, among\
-                   ('kav7', 'ortho', 'cyl', 'moll',\
-                   'nsper[,sat_height=3000,lon=15.0,lat=55]').\
-                   Default depend on the actual projection of fields,\
-                   or 'moll' (Mollweide projection) for Gauss geometry.\
-                   For 'nsper', the additional parameters are optional:\
-                   *sat_height* defines the satellite height in km, with\
-                   a defaults value of 3000;\
-                   *lon* and *lat* define the satellite nadir position, with\
-                   default values to the field centre.\
-                   Overwritten by 'zoom' option.",
+                   ('ll', 'geoid').\
+                   Default is the actual projection of fields,\
+                   or Mollweide projection for Gauss geometry.\
+                   If set to 'geoid' the field is plotted around\
+                   the geoid.",
              default=None)],
     'graphicmode':[
         '-g', '--graphicmode',
