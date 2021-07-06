@@ -20,6 +20,7 @@ Some of which may be dynamically needed only, i.e. needed at actual use of some 
 - :mod:`scipy`
 - :mod:`six`
 - :mod:`vtk`
+- :mod:`web`
 
 VORTEX site-packages (distributed with epygram)
 -----------------------------------------------
