@@ -105,6 +105,10 @@ class D3Geometry(RecursiveObject, FootprintBase):
         # Checks !
         self._consistency_check()
 
+    def _consistency_check(self):
+        # implemented in child classes
+        pass
+
     @property
     def rectangular_grid(self):
         """ Is the grid rectangular ? """
