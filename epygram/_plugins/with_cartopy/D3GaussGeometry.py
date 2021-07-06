@@ -35,5 +35,7 @@ def default_cartopy_CRS(self):
             lon_0 = self.grid['pole_lon'].get('degrees')
         else:
             lon_0 = 0.
+        #Mollweide projection does not handle elliptical globes
+        #Thus, we do not set the globe attribute from the geometry geoid 
         crs = ccrs.Mollweide(central_longitude=lon_0)
         return crs

@@ -91,7 +91,7 @@ pygments_style = 'sphinx'
 #modindex_common_prefix = []
 
 # List of intersphinx mapping docs
-#intersphinx_mapping = {#'mpl_toolkits.basemap': ('https://matplotlib.org/basemap', None),
+#intersphinx_mapping = {
 #                       #'numpy': ('https://docs.scipy.org/doc/numpy', None),
 #                       #'scipy': ('http://docs.scipy.org/doc/scipy', None),
 #                       #'matplotlib': ('http://matplotlib.org/api', None),

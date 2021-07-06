@@ -411,8 +411,8 @@ def plot_geometry(geometry,
     """
     if plotlib == 'cartopy':
         fig = cartoplot_geometry(geometry, lonlat_included, background, departments)
-    elif plotlib == 'basemap':  # CLEANME: 2021 ?
-        fig = basemap_plot_geometry(geometry, lonlat_included, background, departments)
+    else:
+        raise NotImplementedError("'basemap' plotlib has been removed, only remains 'cartopy'")
     if out is not None:
         fig.savefig(out, bbox_inches='tight')
     else:
@@ -495,36 +495,3 @@ def cartoplot_rect_geometry(ll_geometry,
     fig, ax = ll_field.cartoplot(**cartoplot_kwargs)
     return fig, ax
 
-
-def basemap_plot_geometry(geometry,
-                          lonlat_included=None,
-                          background=True,
-                          departments=False):
-    """DEPRECATED"""
-    epylog.warning('basemap is DEPRECATED.')
-    # plot
-    CIEdomain = build_CIE_field(geometry)
-    sat_height = geometry.distance(geometry.gimme_corners_ll()['ll'],
-                                   geometry.gimme_corners_ll()['ur']) / 1000
-    bm = CIEdomain.geometry.make_basemap(specificproj=('nsper', {'sat_height':sat_height * 3}))
-    fig, ax = CIEdomain.plotfield(use_basemap=bm,
-                                  levelsnumber=6,
-                                  minmax=[-1.0, 3.0],
-                                  colorbar=False,
-                                  title='Domain: C+I+E',
-                                  meridians=None,
-                                  parallels=None,
-                                  background=background,
-                                  departments=departments)
-    if lonlat_included is not None:
-        ll_domain = build_lonlat_field(lonlat_included)
-        ll_domain.plotfield(over=(fig, ax),
-                            use_basemap=bm,
-                            graphicmode='contourlines',
-                            title='Domain: C+I+E \n Red contour: required lon/lat',
-                            levelsnumber=2,
-                            contourcolor='red',
-                            contourwidth=2,
-                            contourlabel=False,
-                            departments=departments)
-    return fig

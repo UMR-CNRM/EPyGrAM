@@ -605,10 +605,7 @@ if __name__ == '__main__':
     add_arg_to_parser(parser, output_options['output'])
     add_arg_to_parser(parser, output_options['outputfilename'])
     add_arg_to_parser(parser, misc_options['LAMzone'])
-    add_arg_to_parser(parser, graphical_options['specific_map_projection'],
-                      help=graphical_options['specific_map_projection'][-1]['help'] + \
-                           "\nAlternatively, this option can be 'geoid' to plot the " + \
-                           "field around the geoid.")
+    add_arg_to_parser(parser, graphical_options['specific_map_projection'])
     add_arg_to_parser(parser, graphical_options['minmax'])
     add_arg_to_parser(parser, graphical_options['diffminmax'])
     add_arg_to_parser(parser, graphical_options['levels_number'])

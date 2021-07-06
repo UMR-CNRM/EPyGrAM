@@ -24,7 +24,9 @@ def proj(hCoord, z_factor, offset, reverseZ, geoid):
     Returns a function to transform true coordinates into vtk coordinates and
     the reverse operation 
     :param hCoord: 'll': horizontal coordinates are the lon/lat values
-                       a basemap: horizontal coordinates are set according to this basemap
+                   'geoid': horizontal coordinates are the lon/lat values on a geoid
+                   a basemap/pyproj-like object: horizontal coordinates are set according to this projection
+                   a cartopy.crs object
     :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
     :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
     :param reverseZ: True if z coordinate must be reversed
@@ -57,13 +59,17 @@ def proj(hCoord, z_factor, offset, reverseZ, geoid):
                 lla = pyproj.Proj(proj='latlong', **geoid)
                 x, y, z = pyproj.transform(lla, ecef, lons.flatten(), lats.flatten(), z.flatten(), radians=False)
                 x_offset, y_offset, z_offset = pyproj.transform(lla, ecef, x_offset, y_offset, z_offset, radians=False)
+            elif callable(hCoord):
+                #basemap or pyproj-like object
+                x, y = hCoord(lons.flatten(), lats.flatten())
+                x_offset, y_offset = hCoord(x_offset, y_offset)
             else:
-                from mpl_toolkits.basemap import Basemap
-                if isinstance(hCoord, Basemap):
-                    x, y = hCoord(lons.flatten(), lats.flatten())
-                    x_offset, y_offset= hCoord(x_offset, y_offset)
+                from cartopy import crs as ccrs
+                if isinstance(hCoord, ccrs.CRS):
+                    x, y = list(hCoord.transform_points(ccrs.PlateCarree(globe=hCoord.globe), lons.flatten(), lats.flatten()).T)[0:2]
+                    x_offset, y_offset = hCoord.transform_point(x_offset, y_offset, ccrs.PlateCarree(globe=hCoord.globe))
                 else:
-                    raise ValueError("hCoord must be 'ij', 'll' or a basemap instance")
+                    raise ValueError("hCoord must be 'geoid', 'll', a basemap/pyproj-like object or a cartopy.crs")
             
             #x, y, z modification to change plot aspect and axis position
             x -= x_offset
@@ -93,16 +99,23 @@ def proj(hCoord, z_factor, offset, reverseZ, geoid):
                 y += y_offset
                 z += z_offset
                 lons, lats, z = pyproj.transform(ecef, lla, x.flatten(), y.flatten(), z.flatten(), radians=False)
+            elif callable(hCoord):
+                #basemap or pyproj-like object
+                x_offset, y_offset = hCoord(x_offset, y_offset)
+                x += x_offset
+                y += y_offset
+                z += z_offset
+                lons, lats = hCoord(x.flatten(), y.flatten(), inverse=True)
             else:
-                from mpl_toolkits.basemap import Basemap
-                if isinstance(hCoord, Basemap):
-                    x_offset, y_offset= hCoord(x_offset, y_offset)
+                from cartopy import crs as ccrs
+                if isinstance(hCoord, ccrs.CRS):
+                    x_offset, y_offset = hCoord.transform_point(x_offset, y_offset, ccrs.PlateCarree(globe=hCoord.globe))
                     x += x_offset
                     y += y_offset
                     z += z_offset
-                    lons, lats = hCoord(x.flatten(), y.flatten(), inverse=True)
+                    lons, lats = list(ccrs.PlateCarree(globe=hCoord.globe).transform_points(hCoord, x.flatten(), y.flatten()).T)[0:2]
                 else:
-                    raise ValueError("hCoord must be 'ij', 'll' or a basemap instance")
+                    raise ValueError("hCoord must be 'geoid', 'll', a basemap/pyproj-like object or a cartopy.crs")
 
             z = z / z_factor
 
@@ -235,7 +248,8 @@ class Usevtk(object):
         :param window_size: must be a tuple (width, height)
         :param hCoord: 'll': horizontal coordinates are the lon/lat values
                        'geoid': horizontal coordinates are the lon/lat values on a geoid
-                       a basemap: horizontal coordinates are set according to this basemap
+                       a basemap/pyproj-like object: horizontal coordinates are set according to this projection
+                       a cartopy.crs object
         :param z_factor: factor to apply on z values (to modify aspect ratio of the plot)
         :param offset: (x_offset, y_offset). Offsets are subtracted to x and y coordinates
         :param reverseZ: True if z coordinate must be reversed
