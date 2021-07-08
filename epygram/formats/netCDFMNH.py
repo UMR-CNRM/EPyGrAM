@@ -941,6 +941,7 @@ class netCDFMNH(FileResource):
         Reads the geometry in the netCDFMNH articles.
         """
         def v(name): return self._nc.variables[name][...]
+        def vdefault(name, default): return self._nc.variables[name][...] if name in self._nc.variables else default
         listnames = self._nc.variables.keys()
         
         if 'CARTESIAN' in listnames:
@@ -949,7 +950,7 @@ class netCDFMNH(FileResource):
             cartesian = False
         imax = int(v('IMAX'))
         jmax = int(v('JMAX'))
-        jphext = int(v('JPHEXT'))
+        jphext = int(vdefault('JPHEXT', 1))
         xhat = v('XHAT')
         yhat = v('YHAT')
         if 'KMAX' in listnames:
