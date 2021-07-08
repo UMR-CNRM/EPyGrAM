@@ -48,6 +48,11 @@ def default_cartopy_CRS(self):
     if latmin <= -80.0 or latmax >= 84.0:
         crs = ccrs.PlateCarree(center_lon)
     else:
-        globe = ccrs.Globe(semimajor_axis=self.geoid['a'], semiminor_axis=self.geoid['b'])
+        if 'a' in self.geoid and 'b' in self.geoid:
+            globe = ccrs.Globe(semimajor_axis=self.geoid['a'], semiminor_axis=self.geoid['b'])
+        elif 'ellps' in self.geoid:
+            globe = ccrs.Globe(ellipse=self.geoid['ellps'])
+        else:
+            raise NotImplementedError("self.geoid={}".format(str(self.geoid)))
         crs = ccrs.Mercator(center_lon, globe=globe)
     return crs
