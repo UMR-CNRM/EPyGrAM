@@ -1043,4 +1043,13 @@ domain_maker_options = {
                    In other words, with a given (discrete) C+I+E size, forces\
                    the E-zone to be the smallest possible.",
              default=False)],
+    'truncation':[
+        '-t', '--truncation',
+        dict(help="(for namelists) the kind of truncation of spectral geometry\
+                   to generate, among ('linear', 'quadratic', 'cubic').",
+             default='linear')],
+    'orography_subtruncation':[
+        '-o', '--orography_subtruncation',
+        dict(help="(for namelists) additional subtruncation for orography to be generated.",
+             default='quadratic')],
                         }

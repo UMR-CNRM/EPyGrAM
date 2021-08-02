@@ -29,7 +29,10 @@ def main(mode,
          display=True,
          maximize_CI_in_E=False,
          french_depts=False,
-         background=True):
+         background=True,
+         # for namelists only
+         truncation='linear',
+         orography_subtruncation='quadratic'):
     """
     Domain maker.
 
@@ -40,6 +43,10 @@ def main(mode,
                              minimum.
     :param french_depts: draws french departments instead of countries boundaries.
     :param background: if True, set a background color to continents and oceans.
+    :param truncation: the kind of truncation of spectral geometry
+                       to generate, among ('linear', 'quadratic', 'cubic').
+    :param orography_subtruncation: additional subtruncation for orography to
+                                    be generated.
     """
 
     print("################")
@@ -122,7 +129,10 @@ def main(mode,
     else:
         raise ValueError("invalid value for 'mode' argument")
 
-    dm.output.write_geometry_as_namelists(geometry, allinone=True)
+    dm.output.write_geometry_as_namelists(geometry,
+                                          allinone=True,
+                                          truncation=truncation,
+                                          orography_subtruncation=orography_subtruncation)
 # end of main() ###############################################################
 
 
@@ -138,6 +148,8 @@ if __name__ == '__main__':
     add_arg_to_parser(parser, domain_maker_options['mode'])
     add_arg_to_parser(parser, domain_maker_options['no_display'])
     add_arg_to_parser(parser, domain_maker_options['maximize_CI_in_E'])
+    add_arg_to_parser(parser, domain_maker_options['truncation'])
+    add_arg_to_parser(parser, domain_maker_options['orography_subtruncation'])
     add_arg_to_parser(parser, runtime_options['verbose'])
     add_arg_to_parser(parser, graphical_options['french_departments'])
     add_arg_to_parser(parser, graphical_options['background'], default=True)
@@ -157,4 +169,6 @@ if __name__ == '__main__':
          display=not args.no_display,
          maximize_CI_in_E=args.maximize_CI_in_E,
          french_depts=args.depts,
-         background=args.background)
+         background=args.background,
+         truncation=args.truncation,
+         orography_subtruncation=args.orography_subtruncation)

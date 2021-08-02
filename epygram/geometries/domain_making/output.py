@@ -302,13 +302,21 @@ def write_namelists(namelists, out=None, prefix='', suffix='geoblocks'):
                 out.write(nam.dumps())
 
 
-def write_geometry_as_namelists(geometry, allinone=False):
+def write_geometry_as_namelists(geometry, allinone=False,
+                                truncation='linear',
+                                orography_subtruncation='quadratic'):
     """
     Write out namelists blocks from a geometry.
 
     :param allinone: if True, write all in one file, else in separate files.
+    :param truncation: the kind of truncation of spectral geometry
+                       to generate, among ('linear', 'quadratic', 'cubic').
+    :param orography_subtruncation: additional subtruncation for orography to
+                                    be generated.
     """
-    namelists_blocks = lam_geom2namelists(geometry)
+    namelists_blocks = lam_geom2namelists(geometry,
+                                          truncation=truncation,
+                                          orography_subtruncation=orography_subtruncation)
 
     if allinone:
         outputfilename = "new_domain.namelists_blocks"
