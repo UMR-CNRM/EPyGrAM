@@ -723,7 +723,6 @@ class netCDF(FileResource):
                                             x_0=-dx, y_0=-dy,
                                             **kwargs_geom['geoid'])
                             ll00 = p(-fe, -fn, inverse=True)
-                            print(ll00)
                             del p
                             grid['input_lon'] = Angle(ll00[0], 'degrees')
                             grid['input_lat'] = Angle(ll00[1], 'degrees')
@@ -1041,7 +1040,9 @@ class netCDF(FileResource):
         Z = behaviour.get('Z_dimension', Z)
         if 'gridlevels' in field.geometry.vcoordinate.grid:
             Z_gridsize = max(len(field.geometry.vcoordinate.grid['gridlevels']), 1)
-            if field.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
+            if field.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119) and \
+               field.geometry.vcoordinate.grid.get('ABgrid_position') != \
+               field.geometry.vcoordinate.position_on_grid:
                 Z_gridsize -= 1
         else:
             Z_gridsize = len(field.geometry.vcoordinate.levels)  # 1
@@ -1103,8 +1104,13 @@ class netCDF(FileResource):
                          if v in config.netCDF_usualnames_for_standard_dimensions['Z_dimension']}.get('found', zgridname)
             zgridname = behaviour.get('Z_grid', zgridname)
             if field.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
-                ZP1 = Z + '+1'
-                check_or_add_dim(ZP1, size=Z_gridsize + 1)
+                if field.geometry.vcoordinate.grid.get('ABgrid_position') == 'mass' and \
+                   field.geometry.vcoordinate.position_on_grid == 'mass':
+                    ZP1 = Z
+                    check_or_add_dim(ZP1, size=Z_gridsize)
+                else:
+                    ZP1 = Z + '+1'
+                    check_or_add_dim(ZP1, size=Z_gridsize + 1)
                 zgrid, _status = check_or_add_variable(zgridname, int)
                 if _status == 'created':
                     zgrid.standard_name = _typeoffirstfixedsurface_dict_inv[field.geometry.vcoordinate.typeoffirstfixedsurface]
