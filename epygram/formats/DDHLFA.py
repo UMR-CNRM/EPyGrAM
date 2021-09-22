@@ -24,7 +24,8 @@ from epygram import config, epygramError
 from epygram.util import Angle, write_formatted, separation_line
 from epygram.base import FieldValidity, FieldValidityList, FieldSet
 from .LFA import LFA
-from epygram.geometries import V1DGeometry, PointGeometry, VGeometry
+from epygram.geometries import PointGeometry, VGeometry
+from epygram.geometries.V1DGeometry import V1D_DDHGeometry
 from epygram.fields import V1DField, PointField, MiscField
 from epygram.resources import FileResource
 from epygram import profiles
@@ -175,7 +176,7 @@ class DDHLFA(LFA):
                 geom_builder = PointGeometry
             else:
                 field_builder = V1DField
-                geom_builder = V1DGeometry
+                geom_builder = V1D_DDHGeometry
         field_from_LFA = super(DDHLFA, self).readfield(fieldname,
                                                        getdata=getdata)
         if fieldname in ('INDICE EXPERIENCE', 'DATE', 'DOCFICHIER', 'ECHEANCE')\
@@ -251,16 +252,16 @@ class DDHLFA(LFA):
                             pressure_vertical_grid = self.domains['vertical_grid'][d]['fluxlevels_pressure_init']
                         else:
                             pressure_vertical_grid = self.domains['vertical_grid'][d]['fluxlevels_pressure_term']
+                    vcoordinate = VGeometry(structure='V',
+                                            typeoffirstfixedsurface=100,
+                                            levels=FPList(pressure_vertical_grid / 100.),
+                                            # grid={'gridposition':gridposition,  # TODO: ?
+                                            #       'gridlevels':pressure_vertical_grid},  # TODO: ?
+                                            position_on_grid=position_on_grid)
                     vgeometry = geom_builder(structure='V1D',
                                              name='DDH:' + domain['type'],
                                              grid={'DDH_domain':domain},
-                                             vcoordinate=VGeometry(
-                                                 structure='V',
-                                                 typeoffirstfixedsurface=100,
-                                                 levels=FPList(pressure_vertical_grid / 100.),
-                                                 # grid={'gridposition':gridposition,  # TODO: ?
-                                                 #       'gridlevels':pressure_vertical_grid},  # TODO: ?
-                                                 position_on_grid=position_on_grid),
+                                             vcoordinate=vcoordinate,
                                              dimensions={'X':1, 'Y':1})
                     if getdata:
                         profile = field_from_LFA.getdata()[d * fieldlevels:(d + 1) * fieldlevels]

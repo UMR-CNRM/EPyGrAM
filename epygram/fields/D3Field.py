@@ -2180,6 +2180,7 @@ class D3Field(_D3CommonField):
         if not isinstance(data, numpy.ndarray):
             data = numpy.array(data)
 
+        # determination of field shape
         if self.spectral:
             shp = (len(self.validity),
                    len(self.geometry.vcoordinate.levels),
@@ -2195,16 +2196,19 @@ class D3Field(_D3CommonField):
                    self.geometry.dimensions['Y'],
                    self.geometry.dimensions['X'])
 
-        if self.spectral:
-            d4 = len(data.shape) == 3
-        else:
-            d4 = len(data.shape) == 4
-        if d4:
+        if (len(data.shape) == 3 and self.spectral) or len(data.shape) == 4:
+            # data is given as 4D: check compatibility
             assert data.shape == shp, \
                 ' '.join(['data', str(data.shape),
                           'should have shape', str(shp)])
         else:
-            # find indexes corresponding to dimensions
+            # data is squeezed: reshape
+            try:
+                data = data.reshape(shp)
+            except ValueError:
+                print("'data' shape has to be compatible with field shape: {}".format(shp))
+                raise
+            """# find indexes corresponding to dimensions
             dimensions = 0
             indexes = {'t':0, 'z':1, 'y':2, 'x':3}
             # t, z
@@ -2237,9 +2241,9 @@ class D3Field(_D3CommonField):
                     indexes['x'] = None
                 dataType = "gridpoint"
             # check dimensions
-            assert len(numpy.shape(data)) == dimensions \
-                   or numpy.shape(data) == (1,), \
-                   dataType + " data should be " + str(dimensions) + "D array."
+            assert (len(numpy.shape(data)) == dimensions
+                        or numpy.shape(data) == (1,)), \
+                    dataType + " data should be " + str(dimensions) + "D array."
             if indexes['t'] is not None:
                 assert data.shape[0] == len(self.validity), \
                     ' == '.join(['data.shape[0] should be len(self.validity)',
@@ -2273,7 +2277,7 @@ class D3Field(_D3CommonField):
                                          "] should be self.geometry.dimensions['X']",
                                          str(self.geometry.dimensions['X'])])
             # reshape to 4D
-            data = data.reshape(shp)
+            data = data.reshape(shp)"""
         super(D3Field, self).setdata(data)
 
     data = property(getdata, setdata, Field.deldata, "Accessor to the field data.")

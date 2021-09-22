@@ -24,16 +24,12 @@ class V1DGeometry(V2DGeometry):
     Abstract mother class.
     """
 
+    _abstract = True
     _collector = ('geometry',)
     _footprint = dict(
         attr=dict(
             structure=dict(
                 values=set(['V1D'])),
-            name=dict(
-                values=set(['unstructured',
-                            'DDH:point', 'DDH:ij_point', 'DDH:quadrilateral',
-                            'DDH:rectangle', 'DDH:globe', 'DDH:zonal_bands']),
-                optional=True)
         )
     )
 
@@ -95,6 +91,23 @@ class V1DRectangularGridGeometry(V1DGeometry, V2DRectangularGridGeometry):
                 values=set(['V1D'])),  # inheritance priority problem
             name=dict(
                 values=set(['lambert', 'mercator', 'polar_stereographic', 'space_view', 'unstructured']))
+        )
+    )
+
+
+class V1D_DDHGeometry(V1DGeometry):
+    """
+    Handles the geometry for a Vertical 1-Dimension Field which horizontal geometry comes from a DDH definition.
+    """
+
+    _collector = ('geometry',)
+    _footprint = dict(
+        attr=dict(
+            structure=dict(
+                values=set(['V1D'])),  # inheritance priority problem
+            name=dict(
+                values=set(['DDH:point', 'DDH:ij_point', 'DDH:quadrilateral',
+                            'DDH:rectangle', 'DDH:globe', 'DDH:zonal_bands']),)
         )
     )
 

@@ -45,6 +45,14 @@ class TestMisc(TestCase):
         for r in cls.resources:
             r.close()
 
+    def setUp(self):
+        for r in self.resources:
+            r.open()
+
+    def tearDown(self):
+        for r in self.resources:
+            r.close()
+
     @property
     def _CL_resources(self):
         return [fpx.resource_modificator(name='CombineLevels',
