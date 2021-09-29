@@ -2000,7 +2000,7 @@ class GRIBmessage(RecursiveObject, dict):
         Returns a :class:`epygram.base.FieldValidity` object containing the
         validity of the GRIB message.
         """
-        accepted_tRI = (0, 1, 2, 4, 10, 113, 123)
+        accepted_tRI = (0, 1, 2, 3, 4, 10, 113, 123)
         basis = datetime.datetime(
             self['year'], self['month'], self['day'],
             self['hour'], self['minute'], self['second'])
@@ -2015,7 +2015,7 @@ class GRIBmessage(RecursiveObject, dict):
             term = self['endStep']
             termunit = {k:v * term for k,v in unit.items()}
             term = datetime.timedelta(**termunit)
-            if self['timeRangeIndicator'] in (2, 4) or self['productDefinitionTemplateNumber'] in (8, 11):
+            if self['timeRangeIndicator'] in (2, 3, 4) or self['productDefinitionTemplateNumber'] in (8, 11):
                 cum = self['endStep'] - self['startStep']
                 cumunit = {k:v * cum for k,v in unit.items()}
                 cum = datetime.timedelta(**cumunit)
