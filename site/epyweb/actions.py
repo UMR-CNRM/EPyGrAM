@@ -14,7 +14,7 @@ import web
 
 import matplotlib
 matplotlib.use("Agg")
-from mpl_toolkits.basemap import Basemap
+#from mpl_toolkits.basemap import Basemap
 
 #from . import web
 
@@ -23,7 +23,7 @@ import epygram
 
 from . import epyweb_workdir, vortex_cache, render, basemap_pickle_path, all_fatal_exceptions
 from . import util
-from .util import getAjaxArg, getAjaxArgSmart, check_for_operation, get_common_args, make_my_plot
+from .util import getAjaxArg, getAjaxArgSmart, check_for_operation, get_common_args, make_my_plot2
 
 __all__ = ['Epyweb',
            'GetCacheSize', 'GetGeometries', 'GetFieldsAsJSON', 'GetLocalFile',
@@ -114,7 +114,8 @@ class GetFile(object):
             if 'date' in vortexArgs:
                 vortexArgs['date'] = util.datex(vortexArgs['date'].encode())
             if 'term' in vortexArgs:
-                vortexArgs['term'] = rangex(vortexArgs['term'].encode())
+                print(vortexArgs['term']) #.encode())
+                vortexArgs['term'] = rangex(vortexArgs['term']) #.encode())
             if 'month' in vortexArgs:
                 vortexArgs['month'] = rangex(vortexArgs['month'].encode())
             if 'member' in vortexArgs:
@@ -378,25 +379,29 @@ class MyPlot(object):
                         if monzoom is not None:
                             pass
                             field = field.extract_zoom(monzoom)
-                        current_basemap = field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
-                                                                          subzone=myplot_args["subzone"],
-                                                                          specificproj=myplot_args["specificproj"])
+                        #current_basemap = field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
+                        #                                                  subzone=myplot_args["subzone"],
+                        #                                                  specificproj=myplot_args["specificproj"])
                         """
                         current_basemap = field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
                                                                       subzone=myplot_args["subzone"],
                                                                       specificproj=myplot_args["specificproj"],
                                                                       zoom=monzoom)
                         """
-                        pickle.dump(current_basemap, open(os.path.join(epyweb_workdir,
-                                                                       basemap_pickle_name), 'w'))
+                        #pickle.dump(current_basemap, open(os.path.join(epyweb_workdir,
+                        #                                               basemap_pickle_name), 'w'))
                         # On réutilise le cache
 
-                    myplot = make_my_plot(resource, field, cle, champ, champ_v, FF, vecteurs,
-                                          current_basemap, figax, vectors_subsampling, myplot_args, monzoom=monzoom)
+                    #myplot = make_my_plot(resource, field, cle, champ, champ_v, FF, vecteurs,
+                    #                      current_basemap, figax, vectors_subsampling, myplot_args, monzoom=monzoom)
+                    myplot = make_my_plot2(resource, field, cle, champ, champ_v, FF, vecteurs,
+                                          figax, vectors_subsampling, myplot_args, monzoom=monzoom)
+
 
                     if getcode:
-                        zecode = util.print_code(myplot_args, current_basemap, figax)
-                        print("*** Arguments du plot ***\n" + zecode)
+                        pass
+                        #zecode = util.print_code(myplot_args, current_basemap, figax)
+                        #print("*** Arguments du plot ***\n" + zecode)
 
                     # Utilisation d'un nom unique par image, dans un répertoire fixe
                     try:
@@ -485,12 +490,12 @@ class MyPlotOverlay(object):
 
             operation = getAjaxArgSmart('operation')
 
-            current_basemap = None
-            if os.path.exists(os.path.join(epyweb_workdir, basemap_pickle_name)):
-                _current_basemap = pickle.load(open(os.path.join(epyweb_workdir,
-                                                                 basemap_pickle_name), 'r'))
-                if isinstance(_current_basemap, Basemap):
-                    current_basemap = _current_basemap
+            #current_basemap = None
+            #if os.path.exists(os.path.join(epyweb_workdir, basemap_pickle_name)):
+            #    _current_basemap = pickle.load(open(os.path.join(epyweb_workdir,
+            #                                                     basemap_pickle_name), 'r'))
+            #    if isinstance(_current_basemap, Basemap):
+            #        current_basemap = _current_basemap
 
             # loop sur files["A"] puis concordance avec file["B"]
             liste_tmp = []
@@ -506,6 +511,7 @@ class MyPlotOverlay(object):
                 if "A" in operation:
                     field = check_for_operation(operation["A"], field)
 
+                '''
                 if current_basemap is None:
                     print('Actually niou pickle !')
                     current_basemap = field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
@@ -515,8 +521,9 @@ class MyPlotOverlay(object):
                     pickle.dump(current_basemap, open(basemap_pickle_path, 'w'))
                     # On ne le calcule que pour la 1ere itération de la boucle
 
-                myplot_1 = make_my_plot(resource, field, "A", champ, champ_v, FF, vecteurs,
-                                        current_basemap, figax, vectors_subsampling, myplot_args, monzoom=monzoom)
+                '''
+                myplot_1 = make_my_plot2(resource, field, "A", champ, champ_v, FF, vecteurs,
+                                        figax, vectors_subsampling, myplot_args, monzoom=monzoom)
 
                 resource.close()
 
@@ -531,8 +538,8 @@ class MyPlotOverlay(object):
                         field.sp2gp()
                 if "B" in operation:
                     field = check_for_operation(operation["B"], field)
-
-                myplot = make_my_plot(resource, field, "B", champ, champ_v, FF, vecteurs,
+    
+                myplot = make_my_plot2(resource, field, "B", champ, champ_v, FF, vecteurs,
                                       None, myplot_1, vectors_subsampling, myplot_args, monzoom=monzoom)
 
                 try:
@@ -633,6 +640,7 @@ class MyPlotDiff(object):
                     fieldB = check_for_operation(operation["B"], fieldB)
                 field = fieldB - fieldA
 
+                '''
                 if current_basemap is None:
                     print('Actually niou pickle !')
                     current_basemap = field.geometry.make_basemap(gisquality=myplot_args["gisquality"],
@@ -641,7 +649,8 @@ class MyPlotDiff(object):
                                                                   zoom=monzoom)
                     pickle.dump(current_basemap, open(basemap_pickle_path, 'w'))
                     # On ne le calcule que pour la 1ere itération de la boucle
-
+                '''
+                
                 if (FF["A"] and FF["B"]) or (vecteurs["A"] and vecteurs["B"]):
                     fieldA_v = resourceA.readfield(champ_v["A"])
                     fieldB_v = resourceB.readfield(champ_v["B"])
@@ -659,9 +668,8 @@ class MyPlotDiff(object):
 
                     if FF["A"] and FF["B"]:
                         FF_field = FF_fieldB - FF_fieldA
-                        myplot = FF_field.plotfield(title=str(champ["B"]) + ' - \n' + str(champ["A"]) + '\n' + str(fieldB.validity.get()) + "-" + str(fieldA.validity.get()),
-                                                    use_basemap=current_basemap,
-                                                    **myplot_args)
+                        myplot = FF_field.plotfield(**myplot_args)
+                        #title=str(champ["B"]) + ' - \n' + str(champ["A"]) + '\n' + str(fieldB.validity.get()) + "-" + str(fieldA.validity.get()),                                                 **myplot_args)
                         del FF_field
                         del FF_fieldA
                         del FF_fieldB
@@ -674,15 +682,20 @@ class MyPlotDiff(object):
                         print("no vector difference !")
                 else:
                     # La méthode générique MakMyPlot n'est pas appelable ici -> duplication légère
-                    myplot_args.pop("vectorcolor", None)
+                    #myplot_args.pop("vectorcolor", None)
 
-                    myplot = field.plotfield(title=str(champ["B"]) + ' - \n' + str(champ["A"]) + '\n' + str(fieldB.validity.get()) + "-" + str(fieldA.validity.get()),
-                                             use_basemap=current_basemap,
-                                             **myplot_args)
+                    #myplot = field.plotfield(title=str(champ["B"]) + ' - \n' + str(champ["A"]) + '\n' + str(fieldB.validity.get()) + "-" + str(fieldA.validity.get()),
+                    #                         use_basemap=current_basemap,
+                    #                         **myplot_args)
+                    #TMP GF DEBUG
+                    myplot_args.pop("pointsize", None)
+                    myplot_args.pop("gisquality", None)
+                    myplot_args.pop("specificproj", None)
+                    myplot_args.pop("drawrivers", None)
+                    myplot_args.pop("bluemarble", None)
+                    #print(myplot_args)
+                    myplot = field.cartoplot(title=str(champ[cle]) + '\n' + "Difference manuelle",**myplot_args)
 
-                if getcode:
-                    zecode = util.print_code(myplot_args, current_basemap, figax)
-                    print("*** Arguments du plot ***\n" + zecode)
 
                 # Utilisation d'un nom unique par image, dans un répertoire fixe
                 try:
