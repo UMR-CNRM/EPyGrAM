@@ -58,8 +58,8 @@ def wfaitou(CDFILE, CDSTATE, CDNOMC):
     1) KNUMER: logical unit number associated to file
     """
     return ([CDFILE, CDSTATE, CDNOMC],
-            [(np.str, (len(CDFILE),), IN),
-             (np.str, (len(CDSTATE),), IN),
+            [(np.str, (len(CDFILE.encode('utf8')),), IN),
+             (np.str, (len(CDSTATE.encode('utf8')),), IN),
              (np.int64, None, OUT),
              (np.str, (16,), IN)],
             None)

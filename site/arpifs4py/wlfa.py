@@ -37,8 +37,8 @@ def wlfaouv(cdnomf, cdtypo):
         kul         logical unit of LFA file.
     """
     return ([cdnomf, cdtypo],
-            [(np.str, (len(cdnomf),), IN),
-             (np.str, (len(cdtypo),), IN),
+            [(np.str, (len(cdnomf.encode('utf8')),), IN),
+             (np.str, (len(cdtypo.encode('utf8')),), IN),
              (np.int64, None, OUT),],
             None)
 
@@ -69,7 +69,7 @@ def wlfaecrr(kul, cdna, preel, klong):
     """
     return ([kul, cdna, preel, klong],
             [(np.int64, None, IN),
-             (np.str, (len(cdna),), IN),
+             (np.str, (len(cdna.encode('utf8')),), IN),
              (np.float64, (klong,), IN),
              (np.int64, None, IN)],
             None)
@@ -88,7 +88,7 @@ def wlfaecri(kul, cdna, kentier, klong):
     """
     return ([kul, cdna, kentier, klong],
             [(np.int64, None, IN),
-             (np.str, (len(cdna),), IN),
+             (np.str, (len(cdna.encode('utf8')),), IN),
              (np.float64, (klong,), IN),
              (np.int64, None, IN)],
             None)
@@ -107,7 +107,7 @@ def wlfaecrc(kul, cdna, cdcar, klong):
     """
     return ([kul, cdna, cdcar, klong],
             [(np.int64, None, IN),
-             (np.str, (len(cdna),), IN),
+             (np.str, (len(cdna.encode('utf8')),), IN),
              (np.str, (klong,), IN),  # FIXME: how to dimension ?
              (np.int64, None, IN)],
             None)
@@ -130,7 +130,7 @@ def wlfaleci(kul, cdna, kdimb):
     """
     return ([kul, cdna, kdimb],
             [(np.int64, None, IN),
-             (np.str, (len(cdna),), IN),
+             (np.str, (len(cdna.encode('utf8')),), IN),
              (np.int64, None, IN),
              (np.int64, (kdimb,), OUT),
              (np.int64, None, OUT)],
@@ -154,7 +154,7 @@ def wlfalecr(kul, cdna, kdimb):
     """
     return ([kul, cdna, kdimb],
             [(np.int64, None, IN),
-             (np.str, (len(cdna),), IN),
+             (np.str, (len(cdna.encode('utf8')),), IN),
              (np.int64, None, IN),
              (np.float64, (kdimb,), OUT),
              (np.int64, None, OUT)],
@@ -179,7 +179,7 @@ def wlfalecc(kul, cdna, kdimb, klenc):
     """
     return ([kul, cdna, kdimb, klenc],
             [(np.int64, None, IN),
-             (np.str, (len(cdna),), IN),
+             (np.str, (len(cdna.encode('utf8')),), IN),
              (np.int64, None, IN),
              (np.int64, None, IN),
              (np.str, (klenc, kdimb), OUT),
@@ -203,7 +203,7 @@ def wlfacas(kul, cdna):
     """
     return ([kul, cdna],
             [(np.int64, None, IN),
-             (np.str, (len(cdna),), IN),
+             (np.str, (len(cdna.encode('utf8')),), IN),
              (np.str, (2,), OUT),
              (np.int64, None, OUT)],
             None)
@@ -245,6 +245,6 @@ def wlfatest(cdnomf):
         ldlfa=.true. if the file is a LFA one, .false. else case.
     """
     return ([cdnomf],
-            [(np.str, (len(cdnomf),), IN),
+            [(np.str, (len(cdnomf.encode('utf8')),), IN),
              (np.bool, None, OUT)],
             None)
