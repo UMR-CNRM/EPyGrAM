@@ -3,3 +3,6 @@ unset GRIB_SAMPLES_PATH
 unset GRIB_DEFINITION_PATH
 unset ECCODES_SAMPLES_PATH
 unset ECCODES_DEFINITION_PATH
+# Ubuntu: FIXME ?
+export ECCODES_SAMPLES_PATH=/usr/share/eccodes/samples
+export ECCODES_DEFINITION_PATH=/usr/share/eccodes/definitions
