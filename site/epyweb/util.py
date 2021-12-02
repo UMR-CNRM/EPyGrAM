@@ -127,13 +127,25 @@ def get_common_args(fileid):
     mypointsize = getAjaxArgSmart('pointsize')[fileid]
 
     myplot_args["minmax"] = (mini[fileid], maxi[fileid])
-    myplot_args["levelsnumber"] = getAjaxArgSmart('levelsnumber')[fileid]  # nombre/slidebar ?
+    #myplot_args["levelsnumber"] = getAjaxArgSmart('levelsnumber')[fileid]  # nombre/slidebar ?
+    myplot_args["colorsnumber"] = getAjaxArgSmart('levelsnumber')[fileid]  # nombre/slidebar ?    
     myplot_args["colormap"] = getAjaxArg('colormap')[fileid]  # un menu déroulant avec des mini-images de chaque colormap ?
-    myplot_args["graphicmode"] = getAjaxArgSmart('graphicmode')[fileid]  # cases radiobutton [colorshades,contourlines,points]
+    #myplot_args["graphicmode"] = getAjaxArgSmart('graphicmode')[fileid]  # cases radiobutton [colorshades,contourlines,points]
+
+    myplot_args["plot_method"] = getAjaxArgSmart('graphicmode')[fileid]  # cases radiobutton [colorshades,contourlines,points]
+    if myplot_args["plot_method"] == "colorshades":
+        myplot_args["plot_method"] = "contourf"
+    if myplot_args["plot_method"] == "contourlines":
+        myplot_args["plot_method"] = "contour"
+    if myplot_args["plot_method"] == "points":
+        myplot_args["plot_method"] = "scatter" #DOES NOT WORK!
+    
+    
+    
     if (mypointsize != ""):
         myplot_args["pointsize"] = mypointsize  # nombre/slidebar ?
     myplot_args["contourcolor"] = getAjaxArgSmart('contourcolor')[fileid]
-    myplot_args["vectorcolor"] = getAjaxArgSmart('vectorcolor')[fileid]
+    #myplot_args["vectorcolor"] = getAjaxArgSmart('vectorcolor')[fileid]
     myplot_args["subzone"] = getAjaxArgSmart('subzone')[fileid]  # cases radiobutton [C,CI,CIE]
     myplot_args["gisquality"] = getAjaxArgSmart('gisquality')  # pour régler la finesse des traits de côte : cases radiobutton [c,l,i,h,f]
     myplot_args["specificproj"] = getAjaxArgSmart('specificproj')  # pour utiliser une projection de la carte particulière [kav7,cyl,ortho,nsperXXXX]
@@ -142,7 +154,7 @@ def get_common_args(fileid):
     myplot_args["meridians"] = getAjaxArgSmart('meridians')  # nombre/slidebar
     myplot_args["parallels"] = getAjaxArgSmart('parallels')
     myplot_args["bluemarble"] = getAjaxArgSmart('bluemarble')
-    myplot_args["departments"] = getAjaxArgSmart('departments')  # checkbox
+    myplot_args["epygram_departments"] = getAjaxArgSmart('departments')  # checkbox
 
     return myplot_args
 
@@ -152,7 +164,7 @@ def datex(start, end=None, step=None):
     Extended date expansion : YYYYMMDDHH-YYYYMMDDHH-HH
     """
     rangevalues = list()
-    arguments = start.split('-')
+    arguments = start.decode().split('-')
     start_arg = arguments[0]
 
     if len(arguments) == 1:
@@ -186,7 +198,80 @@ def arg2date(myarg):
                             int(myarg[8:10]))
     return out
 
+def make_my_plot2(resource, field, cle, champ, champ_v, FF, vecteurs,
+                 over, vectors_subsampling, myplot_args, monzoom = None):
+    """
+    Generic method for plotting (ok for plot, plot_both, overlay, but not for diff).
+    """
 
+    '''
+    try:
+        vectorcolor = myplot_args["vectorcolor"]
+        myplot_args.pop("vectorcolor", None)
+    except:
+        vectorcolor = "black"
+    '''
+    print("MakeMyPlot starts ")
+
+    # On enleve des options en cas de tracé de vecteur
+    myplot_args_vect = copy.copy(myplot_args)
+    myplot_args_vect.pop("pointsize", None)
+    myplot_args_vect.pop("colormap", None)
+    #myplot_args_vect.pop("levelsnumber", None)
+    #myplot_args_vect.pop("graphicmode", None)
+    myplot_args_vect.pop("minmax", None)
+    myplot_args_vect.pop("center_cmap_on_0", None)
+    #myplot_args_vect.pop("departments", None)
+    myplot_args_vect.pop("contourcolor", None)
+    myplot_args_vect.pop("colorbar", None)
+
+    #TMP GF DEBUG
+    myplot_args.pop("pointsize", None)
+    myplot_args.pop("gisquality", None)
+    myplot_args.pop("specificproj", None)
+    myplot_args.pop("drawrivers", None)
+    myplot_args.pop("bluemarble", None)
+
+    if FF[cle] or vecteurs[cle]:
+        field_v = resource.readfield(champ_v[cle])
+        if field_v.spectral:
+            field_v.sp2gp()
+        if monzoom is not None:
+            #pass
+            #field = field.extract_zoom(monzoom)
+            field_v = field_v.extract_zoom(monzoom)
+        vectwind = epygram.fields.make_vector_field(field,
+                                                    field_v)
+        if FF[cle]:
+            FF_field = vectwind.to_module()
+            myplot = FF_field.cartoplot(title=str(champ[cle]) + '\n' + str(field.validity.get()),**myplot_args)
+            if vecteurs[cle]:
+                myplot = vectwind.plotfield(over=myplot,
+                                            title=str(champ[cle]) + '\n' + str(field.validity.get()),
+                                            subsampling=vectors_subsampling[cle],
+                                            plot_module=False,
+                                            symbol_options={'color': vectorcolor},
+                                            **myplot_args_vect)
+            del field_v
+            del vectwind
+        elif vecteurs[cle]:
+            myplot = vectwind.plotfield(title=str(champ[cle]) + '\n' + str(field.validity.get()),
+                                        over=over,
+                                        subsampling=vectors_subsampling[cle],
+                                        plot_module=False,
+                                        symbol_options={'color': vectorcolor},
+                                        **myplot_args_vect)
+            del field_v
+            del vectwind
+    else:
+
+        myplot = field.cartoplot(title=str(champ[cle]) + '\n' + str(field.validity.get()),
+                                 **myplot_args)
+
+    return myplot
+
+
+'''
 def make_my_plot(resource, field, cle, champ, champ_v, FF, vecteurs,
                  use_basemap, over, vectors_subsampling, myplot_args, monzoom = None):
     """
@@ -205,11 +290,11 @@ def make_my_plot(resource, field, cle, champ, champ_v, FF, vecteurs,
     myplot_args_vect = copy.copy(myplot_args)
     myplot_args_vect.pop("pointsize", None)
     myplot_args_vect.pop("colormap", None)
-    myplot_args_vect.pop("levelsnumber", None)
-    myplot_args_vect.pop("graphicmode", None)
+    #myplot_args_vect.pop("levelsnumber", None)
+    #myplot_args_vect.pop("graphicmode", None)
     myplot_args_vect.pop("minmax", None)
     myplot_args_vect.pop("center_cmap_on_0", None)
-    myplot_args_vect.pop("departments", None)
+    #myplot_args_vect.pop("departments", None)
     myplot_args_vect.pop("contourcolor", None)
     myplot_args_vect.pop("colorbar", None)
 
@@ -256,7 +341,7 @@ def make_my_plot(resource, field, cle, champ, champ_v, FF, vecteurs,
                                  **myplot_args)
 
     return myplot
-
+'''
 
 def check_for_operation(ope, field):
     try:
