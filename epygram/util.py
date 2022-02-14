@@ -749,8 +749,11 @@ def auto_meridians_parallels(geometry,
         else:
             delta_lon = float(meridians)
         lonmin = minmax['lonmin'] - minmax['lonmin'] % delta_lon
-        lonmax = minmax['lonmax'] - minmax['lonmax'] % delta_lon + 2 * delta_lon
-        lonmax = min(lonmax, lonmin + 360.)  # space-view geometry returns 1.E30 as lonmax
+        if numpy.isinf(minmax['lonmax']):
+            lonmax = lonmin + 360.
+        else:
+            lonmax = minmax['lonmax'] - minmax['lonmax'] % delta_lon + 2 * delta_lon
+        lonmax = min(lonmax, lonmin + 360.)  # space-view geometry used to return 1.E30 as lonmax
         meridians = numpy.arange(lonmin, lonmax + delta_lon, delta_lon)
         if max(meridians) > 180.:
             meridians = meridians - 180.  # FIXME: cartopy does not plot meridians > 180°
@@ -771,8 +774,11 @@ def auto_meridians_parallels(geometry,
         latmin = minmax['latmin'] - minmax['latmin'] % delta_lat
         if latmin <= -90:
             latmin += delta_lat
-        latmax = minmax['latmax'] - minmax['latmax'] % delta_lat + 2 * delta_lat
-        latmax = min(latmax, 90.)  # space-view geometry returns 1.E30 as latmax
+        if numpy.isinf(minmax['latmax']):
+            latmax = 90.
+        else:
+            latmax = minmax['latmax'] - minmax['latmax'] % delta_lat + 2 * delta_lat
+        latmax = min(latmax, 90.)  # space-view geometry used to return 1.E30 as latmax
         if latmax >= 90:
             latmax -= delta_lat
         parallels = numpy.arange(latmin, latmax + delta_lat, delta_lat)
