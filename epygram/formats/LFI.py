@@ -983,7 +983,8 @@ class LFI(FileResource):
                        resolution=None,
                        vertical_coordinate=None,
                        interpolation='linear',
-                       cheap_height=None):
+                       cheap_height=None,
+                       global_shift_center=None):
         """
         Extracts a vertical section from the LFI resource, given its fid
         and the geographic (lon/lat) coordinates of its ends.
@@ -1013,6 +1014,9 @@ class LFI(FileResource):
           - if 'cubic', each horizontal point of the section is
             computed with linear spline interpolation.
         :param cheap_height: has no effect (compatibity with FA format)
+        :param global_shift_center: for global lon/lat grids, shift the center by the
+            requested angle (in degrees). Enables a [0,360] grid
+            to be shifted to a [-180,180] grid, for instance (with -180 argument).
         """
         if geometry is None:
             if None in [end1, end2]:
@@ -1031,7 +1035,8 @@ class LFI(FileResource):
 
         section = self.extract_subdomain(fid, sectionG,
                                          interpolation=interpolation,
-                                         vertical_coordinate=vertical_coordinate)
+                                         vertical_coordinate=vertical_coordinate,
+                                         global_shift_center=None)
 
         return section
 
@@ -1040,7 +1045,8 @@ class LFI(FileResource):
                           vertical_coordinate=None,
                           interpolation='linear',
                           exclude_extralevels=True,
-                          cheap_height=None):
+                          cheap_height=None,
+                          global_shift_center=None):
         """
         Extracts a subdomain from the LFI resource, given its fid
         and the geometry to use.
@@ -1063,6 +1069,9 @@ class LFI(FileResource):
             computed with linear spline interpolation.
         :param exclude_extralevels: if True, not physical levels are removed
         :param cheap_height: has no effect (compatibity with FA format)
+        :param global_shift_center: for global lon/lat grids, shift the center by the
+            requested angle (in degrees). Enables a [0,360] grid
+            to be shifted to a [-180,180] grid, for instance (with -180 argument).
         """
         if self.true3d:
             field3d = self.readfield(fid)
@@ -1070,6 +1079,8 @@ class LFI(FileResource):
             field3d = fpx.field(fid={'LFI':fid},
                                 structure='3D',
                                 resource=self, resource_fids=[fid])
+        if global_shift_center is not None:
+            field3d.global_shift_center(global_shift_center)
         if geometry is None or geometry == field3d.geometry:
             subdomain = field3d
             if exclude_extralevels:

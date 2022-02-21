@@ -51,6 +51,7 @@ def main(filename,
          diffcolormap='RdBu_r',
          center_cmap_on_0=False,
          diffcenter_cmap_on_0=True,
+         global_shift_center=None,
          zoom=None,
          legend=None,
          output=False,
@@ -93,6 +94,9 @@ def main(filename,
     :param diffcolormap: idem for difference fields.
     :param center_cmap_on_0: to center the colormap on 0.
     :param diffcenter_cmap_on_0: NOT to center the diffcolormap on 0.
+    :param global_shift_center: for global lon/lat grids, shift the center by the
+        requested angle (in degrees). Enables a [0,360] grid
+        to be shifted to a [-180,180] grid, for instance (with -180 argument).
     :param zoom: a dict(ymin, ymax) to restrain the plot.
     :param legend: legend to be written over plot.
     :param output: output format, among ('png', 'pdf', False).
@@ -123,7 +127,8 @@ def main(filename,
                                       resolution=resolution,
                                       vertical_coordinate=Yconvert,
                                       interpolation=interpolation,
-                                      cheap_height=cheap_height)
+                                      cheap_height=cheap_height,
+                                      global_shift_center=global_shift_center)
     if operation is not None:
         section.operation(**operation)
     if diffmode:
@@ -133,7 +138,8 @@ def main(filename,
                                               resolution=resolution,
                                               vertical_coordinate=Yconvert,
                                               interpolation=interpolation,
-                                              cheap_height=cheap_height)
+                                              cheap_height=cheap_height,
+                                              global_shift_center=global_shift_center)
         if operation is not None:
             refsection.operation(**operation)
         diff = section - refsection
@@ -269,6 +275,7 @@ if __name__ == '__main__':
     add_arg_to_parser(parser, graphical_options['vertical_zoom'])
     add_arg_to_parser(parser, graphical_options['figures_dpi'])
     add_arg_to_parser(parser, graphical_options['section_abscissa'])
+    add_arg_to_parser(parser, graphical_options['global_shift_center'])
     add_arg_to_parser(parser, misc_options['operation_on_field'])
     add_arg_to_parser(parser, misc_options['diffoperation_on_field'])
     add_arg_to_parser(parser, misc_options['mask_threshold'])
@@ -354,6 +361,7 @@ if __name__ == '__main__':
          diffcolormap=args.diffcolormap,
          center_cmap_on_0=args.center_cmap_on_0,
          diffcenter_cmap_on_0=args.diffcenter_cmap_on_0,
+         global_shift_center=args.global_shift_center,
          zoom=zoom,
          legend=args.legend,
          output=args.output,

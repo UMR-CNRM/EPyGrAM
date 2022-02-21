@@ -2749,7 +2749,8 @@ class GRIB(FileResource):
                        resolution=None,
                        vertical_coordinate=None,
                        interpolation='linear',
-                       cheap_height=True):
+                       cheap_height=True,
+                       global_shift_center=None):
         """
         Extracts a vertical section from the GRIB resource, given its handgrip
         and the geographic (lon/lat) coordinates of its ends.
@@ -2779,6 +2780,9 @@ class GRIB(FileResource):
           ('altitude', 'height'), the computation of heights is done without
           taking hydrometeors into account (in R computation) nor NH Pressure
           departure (Non-Hydrostatic data). Computation therefore faster.
+        :param global_shift_center: for global lon/lat grids, shift the center by the
+            requested angle (in degrees). Enables a [0,360] grid
+            to be shifted to a [-180,180] grid, for instance (with -180 argument).
         """
         if isinstance(handgrip, six.string_types):
             handgrip = griberies.parse_GRIBstr_todict(handgrip)
@@ -2786,7 +2790,8 @@ class GRIB(FileResource):
         field3d = fpx.field(fid={'GRIB':handgrip},
                             structure='3D',
                             resource=self, resource_fids=[handgrip])
-
+        if global_shift_center is not None:
+            field3d.global_shift_center(global_shift_center)
         if geometry is None:
             if None in [end1, end2]:
                 raise epygramError("You must give a geometry or end1 *and* end2")

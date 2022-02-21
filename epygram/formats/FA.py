@@ -1146,7 +1146,8 @@ class FA(FileResource):
                        resolution=None,
                        vertical_coordinate=None,
                        interpolation='linear',
-                       cheap_height=True):
+                       cheap_height=True,
+                       global_shift_center=None):
         """
         Extracts a vertical section from the FA resource, given its pseudoname
         and the geographic (lon/lat) coordinates of its ends.
@@ -1182,6 +1183,9 @@ class FA(FileResource):
           ('altitude', 'height'), the computation of heights is done without
           taking hydrometeors into account (in R computation) nor NH Pressure
           departure (Non-Hydrostatic data). Computation therefore faster.
+        :param global_shift_center: for global lon/lat grids, shift the center by the
+            requested angle (in degrees). Enables a [0,360] grid
+            to be shifted to a [-180,180] grid, for instance (with -180 argument).
         """
         if geometry is None:
             if None in [end1, end2]:
@@ -1201,14 +1205,20 @@ class FA(FileResource):
         section = self.extract_subdomain(pseudoname, sectionG,
                                          interpolation=interpolation,
                                          vertical_coordinate=vertical_coordinate,
-                                         cheap_height=cheap_height)
+                                         cheap_height=cheap_height,
+                                         global_shift_center=global_shift_center)
 
         return section
 
     @FileResource._openbeforedelayed
-    def extract_subdomain(self, pseudoname, geometry, vertical_coordinate=None,
-                          interpolation='linear', cheap_height=True,
-                          external_distance=None):
+    def extract_subdomain(self,
+                          pseudoname,
+                          geometry,
+                          vertical_coordinate=None,
+                          interpolation='linear',
+                          cheap_height=True,
+                          external_distance=None,
+                          global_shift_center=None):
         """
         Extracts a subdomain from the FA resource, given its fid
         and the geometry to use.
@@ -1235,10 +1245,15 @@ class FA(FileResource):
           ('altitude', 'height'), the computation of heights is done without
           taking hydrometeors into account (in R computation) nor NH Pressure
           departure (Non-Hydrostatic data). Computation therefore faster.
+        :param global_shift_center: for global lon/lat grids, shift the center by the
+            requested angle (in degrees). Enables a [0,360] grid
+            to be shifted to a [-180,180] grid, for instance (with -180 argument).
         """
         field3d = self._mk_3dvirtuelfield(pseudoname)
         if field3d.spectral:
             field3d.sp2gp()
+        if global_shift_center is not None:
+            field3d.global_shift_center(global_shift_center)
         
         if geometry is None or geometry == field3d.geometry:
             subdomain = field3d

@@ -339,7 +339,8 @@ class DiagnosticsResource(Resource):
     def extractsection(self, handgrip, end1=None, end2=None,
                        geometry=None, points_number=None,
                        resolution=None, vertical_coordinate=None,
-                       interpolation='linear'):
+                       interpolation='linear',
+                       global_shift_center=None):
         """
         Extracts a vertical section from the resource, given its handgrip
         and the geographic (lon/lat) coordinates of its ends.
@@ -367,10 +368,13 @@ class DiagnosticsResource(Resource):
                                   computed with linear spline interpolation;
                                 - if 'cubic', each horizontal point of the section is
                                   computed with linear spline interpolation.
+        :param global_shift_center: for global lon/lat grids, shift the center by the
+            requested angle (in degrees). Enables a [0,360] grid
+            to be shifted to a [-180,180] grid, for instance (with -180 argument).
         """
-
         field3d = self._get_field3d_from_handrgrip(handgrip)
-
+        if global_shift_center is not None:
+            field3d.global_shift_center(global_shift_center)
         if geometry is None:
             if None in [end1, end2]:
                 raise epygramError("You must give a geometry or end1 *and* end2")
