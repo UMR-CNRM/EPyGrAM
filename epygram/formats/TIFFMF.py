@@ -484,7 +484,7 @@ class TIFFMF(FileResource):
         self.scan = scan
 
         # Validity
-        date = datetime.datetime(date[:2].view(dtype=self.tiff.dtypes.uint16),
+        date = datetime.datetime(int(date[:2].view(dtype=self.tiff.dtypes.uint16)),
                                  date[2], date[3], date[4], date[5])
         date2 = datetime.datetime(year + 100 * (century - 1), month, day, hour, minute)
         if date != date2:
