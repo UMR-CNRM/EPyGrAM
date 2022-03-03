@@ -15,7 +15,7 @@ Usage
 4. run apptools tests: `make apptools`
 
 5. run notebooks, to check the advanced examples therein work properly: `make notebooks_check`
-   (may require to get inputs for notebooks beforehand, cf. according Makefile)
+   (may require to get inputs for notebooks beforehand, with `make notebooks_get_inputs`)
 
 6. clean directory of tests outputs: `make clean`
 
