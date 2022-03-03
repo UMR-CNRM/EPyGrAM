@@ -166,7 +166,8 @@ def main(filename,
     suffix = "stats.out"
     if not diffmode:
         printlist = fidlist
-        printlist.sort()
+        if resource.format != 'GRIB':
+            printlist.sort()
         noutfields = len(printlist)
         parameter = smooth_string(printlist[0])
         if outputfilename:
