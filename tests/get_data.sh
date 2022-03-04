@@ -18,3 +18,9 @@ EOF
 tar -xf data.tgz
 rm -f data.tgz
 
+# to put data:
+#tar -czf data.tgz data
+#ftp $HOST
+#cd tests
+#put data.tgz
+#rm -f data.tgz

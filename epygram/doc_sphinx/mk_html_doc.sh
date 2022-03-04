@@ -17,7 +17,12 @@ then
 fi
 cp -f cheatsheet.pdf _static/.
 cp -f cheatsheet.pdf ../html/_downloads/cheatsheet.pdf
-#rm -f cheatsheet.log cheatsheet.aux cheatsheet.pdf
+
 echo "> Build Sphinx doc..."
-sphinx-build-3 -b $fmt . ../$fmt
+bld=`which sphinx-build-3`
+if [ "$?" != "0" ]
+then
+  bld=`which sphinx-build`
+fi
+$bld -b $fmt . ../$fmt
 cd ..

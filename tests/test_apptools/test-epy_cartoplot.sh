@@ -1,9 +1,11 @@
 #!/bin/bash
-if [ "$1" == "" ]
+
+python=`which python3`
+
+if [ "$?" != "0" ]
 then
-  python=python3.7
-else
-  python=$1
+  echo "ERROR: do not know which 'python3' to use"
+  exit 1
 fi
 
 set -x

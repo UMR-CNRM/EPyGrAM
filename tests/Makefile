@@ -1,5 +1,5 @@
 
-NOSE3list     = nosetests-3.7 nosetests3
+NOSE3list     = nosetests3 nosetests-3.7
 NOSE3         = $(shell for p in $(NOSE3list) ; do if which $$p >/dev/null 2>&1 ; then echo $$p ; break ; fi ; done)
 TEST_ALL      = test_formats.py test_geometries.py test_geometry_methods.py test_spectral.py test_util.py test_combinationsextractions.py
 TEST_BASE     = test_formats.py test_geometries.py test_spectral.py test_util.py
@@ -31,7 +31,7 @@ tests_all3:
 apptools: apptools3
 
 apptools3:
-	$(MAKE) -C $(APPTOOLS_DIR) all3
+	$(MAKE) -C $(APPTOOLS_DIR) all
 
 # notebooks gallery
 notebooks_get_inputs:

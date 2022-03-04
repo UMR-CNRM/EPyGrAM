@@ -94,6 +94,8 @@ class Test_GeometryInterfaces(TestCase):
             if not self.update_pickle:
                 with open(picklename, 'rb') as pckl:
                     pt_pckld = pickle.load(pckl)
+                print(pt_pckld)
+                print(fld)
                 self.assertTrue(fld.tolerant_equal(pt_pckld),
                                 fld.recursive_diff(pt_pckld))
             else:
