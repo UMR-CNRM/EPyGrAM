@@ -459,8 +459,6 @@ def _cartoplot_actualplot(self,
             if clabel_kw is None:
                 clabel_kw = self.default_clabel_kw
             ax.clabel(pf,
-                      colors=plot_kwargs['colors'],
-                      cmap=plot_kwargs['cmap'],
                       **clabel_kw)
     else:
         raise NotImplementedError('plot_method=="{}"'.format(plot_method))
