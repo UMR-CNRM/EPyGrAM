@@ -783,12 +783,13 @@ class FA(FileResource):
                 data = dataOut
             elif ftype == 'H2D':
                 if config.spectral_coeff_order == 'model':
-                    data, masked, masked_value = numpy.array(wfa.wfacilo(datasize,
+                    data, masked, masked_value = wfa.wfacilo(datasize,
                                                              self._unit,
                                                              fieldname[0:4],
                                                              0,
                                                              fieldname[4:],
-                                                             spectral))
+                                                             spectral)
+                    data = numpy.array(data)
                     if masked:
                         data = numpy.ma.masked_equal(data, masked_value)
                 else:
