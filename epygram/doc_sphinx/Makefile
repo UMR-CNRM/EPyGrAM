@@ -6,7 +6,7 @@ all: doc clean
 .PHONY: all doc clean notebooks4doc
 
 doc:
-	. ./mk_html_doc.sh
+	bash ./mk_html_doc.sh
 
 notebooks4doc:
 	$(MAKE) -C $(NB_DIR) nb4doc

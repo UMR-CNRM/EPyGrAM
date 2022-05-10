@@ -6,7 +6,6 @@ Dependancies
 Some of which may be dynamically needed only, i.e. needed at actual use of some methods.
 
 - :mod:`PIL`
-- :mod:`bokeh`
 - :mod:`cartopy`
 - :mod:`eccodes`
 - :mod:`gribapi`
@@ -17,6 +16,7 @@ Some of which may be dynamically needed only, i.e. needed at actual use of some 
 - :mod:`numpy`
 - :mod:`pyproj`
 - :mod:`pyresample`
+- :mod:`pyvgrid`
 - :mod:`scipy`
 - :mod:`six`
 - :mod:`vtk`

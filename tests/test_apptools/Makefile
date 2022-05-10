@@ -4,4 +4,4 @@
 all: cartoplot
 
 cartoplot:
-	. ./test-epy_cartoplot.sh
+	bash ./test-epy_cartoplot.sh

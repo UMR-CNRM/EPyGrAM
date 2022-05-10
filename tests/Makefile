@@ -13,7 +13,7 @@ all: tests apptools notebooks_check
 
 # Get data for tests on dedicated repo
 get_data:
-	. ./get_data.sh
+	bash ./get_data.sh
 
 # Run all test with nose
 tests: tests3
