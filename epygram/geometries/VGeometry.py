@@ -116,7 +116,7 @@ class VGeometry(RecursiveObject, FootprintBase):
 
         Other kwargs passed to HybridPressureVGrid() constructor.
         """
-        from vgrid import HybridPressureVGrid
+        from pyvgrid import HybridPressureVGrid
         if self.typeoffirstfixedsurface == 119:
             vg = HybridPressureVGrid(self, **kwargs)
         else:

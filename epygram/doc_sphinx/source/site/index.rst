@@ -11,4 +11,3 @@ Some external, side modules: modules needed for some optional purposes of
    pyexttiff
    usevortex
    griberies
-   vgrid
