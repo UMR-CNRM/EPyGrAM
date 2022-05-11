@@ -17,15 +17,11 @@ Functions
 .. autofunction:: write_formatted_fields
 .. autofunction:: write_formatted_dict
 .. autofunction:: write_formatted_table
-.. autofunction:: add_meridians_and_parallels_to
 .. autofunction:: nearlyEqual
 .. autofunction:: nearlyEqualArray
-.. autofunction:: scale_colormap
 .. autofunction:: restrain_to_index_i_of_dim_d
 .. autofunction:: datetimes2fieldvaliditylist
 .. autofunction:: ifNone_emptydict
-.. autofunction:: set_map_up
-.. autofunction:: datetimerange
 .. autofunction:: fmtfid
 
 -----------------------------------------------------------
