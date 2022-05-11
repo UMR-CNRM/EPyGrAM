@@ -15,3 +15,6 @@ Then the notebooks can be opened from a jupyter browser window, or they can be r
 * as an extendedset of _unit_ tests: `make nb_check`
   In this case, they can also be ran from the `tests` directory of EPyGrAM
 
+* WARNING: before committing, clear outputs of the notebooks not to save it in Git:
+  `make clear_output`
+

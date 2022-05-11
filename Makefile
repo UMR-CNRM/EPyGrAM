@@ -1,11 +1,10 @@
 # Variables
 TEST_DIR	= tests
 DOC_DIR		= epygram/doc_sphinx
-VGRID_DIR	= site/vgrid/vertical_discretization
 SUBDIRS		= tests epygram/doc_sphinx
 CLEANDIRS 	= $(SUBDIRS:%=clean-%)
 
-.PHONY: notebooks4doc tests doc vgrid mktar clean $(CLEANDIRS)
+.PHONY: notebooks4doc notebooks_clean tests doc mktar clean $(CLEANDIRS)
 
 # TARGETS:
 # Run all the test suite using nose
@@ -20,21 +19,20 @@ doc:
 notebooks4doc:
 	$(MAKE) -C $(DOC_DIR) nb4doc
 
-# Vgrid binary compilation
-vgrid:
-	$(MAKE) -C $(VGRID_DIR)
+notebooks_clean:
+	$(MAKE) -C $(DOC_DIR) clean
 
 # Tarball for export
 tar:
-	. ./mktar.sh
+	bash ./mktar.sh
 
 # Tarball for export
 tar_doc:
-	. ./mktar_doc.sh
+	bash ./mktar_doc.sh
 
 # Tarball for export
 tar_tests:
-	. ./mktar_tests.sh
+	bash ./mktar_tests.sh
 
 # Clean all the directories, then locally
 clean: $(CLEANDIRS)
