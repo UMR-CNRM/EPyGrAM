@@ -459,8 +459,6 @@ def _cartoplot_actualplot(self,
             if clabel_kw is None:
                 clabel_kw = self.default_clabel_kw
             ax.clabel(pf,
-                      colors=plot_kwargs['colors'],
-                      cmap=plot_kwargs['cmap'],
                       **clabel_kw)
     else:
         raise NotImplementedError('plot_method=="{}"'.format(plot_method))
@@ -474,6 +472,7 @@ def _cartoplot_colorbar(cls,
                         colorbar_over,
                         colorbar_ax_kw,
                         colormap_helper,
+                        colorbar_legend,
                         minmax_along_colorbar,
                         m, M,
                         colorsnumber,
@@ -506,8 +505,12 @@ def _cartoplot_colorbar(cls,
                       **colorbar_kwargs)
     if not numpy.all(ticks_label == ticks_position):
         cax.set_yticklabels(ticks_label)
-    if minmax_along_colorbar:
+    if minmax_along_colorbar and not colorbar_legend:
         cb.set_label(minmax_along_colorbar)
+    elif colorbar_legend and not minmax_along_colorbar:
+        cb.set_label(colorbar_legend)
+    elif colorbar_legend and minmax_along_colorbar:
+        raise ValueError("Arguments 'minmax_along_colorbar' and 'colorbar_legend' are mutually exclusive.")
     return cb
 
 def _cartoplot_text(self, ax,
@@ -570,6 +573,7 @@ def cartoplot(self,
               colorbar_over=None,
               colorbar_ax_kw=None,
               colorbar_kw={},
+              colorbar_legend=None,
               minmax_along_colorbar=True,
               # takeover
               takeover=False
@@ -678,6 +682,7 @@ def cartoplot(self,
     :param colorbar_ax_kw: kwargs to be passed to
         make_axes_locatable(ax).append_axes(colorbar, **kwargs)
     :param colorbar_kw: kwargs to be passed to matpltolib's colorbar()
+    :param colorbar_legend: legend for the colorbar; mutually exclusive with arg 'minmax_along_colorbar'
     :param minmax_along_colorbar: if True and minmax is not None,
         adds min and max values along colorbar.
         
@@ -793,6 +798,7 @@ def cartoplot(self,
                                           colorbar_over,
                                           colorbar_ax_kw,
                                           colormap_helper,
+                                          colorbar_legend,
                                           minmax_along_colorbar,
                                           pmin, pmax,
                                           colorsnumber,
