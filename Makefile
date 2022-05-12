@@ -16,11 +16,11 @@ tests:
 doc:
 	$(MAKE) -C $(DOC_DIR)
 
-notebooks4doc:
-	$(MAKE) -C $(DOC_DIR) nb4doc
+#notebooks4doc:
+#	$(MAKE) -C $(DOC_DIR) notebooks4doc
 
-notebooks_clean:
-	$(MAKE) -C $(DOC_DIR) clean
+#notebooks_clean:
+#	$(MAKE) -C $(DOC_DIR) notebooks_clean
 
 # Tarball for export
 tar:
@@ -41,6 +41,9 @@ clean: $(CLEANDIRS)
 
 $(CLEANDIRS):
 	$(MAKE) -C $(@:clean-%=%) clean
+
+clear_doc:
+	$(MAKE) -C $(DOC_DIR) clear_doc
 
 # Usual target
 clobber: clean

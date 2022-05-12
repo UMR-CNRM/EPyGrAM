@@ -1,18 +1,17 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Copyright (c) Météo France (2014-)
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 """
 List the external (potential) dependancies of EPyGrAM,
-and append the source/library/epygram.rst with list.
+and fill source/dependancies.rst with output list.
 
 Some of these dependancies may be dynamic, only needed for actual call to some
 methods or functionalities.
 """
 from __future__ import print_function, absolute_import, unicode_literals, division
 import glob
-import epygram
 import os
 import io
 
@@ -112,7 +111,8 @@ def look_for_imports(filepattern, exclude=[]):
 
 def main(printout=True, write_to_file=True):
     all_dependancies = {}
-    install_dir = os.path.dirname(os.path.dirname(os.path.abspath(epygram.__file__)))
+    doc_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    install_dir = os.path.dirname(os.path.dirname(doc_root))
     # epygram
     subdir = 'epygram'
     found = []
@@ -142,7 +142,7 @@ def main(printout=True, write_to_file=True):
             for p in packages:
                 print(p)
     if write_to_file:
-        with open(os.path.join(install_dir, 'dependancies.rst'), 'w') as f:
+        with open(os.path.join(doc_root, 'source', 'dependancies.rst'), 'w') as f:
             f.write('Dependancies\n')
             f.write('============\n\n')
             f.write('.. _dependancies:\n\n')

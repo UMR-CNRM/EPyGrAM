@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Copyright (c) Météo France (2014-)
 # This software is governed by the CeCILL-C license under French law.
@@ -12,13 +12,13 @@ import io
 import os
 import numpy as np
 import string
+import argparse
 
 import epygram
 from epygram.colormapping import register_colormap_from_json
 import matplotlib.pyplot as plt
 
-here = os.path.dirname(os.path.abspath(__file__))
-doc_root = os.path.dirname(here)
+doc_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def plot_cmap(cmap):
@@ -35,29 +35,40 @@ def plot_cmap(cmap):
     return fig
 
 
-# read template
-template_rst = os.path.join(os.path.dirname(__file__), 'cmaps.rst.tpl')
-with open(template_rst, 'r') as t:
-    rst = string.Template(''.join(t.readlines()))
+def main(output_rootdir=None):
+    if output_rootdir is None:
+        output_rootdir = os.path.join(doc_root, 'html')
+    # read template
+    template_rst = os.path.join(os.path.dirname(__file__), 'cmaps.rst.tpl')
+    with open(template_rst, 'r') as t:
+        rst = string.Template(''.join(t.readlines()))
 
-# plot colormaps
-figures = ''
-for cmap in sorted(epygram.config.colormaps.keys()):
-    if cmap not in plt.colormaps():
-        register_colormap_from_json(epygram.config.colormaps[cmap])
-    fig = plot_cmap(cmap)
-    path_a = os.path.join(doc_root, 'html')
-    path_b = os.path.join('_images', 'colormaps')
-    dirname = os.path.join(path_a, path_b)
-    if not os.path.exists(dirname):
-        os.makedirs(dirname)
-    filename = cmap + '.png'
-    fig.savefig(os.path.join(dirname, filename), facecolor='0.66')
-    plt.close(fig)
-    # append RST
-    figures += '.. figure:: ' + os.path.join('', path_b, filename) + '\n'
-rstout = rst.substitute(epy_cmaps=figures)
+    # plot colormaps
+    figures = ''
+    for cmap in sorted(epygram.config.colormaps.keys()):
+        if cmap not in plt.colormaps():
+            register_colormap_from_json(epygram.config.colormaps[cmap])
+        fig = plot_cmap(cmap)
+        subdir = os.path.join('_images', 'colormaps')
+        dirname = os.path.join(output_rootdir, subdir)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+        filename = cmap + '.png'
+        fig.savefig(os.path.join(dirname, filename), facecolor='0.66')
+        plt.close(fig)
+        # append RST
+        figures += '.. figure:: ' + os.path.join('', subdir, filename) + '\n'
+    rstout = rst.substitute(epy_cmaps=figures)
 
-# write RST
-with io.open(os.path.join(doc_root, 'source', 'cmaps.rst',), 'w') as out:
-    out.write(rstout)
+    # write RST
+    with io.open(os.path.join(doc_root, 'source', 'cmaps.rst',), 'w') as out:
+        out.write(rstout)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser("Make EPyGrAM colormaps illustrations for documentation purpose.")
+    parser.add_argument('-d', '--output_rootdir',
+                        help="Root directory for the output doc.",
+                        default=None)
+    args = parser.parse_args()
+    main(output_rootdir=args.output_rootdir)
