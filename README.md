@@ -23,12 +23,13 @@ Then follow instructions printed by the script to complete installation.
 Tests
 -----
 
-To run tests, cf. `tests/README.md`.
+To run tests, cf. [`tests/README.md`](tests/README.md).
 
 Documentation
 -------------
 
-To generate Sphinx doc: `make doc`.
+To generate Sphinx doc: `make doc`. It will be generated in `docs/build/html`.
+Online doc of the latest release on `master` branch is available at https://umr-cnrm.github.io/EPyGrAM-doc
 
 License
 -------

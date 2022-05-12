@@ -22,11 +22,11 @@ tar:
 
 # Tarball for export
 tar_doc:
-	bash ./mktar_doc.sh
+	$(MAKE) -C $(DOC_DIR) tar_doc
 
 # Tarball for export
 tar_tests:
-	bash ./mktar_tests.sh
+	$(MAKE) -C $(TEST_DIR) tar_tests
 
 # Clean all the directories, then locally
 clean: $(CLEANDIRS)
