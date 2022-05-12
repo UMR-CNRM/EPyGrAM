@@ -7,11 +7,11 @@ if [ "$1" == "-h" ]; then
     exit
 fi
 
-VERSION=`grep __version__ epygram/__init__.py | awk '{print $3}' | awk -F "'" '{print $2}'`
+VERSION=`head -1 VERSION`
 
-cd epygram/doc_sphinx
+cd docs
 tgz="$HOME/tmp/EPyGrAM-${VERSION}_doc.tgz"
-tar -czf $tgz html
+tar -czf $tgz build
 ls -lh $tgz
-cd ../..
+cd ..
 

@@ -12,11 +12,11 @@ if [ "$1" != "-h" ] && [ "$1" != "" ]; then
     VORTEX=$1
 fi
 
-VERSION=`grep __version__ epygram/__init__.py | awk '{print $3}' | awk -F "'" '{print $2}'`
+VERSION=`head -1 VERSION`
 
 # Filters
 to_exclude=''
-for elem in tests deploy.sh mktar.sh apptools/*.pyc site/arpifs4py/libs4py_*.so epygram/doc_sphinx/html epygram/doc_sphinx/source/gallery/inputs epygram/doc_sphinx/source/gallery/outputs *__pycache__* */.ipynb_checkpoints/* site/usevortex.py
+for elem in tests deploy.sh mktar.sh apptools/*.pyc site/arpifs4py/libs4py_*.so docs/build docs/source/gallery/inputs docs/source/gallery/outputs *__pycache__* */.ipynb_checkpoints/* site/usevortex.py
 do
   to_exclude="$to_exclude --exclude $elem"
 done

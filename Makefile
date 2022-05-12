@@ -1,10 +1,10 @@
 # Variables
 TEST_DIR	= tests
-DOC_DIR		= epygram/doc_sphinx
-SUBDIRS		= tests epygram/doc_sphinx
+DOC_DIR		= docs
+SUBDIRS		= $(TEST_DIR) $(DOC_DIR)
 CLEANDIRS 	= $(SUBDIRS:%=clean-%)
 
-.PHONY: notebooks4doc notebooks_clean tests doc mktar clean $(CLEANDIRS)
+.PHONY: tests doc tar tar_doc tar_tests clear_doc clean $(CLEANDIRS)
 
 # TARGETS:
 # Run all the test suite using nose
@@ -15,12 +15,6 @@ tests:
 # Build the sphinx documentation
 doc:
 	$(MAKE) -C $(DOC_DIR)
-
-#notebooks4doc:
-#	$(MAKE) -C $(DOC_DIR) notebooks4doc
-
-#notebooks_clean:
-#	$(MAKE) -C $(DOC_DIR) notebooks_clean
 
 # Tarball for export
 tar:

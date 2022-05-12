@@ -7,7 +7,7 @@ if [ "$1" == "-h" ]; then
     exit
 fi
 
-VERSION=`grep __version__ epygram/__init__.py | awk '{print $3}' | awk -F "'" '{print $2}'`
+VERSION=`head -1 VERSION`
 
 tgz="$HOME/tmp/EPyGrAM-${VERSION}_tests.tgz"
 tar -czf $tgz tests
