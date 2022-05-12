@@ -41,7 +41,7 @@ using: ``pip[2|3] install --user <packagename>``
 License
 -------
 
-Copyright Météo France (2014 - 2021), authors:
+Copyright Météo France (2014 - 2022), authors:
 
 * A. Mary - Météo France, CNRM/GMAP/COOPE - alexandre.mary@meteo.fr
 * S. Riette - Météo France
@@ -78,12 +78,15 @@ knowledge of the CeCILL-C license and that you accept its terms.
 from __future__ import print_function, absolute_import, unicode_literals, division
 
 import sys
+import io
+import os
 
 import footprints
 
 __all__ = []
 
-__version__ = '1.4.14'
+__version__ = io.open(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
+                                   'VERSION'), 'r').read().strip()
 
 __license__ = 'CeCILL-C'
 

@@ -12,7 +12,7 @@ if [ "$1" == "-h" ]; then
 fi
 VERSION=$1
 if [ "$VERSION" == "" ]; then
-    VERSION=`grep __version__ epygram/__init__.py | awk '{print $3}' | awk -F "'" '{print $2}'`
+    VERSION=`head -1 VERSION`
 fi
 EPYGRAM_DIR="public/EPyGrAM/$VERSION"
 
