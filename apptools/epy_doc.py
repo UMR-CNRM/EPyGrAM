@@ -44,13 +44,16 @@ if __name__ == '__main__':
 
     # 3. Main
     #########
-    to_print = 'Epygram doc url = ' + url
-    print("#" * len(to_print))
+    to_print = '* Epygram local doc url = ' + url
+    print("#" * 80)
     print(to_print)
     if args.open:
         if args.search is not None:
             url = url.replace('index.html', 'search.html?q={}'.format(args.search))  # secure ?
         webbrowser.open(url)
     else:
-        print('To open it, run again this command with option -o')
-    print("#" * len(to_print))
+        print('  To open it, run again this command with option -o')
+    online_url = 'https://umr-cnrm.github.io/EPyGrAM-doc'
+    to_print = '* Epygram online doc url = ' + online_url
+    print(to_print)
+    print("#" * 80)
