@@ -1551,6 +1551,31 @@ class FA(FileResource):
             ftype = 'H2D'  # because fanion fails or answers False for meta-fields
         return ftype
 
+    def _raw_header_get(self):
+        vars_from_facies = ('KTYPTR', 'PSLAPO', 'PCLOPO', 'PSLOPO',
+                            'PCODIL', 'KTRONC',
+                            'KNLATI', 'KNXLON', 'KNLOPA', 'KNOZPA', 'PSINLA',
+                            'KNIVER', 'PREFER', 'PAHYBR', 'PBHYBR')
+        zvars = list(zip(vars_from_facies,
+                         wfa.wfacies(self._FAsoftware_cst['JPXPAH'],
+                                     self._FAsoftware_cst['JPXIND'],
+                                     self._FAsoftware_cst['JPXGEO'],
+                                     self._FAsoftware_cst['JPXNIV'],
+                                     self.headername)[:-1]))
+        return zvars
+
+    def _raw_header_set(self, header_vars):
+        h = header_vars
+        wfa.wfacade(self.headername,
+                h['KTYPTR'], h['PSLAPO'], h['PCLOPO'], h['PSLOPO'],
+                h['PCODIL'], h['KTRONC'],
+                h['KNLATI'], h['KNXLON'],
+                len(h['KNLOPA']), h['KNLOPA'],
+                len(h['KNOZPA']), h['KNOZPA'],
+                len(h['PSINLA']), h['PSINLA'],
+                h['KNIVER'], h['PREFER'], h['PAHYBR'], h['PBHYBR'],
+                True)
+
     def _read_geometry(self):
         """
         Reads the geometry in the FA header.
