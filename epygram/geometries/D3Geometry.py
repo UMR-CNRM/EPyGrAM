@@ -3697,7 +3697,7 @@ class D3GaussGeometry(D3Geometry):
             latitudes = as_numpy_array([self.grid['latitudes'][n].get('degrees') for n in range(len(self.grid['latitudes']))])
             dimensions = as_numpy_array(self.dimensions['lon_number_by_lat'])
             lat = latitudes[j]
-            lon = (numpy.pi * 2 * i) / dimensions[j]
+            lon = (numpy.pi * 2 * as_numpy_array(i)) / dimensions[j]
         else:
             lat = self.grid['latitudes'][j].get('degrees')
             lon = (numpy.pi * 2. * i) / self.dimensions['lon_number_by_lat'][j]
