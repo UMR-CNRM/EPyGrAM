@@ -54,6 +54,7 @@ C - Data
 #. `Recompute u/v from psi/khi (Arpege) <C-data/05.wind_transformations_psikhi.ipynb>`_
 #. `Compute vor/div from u/v <C-data/06.wind_transformations_vordiv.ipynb>`_
 #. `Shaving: cut values over a threshold down to this threshold <C-data/07.shave.ipynb>`_
+#. `Morphing: apply local deformation <C-data/08.morphing_apply_local_deformation.ipynb>`_
 
 D.1 - Horizontal Geometry
 -------------------------
