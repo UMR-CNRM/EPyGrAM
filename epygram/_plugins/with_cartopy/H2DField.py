@@ -315,13 +315,10 @@ def _cartoplot_shape(self,
     if plot_method in ('contourf', 'contour'):
         if not self.geometry.rectangular_grid:
             # gauss grid
-            _fill_value = 1e20
-            _shp = [1,1] + list(data.shape)
-            zf = self.geometry.fill_maskedvalues(data.reshape(_shp),  # protect actually masked values
-                                                 _fill_value)
-            zf = numpy.ma.masked_equal(zf.compressed(), _fill_value)  # flatten and re-masked
-            xf = numpy.ma.masked_where(zf.mask, x.compressed())
-            yf = numpy.ma.masked_where(zf.mask, y.compressed())
+            zf = numpy.ma.masked_where(xf.mask, numpy.ma.masked_where(yf.mask, zf)) # zf masked if xf or yf is masked
+            xf = numpy.ma.array(numpy.ma.masked_where(zf.mask, x).compressed()) # xf masked where zf is masked, the compressed
+            yf = numpy.ma.array(numpy.ma.masked_where(zf.mask, y).compressed()) # yf masked where zf is masked, then compressed
+            zf = numpy.ma.array(zf.compressed()) # zf is compressed
         elif self.geometry.dimensions['Y'] == 1:
             # unstructured grid
             xf = x.flatten()
