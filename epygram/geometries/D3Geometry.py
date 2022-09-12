@@ -3033,8 +3033,8 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                                              'X_Czone':self.dimensions['X_Czone'],
                                              'Y_Czone':self.dimensions['Y_Czone']}
             elif subzone == 'C':
-                centerPoint = ((float(self.dimensions['X']) - 1) / 2.,
-                               (float(self.dimensions['Y']) - 1) / 2.)  # Coordinates of center point
+                centerPoint = ((float(self.dimensions['X_Czone']) - 1) / 2.,
+                               (float(self.dimensions['Y_Czone']) - 1) / 2.)  # Coordinates of center point
                 geom_kwargs['grid']['LAMzone'] = None
                 geom_kwargs['dimensions'] = {'X':self.dimensions['X_Czone'],
                                              'Y':self.dimensions['Y_Czone']}
