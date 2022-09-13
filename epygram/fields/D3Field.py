@@ -2433,7 +2433,7 @@ class D3Field(_D3CommonField):
             # levels are, at least, dependent on position
             levels4d = newfield.geometry.get_levels(d4=True, nb_validities=len(self.validity))
             kwargs_vcoord = copy.deepcopy(newfield.geometry.vcoordinate.footprint_as_dict())
-            kwargs_vcoord['levels'] = levels4d[index, ...].squeeze()
+            kwargs_vcoord['levels'] = list(levels4d[index, ...].squeeze())
             newfield.geometry.vcoordinate = fpx.geometry(**kwargs_vcoord)
 
         return newfield

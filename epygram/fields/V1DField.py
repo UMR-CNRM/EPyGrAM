@@ -480,7 +480,7 @@ def plotanimation(profile,
             title_prefix = ''
         else:
             title_prefix = title
-        title = title_prefix + '\n' + profile.validity[0].get().isoformat(sep=b' ')
+        title = title_prefix + '\n' + profile.validity[0].get().isoformat(sep=' ')
     else:
         title_prefix = None
     profile0 = profile.getvalidity(0)
@@ -511,7 +511,7 @@ def plotanimation(profile,
             ax.clear()
             profilei = myself.getvalidity(i)
             if title_prefix is not None:
-                title = title_prefix + '\n' + profilei.validity.get().isoformat(sep=b' ')
+                title = title_prefix + '\n' + profilei.validity.get().isoformat(sep=' ')
             profilei.plotfield(title=title,
                                **kwargs)
 

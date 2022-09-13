@@ -321,7 +321,7 @@ class V2DCommonField(_D3CommonField):
                 title_prefix = ''
             else:
                 title_prefix = title
-            title = title_prefix + '\n' + self.validity[0].get().isoformat(sep=b' ')
+            title = title_prefix + '\n' + self.validity[0].get().isoformat(sep=' ')
         else:
             title_prefix = None
         field0 = self.getvalidity(0)
@@ -343,7 +343,7 @@ class V2DCommonField(_D3CommonField):
                 ax.clear()
                 fieldi = myself.getvalidity(i)
                 if title_prefix is not None:
-                    title = title_prefix + '\n' + fieldi.validity.get().isoformat(sep=b' ')
+                    title = title_prefix + '\n' + fieldi.validity.get().isoformat(sep=' ')
                 fieldi.plotfield(title=title,
                                  **kwargs)
 

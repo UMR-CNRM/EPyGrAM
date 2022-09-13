@@ -5,7 +5,7 @@ PORT=21
 LOGIN=epygram  # read-only anonymous user
 PASSWORD=EpygraM  # with anonymous password
 
-ftp -i -v -n $HOST $PORT << EOF
+ftp -i -p -v -n $HOST $PORT << EOF
 quote USER $LOGIN
 quote PASS $PASSWORD
 bin
