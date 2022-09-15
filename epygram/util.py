@@ -31,8 +31,94 @@ from .colormapping import register_colormap_from_json
 
 epylog = loggers.getLogger(__name__)
 
+class CheckAttribute(object):
+    def add_attr(self, name, set_check, error_message):
+        """
+        :param name: name of the attribute
+        :param set_check: function called each time the attribute is modified to check
+                          the validity of new value (e.g. lambda x: isinstance(x, int))
+        :param error_message: message to display in assertion when value is not valid
 
-class RecursiveObject(object):
+        The method adds a control on the authorised value of an attribute
+        """
+        assert isinstance(name, str), "*name* must be a string"
+        assert callable(set_check), "*set_check* must be callable"
+        assert isinstance(error_message, str), "*error_message* must be a string"
+        if not hasattr(self, '_epyattr'):
+            super().__setattr__('_epyattr', {})
+        self._epyattr[name] = (set_check, error_message)
+
+    def add_attr_int(self, name):
+        """
+        :param name: name of the attribute
+        The method adds a control to check if the attribute is an integer
+        """
+        return self.add_attr(name, lambda x: isinstance(x, int),
+                             "*{name}* must be an integer (and not a {cls})".format(name=name, cls='{cls}'))
+
+    def add_attr_str(self, name):
+        """
+        :param name: name of the attribute
+        The method adds a control to check if the attribute is a string
+        """
+        return self.add_attr(name, lambda x: isinstance(x, str),
+                             "*{name}* must be a string (and not a {cls})".format(name=name, cls='{cls}'))
+
+    def add_attr_float(self, name):
+        """
+        :param name: name of the attribute
+        The method adds a control to check if the attribute is a float
+        """
+        return self.add_attr(name, lambda x: isinstance(x, float),
+                             "*{name}* must be a float (and not a {cls})".format(name=name, cls='{cls}'))
+
+    def add_attr_list(self, name):
+        """
+        :param name: name of the attribute
+        The method adds a control to check if the attribute is a list
+        """
+        return self.add_attr(name, lambda x: isinstance(x, list),
+                             "*{name}* must be a list (and not a {cls})".format(name=name, cls='{cls}'))
+
+    def add_attr_dict(self, name):
+        """
+        :param name: name of the attribute
+        The method adds a control to check if the attribute is a dict
+        """
+        return self.add_attr(name, lambda x: isinstance(x, dict),
+                             "*{name}* must be a dict (and not a {cls})".format(name=name, cls='{cls}'))
+
+    def add_attr_inlist(self, name, values):
+        """
+        :param name: name of the attribute
+        :param values: authorised values
+        The method adds a control to check if the attribute value is allowed
+        """
+        assert isinstance(values, list), "*values* must be a list"
+        return self.add_attr(name, lambda x: x in values,
+                             "*{name}* must be a among {values}".format(name=name,
+                                                                        values=str(values)))
+
+    def add_attr_class(self, name, cls):
+        """
+        :param name: name of the attribute
+        :param cls: 
+        The method adds a control to check if the attribute is an instance of *cls*
+        """
+        return self.add_attr(name, lambda x: isinstance(x, cls),
+                             "*{name}* must be an {clsc} instance (and not a {cls})".format(name=name,
+                                                                                            clsc=cls.__name__,
+                                                                                            cls='{cls}'))
+
+    def __setattr__(self, name, value):
+        if not hasattr(self, '_epyattr'):
+            super().__setattr__('_epyattr', {})
+        if name in self._epyattr:
+            assert self._epyattr[name][0](value), self._epyattr[name][1].format(cls=type(value).__name__)
+        super().__setattr__(name, value)
+
+
+class RecursiveObject(CheckAttribute):
     """
     Generic abstract class implementing useful recursive properties:
 
@@ -44,7 +130,7 @@ class RecursiveObject(object):
     """
 
     # ghost attributes are ignored when comparing 2 objects between them
-    _ghost_attributes = []
+    _ghost_attributes = ['_epyattr']
 
     def _strItem(self, item, reclevel=1):
         """Recursive display of object attributes."""
@@ -57,7 +143,7 @@ class RecursiveObject(object):
                 if attr == '_attributes':
                     for i in item.__dict__[attr].keys():
                         itemstring += "\n" + offset + i + ": " + self._strItem(item.__dict__[attr][i], reclevel + 1)
-                elif attr not in ('_puredict', '_observer'):
+                elif attr not in ('_puredict', '_observer', '_epyattr'):
                     itemstring += "\n" + offset + attr + ": " + self._strItem(item.__dict__[attr], reclevel + 1)
         elif isinstance(item, list):
             if len(item) > 0:
@@ -71,7 +157,8 @@ class RecursiveObject(object):
         elif isinstance(item, RecursiveObject):
             itemstring += item.__class__.__name__ + " containing:"
             for attr in item.__dict__.keys():
-                itemstring += "\n" + offset + attr + ": " + self._strItem(item.__dict__[attr], reclevel + 1)
+                if attr != '_epyattr':
+                    itemstring += "\n" + offset + attr + ": " + self._strItem(item.__dict__[attr], reclevel + 1)
         elif isinstance(item, dict):
             for key in sorted(item.keys()):
                 itemstring += "\n" + offset + str(key) + ": " + self._strItem(item[key], reclevel + 1)

@@ -35,6 +35,7 @@ from epygram.resources import FileResource
 from epygram.util import (Angle, RecursiveObject,
                           separation_line, write_formatted_dict)
 from epygram.fields import H2DField
+from epygram.geometries import VGeometry
 from epygram.geometries.H2DGeometry import gauss_latitudes
 from epygram.geometries.VGeometry import pressure2altitude, altitude2height, height2altitude
 from epygram.geometries.SpectralGeometry import (SpectralGeometry,
@@ -2037,9 +2038,7 @@ class GRIBmessage(RecursiveObject, dict):
 
     def _GRIB2_read_vertical_geometry(self):
         """Read vertical part of geometry in GRIB2."""
-        kwargs_vcoord = dict(
-            structure='V',
-            position_on_grid='mass')
+        kwargs_vcoord = dict(position_on_grid='mass')
         kwargs_vcoord['typeoffirstfixedsurface'] = self.get('typeOfFirstFixedSurface', 255)
         if kwargs_vcoord['typeoffirstfixedsurface'] != 255:
             first_level = self['scaledValueOfFirstFixedSurface'] * 10**(-self['scaleFactorOfFirstFixedSurface'])
@@ -2053,11 +2052,11 @@ class GRIBmessage(RecursiveObject, dict):
             kwargs_vcoord['bottomlevel'] = second_level
         if kwargs_vcoord['typeoffirstfixedsurface'] == 119:
             kwargs_vcoord['grid'] = self._read_hybridP_levels()
-        return fpx.geometry(**kwargs_vcoord)
+        return VGeometry(**kwargs_vcoord)
 
     def _GRIB1_read_vertical_geometry(self):
         """Read vertical part of geometry in GRIB1."""
-        kwargs_vcoord = {'structure': 'V'}
+        kwargs_vcoord = {}
         kwargs_vcoord['position_on_grid'] = 'mass'
         kwargs_vcoord['typeoffirstfixedsurface'] = onetotwo.get(self['indicatorOfTypeOfLevel'], 255)
         kwargs_vcoord['levels'] = [self['level']]
@@ -2066,7 +2065,7 @@ class GRIBmessage(RecursiveObject, dict):
             kwargs_vcoord['bottomlevel'] = self['bottomLevel']
         if kwargs_vcoord['typeoffirstfixedsurface'] == 119:
             kwargs_vcoord['grid'] = self._read_hybridP_levels()
-        return fpx.geometry(**kwargs_vcoord)
+        return VGeometry(**kwargs_vcoord)
 
     # Utilities methods --------------------------------------------------------
 

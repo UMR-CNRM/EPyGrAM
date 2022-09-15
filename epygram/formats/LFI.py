@@ -29,6 +29,7 @@ from epygram.util import Angle
 from epygram.base import FieldSet, FieldValidity, Field
 from epygram.resources import FileResource
 from epygram.fields import H2DField, MiscField, D3Field
+from epygram.geometries import VGeometry
 from epygram.geometries.VGeometry import hybridH2altitude, hybridH2pressure
 
 __all__ = ['LFI']
@@ -471,8 +472,7 @@ class LFI(FileResource):
 
             if self.geometry.vcoordinate is not None:
                 # vertical geometry
-                kwargs_vcoord = {'structure': 'V',
-                                 'typeoffirstfixedsurface': self.geometry.vcoordinate.typeoffirstfixedsurface,
+                kwargs_vcoord = {'typeoffirstfixedsurface': self.geometry.vcoordinate.typeoffirstfixedsurface,
                                  'position_on_grid': self.geometry.vcoordinate.position_on_grid,
                                  'grid': copy.copy(self.geometry.vcoordinate.grid),
                                  'levels': copy.copy(self.geometry.vcoordinate.levels)}
@@ -590,7 +590,7 @@ class LFI(FileResource):
                    }
             kwargs_geom['position_on_horizontal_grid'] = gridIndicator['horizontal']
             kwargs_vcoord['position_on_grid'] = gridIndicator['vertical']
-            kwargs_geom['vcoordinate'] = fpx.geometry(**kwargs_vcoord)
+            kwargs_geom['vcoordinate'] = VGeometry(**kwargs_vcoord)
             geometry = fpx.geometry(**kwargs_geom)
             field = fpx.field(fid=fid,
                               structure=geometry.structure,
@@ -1409,19 +1409,17 @@ class LFI(FileResource):
             grid = {'gridlevels': tuple([(i + 1, FPDict({'Ai':Ai[i], 'Bi':Bi[i]})) for
                                          i in range(len(Ai))]),
                     'ABgrid_position':'flux'}
-            kwargs_vcoord = {'structure': 'V',
-                             'typeoffirstfixedsurface':118 if not sleve else 255,
+            kwargs_vcoord = {'typeoffirstfixedsurface':118 if not sleve else 255,
                              'position_on_grid': 'mass',
                              'grid': grid,
                              'levels': list([i for i in range(len(Ai) + 1)])
                              }
         else:
-            kwargs_vcoord = {'structure': 'V',
-                             'typeoffirstfixedsurface': 255,
+            kwargs_vcoord = {'typeoffirstfixedsurface': 255,
                              'position_on_grid': '__unknown__',
                              'levels':[255]}
         kwargs_geom['position_on_horizontal_grid'] = 'center'
-        kwargs_geom['vcoordinate'] = fpx.geometry(**kwargs_vcoord)
+        kwargs_geom['vcoordinate'] = VGeometry(**kwargs_vcoord)
         self.geometry = fpx.geometry(**kwargs_geom)
 
     @FileResource._openbeforedelayed

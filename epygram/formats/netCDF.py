@@ -28,6 +28,7 @@ from epygram import config, epygramError, util
 from epygram.base import FieldValidity, FieldValidityList
 from epygram.resources import FileResource
 from epygram.util import Angle
+from epygram.geometries import VGeometry
 
 __all__ = ['netCDF']
 
@@ -346,8 +347,7 @@ class netCDF(FileResource):
             kwargs_geom['structure'] = structure
 
         # 3.2 vertical geometry (default)
-        default_kwargs_vcoord = {'structure':'V',
-                                 'typeoffirstfixedsurface':255,
+        default_kwargs_vcoord = {'typeoffirstfixedsurface':255,
                                  'position_on_grid':'mass',
                                  'grid':{'gridlevels': []},
                                  'levels':[0]}
@@ -857,7 +857,7 @@ class netCDF(FileResource):
                     'latitudes':lat}
 
         # 3.4 build geometry
-        vcoordinate = fpx.geometry(**kwargs_vcoord)
+        vcoordinate = VGeometry(**kwargs_vcoord)
         kwargs_geom['grid'] = grid
         kwargs_geom['dimensions'] = dimensions
         kwargs_geom['vcoordinate'] = vcoordinate

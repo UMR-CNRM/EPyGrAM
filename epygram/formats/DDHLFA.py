@@ -212,7 +212,6 @@ class DDHLFA(LFA):
                                              name='DDH:' + domain['type'],
                                              grid={'DDH_domain':domain},
                                              vcoordinate=VGeometry(
-                                                 structure='V',
                                                  typeoffirstfixedsurface=1,
                                                  levels=FPList([1])),
                                              dimensions={'X':1, 'Y':1})
@@ -252,8 +251,7 @@ class DDHLFA(LFA):
                             pressure_vertical_grid = self.domains['vertical_grid'][d]['fluxlevels_pressure_init']
                         else:
                             pressure_vertical_grid = self.domains['vertical_grid'][d]['fluxlevels_pressure_term']
-                    vcoordinate = VGeometry(structure='V',
-                                            typeoffirstfixedsurface=100,
+                    vcoordinate = VGeometry(typeoffirstfixedsurface=100,
                                             levels=FPList(pressure_vertical_grid / 100.),
                                             # grid={'gridposition':gridposition,  # TODO: ?
                                             #       'gridlevels':pressure_vertical_grid},  # TODO: ?

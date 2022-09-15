@@ -39,7 +39,7 @@ vertical_coordinates = {'Pressure':Pressure,
 
 def build_surf_VGeometry():
     """Build a surface vertical geometry."""
-    return fpx.geometry(levels=[0], structure='V', typeoffirstfixedsurface=1)
+    return VGeometry(levels=[0], typeoffirstfixedsurface=1)
 
 
 def build_geometry(help_on=None, **kwargs):

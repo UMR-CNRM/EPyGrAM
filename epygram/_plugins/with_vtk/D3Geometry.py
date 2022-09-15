@@ -16,7 +16,7 @@ import math
 from footprints import proxy as fpx
 
 from epygram.util import Angle, get_file, epygramError
-from epygram.geometries import D3AcademicGeometry
+from epygram.geometries import D3AcademicGeometry, VGeometry
 
 
 def activate():
@@ -249,8 +249,7 @@ def plot3DBluemarble(self, rendering,
             'input_position':(0, 0),
             'X_resolution':Angle(resol[0], 'degrees'),
             'Y_resolution':Angle(resol[1], 'degrees')}
-    kwargs_vcoord = {'structure': 'V',
-                     'typeoffirstfixedsurface': self.vcoordinate.typeoffirstfixedsurface,
+    kwargs_vcoord = {'typeoffirstfixedsurface': self.vcoordinate.typeoffirstfixedsurface,
                      'position_on_grid': self.vcoordinate.position_on_grid,
                      'grid': self.vcoordinate.grid,
                      'levels': [0]
@@ -259,7 +258,7 @@ def plot3DBluemarble(self, rendering,
                        name='regular_lonlat',
                        grid=grid,
                        dimensions=dict(X=size[0], Y=size[1]),
-                       vcoordinate=fpx.geometry(**kwargs_vcoord),
+                       vcoordinate=VGeometry(**kwargs_vcoord),
                        position_on_horizontal_grid='center',
                        geoid=self.geoid)
     geometry = fpx.geometry(**kwargs_geom)
@@ -391,8 +390,7 @@ def plot3DMaptiles(self, rendering, url, resol_factor,
             'X_resolution':resol[0],
             'Y_resolution':resol[1],
             'LAMzone':None}
-    kwargs_vcoord = {'structure': 'V',
-                     'typeoffirstfixedsurface': self.vcoordinate.typeoffirstfixedsurface,
+    kwargs_vcoord = {'typeoffirstfixedsurface': self.vcoordinate.typeoffirstfixedsurface,
                      'position_on_grid': self.vcoordinate.position_on_grid,
                      'grid': self.vcoordinate.grid,
                      'levels': [0]
@@ -405,7 +403,7 @@ def plot3DMaptiles(self, rendering, url, resol_factor,
                        grid=grid,
                        dimensions=dict(X=(xmax + 1 - xmin) * size[0], Y=(ymax + 1 - ymin) * size[1]),
                        projection=projection,
-                       vcoordinate=fpx.geometry(**kwargs_vcoord),
+                       vcoordinate=VGeometry(**kwargs_vcoord),
                        position_on_horizontal_grid='center',
                        geoid={'a':radius, 'b':radius})
     geometry = fpx.geometry(**kwargs_geom)

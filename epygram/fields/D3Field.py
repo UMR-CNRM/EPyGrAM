@@ -25,7 +25,7 @@ from epygram.util import (write_formatted, Angle,
                           as_numpy_array,
                           moveaxis)
 from epygram.base import Field, FieldSet, FieldValidity, FieldValidityList, Resource
-from epygram.geometries import D3Geometry, SpectralGeometry
+from epygram.geometries import D3Geometry, SpectralGeometry, VGeometry
 from epygram.geometries.D3Geometry import D3ProjectedGeometry, D3RectangularGridGeometry
 
 
@@ -130,12 +130,11 @@ class _D3CommonField(Field):
                 # if z dimension exist, z and t dimensions must be exchanged
                 levels = levels.swapaxes(0, 1)
 
-        kwargs_vcoord = {'structure':'V',
-                         'typeoffirstfixedsurface': vcoord,
+        kwargs_vcoord = {'typeoffirstfixedsurface': vcoord,
                          'position_on_grid': self.geometry.vcoordinate.position_on_grid,
                          'levels': list(levels)
                          }
-        return fpx.geometry(**kwargs_vcoord)
+        return VGeometry(**kwargs_vcoord)
 
 ##############
 # ABOUT DATA #
@@ -401,24 +400,23 @@ class _D3CommonField(Field):
 
         field_builder = fpx.field
         geom_builder = fpx.geometry
-        vcoord_builer = fpx.geometry
 
         lons, lats = self.geometry.get_lonlat_grid(subzone=subzone)
         data4d = self.getdata(d4=True, subzone=subzone)
         levels4d = self.geometry.get_levels(d4=True, nb_validities=len(self.validity), subzone=subzone)
 
         result = FieldSet()
-        kwargs_vcoord = copy.deepcopy(self.geometry.vcoordinate.footprint_as_dict())
+        vcoordinate = self.geometry.vcoordinate.deepcopy()
         for t in range(data4d.shape[0]):
             validity = self.validity[t]
             for k in range(data4d.shape[1]):
                 for j in range(data4d.shape[2]):
                     for i in range(data4d.shape[3]):
-                        kwargs_vcoord['levels'] = [levels4d[t, k, j, i]]
-                        vcoordinate = vcoord_builer(**copy.deepcopy(kwargs_vcoord))
+                        vcoordinate.levels = [levels4d[t, k, j, i]]
                         geometry = geom_builder(structure='Point',
+                                                name='unstructured',
                                                 dimensions={'X':1, 'Y':1},
-                                                vcoordinate=vcoordinate,
+                                                vcoordinate=vcoordinate.deepcopy(),
                                                 grid={'longitudes':[lons[j, i]],
                                                       'latitudes':[lats[j, i]]},
                                                 position_on_horizontal_grid='center'
@@ -443,24 +441,22 @@ class _D3CommonField(Field):
 
         field_builder = fpx.field
         geom_builder = fpx.geometry
-        vcoord_builer = fpx.geometry
 
         lons4d, lats4d = self.geometry.get_lonlat_grid(subzone=subzone, d4=True, nb_validities=1)
         data4d = self.getdata(d4=True, subzone=subzone)
         levels4d = self.geometry.get_levels(d4=True, nb_validities=len(self.validity), subzone=subzone)
 
         result = FieldSet()
-        kwargs_vcoord = copy.deepcopy(self.geometry.vcoordinate.footprint_as_dict())
+        vcoordinate = self.geometry.vcoordinate.deepcopy()
         for j in range(data4d.shape[2]):
             for i in range(data4d.shape[3]):
                 if all([numpy.all(levels4d[0, :, j, i] == levels4d[t, :, j, i]) for t in range(len(self.validity))]):
-                    kwargs_vcoord['levels'] = list(levels4d[0, :, j, i])
+                    vcoordinate.levels = list(levels4d[0, :, j, i])
                 else:
-                    kwargs_vcoord['levels'] = list(levels4d[:, :, j, i].swapaxes(0, 1))
-                vcoordinate = vcoord_builer(**copy.deepcopy(kwargs_vcoord))
+                    vcoordinate.levels = list(levels4d[:, :, j, i].swapaxes(0, 1))
                 geometry = geom_builder(structure='V1D',
                                         dimensions={'X':1, 'Y':1},
-                                        vcoordinate=vcoordinate,
+                                        vcoordinate=vcoordinate.deepcopy(),
                                         grid={'longitudes':[lons4d[0, 0, j, i].tolist()],
                                               'latitudes':[lats4d[0, 0, j, i].tolist()],
                                               },
@@ -617,8 +613,7 @@ class _D3CommonField(Field):
 
         # build vertical geometry
         # k_index: ordered list of the level indexes of self used to build the new field
-        kwargs_vcoord = {'structure':'V',
-                         'typeoffirstfixedsurface': self.geometry.vcoordinate.typeoffirstfixedsurface,
+        kwargs_vcoord = {'typeoffirstfixedsurface': self.geometry.vcoordinate.typeoffirstfixedsurface,
                          'position_on_grid': self.geometry.vcoordinate.position_on_grid}
         if self.geometry.vcoordinate.typeoffirstfixedsurface == 119:
             kwargs_vcoord['grid'] = copy.copy(self.geometry.vcoordinate.grid)
@@ -646,7 +641,7 @@ class _D3CommonField(Field):
                     raise epygramError("extract_subdomain cannot do vertical interpolations.")
                 k_index.append(self.geometry.vcoordinate.levels.index(level))
             kwargs_vcoord['levels'] = geometry.vcoordinate.levels
-        vcoordinate = fpx.geometry(**kwargs_vcoord)
+        vcoordinate = VGeometry(**kwargs_vcoord)
         # build geometry
         structure = geometry.structure
         if len(kwargs_vcoord['levels']) == 1:
@@ -2373,13 +2368,12 @@ class D3Field(_D3CommonField):
         else:
             raise epygramError("It's not possible to extract a level from a " + self.structure + " field.")
 
-        kwargs_vcoord = {'structure': 'V',
-                         'typeoffirstfixedsurface': self.geometry.vcoordinate.typeoffirstfixedsurface,
+        kwargs_vcoord = {'typeoffirstfixedsurface': self.geometry.vcoordinate.typeoffirstfixedsurface,
                          'position_on_grid': self.geometry.vcoordinate.position_on_grid,
                          'levels':[my_level]}
         if self.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
             kwargs_vcoord['grid'] = copy.copy(self.geometry.vcoordinate.grid)
-        newvcoordinate = fpx.geometry(**kwargs_vcoord)
+        newvcoordinate = VGeometry(**kwargs_vcoord)
         kwargs_geom = {'structure':newstructure,
                        'name': self.geometry.name,
                        'grid': dict(self.geometry.grid),
@@ -2432,9 +2426,7 @@ class D3Field(_D3CommonField):
         if len(numpy.array(newfield.geometry.vcoordinate.levels).shape) > 1:
             # levels are, at least, dependent on position
             levels4d = newfield.geometry.get_levels(d4=True, nb_validities=len(self.validity))
-            kwargs_vcoord = copy.deepcopy(newfield.geometry.vcoordinate.footprint_as_dict())
-            kwargs_vcoord['levels'] = list(levels4d[index, ...].squeeze())
-            newfield.geometry.vcoordinate = fpx.geometry(**kwargs_vcoord)
+            newfield.geometry.vcoordinate.levels = list(levels4d[index, ...].squeeze())
 
         return newfield
 
@@ -2595,8 +2587,7 @@ class D3VirtualField(_D3CommonField):
                 raise epygramError("fields must have different fids")
             self._fidList.append(fid)
 
-        kwargs_vcoord = dict(structure='V',
-                             typeoffirstfixedsurface=self._geometry.vcoordinate.typeoffirstfixedsurface,
+        kwargs_vcoord = dict(typeoffirstfixedsurface=self._geometry.vcoordinate.typeoffirstfixedsurface,
                              position_on_grid=self._geometry.vcoordinate.position_on_grid)
         if self._geometry.vcoordinate.grid is not None:
             kwargs_vcoord['grid'] = self._geometry.vcoordinate.grid
@@ -2604,7 +2595,7 @@ class D3VirtualField(_D3CommonField):
             kwargs_vcoord['levels'] = levelList
         else:
             kwargs_vcoord['levels'], self._fidList = (list(t) for t in zip(*sorted(zip(levelList, self._fidList))))  # TOBECHECKED
-        newvcoordinate = fpx.geometry(**kwargs_vcoord)
+        newvcoordinate = VGeometry(**kwargs_vcoord)
 
         newstructure = {'3D': '3D',
                         'H2D': '3D',

@@ -23,6 +23,7 @@ from epygram import config, epygramError, util
 from epygram.util import Angle
 from epygram.base import FieldSet, FieldValidity, Field
 from epygram.resources import FileResource
+from epygram.geometries import VGeometry
 from epygram.fields import H2DField, make_vector_field
 
 __all__ = ['TIFFMF']
@@ -363,11 +364,10 @@ class TIFFMF(FileResource):
          unit, P1, P2, timerange, included, missing,
          century, D) = section1
         (lengthS2, NV, PV_PL, dataRepresenationType) = headerSection2
-        kwargs_vcoord = {'structure':'V',
-                         'typeoffirstfixedsurface': 255,
+        kwargs_vcoord = {'typeoffirstfixedsurface': 255,
                          'position_on_grid': '__unknown__',
-                         'levels': (255,)}
-        vcoordinate = fpx.geometry(**kwargs_vcoord)
+                         'levels': [255]}
+        vcoordinate = VGeometry(**kwargs_vcoord)
         if projection == 1:
             # Polar streographic
             if dataRepresenationType != 5:

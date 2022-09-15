@@ -142,7 +142,6 @@ def gimme_one_point(longitude, latitude,
     kwargs_vcoord = {'position_on_grid':'mass',
                      'levels':[0],
                      'grid':{'gridlevels':[]},
-                     'structure':'V',
                      'typeoffirstfixedsurface':255}
     kwargs_vcoord.update(vertical_geometry_args)
     vcoordinate = VGeometry(**kwargs_vcoord)

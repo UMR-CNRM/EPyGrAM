@@ -285,7 +285,6 @@ class GeoPoints(FileResource):
         if footprints_builder:
             field_builder = fpx.field
             geom_builder = fpx.geometry
-            vcoord_builder = fpx.geometry
         else:
             if field_structure == 'Point':
                 field_builder = PointField
@@ -293,14 +292,12 @@ class GeoPoints(FileResource):
             else:
                 field_builder = H2DField
                 geom_builder = H2DUnstructuredGeometry
-            vcoord_builder = VGeometry
 
         if 'LEVEL' in self.columns:
             specialValues_list['LEVEL'] = [float(level)
                                            for level in specialValues_list['LEVEL']]
-        vcoordinate = vcoord_builder(structure='V',
-                                     typeoffirstfixedsurface=255,
-                                     levels=[255] if 'LEVEL' not in self.columns else specialValues_list['LEVEL'])
+        vcoordinate = VGeometry(typeoffirstfixedsurface=255,
+                                levels=[255] if 'LEVEL' not in self.columns else specialValues_list['LEVEL'])
         geometry = geom_builder(structure=field_structure,
                                 name='unstructured',
                                 dimensions={'X':len(values), 'Y':1},

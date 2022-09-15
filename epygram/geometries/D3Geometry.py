@@ -218,10 +218,8 @@ class D3Geometry(RecursiveObject, FootprintBase):
         """
 
         geometry = self.deepcopy()
-        vgeom_kwargs = copy.deepcopy(self.vcoordinate._attributes)
-        vgeom_kwargs['typeOfFirstFixedSurface'] = surface_type
-        vgeom_kwargs['levels'] = range(len(self.vcoordinate.levels)) if levels is None else levels
-        geometry.vcoordinate = fpx.geometry(**vgeom_kwargs)
+        geometry.vcoordinate.typeOfFirstFixedSurface = surface_type
+        geometry.vcoordinate.levels = list(range(len(self.vcoordinate.levels))) if levels is None else levels
         field_kwargs = dict(fid=dict(temp='temp'),
                             structure=geometry.structure,
                             geometry=geometry)
@@ -333,9 +331,8 @@ class D3Geometry(RecursiveObject, FootprintBase):
 
     def make_point_geometry(self, lon, lat):
         """Returns a PointGeometry at coordinates *(lon,lat)* in degrees."""
-        vcoordinate = fpx.geometry(structure='V',
-                                   typeoffirstfixedsurface=255,
-                                   levels=[0])
+        vcoordinate = VGeometry(typeoffirstfixedsurface=255,
+                                levels=[0])
         return fpx.geometry(structure='Point',
                             name='unstructured',
                             vcoordinate=vcoordinate,
@@ -347,9 +344,8 @@ class D3Geometry(RecursiveObject, FootprintBase):
 
     def make_profile_geometry(self, lon, lat):
         """Returns a V1DGeometry at coordinates *(lon,lat)* in degrees."""
-        vcoordinate = fpx.geometry(structure='V',
-                                   typeoffirstfixedsurface=255,
-                                   levels=[])
+        vcoordinate = VGeometry(typeoffirstfixedsurface=255,
+                                levels=[])
         return fpx.geometry(structure='V1D',
                             name='unstructured',
                             vcoordinate=vcoordinate,
@@ -401,9 +397,8 @@ class D3Geometry(RecursiveObject, FootprintBase):
         else:
             raise epygramError("cannot make a section with less than" +
                                " 2 points.")
-        vcoordinate = fpx.geometry(structure='V',
-                                   typeoffirstfixedsurface=255,
-                                   levels=[])
+        vcoordinate = VGeometry(typeoffirstfixedsurface=255,
+                                levels=[])
         kwargs_geom = {'structure':'V2D',
                        'name':'unstructured',
                        'vcoordinate':vcoordinate,
@@ -424,8 +419,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
         geometry = self.deepcopy()
         if self.vcoordinate.typeoffirstfixedsurface == 118:
             # build vertical geometry
-            kwargs_vcoord = {'structure':'V',
-                             'typeoffirstfixedsurface': self.vcoordinate.typeoffirstfixedsurface,
+            kwargs_vcoord = {'typeoffirstfixedsurface': self.vcoordinate.typeoffirstfixedsurface,
                              'position_on_grid': self.vcoordinate.position_on_grid,
                              'grid': copy.copy(self.vcoordinate.grid),
                              'levels': copy.copy(self.vcoordinate.levels)}
@@ -434,7 +428,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
                 if level < 1 or level > len(self.vcoordinate.grid['gridlevels']) - 1:
                     kwargs_vcoord['levels'].remove(level)
             # build geometry
-            geometry.vcoordinate = fpx.geometry(**kwargs_vcoord)
+            geometry.vcoordinate = VGeometry(**kwargs_vcoord)
         return geometry
 
     def make_zoom_geometry(self, zoom, extra_10th=False):
@@ -1940,9 +1934,8 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
             resolution = distance / (points_number - 1)
         else:
             points_number = int(numpy.rint(distance / resolution)) + 1
-        vcoordinate = fpx.geometry(structure='V',
-                                   typeoffirstfixedsurface=255,
-                                   levels=[])
+        vcoordinate = VGeometry(typeoffirstfixedsurface=255,
+                                levels=[])
         grid = {'LAMzone':'CIE',
                 'X_resolution':resolution,
                 'Y_resolution':resolution,
@@ -3236,11 +3229,10 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         :param position: grid position with respect to the model cell.
           Defaults to self.position_on_horizontal_grid.
         """
-        kwargs_vcoord = {'structure': 'V',
-                         'typeoffirstfixedsurface': 255,
+        kwargs_vcoord = {'typeoffirstfixedsurface': 255,
                          'position_on_grid': '__unknown__',
                          'levels': [0]}
-        vcoordinate = fpx.geometry(**kwargs_vcoord)
+        vcoordinate = VGeometry(**kwargs_vcoord)
         geometry = fpx.geometrys.almost_clone(self,
                                               structure='H2D',
                                               vcoordinate=vcoordinate)
@@ -3385,9 +3377,8 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         else:
             points_number = int(numpy.rint(distance / resolution)) + 1
         rotation = numpy.arctan2(y2 - y1, x2 - x1) + self.projection['rotation'].get('radians')
-        vcoordinate = fpx.geometry(structure='V',
-                                   typeoffirstfixedsurface=255,
-                                   levels=[])
+        vcoordinate = VGeometry(typeoffirstfixedsurface=255,
+                                levels=[])
         grid = {'LAMzone':None,
                 'X_resolution':resolution,
                 'Y_resolution':resolution,
@@ -4218,11 +4209,10 @@ class D3GaussGeometry(D3Geometry):
         :param position: grid position with respect to the model cell.
           Defaults to self.position_on_horizontal_grid.
         """
-        kwargs_vcoord = {'structure': 'V',
-                         'typeoffirstfixedsurface': 255,
+        kwargs_vcoord = {'typeoffirstfixedsurface': 255,
                          'position_on_grid': '__unknown__',
                          'levels': [0]}
-        vcoordinate = fpx.geometry(**kwargs_vcoord)
+        vcoordinate = VGeometry(**kwargs_vcoord)
         geometry = fpx.geometrys.almost_clone(self,
                                               structure='H2D',
                                               vcoordinate=vcoordinate)

@@ -29,7 +29,7 @@ from epygram import config, epygramError, util
 from epygram.util import Angle, separation_line, write_formatted_fields
 from epygram.base import FieldSet, FieldValidity, FieldValidityList
 from epygram.resources import FileResource
-from epygram.geometries import (D3Geometry, SpectralGeometry,
+from epygram.geometries import (D3Geometry, SpectralGeometry, VGeometry,
                                 truncation_from_gridpoint_dims)
 from epygram.geometries.VGeometry import (hybridP2pressure, hybridP2altitude,
                                           pressure2altitude)
@@ -687,8 +687,7 @@ class FA(FileResource):
         if ftype == 'H2D':
             encoding = self.fieldencoding(fieldname, update_fieldscompression=True)
             # vertical geometry
-            kwargs_vcoord = {'structure': 'V',
-                             'typeoffirstfixedsurface': self.geometry.vcoordinate.typeoffirstfixedsurface,
+            kwargs_vcoord = {'typeoffirstfixedsurface': self.geometry.vcoordinate.typeoffirstfixedsurface,
                              'position_on_grid': self.geometry.vcoordinate.position_on_grid,
                              'grid': self.geometry.vcoordinate.grid,
                              'levels': self.geometry.vcoordinate.levels}
@@ -704,7 +703,7 @@ class FA(FileResource):
                 kwargs_vcoord['levels'] = [field_info['scaledValueOfFirstFixedSurface'] * (10 ** -exp)]
             if kwargs_vcoord['typeoffirstfixedsurface'] != 119:  # hybrid-pressure
                 kwargs_vcoord.pop('grid', None)
-            vcoordinate = fpx.geometry(**kwargs_vcoord)
+            vcoordinate = VGeometry(**kwargs_vcoord)
             # Prepare field dimensions
             spectral = encoding['spectral']
             if spectral and self.spectral_geometry is not None:
@@ -1571,13 +1570,12 @@ class FA(FileResource):
                                                               'Bi':Bi[i]}))
                                               for i in range(len(Ai))]),
                          'ABgrid_position':'flux'}
-        kwargs_vcoord = {'structure': 'V',
-                         'typeoffirstfixedsurface':119,
+        kwargs_vcoord = {'typeoffirstfixedsurface':119,
                          'position_on_grid': 'mass',
                          'grid': vertical_grid,
                          'levels': list([i + 1 for i in range(len(Ai) - 1)])
                          }
-        vcoordinate_read_in_header = fpx.geometry(**kwargs_vcoord)
+        vcoordinate_read_in_header = VGeometry(**kwargs_vcoord)
         self.reference_pressure = PREFER
 
         rectangular_grid = KTYPTR <= 0
