@@ -104,6 +104,28 @@ class H2DField(D3Field):
         pt.setdata(value)
         return pt
 
+    def extract_contour(self,level):
+        """
+        Return the intersection of the plan **level** and the H2Dfield: the result is a list of (lon,lat) point list.
+        The length of the first list is the number of disjoint lines.
+        This function relies on the contourpy library which is expected to be installed by the user.
+        """
+        try:
+            from contourpy import contour_generator
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError('To use *extract_contour* method, you must have `contourpy` installed: ' +
+                                      'pip3 install --user contourpy')
+        cont_gen=contour_generator(z=self.getdata()) 
+        contour=cont_gen.lines(level)
+        lines=[]
+        for ijlist in contour:
+            line=[]
+            for i,j in ijlist:
+                lon,lat=self.geometry.ij2ll(i,j)
+                line.append((lon,lat))
+            lines.append(line)
+        return lines
+
 ###################
 # PRE-APPLICATIVE #
 ###################
