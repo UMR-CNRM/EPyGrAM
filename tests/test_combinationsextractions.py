@@ -137,10 +137,11 @@ class TestMisc(TestCase):
                                              vertical_coordinate=100,
                                              interpolation='nearest')
         if test_plot:
-            sections.plotanimation(repeat=True,
-                                   interval=500,
-                                   zoom={'ymax':900, 'ymin':1020})
+            myanim = sections.plotanimation(repeat=True,
+                                            interval=500,
+                                            zoom={'ymax':900, 'ymin':1020})
             plt.show()  # we can see mountains movement
+            del myanim #myanim must live as long as the animation should run
         profiles = sections.as_profiles()[0]
         lon, lat = sections.geometry.get_lonlat_grid()
         profiles_bis = resource4D.extractprofile(FA_name,
@@ -150,10 +151,11 @@ class TestMisc(TestCase):
         self.assertTrue(numpy.all(profiles.getdata() == profiles_bis.getdata()))
         self.assertEqual(profiles.geometry, profiles_bis.geometry)
         if test_plot:
-            profiles.plotanimation(repeat=True,
-                                   interval=500,
-                                   zoom={'ymax':900, 'ymin':1020})
+            myanim = profiles.plotanimation(repeat=True,
+                                            interval=500,
+                                            zoom={'ymax':900, 'ymin':1020})
             plt.show()
+            del myanim #myanim must live as long as the animation should run
 
     def test_V2DT_getvalidity(self):
         resource4D = self._MVCL_resource
@@ -288,9 +290,9 @@ class TestMisc(TestCase):
         self.assertTrue(numpy.all(f1.data == f2.data))
         self.assertTrue(numpy.all(f1.data == f3.data))
         if test_plot:
-            f1.plotfield()
-            f2.plotfield()
-            f3.plotfield()
+            f1.cartoplot()
+            f2.cartoplot()
+            f3.cartoplot()
             plt.show()
 
     def _test__variousways(self, geomtype):
@@ -315,8 +317,9 @@ class TestMisc(TestCase):
 
         if test_plot:
             field = fields[0]
-            field.plotanimation(repeat=True, interval=100)
+            myanim = field.plotanimation(repeat=True, interval=100)
             plt.show()
+            del myanim #myanim must live as long as the animation should run
 
         # subdo(mult([comb(file)]))
         chain2 = fpx.resource_modificator(name="Subdomain",

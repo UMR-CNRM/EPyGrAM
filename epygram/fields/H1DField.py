@@ -532,7 +532,7 @@ def plotanimation(transect,
             ax.clear()
             transecti = myself.getvalidity(i)
             if title_prefix is not None:
-                title = title_prefix + '\n' + transecti.validity.get().isoformat(sep=b' ')
+                title = title_prefix + '\n' + transecti.validity.get().isoformat(sep=' ')
             transecti.plotfield(title=title, **kwargs)
 
     anim = animation.FuncAnimation(fig, update,
