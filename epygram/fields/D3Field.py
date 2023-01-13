@@ -25,8 +25,8 @@ from epygram.util import (write_formatted, Angle,
                           as_numpy_array,
                           moveaxis)
 from epygram.base import Field, FieldSet, FieldValidity, FieldValidityList, Resource
-from epygram.geometries import D3Geometry, SpectralGeometry, VGeometry
-from epygram.geometries.D3Geometry import D3ProjectedGeometry, D3RectangularGridGeometry
+from epygram.geometries import (Geometry, SpectralGeometry, VGeometry, ProjectedGeometry, 
+                                RectangularGridGeometry, RegLLGeometry, UnstructuredGeometry)
 
 
 class _D3CommonField(Field):
@@ -224,7 +224,7 @@ class _D3CommonField(Field):
             raise epygramError("each of lon, lat, k/level and validity must be scalar or have the same length as the others")
 
         if interpolation == 'linear':
-            if isinstance(self.geometry, D3RectangularGridGeometry):
+            if isinstance(self.geometry, RectangularGridGeometry):
                 method = 'bilinear'
             else:
                 method = 'linear_spline'
@@ -399,7 +399,6 @@ class _D3CommonField(Field):
             raise epygramError("as_points method needs a grid-point field, not a spectral one.")
 
         field_builder = fpx.field
-        geom_builder = fpx.geometry
 
         lons, lats = self.geometry.get_lonlat_grid(subzone=subzone)
         data4d = self.getdata(d4=True, subzone=subzone)
@@ -413,14 +412,13 @@ class _D3CommonField(Field):
                 for j in range(data4d.shape[2]):
                     for i in range(data4d.shape[3]):
                         vcoordinate.levels = [levels4d[t, k, j, i]]
-                        geometry = geom_builder(structure='Point',
-                                                name='unstructured',
-                                                dimensions={'X':1, 'Y':1},
-                                                vcoordinate=vcoordinate.deepcopy(),
-                                                grid={'longitudes':[lons[j, i]],
-                                                      'latitudes':[lats[j, i]]},
-                                                position_on_horizontal_grid='center'
-                                                )
+                        geometry = UnstructuredGeometry(name='unstructured',
+                                                        dimensions={'X':1, 'Y':1},
+                                                        vcoordinate=vcoordinate.deepcopy(),
+                                                        grid={'longitudes':[lons[j, i]],
+                                                              'latitudes':[lats[j, i]]},
+                                                        position_on_horizontal_grid='center'
+                                                        )
                         pointfield = field_builder(structure='Point',
                                                    fid=dict(copy.deepcopy(self.fid)),
                                                    geometry=geometry,
@@ -440,7 +438,6 @@ class _D3CommonField(Field):
             raise epygramError("as_profiles method needs a grid-point field, not a spectral one.")
 
         field_builder = fpx.field
-        geom_builder = fpx.geometry
 
         lons4d, lats4d = self.geometry.get_lonlat_grid(subzone=subzone, d4=True, nb_validities=1)
         data4d = self.getdata(d4=True, subzone=subzone)
@@ -454,15 +451,14 @@ class _D3CommonField(Field):
                     vcoordinate.levels = list(levels4d[0, :, j, i])
                 else:
                     vcoordinate.levels = list(levels4d[:, :, j, i].swapaxes(0, 1))
-                geometry = geom_builder(structure='V1D',
-                                        dimensions={'X':1, 'Y':1},
-                                        vcoordinate=vcoordinate.deepcopy(),
-                                        grid={'longitudes':[lons4d[0, 0, j, i].tolist()],
-                                              'latitudes':[lats4d[0, 0, j, i].tolist()],
-                                              },
-                                        position_on_horizontal_grid='center',
-                                        name='unstructured'
-                                        )
+                geometry = UnstructuredGeometry(name='unstructured',
+                                                dimensions={'X':1, 'Y':1},
+                                                vcoordinate=vcoordinate.deepcopy(),
+                                                grid={'longitudes':[lons4d[0, 0, j, i].tolist()],
+                                                      'latitudes':[lats4d[0, 0, j, i].tolist()],
+                                                      },
+                                                position_on_horizontal_grid='center',
+                                                )
                 profilefield = field_builder(structure='V1D',
                                              fid=dict(copy.deepcopy(self.fid)),
                                              geometry=geometry,
@@ -643,36 +639,11 @@ class _D3CommonField(Field):
             kwargs_vcoord['levels'] = geometry.vcoordinate.levels
         vcoordinate = VGeometry(**kwargs_vcoord)
         # build geometry
-        structure = geometry.structure
-        if len(kwargs_vcoord['levels']) == 1:
-            # We suppress the vertical dimension
-            structure = {'3D':'H2D',
-                         'V1D':'Point',
-                         'V2D':'H1D',
-                         'H1D':'H1D',
-                         'H2D':'H2D',
-                         'Point':'Point'}[structure]
-        else:
-            # We add the vertical dimension
-            structure = {'H2D':'3D',
-                         'Point':'V1D',
-                         'H1D':'V2D',
-                         '3D':'3D',
-                         'V2D':'V2D',
-                         'V1D':'V1D'}[structure]
-        kwargs_geom = {'structure': structure,
-                       'name': geometry.name,
-                       'grid': dict(geometry.grid),  # do not remove dict(), it is usefull for unstructured grid
-                       'dimensions': copy.copy(geometry.dimensions),
-                       'vcoordinate': vcoordinate,
-                       'position_on_horizontal_grid': 'center'}
-        if geometry.projected_geometry or geometry.name == 'academic':
-            kwargs_geom['projection'] = copy.copy(geometry.projection)
-        if geometry.geoid:
-            kwargs_geom['geoid'] = geometry.geoid
-        if geometry.position_on_horizontal_grid not in [None, '__unknown__', kwargs_geom['position_on_horizontal_grid']]:
+        newgeometry = geometry.deepcopy()
+        newgeometry.vcoordinate = vcoordinate
+        newgeometry.position_on_horizontal_grid = 'center'
+        if geometry.position_on_horizontal_grid not in [None, '__unknown__', newgeometry.position_on_horizontal_grid]:
             raise epygramError("extract_subdomain cannot deal with position_on_horizontal_grid other than 'center'")
-        newgeometry = fpx.geometry(**kwargs_geom)
 
         if any([isinstance(level, numpy.ndarray) for level in newgeometry.vcoordinate.levels]):
             # level value is not constant on the domain, we must extract a subdomain.
@@ -811,8 +782,7 @@ class _D3CommonField(Field):
         assert not self.spectral, \
                "spectral field: convert to gridpoint beforehand"
 
-        kwargs_zoomgeom = {'structure':self.geometry.structure,
-                           'vcoordinate':self.geometry.vcoordinate.deepcopy(),
+        kwargs_zoomgeom = {'vcoordinate':self.geometry.vcoordinate.deepcopy(),
                            'position_on_horizontal_grid':self.geometry.position_on_horizontal_grid,
                            'geoid':self.geometry.geoid}
         if self.geometry.name == 'regular_lonlat':
@@ -849,7 +819,8 @@ class _D3CommonField(Field):
             kwargs_zoomgeom['dimensions'] = {'X':imax - imin + 1,
                                              'Y':jmax - jmin + 1}
             lonmin, latmin = self.geometry.ij2ll(imin, jmin)
-            kwargs_zoomgeom['name'] = self.geometry.name
+            geometryclass = RegLLGeometry
+            kwargs_zoomgeom['name'] = 'regular_lonlat'
             kwargs_zoomgeom['grid'] = {'input_position':(0, 0),
                                        'input_lon':Angle(lonmin, 'degrees'),
                                        'input_lat':Angle(latmin, 'degrees'),
@@ -859,8 +830,8 @@ class _D3CommonField(Field):
             (lons, lats) = self.geometry.get_lonlat_grid()
             lons = lons.flatten()
             lats = lats.flatten()
-            zoomlons = FPList([])
-            zoomlats = FPList([])
+            zoomlons = []
+            zoomlats = []
             flat_indexes = []
             for i in range(len(lons)):
                 if zoom['lonmin'] <= lons[i] <= zoom['lonmax'] and \
@@ -871,10 +842,11 @@ class _D3CommonField(Field):
             assert len(zoomlons) > 0, "zoom not in domain."
             kwargs_zoomgeom['dimensions'] = {'X':len(zoomlons),
                                              'Y':1}
+            geometryclass = UnstructuredGeometry
             kwargs_zoomgeom['name'] = 'unstructured'
             kwargs_zoomgeom['grid'] = {'longitudes':zoomlons,
                                        'latitudes':zoomlats}
-        zoom_geom = fpx.geometry(**kwargs_zoomgeom)
+        zoom_geom = geometryclass(**kwargs_zoomgeom)
         # Il serait mieux d'utiliser
         # zoom_geom = self.geometry.make_zoom_geometry(zoom, extra_10th)
         # mais il faudrait s'assurer d'appliquer le global_shift_center de
@@ -1328,13 +1300,12 @@ class _D3CommonField(Field):
                 'input_lat':Angle(borders['latmin'], 'degrees'),
                 'X_resolution':Angle(resolution_in_degrees, 'degrees'),
                 'Y_resolution':Angle(resolution_in_degrees, 'degrees')}
-        target_geometry = fpx.geometry(structure=self.geometry.structure,
-                                       name='regular_lonlat',
-                                       vcoordinate=self.geometry.vcoordinate.deepcopy(),
-                                       dimensions={'X':X, 'Y':Y},
-                                       grid=grid,
-                                       position_on_horizontal_grid='center',
-                                       geoid=self.geometry.geoid)
+        target_geometry = RegLLGeometry(name='regular_lonlat',
+                                        vcoordinate=self.geometry.vcoordinate.deepcopy(),
+                                        dimensions={'X':X, 'Y':Y},
+                                        grid=grid,
+                                        position_on_horizontal_grid='center',
+                                        geoid=self.geometry.geoid)
         return self.resample(target_geometry, **kwargs)
 
     def extend(self, another_field_with_time_dimension):
@@ -1985,7 +1956,7 @@ class D3Field(_D3CommonField):
             structure=dict(
                 values=set(['3D'])),
             geometry=dict(
-                type=D3Geometry,
+                type=Geometry,
                 info="Geometry defining the position of the field gridpoints."),
             validity=dict(
                 type=FieldValidityList,
@@ -2359,13 +2330,7 @@ class D3Field(_D3CommonField):
             my_k = k
             my_level = self.geometry.vcoordinate.levels[k]
 
-        if self.structure == '3D':
-            newstructure = 'H2D'
-        elif self.structure == 'V2D':
-            newstructure = 'H1D'
-        elif self.structure == 'V1D':
-            newstructure = 'Point'
-        else:
+        if self.structure not in ['3D', 'V2D', 'V1D']:
             raise epygramError("It's not possible to extract a level from a " + self.structure + " field.")
 
         kwargs_vcoord = {'typeoffirstfixedsurface': self.geometry.vcoordinate.typeoffirstfixedsurface,
@@ -2374,20 +2339,11 @@ class D3Field(_D3CommonField):
         if self.geometry.vcoordinate.typeoffirstfixedsurface in (118, 119):
             kwargs_vcoord['grid'] = copy.copy(self.geometry.vcoordinate.grid)
         newvcoordinate = VGeometry(**kwargs_vcoord)
-        kwargs_geom = {'structure':newstructure,
-                       'name': self.geometry.name,
-                       'grid': dict(self.geometry.grid),
-                       'dimensions': copy.copy(self.geometry.dimensions),
-                       'vcoordinate': newvcoordinate,
-                       'position_on_horizontal_grid': self.geometry.position_on_horizontal_grid}
-        if self.geometry.projected_geometry or self.geometry.name == 'academic':
-            kwargs_geom['projection'] = copy.copy(self.geometry.projection)
-        if self.geometry.geoid:
-            kwargs_geom['geoid'] = self.geometry.geoid
-        newgeometry = fpx.geometry(**kwargs_geom)
+        newgeometry = self.geometry.deepcopy()
+        newgeometry.vcoordinate = newvcoordinate
         generic_fid = self.fid.get('generic', {})
         generic_fid['level'] = my_level if not isinstance(my_level, numpy.ndarray) else my_k  # to avoid arrays in fid
-        kwargs_field = {'structure':newstructure,
+        kwargs_field = {'structure':newgeometry.structure,
                         'validity':self.validity.copy(),
                         'processtype':self.processtype,
                         'geometry':newgeometry,
@@ -2439,7 +2395,7 @@ class D3Field(_D3CommonField):
         if len(posSpl) == 2:  # not center
             posY, posX = posSpl
             if (posY == 'lower' or posX == 'left'):
-                if not isinstance(self.geometry, D3ProjectedGeometry):
+                if not isinstance(self.geometry, ProjectedGeometry):
                     raise NotImplementedError("Centering is not available with non-projected geometries")
                 data = self.getdata(d4=True)
                 if data is not None:  # This test is useful if field has been retrieved with getdata=False
@@ -2606,18 +2562,8 @@ class D3VirtualField(_D3CommonField):
         assert newstructure == self.structure, \
                "Individual fields structure do not match the field strucuture"
 
-        kwargs_geom = {'structure':newstructure,
-                       'name': self.geometry.name,
-                       'grid': dict(self.geometry.grid),
-                       'dimensions': copy.copy(self.geometry.dimensions),
-                       'vcoordinate': newvcoordinate,
-                       'position_on_horizontal_grid': self.geometry.position_on_horizontal_grid
-                       }
-        if self.geometry.projected_geometry or self.geometry.name == 'academic':
-            kwargs_geom['projection'] = copy.copy(self.geometry.projection)
-        if self.geometry.geoid:
-            kwargs_geom['geoid'] = self.geometry.geoid
-        self._geometry = fpx.geometry(**kwargs_geom)
+        self._geometry = self.geometry.deepcopy()
+        self._geometry.vcoordinate = newvcoordinate
         self._spgpOpList = []
 
     def as_real_field(self, getdata=True):

@@ -29,7 +29,7 @@ from epygram.util import Angle
 from epygram.base import FieldSet, FieldValidity, Field
 from epygram.resources import FileResource
 from epygram.fields import H2DField, MiscField, D3Field
-from epygram.geometries import VGeometry
+from epygram.geometries import VGeometry, ProjectedGeometry, AcademicGeometry
 from epygram.geometries.VGeometry import hybridH2altitude, hybridH2pressure
 
 __all__ = ['LFI']
@@ -461,12 +461,10 @@ class LFI(FileResource):
                 self._read_validity()
 
             # Make geometry object
-            kwargs_geom = dict(structure=field_info['type'] if self.true3d else 'H2D',
-                               name=self.geometry.name,
+            kwargs_geom = dict(name=self.geometry.name,
                                grid=self.geometry.grid,
                                dimensions=self.geometry.dimensions,
                                geoid=config.LFI_default_geoid,
-                               position_on_grid=None,
                                projection=self.geometry.projection  # Also used for academic geometries
                                )
 
@@ -591,7 +589,7 @@ class LFI(FileResource):
             kwargs_geom['position_on_horizontal_grid'] = gridIndicator['horizontal']
             kwargs_vcoord['position_on_grid'] = gridIndicator['vertical']
             kwargs_geom['vcoordinate'] = VGeometry(**kwargs_vcoord)
-            geometry = fpx.geometry(**kwargs_geom)
+            geometry = self.geometry.__class__(**kwargs_geom)
             field = fpx.field(fid=fid,
                               structure=geometry.structure,
                               geometry=geometry, validity=self.validity.deepcopy(),
@@ -942,8 +940,7 @@ class LFI(FileResource):
         :param geometry: the geometry on which extract data. If None, it is built from
           lon/lat.
         :param vertical_coordinate: defines the requested vertical coordinate of the
-          V1DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
-          possible values).
+          V1DField (cf. :module:`epygram.geometries` coordinate possible values).
         :param interpolation: defines the interpolation function used to compute
           the profile at requested lon/lat from the fields grid:\n
           - if 'nearest' (default), extracts profile at the horizontal nearest neighboring gridpoint;
@@ -1003,8 +1000,7 @@ class LFI(FileResource):
         :param resolution: defines the horizontal resolution to be given to the
           field. If None, defaults to the horizontal resolution of the field.
         :param vertical_coordinate: defines the requested vertical coordinate of the
-          V2DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
-          possible values).
+          V2DField (cf. :module:`epygram.geometries` coordinate possible values).
         :param interpolation: defines the interpolation function used to compute
           the profile points locations from the fields grid: \n
           - if 'nearest', each horizontal point of the section is
@@ -1057,8 +1053,7 @@ class LFI(FileResource):
         :param geometry: the geometry on which extract data.
                          None to keep the geometry untouched.
         :param vertical_coordinate: defines the requested vertical coordinate of the
-          V2DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
-          possible values).
+          V2DField (cf. :module:`epygram.geometries` coordinate possible values).
         :param interpolation defines the interpolation function used to compute
           the profile points locations from the fields grid: \n
           - if 'nearest', each horizontal point of the section is
@@ -1286,6 +1281,7 @@ class LFI(FileResource):
         else:
             cartesian = False
         if cartesian:
+            geometryclass = AcademicGeometry
             imax = int(self.readfield(s('IMAX', None)).getdata())
             jmax = int(self.readfield(s('JMAX', None)).getdata())
             xhat = self.readfield(s('XHAT', None)).getdata()
@@ -1323,14 +1319,14 @@ class LFI(FileResource):
                           'reference_dX':grid['X_resolution'],
                           'reference_dY':grid['X_resolution']}
             geometryname = 'academic'
-            kwargs_geom = dict(structure='3D',
-                               name=geometryname,
+            kwargs_geom = dict(name=geometryname,
                                grid=grid,
                                dimensions=dimensions,
                                projection=projection,
                                geoid=config.LFI_default_geoid,
                                )
         else:
+            geometryclass = ProjectedGeometry
             lat0 = self.readfield(s('LAT0', None)).getdata()
             lon0 = self.readfield(s('LON0', None)).getdata()
             lat1 = self.readfield(s('LATORI' if 'LATORI' in listnames else 'LATOR', None)).getdata()
@@ -1390,8 +1386,7 @@ class LFI(FileResource):
             else:
                 geometryname = 'lambert'
 
-            kwargs_geom = dict(structure='3D',
-                               name=geometryname,
+            kwargs_geom = dict(name=geometryname,
                                grid=grid,
                                dimensions=dimensions,
                                geoid=config.LFI_default_geoid,
@@ -1420,7 +1415,7 @@ class LFI(FileResource):
                              'levels':[255]}
         kwargs_geom['position_on_horizontal_grid'] = 'center'
         kwargs_geom['vcoordinate'] = VGeometry(**kwargs_vcoord)
-        self.geometry = fpx.geometry(**kwargs_geom)
+        self.geometry = geometryclass(**kwargs_geom)
 
     @FileResource._openbeforedelayed
     def _read_validity(self):

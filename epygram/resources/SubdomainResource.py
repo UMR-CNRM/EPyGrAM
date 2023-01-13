@@ -11,7 +11,7 @@ from footprints import FPDict
 
 from epygram.base import Resource, FieldSet
 from epygram import epygramError
-from epygram.geometries import D3Geometry
+from epygram.geometries import Geometry
 
 
 class SubdomainResource(Resource):
@@ -24,7 +24,7 @@ class SubdomainResource(Resource):
                 type=Resource,
                 info="Low level resource"),
             geometry=dict(
-                type=D3Geometry,
+                type=Geometry,
                 optional=True,
                 default=None,
                 info="Geometry on which extract fields"),

@@ -12,7 +12,7 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 import numpy
 import sys
 
-from footprints import FootprintBase, FPDict, FPList, proxy as fpx
+from footprints import proxy as fpx
 
 from epygram import profiles, epygramError, config
 from epygram.util import (RecursiveObject, write_formatted, separation_line,
@@ -55,7 +55,7 @@ class VGeometry(RecursiveObject):
         """
         self.add_attr_int('typeoffirstfixedsurface')
         self.add_attr_list('levels')
-        self.add_attr_dict('dict')
+        self.add_attr_dict('grid')
         self.add_attr_inlist('position_on_grid', ['mass', 'flux', '__unknown__'])
 
         self.typeoffirstfixedsurface = typeoffirstfixedsurface
@@ -375,14 +375,11 @@ def pressure2altitude(pressure_geometry, R, T, vertical_mean,
         coordinate = 103
     else:
         coordinate = 102
+    geom = pressure_geometry.deppcopy()
     grid = pressure_geometry.grid.copy()
     grid.update({'gridposition':pressure_geometry.gridposition,
                  'levels':list(levels)})
-    return fpx.geometry(structure='V1D',
-                        coordinate=coordinate,
-                        grid=grid,
-                        hlocation=pressure_geometry.hlocation,
-                        position_on_grid=pressure_geometry.position_on_grid)
+    return geom
 
 
 def hybridP_coord_and_surfpressure_to_3D_pressure_field(
@@ -412,9 +409,8 @@ def hybridP_coord_and_surfpressure_to_3D_pressure_field(
                                  gridposition=gridposition).levels
     vgeom = hybridP_geometry.deepcopy()
     vgeom.levels = list(range(1, len(pressures) + 1))
-    geom = fpx.geometrys.almost_clone(Psurf.geometry,
-                                      structure='3D',
-                                      vcoordinate=vgeom)
+    geom = Psurf.geometry.deepcopy()
+    geom.vcoordinate = vgeom
     d3pressure = fpx.field(fid={'computed':'pressure'},
                            structure='3D',
                            geometry=geom,

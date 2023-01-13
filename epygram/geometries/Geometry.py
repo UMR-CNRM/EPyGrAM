@@ -3,6 +3,8 @@
 # Copyright (c) Météo France (2014-)
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
+
+
 """
 Contains the classes for 3D geometries of fields.
 """
@@ -16,7 +18,7 @@ import sys
 import re
 
 import footprints
-from footprints import FootprintBase, FPDict, FPList, proxy as fpx
+from footprints import FPDict, proxy as fpx
 from bronx.graphics.axes import set_figax
 from bronx.syntax.arrays import stretch_array
 from bronx.syntax.decorators import nicedeco
@@ -49,59 +51,51 @@ def _need_pyproj_geod(mtd):
     return with_geod
 
 
-class D3Geometry(RecursiveObject, FootprintBase):
+def gauss_latitudes(nlat):
+    """Compute the Gauss latitudes for a **nlat** points grid."""
+    x, _ = numpy.polynomial.legendre.leggauss(nlat)
+    return numpy.degrees(numpy.arcsin(x[::-1]))
+
+
+class Geometry(RecursiveObject):
     """
     Handles the geometry for a 3-Dimensions Field.
     Abstract mother class.
     """
 
-    _abstract = True
-    _collector = ('geometry',)
-    _footprint = dict(
-        attr=dict(
-            structure=dict(
-                info="Type of geometry.",
-                values=set(['3D'])),
-            name=dict(
-                info="Name of geometrical type of representation of points on \
-                      the Globe.",
-                values=set(['lambert', 'mercator', 'polar_stereographic',
-                            'regular_lonlat', 'rotated_lonlat',
-                            'rotated_reduced_gauss', 'reduced_gauss', 'regular_gauss',
-                            'unstructured'])),
-            grid=dict(
-                type=FPDict,
-                info="Handles description of the horizontal grid."),
-            dimensions=dict(
-                type=FPDict,
-                info="Handles grid dimensions."),
-            vcoordinate=dict(
-                access='rwx',
-                type=VGeometry,
-                info="Handles vertical geometry parameters."),
-            position_on_horizontal_grid=dict(
-                optional=True,
-                access='rwx',
-                info="Position of points w/r to the horizontal.",
-                default='__unknown__',
-                values=set(['upper-right', 'upper-left',
-                            'lower-left', 'lower-right',
-                            'center-left', 'center-right',
-                            'lower-center', 'upper-center',
-                            'center', '__unknown__'])),
-            geoid=dict(
-                type=FPDict,
-                optional=True,
-                default=FPDict(config.default_geoid),
-                info="To specify geoid shape.")
-        )
-    )
-
     # ghost attributes are ignored when comparing 2 objects between them
     _ghost_attributes = RecursiveObject._ghost_attributes + ['_puredict', '_observer']  # footprints special attributes
 
-    def __init__(self, *args, **kwargs):
-        super(D3Geometry, self).__init__(*args, **kwargs)
+    def __init__(self, grid, dimensions, vcoordinate,
+                 position_on_horizontal_grid='__unknown__', geoid=None):
+        """
+        :param grid: Handles description of the horizontal grid.
+        :param dimensions: Handles grid dimensions.
+        :param vcoordinate: Handles vertical geometry parameters.
+        :param position_on_horizontal_grid: Position of points w/r to the horizontal.
+                                            among: ['upper-right', 'upper-left',
+                                                    'lower-left', 'lower-right',
+                                                    'center-left', 'center-right',
+                                                    'lower-center', 'upper-center',
+                                                    'center', '__unknown__']
+        :param geoid: To specify geoid shape.
+        """
+        self.add_attr_dict('grid')
+        self.add_attr_dict('dimensions')
+        self.add_attr_class('vcoordinate', VGeometry)
+        self.add_attr_inlist('position_on_horizontal_grid', ['upper-right', 'upper-left',
+                                                             'lower-left', 'lower-right',
+                                                             'center-left', 'center-right',
+                                                             'lower-center', 'upper-center',
+                                                             'center', '__unknown__'])
+        self.add_attr_dict('geoid')
+
+        self.grid = grid
+        self.dimensions = dimensions
+        self.vcoordinate = vcoordinate
+        self.position_on_horizontal_grid = position_on_horizontal_grid
+        self.geoid = config.default_geoid if geoid is None else geoid
+
         # Checks !
         self._consistency_check()
 
@@ -109,15 +103,42 @@ class D3Geometry(RecursiveObject, FootprintBase):
         # implemented in child classes
         pass
 
+    def _GRIB2_sample(self, prefix):
+        """Build GRIB2 sample name."""
+        from griberies.tables import typeoffixedsurface2sample as levels
+        if self.structure == 'H2D':
+            return '_'.join([prefix,
+                             levels.get(self.vcoordinate.typeoffirstfixedsurface, 'sfc'),
+                             'grib2'])
+        else:
+            raise NotImplementedError()
+
+    @property
+    def structure(self):
+        """
+        Returns the structure of the grid which depends on the prsent dimensions
+        """
+        has_k = len(self.vcoordinate.levels) > 1
+        has_j = self.dimensions.get('Y', 1) != 1 or self.dimensions.get('lat_number', 1) != 1
+        has_i = self.dimensions.get('X', 1) != 1 or self.dimensions.get('max_lon_number', 1) != 1
+
+        return {(True, True, True): '3D',
+                (True, True, False): 'H2D',
+                (True, False, False): 'H1D',
+                (False, False, False): 'Point',
+                (True, False, True): 'V2D',
+                (False, False, True): 'V1D',
+               }[(has_i, has_j, has_k)]
+        
     @property
     def rectangular_grid(self):
         """ Is the grid rectangular ? """
-        return isinstance(self, D3RectangularGridGeometry)
+        return isinstance(self, RectangularGridGeometry)
 
     @property
     def projected_geometry(self):
         """ Is the geometry a projection ? """
-        return 'projection' in self._attributes
+        return isinstance(self, ProjectedGeometry)
 
     @property
     def datashape(self):
@@ -330,37 +351,35 @@ class D3Geometry(RecursiveObject, FootprintBase):
         return self._pyproj_geod.inv(end1[0], end1[1], end2[0], end2[1])[0]
 
     def make_point_geometry(self, lon, lat):
-        """Returns a PointGeometry at coordinates *(lon,lat)* in degrees."""
+        """Returns a Geometry at coordinates *(lon,lat)* in degrees."""
         vcoordinate = VGeometry(typeoffirstfixedsurface=255,
                                 levels=[0])
-        return fpx.geometry(structure='Point',
-                            name='unstructured',
-                            vcoordinate=vcoordinate,
-                            dimensions={'X':1, 'Y':1},
-                            grid={'longitudes':[lon],
-                                  'latitudes':[lat]},
-                            position_on_horizontal_grid='center'
-                            )
+        return UnstructuredGeometry(name='unstructured',
+                                    vcoordinate=vcoordinate,
+                                    dimensions={'X':1, 'Y':1},
+                                    grid={'longitudes':[lon],
+                                          'latitudes':[lat]},
+                                    position_on_horizontal_grid='center'
+                                    )
 
     def make_profile_geometry(self, lon, lat):
         """Returns a V1DGeometry at coordinates *(lon,lat)* in degrees."""
         vcoordinate = VGeometry(typeoffirstfixedsurface=255,
                                 levels=[])
-        return fpx.geometry(structure='V1D',
-                            name='unstructured',
-                            vcoordinate=vcoordinate,
-                            dimensions={'X':1, 'Y':1},
-                            grid={'longitudes':[lon],
-                                  'latitudes':[lat]},
-                            position_on_horizontal_grid='center'
-                            )
+        return UnstructuredGeometry(name='unstructured',
+                                    vcoordinate=vcoordinate,
+                                    dimensions={'X':1, 'Y':1},
+                                    grid={'longitudes':[lon],
+                                          'latitudes':[lat]},
+                                    position_on_horizontal_grid='center'
+                                    )
 
     def make_section_geometry(self, end1, end2,
                               points_number=None,
                               resolution=None,
                               position=None):
         """
-        Returns a V2DGeometry.
+        Returns a Geometry.
 
         :param end1: must be a tuple (lon, lat) in degrees.
         :param end2: must be a tuple (lon, lat) in degrees.
@@ -399,8 +418,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
                                " 2 points.")
         vcoordinate = VGeometry(typeoffirstfixedsurface=255,
                                 levels=[])
-        kwargs_geom = {'structure':'V2D',
-                       'name':'unstructured',
+        kwargs_geom = {'name':'unstructured',
                        'vcoordinate':vcoordinate,
                        'dimensions':{'X':len(transect), 'Y':1},
                        'grid':{'longitudes':[p[0] for p in transect],
@@ -408,7 +426,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
                        'position_on_horizontal_grid':'center' if position is None else position}
         if self.geoid:
             kwargs_geom['geoid'] = self.geoid
-        return fpx.geometry(**kwargs_geom)
+        return UnstructuredGeometry(**kwargs_geom)
 
     def make_physicallevels_geometry(self):
         """
@@ -440,14 +458,13 @@ class D3Geometry(RecursiveObject, FootprintBase):
                            (only usefull for the regular_lonlat grid implementation).
         """
         (lons, lats) = self.get_lonlat_grid()
-        kwargs_zoomgeom = {'structure':self.structure,
-                           'vcoordinate':self.vcoordinate.deepcopy(),
+        kwargs_zoomgeom = {'vcoordinate':self.vcoordinate.deepcopy(),
                            'position_on_horizontal_grid':self.position_on_horizontal_grid,
                            'geoid':self.geoid}
         lons = lons.flatten()
         lats = lats.flatten()
-        zoomlons = FPList([])
-        zoomlats = FPList([])
+        zoomlons = []
+        zoomlats = []
         flat_indexes = []
         for i in range(len(lons)):
             if zoom['lonmin'] <= lons[i] <= zoom['lonmax'] and \
@@ -461,7 +478,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
         kwargs_zoomgeom['name'] = 'unstructured'
         kwargs_zoomgeom['grid'] = {'longitudes':zoomlons,
                                    'latitudes':zoomlats}
-        return fpx.geometry(**kwargs_zoomgeom)
+        return UnstructuredGeometry(**kwargs_zoomgeom)
 
     def _reshape_lonlat_4d(self, lons, lats, nb_validities):
         """Make lons, lats grids 4D."""
@@ -492,7 +509,7 @@ class D3Geometry(RecursiveObject, FootprintBase):
         the horizontal part of another geometry.
         :param: other: other geometry to use in the comparison
         """
-        assert isinstance(other, D3Geometry), "Other must be a geometry object"
+        assert isinstance(other, Geometry), "Other must be a geometry object"
         vc_self = self.vcoordinate
         self.vcoordinate = other.vcoordinate
         result = self == other
@@ -584,22 +601,11 @@ class D3Geometry(RecursiveObject, FootprintBase):
             self.vcoordinate.what(out)
 
 
-class D3RectangularGridGeometry(D3Geometry):
+class RectangularGridGeometry(Geometry):
     """
     Handles the geometry for a rectangular 3-Dimensions Field.
     Abstract.
     """
-
-    _abstract = True
-    _collector = ('geometry',)
-    _footprint = dict(
-        attr=dict(
-            name=dict(
-                values=set(['lambert', 'mercator', 'polar_stereographic',
-                            'regular_lonlat', 'rotated_lonlat',
-                            'academic', 'unstructured']))
-        )
-    )
 
     @property
     def isglobal(self):
@@ -607,6 +613,16 @@ class D3RectangularGridGeometry(D3Geometry):
         :return: True if geometry is global
         """
         return False  # Apart for global lon-lat
+
+    def suggested_GRIB2_sample(self, spectral=False):
+        if self.structure == 'H2D':
+            if not spectral:
+                # return self._GRIB2_sample(regular_ll')
+                return 'GRIB2'
+            else:
+                return self._GRIB2_sample('sh')
+        else:
+            raise NotImplementedError()
 
     def _get_grid(self, indextype, subzone=None, position=None):
         """
@@ -754,19 +770,17 @@ class D3RectangularGridGeometry(D3Geometry):
            last_j < 0 or last_j >= self.dimensions['Y']:
             raise epygramError("first_i, last_i, first_j and last_j must be inside the geometry")
 
-        geom_kwargs = copy.deepcopy(self._attributes)
-        geom_kwargs.pop('dimensions')
-        if 'LAMzone' in geom_kwargs['grid']:
-            geom_kwargs['grid']['LAMzone'] = None
-        if 'input_position' in geom_kwargs['grid']:
+        newgeom = self.deepcopy()
+        if 'LAMzone' in newgeom.grid:
+            newgeom.grid['LAMzone'] = None
+        if 'input_position' in newgeom.grid:
             coords_00 = self.ij2ll(first_i, first_j, position='center')
-            geom_kwargs['grid']['input_position'] = (0, 0)
+            newgeom.grid['input_position'] = (0, 0)
             input_lon = Angle(coords_00[0], 'degrees') if isinstance(self.grid['input_lon'], Angle) else coords_00[0]
             input_lat = Angle(coords_00[1], 'degrees') if isinstance(self.grid['input_lat'], Angle) else coords_00[1]
-            geom_kwargs['grid']['input_lon'] = input_lon
-            geom_kwargs['grid']['input_lat'] = input_lat
-        geom_kwargs['dimensions'] = {'X':last_i - first_i + 1, 'Y':last_j - first_j + 1}
-        newgeom = fpx.geometry(**geom_kwargs)  # create new geometry object
+            newgeom.grid['input_lon'] = input_lon
+            newgeom.grid['input_lat'] = input_lat
+        newgeom.dimensions = {'X':last_i - first_i + 1, 'Y':last_j - first_j + 1}
         return newgeom
 
     def make_subsample_geometry(self, sample_x, sample_y, sample_z):
@@ -782,24 +796,21 @@ class D3RectangularGridGeometry(D3Geometry):
         assert isinstance(sample_x, int) and \
                isinstance(sample_y, int) and \
                isinstance(sample_z, int), "sample_x, y and z must be integers"
-        geom_kwargs = copy.deepcopy(self._attributes)
-        if 'LAMzone' in geom_kwargs['grid']:
-            geom_kwargs['grid']['LAMzone'] = None
-        if 'input_position' in geom_kwargs['grid']:
+        newgeom = self.deepcopy()
+        if 'LAMzone' in self.grid:
+            newgeom.grid['LAMzone'] = None
+        if 'input_position' in newgeom.grid:
             coords_00 = self.ij2ll(0, 0, position='center')
-            geom_kwargs['grid']['input_position'] = (0, 0)
+            newgeom.grid['input_position'] = (0, 0)
             input_lon = Angle(coords_00[0], 'degrees') if isinstance(self.grid['input_lon'], Angle) else coords_00[0]
             input_lat = Angle(coords_00[1], 'degrees') if isinstance(self.grid['input_lat'], Angle) else coords_00[1]
-            geom_kwargs['grid']['input_lon'] = input_lon
-            geom_kwargs['grid']['input_lat'] = input_lat
-        geom_kwargs['dimensions'] = {'X':int(math.ceil(geom_kwargs['dimensions']['X'] / float(sample_x))),
-                                     'Y':int(math.ceil(geom_kwargs['dimensions']['Y'] / float(sample_y)))}
-        geom_kwargs['grid']['X_resolution'] = geom_kwargs['grid']['X_resolution'] * sample_x
-        geom_kwargs['grid']['Y_resolution'] = geom_kwargs['grid']['Y_resolution'] * sample_y
-        levels = geom_kwargs['vcoordinate'].levels[::sample_z]
-        del geom_kwargs['vcoordinate'].levels[:]
-        geom_kwargs['vcoordinate'].levels.extend(levels)
-        newgeom = fpx.geometry(**geom_kwargs)  # create new geometry object
+            newgeom.grid['input_lon'] = input_lon
+            newgeom.grid['input_lat'] = input_lat
+        newgeom.dimensions = {'X':int(math.ceil(newgeom.dimensions['X'] / float(sample_x))),
+                              'Y':int(math.ceil(newgeom.dimensions['Y'] / float(sample_y)))}
+        newgeom.grid['X_resolution'] = newgeom.grid['X_resolution'] * sample_x
+        newgeom.grid['Y_resolution'] = newgeom.grid['Y_resolution'] * sample_y
+        newgeom.vcoordinate.levels = newgeom.vcoordinate.levels[::sample_z]
         return newgeom
 
     def get_datashape(self,
@@ -1325,25 +1336,36 @@ class D3RectangularGridGeometry(D3Geometry):
 
     def __hash__(self):
         # known issue __eq__/must be defined both or none, else inheritance is broken
-        return super(D3RectangularGridGeometry, self).__hash__()"""
+        return super(RectangularGridGeometry, self).__hash__()"""
 
 
-class D3UnstructuredGeometry(D3RectangularGridGeometry):
+class UnstructuredGeometry(RectangularGridGeometry):
     """Handles the geometry for an unstructured 3-Dimensions Field."""
 
-    _collector = ('geometry',)
-    _footprint = dict(
-        attr=dict(
-            name=dict(
-                values=set(['unstructured'])),
-            position_on_horizontal_grid=dict(
-                default='center',
-                values=set(['center'])),
-        )
-    )
+    def __init__(self, name, grid, dimensions, vcoordinate,
+                 position_on_horizontal_grid='center', geoid=None):
+        """
+        :param name: Name of geometrical type of representation of points on the Globe.
+                     Name must be 'unstructured'
+        :param grid: Handles description of the horizontal grid.
+        :param dimensions: Handles grid dimensions.
+        :param vcoordinate: Handles vertical geometry parameters.
+        :param position_on_horizontal_grid: Position of points w/r to the horizontal.
+                                            among: ['upper-right', 'upper-left',
+                                                    'lower-left', 'lower-right',
+                                                    'center-left', 'center-right',
+                                                    'lower-center', 'upper-center',
+                                                    'center', '__unknown__']
+        :param geoid: To specify geoid shape.
+        """
+        self.add_attr_inlist('name', ['unstructured',
+                                      'DDH:point', 'DDH:ij_point', 'DDH:quadrilateral',
+                                      'DDH:rectangle', 'DDH:globe', 'DDH:zonal_bands'])
 
-    def __init__(self, *args, **kwargs):
-        super(D3UnstructuredGeometry, self).__init__(*args, **kwargs)
+        self.name = name
+
+        super(UnstructuredGeometry, self).__init__(grid, dimensions, vcoordinate,
+                                                   position_on_horizontal_grid, geoid)
 
     def _consistency_check(self):
         """Check that the geometry is consistent."""
@@ -1591,27 +1613,34 @@ class D3UnstructuredGeometry(D3RectangularGridGeometry):
                         corners['ur'][1])
 
 
-class D3AcademicGeometry(D3RectangularGridGeometry):
+class AcademicGeometry(RectangularGridGeometry):
     """Handles the geometry for an academic 3-Dimensions Field."""
 
-    _collector = ('geometry',)
-    _footprint = dict(
-        attr=dict(
-            name=dict(
-                values=set(['academic'])),
-            projection=dict(
-                type=FPDict,
-                info="Handles projection information."),
-            geoid=dict(
-                type=FPDict,
-                optional=True,
-                default=FPDict({}),
-                info="Of no meaning in this geometry.")
-        )
-    )
+    def __init__(self, name, grid, dimensions, vcoordinate, projection,
+                 position_on_horizontal_grid='__unknown__', geoid=None):
+        """
+        :param name: Name of geometrical type of representation of points on the Globe.
+                     Name must be 'academic'
+        :param grid: Handles description of the horizontal grid.
+        :param dimensions: Handles grid dimensions.
+        :param vcoordinate: Handles vertical geometry parameters.
+        :param position_on_horizontal_grid: Position of points w/r to the horizontal.
+                                            among: ['upper-right', 'upper-left',
+                                                    'lower-left', 'lower-right',
+                                                    'center-left', 'center-right',
+                                                    'lower-center', 'upper-center',
+                                                    'center', '__unknown__']
+        :param geoid: To specify geoid shape (of no meaning in this geometry).
+        """
+        self.add_attr_inlist('name', ['academic'])
+        self.add_attr_dict('projection')
 
-    def __init__(self, *args, **kwargs):
-        super(D3RectangularGridGeometry, self).__init__(*args, **kwargs)
+        self.name = name
+        self.projection = projection
+
+        super(AcademicGeometry, self).__init__(grid, dimensions, vcoordinate,
+                                                      position_on_horizontal_grid, geoid)
+
         if self.grid['input_position'] != (0, 0):
             raise NotImplementedError("For now, only input_position = (0, 0) is allowed for academic geometries.")
         self._center_lon = (self.dimensions['X'] - 1) / 2.
@@ -1686,10 +1715,10 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
     def _getoffset(self, position=None):
         """
         Returns the offset to use for this position.
-        Replaces the method defined in D3RectangularGridGeometry to deal with
+        Replaces the method defined in RectangularGridGeometry to deal with
         1D or 2D simulations.
         """
-        offset = super(D3AcademicGeometry, self)._getoffset(position)
+        offset = super(AcademicGeometry, self)._getoffset(position)
         if self.dimensions['X'] == 1:
             offset = (0, offset[1])
         if self.dimensions['Y'] == 1:
@@ -1904,7 +1933,7 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
                               resolution=None,
                               position=None):
         """
-        Returns a academic V2DGeometry.
+        Returns a academic Geometry.
 
         :param end1: must be a tuple (lon, lat) in degrees.
         :param end2: must be a tuple (lon, lat) in degrees.
@@ -1958,31 +1987,22 @@ class D3AcademicGeometry(D3RectangularGridGeometry):
                       'reference_dX':self.projection['reference_dX'],
                       'reference_dY':self.projection['reference_dY']}
 
-        kwargs_geom = dict(structure='V2D',
-                           name=self.name,
-                           grid=FPDict(grid),
+        kwargs_geom = dict(name=self.name,
+                           grid=grid,
                            projection=projection,
-                           dimensions=FPDict(dimensions),
+                           dimensions=dimensions,
                            position_on_horizontal_grid='center' if position is None else position,
                            vcoordinate=vcoordinate
                            )
         if self.geoid:
             kwargs_geom['geoid'] = self.geoid
-        return fpx.geometry(**kwargs_geom)
+        return AcademicGeometry(**kwargs_geom)
 
-
-class D3RegLLGeometry(D3RectangularGridGeometry):
+class LLGeometry(RectangularGridGeometry):
     """
     Handles the geometry for a Regular Lon/Lat 3-Dimensions Field.
+    Abstract.
     """
-
-    _collector = ('geometry',)
-    _footprint = dict(
-        attr=dict(
-            name=dict(
-                values=set(['regular_lonlat'])),
-        )
-    )
 
     @property
     def isglobal(self):
@@ -1992,8 +2012,204 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
         return self.dimensions['X'] * self.grid['X_resolution'].get('degrees') >= 360. and \
                self.dimensions['Y'] * self.grid['Y_resolution'].get('degrees') >= 180.
 
-    def __init__(self, *args, **kwargs):
-        super(D3RegLLGeometry, self).__init__(*args, **kwargs)
+    def tolerant_equal(self, other, tolerance=config.epsilon):
+        if self.__class__ == other.__class__:
+            # create copies of inner objects to filter some ghost attributes
+            almost_self = {k:copy.deepcopy(self.__dict__[k])
+                           for k in self.__dict__.keys()
+                           if k not in self._ghost_attributes}
+            almost_other = {k: copy.deepcopy(other.__dict__[k])
+                            for k in other.__dict__.keys()
+                            if k not in other._ghost_attributes}
+            # (the same grid could be defined from different inputs)
+            for almost in (almost_self, almost_other):
+                for k in ('input_lon', 'input_lat', 'input_position'):
+                    almost['grid'].pop(k)
+            almost_self['grid']['center'] = self.getcenter()
+            almost_other['grid']['center'] = other.getcenter()
+            return Comparator.are_equal(almost_self, almost_other, tolerance)
+        else:
+            return False
+
+    def global_shift_center(self, longitude_shift):
+        """
+        Shifts the center of the geometry by *longitude_shift* (in degrees).
+        *longitude_shift* has to be a multiple of the grid's resolution in
+        longitude.
+        """
+        corners = self.gimme_corners_ll()
+        zip_width = abs(degrees_nearest_mod(corners['ur'][0] - corners['ul'][0], 0.))
+        zip_minus_resolution = round(zip_width - self.grid['X_resolution'].get('degrees'),
+                                     _rd)
+        if abs(zip_minus_resolution) < config.epsilon:
+            as_int = 1e6  # decimal error
+            if abs((longitude_shift * as_int) %
+                   (self.grid['X_resolution'].get('degrees') * as_int)) > config.epsilon:
+                raise epygramError(("*longitude_shift* ({}) has to be a multiple" +
+                                    " of the grid's resolution in longitude ({}).").
+                                   format(longitude_shift, self.grid['X_resolution'].get('degrees')))
+            self._center_lon = Angle(self._center_lon.get('degrees') + longitude_shift,
+                                     'degrees')
+            self.grid['input_lon'] = Angle(self.grid['input_lon'].get('degrees') + longitude_shift,
+                                           'degrees')
+        else:
+            raise epygramError("unable to shift center if " +
+                               "lon_max - lon_min != X_resolution")
+
+    def linspace(self, end1, end2, num):
+        """
+        Returns evenly spaced points over the specified interval.
+        Points are lined up in the geometry.
+
+        :param end1: must be a tuple (lon, lat) in degrees.
+        :param end2: must be a tuple (lon, lat) in degrees.
+        :param num: number of points, including point1 and point2.
+        """
+        if num < 2:
+            raise epygramError("'num' must be at least 2.")
+        (x1, y1) = self.ll2xy(*end1)
+        (x2, y2) = self.ll2xy(*end2)
+        xy_linspace = list(zip(numpy.linspace(x1, x2, num=num),
+                               numpy.linspace(y1, y2, num=num)))
+        return [self.xy2ll(*xy) for xy in xy_linspace]
+
+    @_need_pyproj_geod
+    def distance(self, end1, end2):
+        """
+        Computes the distance between two points along a straight line in the
+        geometry.
+
+        :param end1: must be a tuple (lon, lat) in degrees.
+        :param end2: must be a tuple (lon, lat) in degrees.
+
+        Warning: requires the :mod:`pyproj` module.
+        """
+        plast = end1
+        distance = 0
+        for p in self.linspace(end1, end2, 1000)[1:]:
+            distance += self._pyproj_geod.inv(plast[0], plast[1], *p)[2]
+            plast = p
+        return distance
+
+    def make_zoom_geometry(self, zoom, extra_10th=False):
+        """
+        Returns a new geometry with the points contained in *zoom*.
+
+        :param zoom: a dict(lonmin=, lonmax=, latmin=, latmax=).
+        :param extra_10th: if True, add 1/10th of the X/Y extension of the zoom
+                           (only usefull for the regular_lonlat grid implementation).
+        """
+        kwargs_zoomgeom = {'vcoordinate':self.vcoordinate.deepcopy(),
+                           'position_on_horizontal_grid':self.position_on_horizontal_grid,
+                           'geoid':self.geoid}
+        if extra_10th:
+            dx = (degrees_nearest_mod(zoom['lonmax'], 0.) -
+                  degrees_nearest_mod(zoom['lonmin'], 0.)) / 10.
+            dy = (zoom['latmax'] - zoom['latmin']) / 10.
+            zoom = {'lonmin':zoom['lonmin'] - dx,
+                    'lonmax':zoom['lonmax'] + dx,
+                    'latmin':zoom['latmin'] - dy,
+                    'latmax':zoom['latmax'] + dy}
+        imin, jmin = self.ll2ij(zoom['lonmin'], zoom['latmin'])
+        imax, jmax = self.ll2ij(zoom['lonmax'], zoom['latmax'])
+        if imin > imax:
+            gridmin = self.gimme_corners_ll()['ll'][0]
+            diff_lonmin = (gridmin - degrees_nearest_mod(zoom['lonmin'],
+                                                         gridmin))
+            Xres = self.grid['X_resolution'].get('degrees')
+            shift = (diff_lonmin // Xres + 1) * Xres
+            shifted_self = self.deepcopy()
+            shifted_self.global_shift_center(-shift)
+            return shifted_self.make_zoom_geometry(zoom, extra_10th=False)  # zoom already includes the extra part
+        elif imin == imax:  # means 360deg wide
+            imin = 0
+            imax = self.dimensions['X'] - 1
+        imin = max(int(numpy.ceil(imin)),
+                   0)
+        imax = min(int(numpy.floor(imax)),
+                   self.dimensions['X'] - 1)
+        jmin = max(int(numpy.ceil(jmin)),
+                   0)
+        jmax = min(int(numpy.floor(jmax)),
+                   self.dimensions['Y'] - 1)
+        kwargs_zoomgeom['dimensions'] = {'X':imax - imin + 1,
+                                         'Y':jmax - jmin + 1}
+        lonmin, latmin = self.ij2ll(imin, jmin)
+        kwargs_zoomgeom['name'] = self.name
+        kwargs_zoomgeom['grid'] = {'input_position':(0, 0),
+                                   'input_lon':Angle(lonmin, 'degrees'),
+                                   'input_lat':Angle(latmin, 'degrees'),
+                                   'X_resolution':self.grid['X_resolution'],
+                                   'Y_resolution':self.grid['Y_resolution']}
+        return RegLLGeometry(**kwargs_zoomgeom)
+
+    def resolution_ll(self, lon, lat):
+        """
+        Returns the local resolution at the nearest point of lon/lat.
+        It's the distance between this point and its closest neighbour.
+
+        :param lon: longitude of the point in degrees
+        :param lat: latitude of the point in degrees
+        """
+        return self.resolution_ij(*self.ll2ij(lon, lat))
+
+    def resolution_ij(self, i, j):
+        """
+        Returns the distance to the nearest point of (i,j) point.
+
+        :param i: X index of point in the 2D matrix of gridpoints
+        :param j: Y index of point in the 2D matrix of gridpoints
+        """
+        (iint, jint) = (numpy.rint(i).astype('int'),
+                        numpy.rint(j).astype('int'))
+        points_list = [(iint + oi, jint + oj)
+                       for oi in [-1, 0, 1]
+                       for oj in [-1, 0, 1]
+                       if (oi, oj) != (0, 0)]
+        return numpy.array([self.distance(self.ij2ll(iint, jint),
+                                          self.ij2ll(*p))
+                            for p in points_list]).min()
+
+    def plane_azimuth(self, end1, end2):
+        """
+        Initial bearing from *end1* to *end2* points in plane local referential
+        geometry.
+
+        :param end1: must be a tuple (lon, lat) in degrees.
+        :param end2: must be a tuple (lon, lat) in degrees.
+        """
+        (x1, y1) = self.ll2xy(*end1)
+        (x2, y2) = self.ll2xy(*end2)
+        return (numpy.degrees(numpy.arctan2(x2 - x1, y2 - y1)) + 180.) % 360. - 180.
+
+
+class RegLLGeometry(LLGeometry):
+    """
+    Handles the geometry for a Regular Lon/Lat 3-Dimensions Field.
+    """
+
+    def __init__(self, name, grid, dimensions, vcoordinate,
+                 position_on_horizontal_grid='__unknown__', geoid=None):
+        """
+        :param name: Name of geometrical type of representation of points on the Globe.
+                     Name must be 'regular_lonlat'
+        :param grid: Handles description of the horizontal grid.
+        :param dimensions: Handles grid dimensions.
+        :param vcoordinate: Handles vertical geometry parameters.
+        :param position_on_horizontal_grid: Position of points w/r to the horizontal.
+                                            among: ['upper-right', 'upper-left',
+                                                    'lower-left', 'lower-right',
+                                                    'center-left', 'center-right',
+                                                    'lower-center', 'upper-center',
+                                                    'center', '__unknown__']
+        :param geoid: To specify geoid shape.
+        """
+        self.add_attr_inlist('name', ['regular_lonlat'])
+
+        self.name = name
+
+        super(RegLLGeometry, self).__init__(grid, dimensions, vcoordinate,
+                                            position_on_horizontal_grid, geoid)
 
         if self.grid['input_position'] == ((float(self.dimensions['X']) - 1) / 2.,
                                            (float(self.dimensions['Y']) - 1) / 2.):
@@ -2048,25 +2264,6 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
             self._earthround = True
         else:
             self._earthround = False
-
-    def tolerant_equal(self, other, tolerance=config.epsilon):
-        if self.__class__ == other.__class__:
-            # create copies of inner objects to filter some ghost attributes
-            almost_self = {k:copy.deepcopy(self.__dict__[k])
-                           for k in self.__dict__.keys()
-                           if k not in self._ghost_attributes}
-            almost_other = {k: copy.deepcopy(other.__dict__[k])
-                            for k in other.__dict__.keys()
-                            if k not in other._ghost_attributes}
-            # (the same grid could be defined from different inputs)
-            for almost in (almost_self, almost_other):
-                for k in ('input_lon', 'input_lat', 'input_position'):
-                    almost['_attributes']['grid'].pop(k)
-            almost_self['_attributes']['grid']['center'] = self.getcenter()
-            almost_other['_attributes']['grid']['center'] = other.getcenter()
-            return Comparator.are_equal(almost_self, almost_other, tolerance)
-        else:
-            return False
 
     def getcenter(self):
         """
@@ -2223,159 +2420,6 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
             y = numpy.array(y)
         return self.ij2ll(*self.xy2ij(x, y))
 
-
-    def global_shift_center(self, longitude_shift):
-        """
-        Shifts the center of the geometry by *longitude_shift* (in degrees).
-        *longitude_shift* has to be a multiple of the grid's resolution in
-        longitude.
-        """
-        corners = self.gimme_corners_ll()
-        zip_width = abs(degrees_nearest_mod(corners['ur'][0] - corners['ul'][0], 0.))
-        zip_minus_resolution = round(zip_width - self.grid['X_resolution'].get('degrees'),
-                                     _rd)
-        if abs(zip_minus_resolution) < config.epsilon:
-            as_int = 1e6  # decimal error
-            if abs((longitude_shift * as_int) %
-                   (self.grid['X_resolution'].get('degrees') * as_int)) > config.epsilon:
-                raise epygramError(("*longitude_shift* ({}) has to be a multiple" +
-                                    " of the grid's resolution in longitude ({}).").
-                                   format(longitude_shift, self.grid['X_resolution'].get('degrees')))
-            self._center_lon = Angle(self._center_lon.get('degrees') + longitude_shift,
-                                     'degrees')
-            self.grid['input_lon'] = Angle(self.grid['input_lon'].get('degrees') + longitude_shift,
-                                           'degrees')
-        else:
-            raise epygramError("unable to shift center if " +
-                               "lon_max - lon_min != X_resolution")
-
-    def linspace(self, end1, end2, num):
-        """
-        Returns evenly spaced points over the specified interval.
-        Points are lined up in the geometry.
-
-        :param end1: must be a tuple (lon, lat) in degrees.
-        :param end2: must be a tuple (lon, lat) in degrees.
-        :param num: number of points, including point1 and point2.
-        """
-        if num < 2:
-            raise epygramError("'num' must be at least 2.")
-        (x1, y1) = self.ll2xy(*end1)
-        (x2, y2) = self.ll2xy(*end2)
-        xy_linspace = list(zip(numpy.linspace(x1, x2, num=num),
-                               numpy.linspace(y1, y2, num=num)))
-        return [self.xy2ll(*xy) for xy in xy_linspace]
-
-    @_need_pyproj_geod
-    def distance(self, end1, end2):
-        """
-        Computes the distance between two points along a straight line in the
-        geometry.
-
-        :param end1: must be a tuple (lon, lat) in degrees.
-        :param end2: must be a tuple (lon, lat) in degrees.
-
-        Warning: requires the :mod:`pyproj` module.
-        """
-        plast = end1
-        distance = 0
-        for p in self.linspace(end1, end2, 1000)[1:]:
-            distance += self._pyproj_geod.inv(plast[0], plast[1], *p)[2]
-            plast = p
-        return distance
-
-    def make_zoom_geometry(self, zoom, extra_10th=False):
-        """
-        Returns a new geometry with the points contained in *zoom*.
-
-        :param zoom: a dict(lonmin=, lonmax=, latmin=, latmax=).
-        :param extra_10th: if True, add 1/10th of the X/Y extension of the zoom
-                           (only usefull for the regular_lonlat grid implementation).
-        """
-        kwargs_zoomgeom = {'structure':self.structure,
-                           'vcoordinate':self.vcoordinate.deepcopy(),
-                           'position_on_horizontal_grid':self.position_on_horizontal_grid,
-                           'geoid':self.geoid}
-        if extra_10th:
-            dx = (degrees_nearest_mod(zoom['lonmax'], 0.) -
-                  degrees_nearest_mod(zoom['lonmin'], 0.)) / 10.
-            dy = (zoom['latmax'] - zoom['latmin']) / 10.
-            zoom = {'lonmin':zoom['lonmin'] - dx,
-                    'lonmax':zoom['lonmax'] + dx,
-                    'latmin':zoom['latmin'] - dy,
-                    'latmax':zoom['latmax'] + dy}
-        imin, jmin = self.ll2ij(zoom['lonmin'], zoom['latmin'])
-        imax, jmax = self.ll2ij(zoom['lonmax'], zoom['latmax'])
-        if imin > imax:
-            gridmin = self.gimme_corners_ll()['ll'][0]
-            diff_lonmin = (gridmin - degrees_nearest_mod(zoom['lonmin'],
-                                                         gridmin))
-            Xres = self.grid['X_resolution'].get('degrees')
-            shift = (diff_lonmin // Xres + 1) * Xres
-            shifted_self = self.deepcopy()
-            shifted_self.global_shift_center(-shift)
-            return shifted_self.make_zoom_geometry(zoom, extra_10th=False)  # zoom already includes the extra part
-        elif imin == imax:  # means 360deg wide
-            imin = 0
-            imax = self.dimensions['X'] - 1
-        imin = max(int(numpy.ceil(imin)),
-                   0)
-        imax = min(int(numpy.floor(imax)),
-                   self.dimensions['X'] - 1)
-        jmin = max(int(numpy.ceil(jmin)),
-                   0)
-        jmax = min(int(numpy.floor(jmax)),
-                   self.dimensions['Y'] - 1)
-        kwargs_zoomgeom['dimensions'] = {'X':imax - imin + 1,
-                                         'Y':jmax - jmin + 1}
-        lonmin, latmin = self.ij2ll(imin, jmin)
-        kwargs_zoomgeom['name'] = self.name
-        kwargs_zoomgeom['grid'] = {'input_position':(0, 0),
-                                   'input_lon':Angle(lonmin, 'degrees'),
-                                   'input_lat':Angle(latmin, 'degrees'),
-                                   'X_resolution':self.grid['X_resolution'],
-                                   'Y_resolution':self.grid['Y_resolution']}
-        return fpx.geometry(**kwargs_zoomgeom)
-
-    def resolution_ll(self, lon, lat):
-        """
-        Returns the local resolution at the nearest point of lon/lat.
-        It's the distance between this point and its closest neighbour.
-
-        :param lon: longitude of the point in degrees
-        :param lat: latitude of the point in degrees
-        """
-        return self.resolution_ij(*self.ll2ij(lon, lat))
-
-    def resolution_ij(self, i, j):
-        """
-        Returns the distance to the nearest point of (i,j) point.
-
-        :param i: X index of point in the 2D matrix of gridpoints
-        :param j: Y index of point in the 2D matrix of gridpoints
-        """
-        (iint, jint) = (numpy.rint(i).astype('int'),
-                        numpy.rint(j).astype('int'))
-        points_list = [(iint + oi, jint + oj)
-                       for oi in [-1, 0, 1]
-                       for oj in [-1, 0, 1]
-                       if (oi, oj) != (0, 0)]
-        return numpy.array([self.distance(self.ij2ll(iint, jint),
-                                          self.ij2ll(*p))
-                            for p in points_list]).min()
-
-    def plane_azimuth(self, end1, end2):
-        """
-        Initial bearing from *end1* to *end2* points in plane local referential
-        geometry.
-
-        :param end1: must be a tuple (lon, lat) in degrees.
-        :param end2: must be a tuple (lon, lat) in degrees.
-        """
-        (x1, y1) = self.ll2xy(*end1)
-        (x2, y2) = self.ll2xy(*end2)
-        return (numpy.degrees(numpy.arctan2(x2 - x1, y2 - y1)) + 180.) % 360. - 180.
-
     def _what_grid(self, out=sys.stdout, arpifs_var_names=False):
         """
         Writes in file a summary of the grid of the field.
@@ -2438,21 +2482,34 @@ class D3RegLLGeometry(D3RectangularGridGeometry):
                         corners['ur'][1])
 
 
-class D3RotLLGeometry(D3RegLLGeometry):
+class RotLLGeometry(LLGeometry):
     """
     Handles the geometry for a Rotated Lon/Lat 3-Dimensions Field.
     """
 
-    _collector = ('geometry',)
-    _footprint = dict(
-        attr=dict(
-            name=dict(
-                values=set(['rotated_lonlat']))
-        )
-    )
+    def __init__(self, name, grid, dimensions, vcoordinate,
+                 position_on_horizontal_grid='__unknown__', geoid=None):
+        """
+        :param name: Name of geometrical type of representation of points on the Globe.
+                     Name must be 'rotated_lonlat'
+        :param grid: Handles description of the horizontal grid.
+        :param dimensions: Handles grid dimensions.
+        :param vcoordinate: Handles vertical geometry parameters.
+        :param position_on_horizontal_grid: Position of points w/r to the horizontal.
+                                            among: ['upper-right', 'upper-left',
+                                                    'lower-left', 'lower-right',
+                                                    'center-left', 'center-right',
+                                                    'lower-center', 'upper-center',
+                                                    'center', '__unknown__']
+        :param geoid: To specify geoid shape.
+        """
+        self.add_attr_inlist('name', ['rotated_lonlat'])
 
-    def __init__(self, *args, **kwargs):
-        super(D3RegLLGeometry, self).__init__(*args, **kwargs)
+        self.name = name
+
+        super(RotLLGeometry, self).__init__(grid, dimensions, vcoordinate,
+                                            position_on_horizontal_grid, geoid)
+
         if self.grid['input_position'] == ((float(self.dimensions['X']) - 1) / 2.,
                                            (float(self.dimensions['Y']) - 1) / 2.):
             self._center_rlon = self.grid['input_lon']
@@ -2747,33 +2804,40 @@ class D3RotLLGeometry(D3RegLLGeometry):
                         corners['ur'][1])
 
 
-class D3ProjectedGeometry(D3RectangularGridGeometry):
+class ProjectedGeometry(RectangularGridGeometry):
     """
     Handles the geometry for a Projected 3-Dimensions Field.
     """
 
-    _collector = ('geometry',)
-    _footprint = dict(
-        attr=dict(
-            name=dict(
-                values=set(['lambert', 'mercator', 'polar_stereographic',
-                            'space_view'])),
-            projection=dict(
-                type=FPDict,
-                info="Handles projection information."),
-        )
-    )
+    _ghost_attributes = RectangularGridGeometry._ghost_attributes + ['_proj']
 
-    _ghost_attributes = D3RectangularGridGeometry._ghost_attributes + ['_proj']
+    def __init__(self, name, grid, dimensions, vcoordinate, projection,
+                 position_on_horizontal_grid='__unknown__', geoid=None):
+        """
+        :param name: Name of geometrical type of representation of points on the Globe.
+                     Name must be among ['lambert', 'mercator', 'polar_stereographic',
+                                         'space_view']
+        :param grid: Handles description of the horizontal grid.
+        :param dimensions: Handles grid dimensions.
+        :param vcoordinate: Handles vertical geometry parameters.
+        :param position_on_horizontal_grid: Position of points w/r to the horizontal.
+                                            among: ['upper-right', 'upper-left',
+                                                    'lower-left', 'lower-right',
+                                                    'center-left', 'center-right',
+                                                    'lower-center', 'upper-center',
+                                                    'center', '__unknown__']
+        :param geoid: To specify geoid shape.
+        """
+        self.add_attr_inlist('name', ['lambert', 'mercator', 'polar_stereographic',
+                                      'space_view'])
+        self.add_attr_dict('projection')
 
-    @property
-    def secant_projection(self):
-        """ Is the projection secant to the sphere ? (or tangent)"""
-        return ('secant_lat' in self.projection or
-                'secant_lat1' in self.projection)
+        self.name = name
+        self.projection = projection
 
-    def __init__(self, *args, **kwargs):
-        super(D3ProjectedGeometry, self).__init__(*args, **kwargs)
+        super(ProjectedGeometry, self).__init__(grid, dimensions, vcoordinate,
+                                                      position_on_horizontal_grid, geoid)
+
         import pyproj
 
         def compute_center_proj(p, center):
@@ -2903,6 +2967,12 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         else:
             raise NotImplementedError("projection: " + self.name)
 
+    @property
+    def secant_projection(self):
+        """ Is the projection secant to the sphere ? (or tangent)"""
+        return ('secant_lat' in self.projection or
+                'secant_lat1' in self.projection)
+
     def tolerant_equal(self, other, tolerance=config.epsilon):
         if self.__class__ == other.__class__:
             # create copies of inner objects to filter some ghost attributes
@@ -2915,9 +2985,9 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
             # (the same grid could be defined from different inputs)
             for almost in (almost_self, almost_other):
                 for k in ('input_lon', 'input_lat', 'input_position'):
-                    almost['_attributes']['grid'].pop(k)
-            almost_self['_attributes']['grid']['center'] = self.getcenter()
-            almost_other['_attributes']['grid']['center'] = other.getcenter()
+                    almost['grid'].pop(k)
+            almost_self['grid']['center'] = self.getcenter()
+            almost_other['grid']['center'] = other.getcenter()
             return Comparator.are_equal(almost_self, almost_other, tolerance)
         else:
             return False
@@ -3008,37 +3078,34 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         assert subzone in ('C', 'CI'), \
                'unknown subzone : ' + subzone
         if self.grid.get('LAMzone') is not None:
-            geom_kwargs = copy.copy(self._attributes)
-            geom_kwargs['grid'] = copy.copy(self.grid)
-            geom_kwargs['dimensions'] = copy.copy(self.dimensions)
+            newgeom = self.deepcopy()
             if subzone == 'CI':
                 io = self.dimensions.get('X_CIoffset', 0)
                 jo = self.dimensions.get('Y_CIoffset', 0)
                 centerPoint = (io + (float(self.dimensions['X_CIzone']) - 1) / 2.,
                                jo + (float(self.dimensions['Y_CIzone']) - 1) / 2.)  # Coordinates of center point
-                geom_kwargs['grid']['LAMzone'] = subzone
-                geom_kwargs['dimensions'] = {'X':self.dimensions['X_CIzone'],
-                                             'Y':self.dimensions['Y_CIzone'],
-                                             'X_CIzone':self.dimensions['X_CIzone'],
-                                             'Y_CIzone':self.dimensions['Y_CIzone'],
-                                             'X_Iwidth':self.dimensions['X_Iwidth'],
-                                             'Y_Iwidth':self.dimensions['Y_Iwidth'],
-                                             'X_Czone':self.dimensions['X_Czone'],
-                                             'Y_Czone':self.dimensions['Y_Czone']}
+                newgeom.grid['LAMzone'] = subzone
+                newgeom.dimensions = {'X':self.dimensions['X_CIzone'],
+                                      'Y':self.dimensions['Y_CIzone'],
+                                      'X_CIzone':self.dimensions['X_CIzone'],
+                                      'Y_CIzone':self.dimensions['Y_CIzone'],
+                                      'X_Iwidth':self.dimensions['X_Iwidth'],
+                                      'Y_Iwidth':self.dimensions['Y_Iwidth'],
+                                      'X_Czone':self.dimensions['X_Czone'],
+                                      'Y_Czone':self.dimensions['Y_Czone']}
             elif subzone == 'C':
                 centerPoint = ((float(self.dimensions['X']) - 1) / 2.,
                                (float(self.dimensions['Y']) - 1) / 2.)  # Coordinates of center point
-                geom_kwargs['grid']['LAMzone'] = None
-                geom_kwargs['dimensions'] = {'X':self.dimensions['X_Czone'],
-                                             'Y':self.dimensions['Y_Czone']}
-            geom_kwargs['grid']['input_lon'] = self._center_lon
-            geom_kwargs['grid']['input_lat'] = self._center_lat
-            geom_kwargs['grid']['input_position'] = centerPoint
-            new_geom = fpx.geometry(**geom_kwargs)
+                newgeom.grid['LAMzone'] = None
+                newgeom.dimensions = {'X':self.dimensions['X_Czone'],
+                                      'Y':self.dimensions['Y_Czone']}
+            newgeom.grid['input_lon'] = self._center_lon
+            newgeom.grid['input_lat'] = self._center_lat
+            newgeom.grid['input_position'] = centerPoint
         else:
-            new_geom = self
+            newgeom = self
 
-        return new_geom
+        return newgeom
 
     def getcenter(self):
         """
@@ -3233,9 +3300,8 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                          'position_on_grid': '__unknown__',
                          'levels': [0]}
         vcoordinate = VGeometry(**kwargs_vcoord)
-        geometry = fpx.geometrys.almost_clone(self,
-                                              structure='H2D',
-                                              vcoordinate=vcoordinate)
+        geometry = self.deepcopy()
+        geometry.vcoordinate=vcoordinate
         f = fpx.field(structure='H2D',
                       geometry=geometry,
                       fid={'geometry':'Map Factor'},
@@ -3345,7 +3411,7 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
                               resolution=None,
                               position=None):
         """
-        Returns a projected V2DGeometry.
+        Returns a projected Geometry.
 
         :param end1: must be a tuple (lon, lat) in degrees.
         :param end2: must be a tuple (lon, lat) in degrees.
@@ -3388,17 +3454,16 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
         projection = dict(self.projection)
         projection['rotation'] = Angle(rotation, 'radians')
         dimensions = {'X':points_number, 'Y':1}
-        kwargs_geom = dict(structure='V2D',
-                           name=self.name,
-                           grid=FPDict(grid),
-                           dimensions=FPDict(dimensions),
-                           projection=FPDict(projection),
+        kwargs_geom = dict(name=self.name,
+                           grid=grid,
+                           dimensions=dimensions,
+                           projection=projection,
                            geoid=self.geoid,
                            position_on_horizontal_grid='center' if position is None else position,
                            vcoordinate=vcoordinate)
         if self.geoid:
             kwargs_geom['geoid'] = self.geoid
-        return fpx.geometry(**kwargs_geom)
+        return ProjectedGeometry(**kwargs_geom)
 
     def compass_grid(self, subzone=None, position=None):
         """
@@ -3621,23 +3686,37 @@ class D3ProjectedGeometry(D3RectangularGridGeometry):
 
     def __hash__(self):
         # known issue __eq__/__hash__ must be defined both or none, else inheritance is broken
-        return super(D3ProjectedGeometry, self).__hash__()"""
+        return super(ProjectedGeometry, self).__hash__()"""
 
 
-class D3GaussGeometry(D3Geometry):
+class GaussGeometry(Geometry):
     """
     Handles the geometry for a Global Gauss grid 3-Dimensions Field.
     """
+    _ghost_attributes = Geometry._ghost_attributes + ['_buffered_gauss_grid']
 
-    _collector = ('geometry',)
-    _footprint = dict(
-        attr=dict(
-            name=dict(
-                values=set(['rotated_reduced_gauss', 'reduced_gauss', 'regular_gauss'])),
-        )
-    )
+    def __init__(self, name, grid, dimensions, vcoordinate,
+                 position_on_horizontal_grid='__unknown__', geoid=None):
+        """
+        :param name: Name of geometrical type of representation of points on the Globe.
+                     Name must be among ['rotated_reduced_gauss', 'reduced_gauss', 'regular_gauss'
+        :param grid: Handles description of the horizontal grid.
+        :param dimensions: Handles grid dimensions.
+        :param vcoordinate: Handles vertical geometry parameters.
+        :param position_on_horizontal_grid: Position of points w/r to the horizontal.
+                                            among: ['upper-right', 'upper-left',
+                                                    'lower-left', 'lower-right',
+                                                    'center-left', 'center-right',
+                                                    'lower-center', 'upper-center',
+                                                    'center', '__unknown__']
+        :param geoid: To specify geoid shape.
+        """
+        self.add_attr_inlist('name', ['rotated_reduced_gauss', 'reduced_gauss', 'regular_gauss'])
 
-    _ghost_attributes = D3Geometry._ghost_attributes + ['_buffered_gauss_grid']
+        self.name = name
+
+        super(GaussGeometry, self).__init__(grid, dimensions, vcoordinate,
+                                            position_on_horizontal_grid, geoid)
 
     @property
     def isglobal(self):
@@ -3669,6 +3748,15 @@ class D3GaussGeometry(D3Geometry):
             self._attributes['name'] = 'reduced_gauss'
             self.grid.pop('pole_lon')
             self.grid.pop('pole_lat')
+
+    def suggested_GRIB2_sample(self, spectral=False):
+        if self.structure == 'H2D':
+            prefix = {'rotated_reduced_gauss':'reduced_rotated_gg',
+                      'reduced_gauss':'reduced_gg',
+                      'regular_gauss':'regular_gg'}[self.name]
+            return self._GRIB2_sample('sh' if spectral else prefix)
+        else:
+            raise NotImplementedError()
 
     def ij2ll(self, i, j, position=None):
         """
@@ -4213,9 +4301,8 @@ class D3GaussGeometry(D3Geometry):
                          'position_on_grid': '__unknown__',
                          'levels': [0]}
         vcoordinate = VGeometry(**kwargs_vcoord)
-        geometry = fpx.geometrys.almost_clone(self,
-                                              structure='H2D',
-                                              vcoordinate=vcoordinate)
+        geometry = self.deepcopy()
+        geometry.vcoordinate=vcoordinate
         f = fpx.field(structure='H2D',
                       geometry=geometry,
                       fid={'geometry':'Map Factor'},
@@ -4629,5 +4716,3 @@ class D3GaussGeometry(D3Geometry):
         if spectral_geometry is not None:
             write_formatted(out, "Truncation",
                             spectral_geometry['max'])
-
-footprints.collectors.get(tag='geometrys').fasttrack = ('structure', 'name')

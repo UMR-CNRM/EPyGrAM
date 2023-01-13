@@ -16,7 +16,7 @@ from bronx.graphics.axes import set_figax, set_nice_time_axis
 
 from .D3Field import D3Field
 from epygram import config, epygramError
-from epygram.geometries import PointGeometry, VGeometry
+from epygram.geometries import Geometry, VGeometry, UnstructuredGeometry
 from epygram.util import ifNone_emptydict
 
 
@@ -33,7 +33,7 @@ class PointField(D3Field):
             structure=dict(
                 values=set(['Point'])),
             geometry=dict(
-                type=PointGeometry),
+                type=Geometry),
         )
     )
 
@@ -127,13 +127,15 @@ class PointField(D3Field):
 def gimme_one_point(longitude, latitude,
                     field_args=None,
                     geometry_args=None,
-                    vertical_geometry_args=None):
+                    vertical_geometry_args=None,
+                    geometry_class=UnstructuredGeometry):
     """
     Builds an empty PointField at given (longitude, latitude).
 
     :param field_args: to be passed to field constructor, e.g. a validity
     :param geometry_args: to be passed to geometry constructor
     :param vertical_geometry_args: to be passed to vertical_geometry constructor
+    :param geometry_class: geometry class tu use (default: UnstructuredGeometry)
     """
     field_args = ifNone_emptydict(field_args)
     geometry_args = ifNone_emptydict(geometry_args)
@@ -146,15 +148,14 @@ def gimme_one_point(longitude, latitude,
     kwargs_vcoord.update(vertical_geometry_args)
     vcoordinate = VGeometry(**kwargs_vcoord)
 
-    kwargs_geom = {'structure':'Point',
-                   'name':'unstructured',
+    kwargs_geom = {'name':'unstructured',
                    'grid':{'longitudes':[longitude],
                            'latitudes':[latitude]},
                    'dimensions':{'X':1, 'Y':1},
                    'vcoordinate':vcoordinate,
                    }
     kwargs_geom.update(geometry_args)
-    geom = fpx.geometry(**kwargs_geom)
+    geom = geometry_class(**kwargs_geom)
 
     kwargs_field = {'structure':'Point',
                     'geometry':geom,

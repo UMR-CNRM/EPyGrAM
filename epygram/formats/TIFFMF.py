@@ -23,7 +23,7 @@ from epygram import config, epygramError, util
 from epygram.util import Angle
 from epygram.base import FieldSet, FieldValidity, Field
 from epygram.resources import FileResource
-from epygram.geometries import VGeometry
+from epygram.geometries import VGeometry, ProjectedGeometry
 from epygram.fields import H2DField, make_vector_field
 
 __all__ = ['TIFFMF']
@@ -413,8 +413,7 @@ class TIFFMF(FileResource):
                           'reference_lat':Angle(lat_0, 'degrees')}
             dimensions = {'X':Nx, 'Y':Ny}
             geometryname = 'polar_stereographic'
-            kwargs_geom = dict(structure='H2D',
-                               name=geometryname,
+            kwargs_geom = dict(name=geometryname,
                                grid=FPDict(grid),
                                dimensions=FPDict(dimensions),
                                projection=FPDict(projection),
@@ -422,7 +421,7 @@ class TIFFMF(FileResource):
                                position_on_horizontal_grid='center',
                                vcoordinate=vcoordinate
                                )
-            self.geometry = fpx.geometry(**kwargs_geom)
+            self.geometry = ProjectedGeometry(**kwargs_geom)
         elif projection == 3:
             # Mercator
             if dataRepresenationType != 1: raise epygramError("Projection does not match.")
@@ -462,8 +461,7 @@ class TIFFMF(FileResource):
                           'rotation': Angle(int(ort) / 1000., 'degrees')}
             dimensions = {'X':Nx, 'Y':Ny}
             geometryname = 'space_view'
-            kwargs_geom = dict(structure='H2D',
-                               name=geometryname,
+            kwargs_geom = dict(name=geometryname,
                                grid=FPDict(grid),
                                dimensions=FPDict(dimensions),
                                projection=FPDict(projection),
@@ -471,7 +469,7 @@ class TIFFMF(FileResource):
                                vcoordinate=vcoordinate,
                                geoid=geoid,
                                )
-            self.geometry = fpx.geometry(**kwargs_geom)
+            self.geometry = ProjectedGeometry(**kwargs_geom)
         elif projection == 15:
             # Cylindric ?
             raise NotImplementedError("Cylindric projection is not implemented")

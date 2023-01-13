@@ -29,8 +29,8 @@ from epygram import config, epygramError, util
 from epygram.util import Angle, separation_line, write_formatted_fields
 from epygram.base import FieldSet, FieldValidity, FieldValidityList
 from epygram.resources import FileResource
-from epygram.geometries import (D3Geometry, SpectralGeometry, VGeometry,
-                                truncation_from_gridpoint_dims)
+from epygram.geometries import (Geometry, SpectralGeometry, ProjectedGeometry, GaussGeometry,
+                                RegLLGeometry, VGeometry, AcademicGeometry, truncation_from_gridpoint_dims)
 from epygram.geometries.VGeometry import (hybridP2pressure, hybridP2altitude,
                                           pressure2altitude)
 from epygram.fields import MiscField, H2DField
@@ -68,7 +68,7 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
     Create a header and returns its name, from a geometry and (preferably)
     a SpectralGeometry.
 
-    :param geometry: a D3Geometry (or heirs) instance, from which the header is set.
+    :param geometry: a Geometry (or heirs) instance, from which the header is set.
     :param spectral_geometry: optional, a SpectralGeometry instance, from which
       truncation is set in header. If not provided, in LAM case the X/Y
       truncations are computed from field dimension, as linear grid.
@@ -76,8 +76,8 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
 
     Contains a call to arpifs4py.wfa.wfacade (wrapper for FACADE routine).
     """
-    assert isinstance(geometry, D3Geometry), \
-           "geometry must be a D3Geometry (or heirs) instance."
+    assert isinstance(geometry, Geometry), \
+           "geometry must be a Geometry (or heirs) instance."
     if spectral_geometry is not None and\
        not isinstance(spectral_geometry, SpectralGeometry):
         raise epygramError("spectral_geometry must be a SpectralGeometry" +
@@ -350,7 +350,7 @@ class FA(FileResource):
         resource.
 
         :param geometry: optional, must be a
-          :class:`epygram.geometries.D3Geometry` (or heirs) instance.
+          :class:`epygram.geometries.Geometry` (or heirs) instance.
         :param spectral_geometry: optional, must be a
           :class:`epygram.geometries.SpectralGeometry` instance.
         :param validity: optional, must be a :class:`epygram.base.FieldValidity` or
@@ -387,8 +387,8 @@ class FA(FileResource):
                 self._setrunningcompression(**self.default_compression)
         elif self.openmode == 'w':
             if geometry is not None:
-                if not isinstance(geometry, D3Geometry):
-                    raise epygramError("geometry must be a D3Geometry (or heirs) instance.")
+                if not isinstance(geometry, Geometry):
+                    raise epygramError("geometry must be a Geometry (or heirs) instance.")
                 self._attributes['headername'] = _create_header_from_geometry(geometry, spectral_geometry)
             if validity is not None:
                 if (not isinstance(validity, FieldValidity)) and (not isinstance(validity, FieldValidityList)):
@@ -730,8 +730,7 @@ class FA(FileResource):
                 datasize = GPdatasize
                 spectral_geometry = None
             # Make geometry object
-            kwargs_geom = dict(structure='H2D',
-                               name=self.geometry.name,
+            kwargs_geom = dict(name=self.geometry.name,
                                grid=copy.copy(self.geometry.grid),
                                dimensions=self.geometry.dimensions,
                                vcoordinate=vcoordinate,
@@ -740,7 +739,7 @@ class FA(FileResource):
 
             if self.geometry.projected_geometry or self.geometry.name == 'academic':
                 kwargs_geom['projection'] = self.geometry.projection
-            geometry = fpx.geometry(**kwargs_geom)
+            geometry = self.geometry.__class__(**kwargs_geom)
 
         # Get data if requested
         if getdata:
@@ -884,7 +883,7 @@ class FA(FileResource):
                 # FA need a geometry to be open. Maybe this FA has not been
                 # given one at opening. For opening it, either write a H2DField
                 # in, or call its method open(geometry, validity), geometry
-                # being a D3Geometry (or heirs), validity being a FieldValidity.
+                # being a Geometry (or heirs), validity being a FieldValidity.
                 raise epygramError("cannot write a this kind of field on a" +
                                    " non-open FA.")
             if self.validity is None:
@@ -1589,6 +1588,7 @@ class FA(FileResource):
             dimensions = {'X':KNXLON,
                           'Y':KNLATI}
             if projected_geometry:
+                geometryclass = ProjectedGeometry
                 # LAM (projection)
                 dimensions.update({'X_CIzone':KNLOPA[3] - KNLOPA[2] + 1,
                                    'Y_CIzone':KNLOPA[5] - KNLOPA[4] + 1,
@@ -1656,8 +1656,10 @@ class FA(FileResource):
                                   'reference_dX':grid['X_resolution'],
                                   'reference_dY':grid['X_resolution']}
                     geometryname = 'academic'
+                    geometryclass = AcademicGeometry
             elif not projected_geometry:
                 # regular lat/lon
+                geometryclass = RegLLGeometry
                 projection = None
                 geometryname = 'regular_lonlat'
                 if int(PSINLA[0]) == 0:
@@ -1677,6 +1679,7 @@ class FA(FileResource):
                 spectral_space = None
         else:
             # ARPEGE global
+            geometryclass = GaussGeometry
             projection = None
             # reconstruction of tables on both hemispheres
             KNLOPA = KNLOPA[:KNLATI // 2]
@@ -1716,8 +1719,7 @@ class FA(FileResource):
                               'max_zonal_wavenumber_by_lat':FPList([k for k in
                                                                     max_zonal_wavenumber_by_lat])
                               }
-        kwargs_geom = dict(structure='3D',
-                           name=geometryname,
+        kwargs_geom = dict(name=geometryname,
                            grid=grid,
                            dimensions=dimensions,
                            vcoordinate=vcoordinate_read_in_header,
@@ -1725,7 +1727,7 @@ class FA(FileResource):
                            geoid=config.FA_default_geoid)
         if projection is not None:
             kwargs_geom['projection'] = projection
-        self.geometry = fpx.geometry(**kwargs_geom)
+        self.geometry = geometryclass(**kwargs_geom)
         if spectral_space is not None:
             self.spectral_geometry = SpectralGeometry(space=spectral_space,
                                                       truncation=spectral_trunc)

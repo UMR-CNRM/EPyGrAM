@@ -169,12 +169,8 @@ class MultiValiditiesResource(Resource):
         sortedValidities = sorted(validities.keys())
 
         # Geometries
-        kwargs_geom = copy.deepcopy(fieldset[0].geometry.footprint_as_dict())
-        kwargs_geom['vcoordinate'] = VGeometry(typeoffirstfixedsurface=255, levels=[255])
-        for k, v in kwargs_geom.items():
-            if isinstance(v, FPDict):
-                kwargs_geom[k] = dict(v)
-        geometry = fpx.geometry(**kwargs_geom)
+        geometry = fieldset[0].geometry.deepcopy()
+        geometry.vcoordinate = VGeometry(typeoffirstfixedsurface=255, levels=[255])
         vcoordinate = fieldset[0].geometry.vcoordinate.deepcopy()
         vcoordinate.levels = []
         levels = fieldset[0].geometry.vcoordinate.levels
@@ -183,12 +179,8 @@ class MultiValiditiesResource(Resource):
         for field in fieldset[1:]:
             if spectral != field.spectral:
                 raise epygramError("All fields must be gridpoint or spectral")
-            kwargs_geom = copy.deepcopy(field.geometry.footprint_as_dict())
-            kwargs_geom['vcoordinate'] = VGeometry(typeoffirstfixedsurface=255, levels=[255])
-            for k, v in kwargs_geom.items():
-                if isinstance(v, FPDict):
-                    kwargs_geom[k] = dict(v)
-            geometry_field = fpx.geometry(**kwargs_geom)
+            geometry_field = field.geometry.deepcopy()
+            geometry_field.vcoordinate = VGeometry(typeoffirstfixedsurface=255, levels=[255])
             vcoordinate_field = field.geometry.vcoordinate.deepcopy()
             vcoordinate_field.levels = []
             levels_field = field.geometry.vcoordinate.levels

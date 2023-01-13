@@ -19,8 +19,7 @@ from footprints import FPList, FPDict, proxy as fpx
 from epygram import config, epygramError
 from epygram.base import FieldSet, FieldValidity
 from epygram.resources import FileResource
-from epygram.geometries import PointGeometry, VGeometry
-from epygram.geometries.H2DGeometry import H2DUnstructuredGeometry
+from epygram.geometries import UnstructuredGeometry, VGeometry
 from epygram.fields import H2DField, PointField, D3Field
 
 __all__ = ['GeoPoints']
@@ -284,28 +283,24 @@ class GeoPoints(FileResource):
 
         if footprints_builder:
             field_builder = fpx.field
-            geom_builder = fpx.geometry
         else:
             if field_structure == 'Point':
                 field_builder = PointField
-                geom_builder = PointGeometry
             else:
                 field_builder = H2DField
-                geom_builder = H2DUnstructuredGeometry
 
         if 'LEVEL' in self.columns:
             specialValues_list['LEVEL'] = [float(level)
                                            for level in specialValues_list['LEVEL']]
         vcoordinate = VGeometry(typeoffirstfixedsurface=255,
                                 levels=[255] if 'LEVEL' not in self.columns else specialValues_list['LEVEL'])
-        geometry = geom_builder(structure=field_structure,
-                                name='unstructured',
-                                dimensions={'X':len(values), 'Y':1},
-                                vcoordinate=vcoordinate,
-                                grid={'longitudes':longitudes,
-                                      'latitudes':latitudes},
-                                position_on_horizontal_grid='center'
-                                )
+        geometry = UnstructuredGeometry(name='unstructured',
+                                        dimensions={'X':len(values), 'Y':1},
+                                        vcoordinate=vcoordinate,
+                                        grid={'longitudes':longitudes,
+                                              'latitudes':latitudes},
+                                        position_on_horizontal_grid='center'
+                                        )
         if 'DATE' in self.columns and 'TIME' in self.columns:
             if specialValues_cst['DATE'] and not specialValues_cst['TIME']:
                 specialValues_cst['DATE'] = False

@@ -96,13 +96,14 @@ class CheckAttribute(object):
         """
         assert isinstance(values, list), "*values* must be a list"
         return self.add_attr(name, lambda x: x in values,
-                             "*{name}* must be a among {values}".format(name=name,
-                                                                        values=str(values)))
+                             "*{name}* (={value}) must be a among {values}".format(name=name,
+                                                                                   values=str(values),
+                                                                                   value='{value}'))
 
     def add_attr_class(self, name, cls):
         """
         :param name: name of the attribute
-        :param cls: 
+        :param cls: authorised class
         The method adds a control to check if the attribute is an instance of *cls*
         """
         return self.add_attr(name, lambda x: isinstance(x, cls),
@@ -114,7 +115,7 @@ class CheckAttribute(object):
         if not hasattr(self, '_epyattr'):
             super().__setattr__('_epyattr', {})
         if name in self._epyattr:
-            assert self._epyattr[name][0](value), self._epyattr[name][1].format(cls=type(value).__name__)
+            assert self._epyattr[name][0](value), self._epyattr[name][1].format(cls=type(value).__name__, value=value)
         super().__setattr__(name, value)
 
 
