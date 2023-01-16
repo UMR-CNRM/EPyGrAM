@@ -25,7 +25,7 @@ from .util import (Ezone_minimum_width, maxdims_security_barrier,
 from epygram import epygramError, epylog
 from epygram.config import epsilon, margin_points_within_Czone
 from epygram.util import Angle
-from epygram.geometries.SpectralGeometry import nearest_greater_FFT992compliant_int
+from epygram.geometries.SpectralGeometry import SpectralGeometry, nearest_greater_FFT992compliant_int
 from epygram.geometries import ProjectedGeometry, RegLLGeometry
 
 
@@ -452,9 +452,9 @@ def build_geom_from_e923nam(nam):
                          **kwargs
                          )
     if 'NMSMAX' in nam['NAMDIM'].keys() and 'NSMAX' in nam['NAMDIM'].keys():
-        spgeom = fpx.geometry(space='bi-fourier',
-                              truncation=dict(in_X=nam['NAMDIM']['NMSMAX'],
-                                              in_Y=nam['NAMDIM']['NSMAX']))
+        spgeom = SpectralGeometry(space='bi-fourier',
+                                  truncation=dict(in_X=nam['NAMDIM']['NMSMAX'],
+                                                  in_Y=nam['NAMDIM']['NSMAX']))
     else:
         spgeom = None
     return (geom, spgeom)

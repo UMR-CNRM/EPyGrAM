@@ -12,7 +12,6 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 import numpy
 import os
 
-from footprints import FootprintBase, FPDict
 from bronx.system import memory
 
 from epygram import config, epygramError, epylog
@@ -140,29 +139,27 @@ def complete_gridpoint_dimensions(longitudes, latitudes,
     return longitudes, latitudes
 
 
-class SpectralGeometry(RecursiveObject, FootprintBase):
+class SpectralGeometry(RecursiveObject):
     """Handles the spectral geometry and transforms for a H2DField."""
-
-    _collector = ('geometry',)
-    _footprint = dict(
-        attr=dict(
-            space=dict(
-                access='rxx',
-                values=['legendre', 'bi-fourier', 'fourier'],
-                info='Name of spectral space.'),
-            truncation=dict(
-                type=FPDict,
-                access='rwx',
-                info='Handles the spectral truncation parameters.'),
-        )
-    )
 
     # in order to avoid calling etrans_inq for large truncations
     _usual_SPdatasize_for_global_trunc = {'triangular':{1198:719400,
                                                         1798:1619100}}
 
-    def __init__(self, *args, **kwargs):
-        super(SpectralGeometry, self).__init__(*args, **kwargs)
+    def __init__(self, space, truncation):
+        """
+        :param space: Name of spectral space.
+                      (among ['legendre', 'bi-fourier', 'fourier'])
+        :param truncation: Handles the spectral truncation parameters.
+        """
+
+        self.add_attr_inlist('space', ['legendre', 'bi-fourier', 'fourier'])
+        self.add_attr_dict('truncation')
+
+        self.space = space
+        self.truncation = truncation
+
+        super(SpectralGeometry, self).__init__()
         if os.name == 'posix':
             meminfo = memory.LinuxMemInfo()
         else:
