@@ -114,13 +114,12 @@ class GetFile(object):
             if 'date' in vortexArgs:
                 vortexArgs['date'] = util.datex(vortexArgs['date'].encode())
             if 'term' in vortexArgs:
-                print(vortexArgs['term']) #.encode())
                 vortexArgs['term'] = rangex(vortexArgs['term']) #.encode())
             if 'month' in vortexArgs:
                 vortexArgs['month'] = rangex(vortexArgs['month'].encode())
             if 'member' in vortexArgs:
                 memberstr = '_mb[member]'
-                vortexArgs['member'] = rangex(vortexArgs['member'].encode())
+                vortexArgs['member'] = rangex(vortexArgs['member']) #.encode())
             else:
                 memberstr = ''
 
