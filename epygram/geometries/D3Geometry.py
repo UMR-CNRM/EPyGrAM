@@ -4592,8 +4592,8 @@ class D3GaussGeometry(D3Geometry):
             result = list(result)  # We transform into list to be able to modify the length
             for ipt, points in enumerate(result):
                 if request.get('shape', 'circle') == 'circle':
-                    for i,j in points:
-                        print(i,j,self.distance((lon[ipt], lat[ipt]), self.ij2ll(i, j)))
+                    #for i,j in points:
+                    #    print(i,j,self.distance((lon[ipt], lat[ipt]), self.ij2ll(i, j)))
                     result[ipt] = [(i, j)
                                    for (i, j) in points
                                    if self.distance((lon[ipt], lat[ipt]), self.ij2ll(i, j)) <= request['radius']]
