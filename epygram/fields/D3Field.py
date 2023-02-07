@@ -923,7 +923,7 @@ class _D3CommonField(Field):
                     zoomvals = []
                     for i in flat_indexes:
                         zoomvals.append(vals[i])
-                    data[t, k, :, :] = numpy.array(zoomvals).reshape(shp[2:])
+                    data[t, k, :, :] = numpy.ma.array(zoomvals).reshape(shp[2:])
 
         fid = {k:v for k, v in self.fid.items()}
         for k, v in fid.items():
