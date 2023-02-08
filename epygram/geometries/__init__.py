@@ -9,10 +9,31 @@ Contains all geometries classes.
 
 from __future__ import print_function, absolute_import, unicode_literals, division
 
-from .Geometry import (Geometry, RectangularGridGeometry, ProjectedGeometry,
-                       UnstructuredGeometry, AcademicGeometry, GaussGeometry,
-                       gauss_latitudes, RegLLGeometry, RotLLGeometry,
-                       _need_pyproj_geod)
+import numpy
+
+from bronx.syntax.decorators import nicedeco
+
+@nicedeco
+def _need_pyproj_geod(mtd):
+    """
+    Decorator for Geometry object: if the method needs a pyproj.Geod
+    object to be set.
+    """
+    def with_geod(self, *args, **kwargs):
+        if not hasattr(self, '_pyproj_geod'):
+            self._set_geoid()
+        return mtd(self, *args, **kwargs)
+    return with_geod
+
+from .AbstractGeometry import Geometry, RectangularGridGeometry
+
+from .ProjectedGeometry import ProjectedGeometry
+from .UnstructuredGeometry import UnstructuredGeometry
+from .AcademicGeometry import AcademicGeometry
+from .GaussGeometry import GaussGeometry
+from .RegLLGeometry import RegLLGeometry
+from .RotLLGeometry import RotLLGeometry
+
 from .VGeometry import VGeometry
 from .SpectralGeometry import SpectralGeometry, truncation_from_gridpoint_dims
 from . import domain_making
@@ -36,3 +57,8 @@ vertical_coordinates = {'Pressure':Pressure,
 def build_surf_VGeometry():
     """Build a surface vertical geometry."""
     return VGeometry(levels=[0], typeoffirstfixedsurface=1)
+
+def gauss_latitudes(nlat):
+    """Compute the Gauss latitudes for a **nlat** points grid."""
+    x, _ = numpy.polynomial.legendre.leggauss(nlat)
+    return numpy.degrees(numpy.arcsin(x[::-1]))

@@ -21,7 +21,7 @@ def activate():
     from epygram._plugins.util import notify_doc_requires_plugin
     notify_doc_requires_plugin([default_cartopy_CRS],
                                plugin_name)
-    from epygram.geometries.Geometry import RectangularGridGeometry
+    from epygram.geometries import RectangularGridGeometry
     # defaults arguments for cartopy plots
     RectangularGridGeometry.default_cartopy_CRS = default_cartopy_CRS
 
