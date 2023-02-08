@@ -35,7 +35,9 @@ from epygram.resources import FileResource
 from epygram.util import (Angle, RecursiveObject,
                           separation_line, write_formatted_dict)
 from epygram.fields import H2DField
-from epygram.geometries.H2DGeometry import gauss_latitudes
+from epygram.geometries import (VGeometry, gauss_latitudes,
+                                RegLLGeometry, RotLLGeometry,
+                                ProjectedGeometry, GaussGeometry)
 from epygram.geometries.VGeometry import pressure2altitude, altitude2height, height2altitude
 from epygram.geometries.SpectralGeometry import (SpectralGeometry,
                                                  gridpoint_dims_from_truncation,
@@ -1686,17 +1688,17 @@ class GRIBmessage(RecursiveObject, dict):
         """
         geoid = self._read_earth_geometry()
         vcoordinate = self._read_vertical_geometry()
-        geometryname, dimensions, grid, projection = self._read_horizontal_geometry()
+        geometryname, geometryclass, dimensions, grid, projection = self._read_horizontal_geometry()
         # Make geometry object
-        kwargs_geom = dict(structure='H2D',
-                           name=geometryname,
+        kwargs_geom = dict(name=geometryname,
                            grid=grid,
                            dimensions=dimensions,
                            vcoordinate=vcoordinate,
-                           projection=projection,
                            position_on_horizontal_grid='center',
                            geoid=geoid)
-        geometry = fpx.geometry(**kwargs_geom)
+        if projection is not None:
+            kwargs_geom['projection'] = projection
+        geometry = geometryclass(**kwargs_geom)
         return geometry
 
     def _read_vertical_geometry(self):
@@ -1736,6 +1738,7 @@ class GRIBmessage(RecursiveObject, dict):
                 input_position = (dimensions['X'] - 1, 0)
         # ----------------------------------------------------------------------
         if self['gridType'] == 'regular_ll':
+            geometryclass = RegLLGeometry
             geometryname = 'regular_lonlat'
             grid = {'input_lon':Angle(self['longitudeOfFirstGridPointInDegrees'], 'degrees'),
                     'input_lat':Angle(self['latitudeOfFirstGridPointInDegrees'], 'degrees'),
@@ -1748,6 +1751,7 @@ class GRIBmessage(RecursiveObject, dict):
             projection = None
         # ----------------------------------------------------------------------
         elif self['gridType'] == 'rotated_ll':
+            geometryclass = RotLLGeometry
             geometryname = 'rotated_lonlat'
             grid = {'input_lon':Angle(self['longitudeOfFirstGridPointInDegrees'], 'degrees'),
                     'input_lat':Angle(self['latitudeOfFirstGridPointInDegrees'], 'degrees'),
@@ -1761,6 +1765,7 @@ class GRIBmessage(RecursiveObject, dict):
             projection = None
         # ----------------------------------------------------------------------
         elif self['gridType'] in ('polar_stereographic',):
+            geometryclass = ProjectedGeometry
             geometryname = self['gridType']
             if self['projectionCentreFlag'] == 0:
                 lat_0 = 90.
@@ -1793,6 +1798,7 @@ class GRIBmessage(RecursiveObject, dict):
                     'LAMzone':None}
         # ----------------------------------------------------------------------
         elif self['gridType'] in ('lambert',):
+            geometryclass = ProjectedGeometry
             geometryname = self['gridType']
             lon_0 = self['LoVInDegrees']
             lat_0 = self['LaDInDegrees']
@@ -1813,6 +1819,7 @@ class GRIBmessage(RecursiveObject, dict):
                     'LAMzone':None}
         # ----------------------------------------------------------------------
         elif self['gridType'] in ('mercator',):
+            geometryclass = ProjectedGeometry
             geometryname = self['gridType']
             lat_ts = self['LaDInDegrees']
             projection = {'reference_lon':Angle(0., 'degrees'),
@@ -1828,6 +1835,7 @@ class GRIBmessage(RecursiveObject, dict):
                     'LAMzone':None}
         # ----------------------------------------------------------------------
         elif 'gg' in self['gridType']:
+            geometryclass = GaussGeometry
             projection = None
             latitudes = gauss_latitudes(self['Nj'])
             grid = {'latitudes':FPList([Angle(l, 'degrees') for l in latitudes])}
@@ -1872,6 +1880,7 @@ class GRIBmessage(RecursiveObject, dict):
                                         for l in latitudes]),
                     'dilatation_coef':1.}
             dimensions = gpdims
+            geometryclass = GaussGeometry
             geometryname = 'reduced_gauss'
             # try to have roughly the same zonal resolution as on equator
             lon_number_by_lat = 2 * gpdims['lat_number'] * numpy.cos(numpy.radians(latitudes))
@@ -1882,7 +1891,7 @@ class GRIBmessage(RecursiveObject, dict):
         else:
             raise NotImplementedError("gridType == {} : not yet !".
                                       format(self['gridType']))
-        return geometryname, dimensions, grid, projection
+        return geometryname, geometryclass, dimensions, grid, projection
 
     def _read_spectralgeometry(self):
         """
@@ -2037,9 +2046,7 @@ class GRIBmessage(RecursiveObject, dict):
 
     def _GRIB2_read_vertical_geometry(self):
         """Read vertical part of geometry in GRIB2."""
-        kwargs_vcoord = dict(
-            structure='V',
-            position_on_grid='mass')
+        kwargs_vcoord = dict(position_on_grid='mass')
         kwargs_vcoord['typeoffirstfixedsurface'] = self.get('typeOfFirstFixedSurface', 255)
         if kwargs_vcoord['typeoffirstfixedsurface'] != 255:
             first_level = self['scaledValueOfFirstFixedSurface'] * 10**(-self['scaleFactorOfFirstFixedSurface'])
@@ -2053,11 +2060,11 @@ class GRIBmessage(RecursiveObject, dict):
             kwargs_vcoord['bottomlevel'] = second_level
         if kwargs_vcoord['typeoffirstfixedsurface'] == 119:
             kwargs_vcoord['grid'] = self._read_hybridP_levels()
-        return fpx.geometry(**kwargs_vcoord)
+        return VGeometry(**kwargs_vcoord)
 
     def _GRIB1_read_vertical_geometry(self):
         """Read vertical part of geometry in GRIB1."""
-        kwargs_vcoord = {'structure': 'V'}
+        kwargs_vcoord = {}
         kwargs_vcoord['position_on_grid'] = 'mass'
         kwargs_vcoord['typeoffirstfixedsurface'] = onetotwo.get(self['indicatorOfTypeOfLevel'], 255)
         kwargs_vcoord['levels'] = [self['level']]
@@ -2066,7 +2073,7 @@ class GRIBmessage(RecursiveObject, dict):
             kwargs_vcoord['bottomlevel'] = self['bottomLevel']
         if kwargs_vcoord['typeoffirstfixedsurface'] == 119:
             kwargs_vcoord['grid'] = self._read_hybridP_levels()
-        return fpx.geometry(**kwargs_vcoord)
+        return VGeometry(**kwargs_vcoord)
 
     # Utilities methods --------------------------------------------------------
 
@@ -2979,8 +2986,6 @@ class GRIB(FileResource):
 
         if mode == 'one+list':
             onefield = self.get_message_at_position(0).as_field(getdata=False)
-            g0 = onefield.geometry.footprint_as_dict()
-            g0.pop('vcoordinate')
             while True:
                 m = self.iter_messages()
                 if m is None:
