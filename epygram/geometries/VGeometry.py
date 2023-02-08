@@ -43,6 +43,8 @@ class VGeometry(RecursiveObject):
     """
 
     def __init__(self, typeoffirstfixedsurface, levels,
+                 typeofsecondfixedsurface=None,
+                 toplevel=None, bottomlevel=None,
                  grid=None, position_on_grid='__unknown__'):
         """
         :param str structure: must be 'V'
@@ -54,11 +56,14 @@ class VGeometry(RecursiveObject):
                                      (among ['mass', 'flux', '__unknown__'])
         """
         self.add_attr_int('typeoffirstfixedsurface')
+        self.add_attr_int('typeofsecondfixedsurface')
         self.add_attr_list('levels')
         self.add_attr_dict('grid')
         self.add_attr_inlist('position_on_grid', ['mass', 'flux', '__unknown__'])
 
         self.typeoffirstfixedsurface = typeoffirstfixedsurface
+        if typeofsecondfixedsurface is not None:
+            self.typeofsecondfixedsurface = typeofsecondfixedsurface
         self.levels = levels
         self.grid = ifNone_emptydict(grid)
         self.position_on_grid = position_on_grid
