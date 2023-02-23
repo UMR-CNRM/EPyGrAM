@@ -17,8 +17,6 @@ from distutils.version import LooseVersion
 import footprints
 from footprints import FPDict, FPList
 import taylorism
-assert LooseVersion(taylorism.__version__) >= LooseVersion('1.0.7'), \
-    'Version of package taylorism (here {}) need to be >= 1.0.7'.format(taylorism.__version__)
 from bronx.fancies.display import printstatus
 from bronx.syntax.parsing import str2dict
 
