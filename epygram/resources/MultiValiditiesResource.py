@@ -17,6 +17,7 @@ from footprints import FPList, FPDict, proxy as fpx
 from epygram import epygramError
 from epygram.util import fmtfid
 from epygram.base import Resource, FieldSet, FieldValidityList
+from epygram.geometries import VGeometry
 from . import open_and_close_resource
 
 
@@ -168,36 +169,20 @@ class MultiValiditiesResource(Resource):
         sortedValidities = sorted(validities.keys())
 
         # Geometries
-        kwargs_geom = copy.deepcopy(fieldset[0].geometry.footprint_as_dict())
-        kwargs_geom['vcoordinate'] = fpx.geometry(structure='V', typeoffirstfixedsurface=255, levels=[255])
-        for k, v in kwargs_geom.items():
-            if isinstance(v, FPDict):
-                kwargs_geom[k] = dict(v)
-        geometry = fpx.geometry(**kwargs_geom)
-        kwargs_vcoord = copy.deepcopy(fieldset[0].geometry.vcoordinate.footprint_as_dict())
-        kwargs_vcoord['grid'] = dict(kwargs_vcoord['grid'])
-#        if kwargs_vcoord['grid'].get('gridlevels'):
-#            kwargs_vcoord['grid']['gridlevels'] = list(kwargs_vcoord['grid']['gridlevels'])
-        kwargs_vcoord['levels'] = []
-        vcoordinate = fpx.geometry(**kwargs_vcoord)
+        geometry = fieldset[0].geometry.deepcopy()
+        geometry.vcoordinate = VGeometry(typeoffirstfixedsurface=255, levels=[255])
+        vcoordinate = fieldset[0].geometry.vcoordinate.deepcopy()
+        vcoordinate.levels = []
         levels = fieldset[0].geometry.vcoordinate.levels
         joinLevels = False
         spectral = fieldset[0].spectral
         for field in fieldset[1:]:
             if spectral != field.spectral:
                 raise epygramError("All fields must be gridpoint or spectral")
-            kwargs_geom = copy.deepcopy(field.geometry.footprint_as_dict())
-            kwargs_geom['vcoordinate'] = fpx.geometry(structure='V', typeoffirstfixedsurface=255, levels=[255])
-            for k, v in kwargs_geom.items():
-                if isinstance(v, FPDict):
-                    kwargs_geom[k] = dict(v)
-            geometry_field = fpx.geometry(**kwargs_geom)
-            kwargs_vcoord = copy.deepcopy(field.geometry.vcoordinate.footprint_as_dict())
-            kwargs_vcoord['grid'] = dict(kwargs_vcoord['grid'])
-#            if kwargs_vcoord['grid'].get('gridlevels'):
-#                kwargs_vcoord['grid']['gridlevels'] = FPList(kwargs_vcoord['grid']['gridlevels'])
-            kwargs_vcoord['levels'] = []
-            vcoordinate_field = fpx.geometry(**kwargs_vcoord)
+            geometry_field = field.geometry.deepcopy()
+            geometry_field.vcoordinate = VGeometry(typeoffirstfixedsurface=255, levels=[255])
+            vcoordinate_field = field.geometry.vcoordinate.deepcopy()
+            vcoordinate_field.levels = []
             levels_field = field.geometry.vcoordinate.levels
             if geometry != geometry_field:
                 raise epygramError("All resources must return fields with the same geometry.")
@@ -211,7 +196,7 @@ class MultiValiditiesResource(Resource):
                         raise epygramError("All resources must return fields with the same vertical geometry length.")
                     joinLevels = True
 
-        kwargs_vcoord = copy.deepcopy(fieldset[0].geometry.vcoordinate.footprint_as_dict())
+        geometry.vcoordinate = fieldset[0].geometry.vcoordinate.deepcopy()
         if joinLevels:
             if spectral:
                 raise epygramError("Not sure how to merge vertical levels when spectral")
@@ -223,10 +208,7 @@ class MultiValiditiesResource(Resource):
                 if isinstance(mylevel, numpy.ma.masked_array):
                     concat = numpy.ma.concatenate
                 newLevels.append(mylevel)
-            kwargs_vcoord['levels'] = list(concat(newLevels, axis=0).swapaxes(0, 1).squeeze())
-            geometry.vcoordinate = fpx.geometry(**kwargs_vcoord)
-        else:
-            geometry.vcoordinate = fpx.geometry(**kwargs_vcoord)
+            geometry.vcoordinate.levels = list(concat(newLevels, axis=0).swapaxes(0, 1).squeeze())
 
         # Other metadata
         kwargs_field = copy.deepcopy(fieldset[0].footprint_as_dict())

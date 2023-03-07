@@ -17,7 +17,7 @@ from bronx.graphics.axes import set_figax, set_nice_time_axis
 
 from epygram import config, util, epygramError
 from epygram.base import FieldSet
-from epygram.geometries import H1DGeometry
+from epygram.geometries import Geometry
 from .D3Field import D3Field
 
 epylog = footprints.loggers.getLogger(__name__)
@@ -41,7 +41,7 @@ class H1DField(D3Field):
             structure=dict(
                 values=set(['H1D'])),
             geometry=dict(
-                type=H1DGeometry),
+                type=Geometry),
         )
     )
 

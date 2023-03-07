@@ -8,16 +8,16 @@ Contains all classes needed to plot fields using cartopy.
 """
 from __future__ import print_function, absolute_import, unicode_literals, division
 
-from . import (H2DField, H2DVectorField, D3AcademicGeometry, D3GaussGeometry,
-               D3Geometry, D3ProjectedGeometry, D3RectangularGeometry)
+from . import (H2DField, H2DVectorField, AcademicGeometry, GaussGeometry,
+               Geometry, ProjectedGeometry, RectangularGeometry)
 
 
 def activate():
     """Activate plugin."""
     H2DField.activate()
     H2DVectorField.activate()
-    D3AcademicGeometry.activate()
-    D3GaussGeometry.activate()
-    D3Geometry.activate()
-    D3ProjectedGeometry.activate()
-    D3RectangularGeometry.activate()
+    AcademicGeometry.activate()
+    GaussGeometry.activate()
+    Geometry.activate()
+    ProjectedGeometry.activate()
+    RectangularGeometry.activate()

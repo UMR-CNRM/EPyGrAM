@@ -12,7 +12,7 @@ then
 fi
 
 cd $INPUTS_DIR
-ftp -i -v -n $HOST $PORT << EOF
+ftp -p -i -v -n $HOST $PORT << EOF
 quote USER $LOGIN
 quote PASS $PASSWORD
 bin

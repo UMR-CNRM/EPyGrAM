@@ -11,7 +11,7 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 
 import math
 
-from footprints import proxy as fpx
+from epygram.geometries import VGeometry
 
 # parameters
 #: minimum width of Extension zone
@@ -24,10 +24,7 @@ threshold_pole_distance_lambert = 1.
 default_Izone_width_in_m = 20000.
 
 maxdims_security_barrier = 10000
-vkw = {'structure': 'V',
-       'typeoffirstfixedsurface': 1,
-       'levels': [1]}
-vgeom = fpx.geometry(**vkw)
+vgeom = VGeometry(typeoffirstfixedsurface= 1, levels=[1])
 projections_s2g = {'L':'lambert', 'M':'mercator', 'PS':'polar_stereographic'}
 projections_g2p = {'lambert':'Lambert (conformal conic)', 'mercator':'Mercator', 'polar_stereographic':'Polar Stereographic'}
 projections_s2p = {'L':'Lambert (conformal conic)', 'M':'Mercator', 'PS':'Polar Stereographic'}

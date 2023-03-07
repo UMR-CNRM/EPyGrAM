@@ -4,7 +4,7 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 """
-Extend D3Geometry with plotting methods using cartopy.
+Extend Geometry with plotting methods using cartopy.
 """
 from __future__ import print_function, absolute_import, unicode_literals, division
 
@@ -25,10 +25,10 @@ def activate():
     from epygram._plugins.util import notify_doc_requires_plugin
     notify_doc_requires_plugin([default_cartopy_CRS, get_cartopy_extent],
                                plugin_name)
-    from epygram.geometries.D3Geometry import D3ProjectedGeometry
+    from epygram.geometries import ProjectedGeometry
     # defaults arguments for cartopy plots
-    D3ProjectedGeometry.default_cartopy_CRS = default_cartopy_CRS
-    D3ProjectedGeometry.get_cartopy_extent = get_cartopy_extent
+    ProjectedGeometry.default_cartopy_CRS = default_cartopy_CRS
+    ProjectedGeometry.get_cartopy_extent = get_cartopy_extent
 
 
 def default_cartopy_CRS(self):

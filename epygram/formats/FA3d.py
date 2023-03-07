@@ -310,12 +310,9 @@ class FA3d(FileResource):
             del vcoordinate.levels[:]
             vcoordinate.levels.extend(sorted(levels))
 
-            kwargs_geom = fieldset[0].geometry._attributes
-            kwargs_geom['structure'] = '3D'
-
             kwargs_field = fieldset[0]._attributes
             kwargs_field['structure'] = '3D'
-            kwargs_field['geometry'] = fpx.geometry(**kwargs_geom)
+            kwargs_field['geometry'] = fieldset[0].geometry.deepcopy()
 
             field = fpx.field(**kwargs_field)
 

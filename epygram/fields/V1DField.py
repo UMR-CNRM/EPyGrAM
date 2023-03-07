@@ -18,7 +18,7 @@ from bronx.graphics.axes import set_figax, set_nice_time_axis
 
 from .D3Field import _D3CommonField, D3Field, D3VirtualField
 from epygram import epygramError, config, util
-from epygram.geometries import V1DGeometry
+from epygram.geometries import Geometry
 
 epylog = footprints.loggers.getLogger(__name__)
 
@@ -537,7 +537,7 @@ class V1DField(V1DCommonField, D3Field):
             structure=dict(
                 values=set(['V1D'])),
             geometry=dict(
-                type=V1DGeometry,
+                type=Geometry,
                 access='rwx'),
         )
     )

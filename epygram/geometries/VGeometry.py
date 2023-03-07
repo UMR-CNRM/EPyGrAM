@@ -12,13 +12,15 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 import numpy
 import sys
 
-from footprints import FootprintBase, FPDict, FPList, proxy as fpx
+from footprints import proxy as fpx
 
 from epygram import profiles, epygramError, config
-from epygram.util import RecursiveObject, write_formatted, separation_line
+from epygram.util import (RecursiveObject, write_formatted, separation_line,
+                          ifNone_emptydict)
+from epygram.geometries import VGeometry
 
 
-class VGeometry(RecursiveObject, FootprintBase):
+class VGeometry(RecursiveObject):
     """
     Handles the vertical geometry for fields.
 
@@ -40,31 +42,31 @@ class VGeometry(RecursiveObject, FootprintBase):
     It is not allowed to have a level varying in time and constant on the geographic domain.
     """
 
-    _collector = ('geometry',)
-    _footprint = dict(
-        attr=dict(
-            structure=dict(
-                values=set(['V'])),
-            typeoffirstfixedsurface=dict(
-                info="Type of horizontal level, as of GRIB2 norm \
-                      (inspired from GRIB_API).",
-                type=int),
-            levels=dict(
-                type=FPList,
-                info="Effective levels on which data is available."),
-            grid=dict(
-                type=FPDict,
-                optional=True,
-                default=FPDict({}),
-                info="Handles description of the vertical grid."),
-            position_on_grid=dict(
-                optional=True,
-                access='rwx',
-                info="Position of points w/r to the vertical grid.",
-                values=set(['mass', 'flux', '__unknown__']),
-                default='__unknown__')
-        )
-    )
+    def __init__(self, typeoffirstfixedsurface, levels,
+                 typeofsecondfixedsurface=None,
+                 toplevel=None, bottomlevel=None,
+                 grid=None, position_on_grid='__unknown__'):
+        """
+        :param str structure: must be 'V'
+        :param int typeoffirstfixedsurface: Type of horizontal level, as of GRIB2 norm
+                                            (inspired from GRIB_API).
+        :param list levels: Effective levels on which data is available.
+        :param dict grid: Handles description of the vertical grid.
+        :param str position_on_grid: Position of points w/r to the vertical grid.
+                                     (among ['mass', 'flux', '__unknown__'])
+        """
+        self.add_attr_int('typeoffirstfixedsurface')
+        self.add_attr_int('typeofsecondfixedsurface')
+        self.add_attr_list('levels')
+        self.add_attr_dict('grid')
+        self.add_attr_inlist('position_on_grid', ['mass', 'flux', '__unknown__'])
+
+        self.typeoffirstfixedsurface = typeoffirstfixedsurface
+        if typeofsecondfixedsurface is not None:
+            self.typeofsecondfixedsurface = typeofsecondfixedsurface
+        self.levels = levels
+        self.grid = ifNone_emptydict(grid)
+        self.position_on_grid = position_on_grid
 
     def what(self, out=sys.stdout, levels=True):
         """
@@ -160,13 +162,12 @@ def hybridP2pressure(hybridP_geometry, Psurf, vertical_mean,
     else:
         raise epygramError("gridposition != 'mass' or 'flux'.")
     levels = [l / 100. for l in levels.squeeze()]
-    kwargs_vcoord = {'structure':'V',
-                     'typeoffirstfixedsurface': 100,
+    kwargs_vcoord = {'typeoffirstfixedsurface': 100,
                      'position_on_grid': hybridP_geometry.position_on_grid,
                      # 'grid': {'gridlevels':levels},
                      'levels': levels
                      }
-    return fpx.geometry(**kwargs_vcoord)
+    return VGeometry(**kwargs_vcoord)
 
 
 def hybridH2pressure(hybridH_geometry, P, position):
@@ -198,13 +199,12 @@ def hybridH2pressure(hybridH_geometry, P, position):
         raise NotImplementedError("grid positions can only be 'mass' or 'flux'.")
     levels = levels[numpy.array(hybridH_geometry.levels) - 1]
     levels = [l / 100 for l in levels.squeeze()]
-    kwargs_vcoord = {'structure':'V',
-                     'typeoffirstfixedsurface': 100,
+    kwargs_vcoord = {'typeoffirstfixedsurface': 100,
                      'position_on_grid': hybridH_geometry.position_on_grid,
                      # 'grid':{'gridlevels':levels},
                      'levels': levels
                      }
-    return fpx.geometry(**kwargs_vcoord)
+    return VGeometry(**kwargs_vcoord)
 
 
 def hybridP2altitude(hybridP_geometry, R, T, Psurf, vertical_mean,
@@ -247,13 +247,12 @@ def hybridP2altitude(hybridP_geometry, R, T, Psurf, vertical_mean,
     elif hybridP_geometry.grid['ABgrid_position'] == 'mass':
         raise NotImplementedError("hybrid-pressure grid at mass-levels.")
     levels = levels[numpy.array(hybridP_geometry.levels) - 1]
-    kwargs_vcoord = {'structure':'V',
-                     'typeoffirstfixedsurface': coordinate,
+    kwargs_vcoord = {'typeoffirstfixedsurface': coordinate,
                      'position_on_grid': hybridP_geometry.position_on_grid,
                      # 'grid':{'gridlevels':list(levels)},
                      'levels': list(levels)
                      }
-    return fpx.geometry(**kwargs_vcoord)
+    return VGeometry(**kwargs_vcoord)
 
 
 def hybridH2altitude(hybridH_geometry, Zsurf,
@@ -292,13 +291,12 @@ def hybridH2altitude(hybridH_geometry, Zsurf,
     else:
         raise epygramError("gridposition != 'mass' or 'flux'.")
     levels = levels[numpy.array(hybridH_geometry.levels)]
-    kwargs_vcoord = {'structure':'V',
-                     'typeoffirstfixedsurface': 103 if conv2height else 102,
+    kwargs_vcoord = {'typeoffirstfixedsurface': 103 if conv2height else 102,
                      'position_on_grid': hybridH_geometry.position_on_grid,
                      # 'grid':{'gridlevels':list(levels)},
                      'levels': list(levels)
                      }
-    return fpx.geometry(**kwargs_vcoord)
+    return VGeometry(**kwargs_vcoord)
 
 
 def height2altitude(height_geometry, Zsurf):
@@ -315,12 +313,11 @@ def height2altitude(height_geometry, Zsurf):
     levels = list(height_geometry.levels)
     for k in range(len(levels)):
         levels[k] = levels[k] + Zsurf
-    kwargs_vcoord = {'structure':'V',
-                     'typeoffirstfixedsurface': 102,
+    kwargs_vcoord = {'typeoffirstfixedsurface': 102,
                      'position_on_grid': height_geometry.position_on_grid,
                      'levels': levels
                      }
-    return fpx.geometry(**kwargs_vcoord)
+    return VGeometry(**kwargs_vcoord)
 
 
 def altitude2height(altitude_geometry, Zsurf):
@@ -337,12 +334,11 @@ def altitude2height(altitude_geometry, Zsurf):
     levels = list(altitude_geometry.levels)
     for k in range(len(levels)):
         levels[k] = levels[k] - Zsurf
-    kwargs_vcoord = {'structure':'V',
-                     'typeoffirstfixedsurface': 103,
+    kwargs_vcoord = {'typeoffirstfixedsurface': 103,
                      'position_on_grid': altitude_geometry.position_on_grid,
                      'levels': levels
                      }
-    return fpx.geometry(**kwargs_vcoord)
+    return VGeometry(**kwargs_vcoord)
 
 
 def pressure2altitude(pressure_geometry, R, T, vertical_mean,
@@ -384,21 +380,18 @@ def pressure2altitude(pressure_geometry, R, T, vertical_mean,
         coordinate = 103
     else:
         coordinate = 102
+    geom = pressure_geometry.deppcopy()
     grid = pressure_geometry.grid.copy()
     grid.update({'gridposition':pressure_geometry.gridposition,
                  'levels':list(levels)})
-    return fpx.geometry(structure='V1D',
-                        coordinate=coordinate,
-                        grid=grid,
-                        hlocation=pressure_geometry.hlocation,
-                        position_on_grid=pressure_geometry.position_on_grid)
+    return geom
 
 
 def hybridP_coord_and_surfpressure_to_3D_pressure_field(
         hybridP_geometry, Psurf, vertical_mean,
         gridposition=None):
     """
-    From a hybridP Vgeometry and a surface pressure (in Pa) H2D field,
+    From a hybridP VGeometry and a surface pressure (in Pa) H2D field,
     compute a 3D field containing the pressure (in hPa) at each hybridP level
     for each gridpoint.
 
@@ -419,11 +412,10 @@ def hybridP_coord_and_surfpressure_to_3D_pressure_field(
         Psurf.sp2gp()
     pressures = hybridP2pressure(hybridP_geometry, Psurf.data, vertical_mean,
                                  gridposition=gridposition).levels
-    vgeom = fpx.geometrys.almost_clone(hybridP_geometry,
-                                       levels=list(range(1, len(pressures) + 1)))
-    geom = fpx.geometrys.almost_clone(Psurf.geometry,
-                                      structure='3D',
-                                      vcoordinate=vgeom)
+    vgeom = hybridP_geometry.deepcopy()
+    vgeom.levels = list(range(1, len(pressures) + 1))
+    geom = Psurf.geometry.deepcopy()
+    geom.vcoordinate = vgeom
     d3pressure = fpx.field(fid={'computed':'pressure'},
                            structure='3D',
                            geometry=geom,
@@ -443,7 +435,7 @@ def hybridP_coord_to_3D_altitude_field(
         Pdep3D=None,
         Phi_surf=None):
     """
-    From a hybridP Vgeometry, a surface pressure (in Pa) H2D field,
+    From a hybridP VGeometry, a surface pressure (in Pa) H2D field,
     and temperature and specific humidity 3D fields,
     compute a 3D field containing the altitude (in m) at each hybridP level
     for each gridpoint.

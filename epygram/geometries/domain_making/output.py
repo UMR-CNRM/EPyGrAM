@@ -334,7 +334,7 @@ def summary(geometry):
     """
     Returns a summary of geometry as a character string.
 
-    :param geometry: a H2DGeometry instance
+    :param geometry: a Geometry instance
     """
     invprojections = {'lambert':'L', 'mercator':'M', 'polar_stereographic':'PS'}
     print_projections = {'L':'Lambert (conformal conic)', 'M':'Mercator', 'PS':'Polar Stereographic'}

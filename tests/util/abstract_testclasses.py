@@ -206,15 +206,15 @@ class Test_GeometryMethods(TestCase):
 
     def test_make_point_geometry(self):
         self.assertIsInstance(self.geo.make_point_geometry(*self.point),
-                              epygram.geometries.PointGeometry)
+                              epygram.geometries.Geometry)
 
     def test_make_profile_geometry(self):
         self.assertIsInstance(self.geo.make_profile_geometry(*self.point),
-                              epygram.geometries.V1DGeometry)
+                              epygram.geometries.Geometry)
 
     def test_make_section_geometry(self):
         self.assertIsInstance(self.geo.make_section_geometry(*self.transect),
-                              epygram.geometries.V2DGeometry)
+                              epygram.geometries.Geometry)
 
     def _test_nearest_points(self, request, expected):
         self.assertEqualArray(self.geo.nearest_points(*self.point,

@@ -22,6 +22,7 @@ from epygram import epygramError, util
 #from epygram import config, util
 from epygram.util import Angle
 from epygram.base import FieldSet, FieldValidity, Field
+from epygram.geometries import VGeometry, ProjectedGeometry
 from epygram.resources import FileResource
 from epygram.fields import H2DField
 
@@ -355,11 +356,10 @@ class HDF5SAF(FileResource):
         cfac, coff, lfac, loff, nc, nl, satellite = [self.hdf5.attrs[k] for k in
                                                      ['CFAC', 'COFF', 'LFAC', 'LOFF', 'NC', 'NL', 'SATELLITE']]
 
-        kwargs_vcoord = {'structure':'V',
-                         'typeoffirstfixedsurface': 255,
+        kwargs_vcoord = {'typeoffirstfixedsurface': 255,
                          'position_on_grid': '__unknown__',
-                         'levels': (255,)}
-        vcoordinate = fpx.geometry(**kwargs_vcoord)
+                         'levels': [255]}
+        vcoordinate = VGeometry(**kwargs_vcoord)
         if geo:
             # Space view
             Lap = Angle(self.hdf5.attrs['SUB_SATELLITE_POINT_START_LAT'], 'degrees')
@@ -397,8 +397,7 @@ class HDF5SAF(FileResource):
                           'rotation': Angle(0., 'degrees')}
             dimensions = {'X':nc, 'Y':nl}
             geometryname = 'space_view'
-            kwargs_geom = dict(structure='H2D',
-                               name=geometryname,
+            kwargs_geom = dict(name=geometryname,
                                grid=FPDict(grid),
                                dimensions=FPDict(dimensions),
                                projection=FPDict(projection),
@@ -406,6 +405,6 @@ class HDF5SAF(FileResource):
                                vcoordinate=vcoordinate,
                                geoid={'a':rmajor, 'b':rminor},
                                )
-            self.geometry = fpx.geometry(**kwargs_geom)
+            self.geometry = ProjectedGeometry(**kwargs_geom)
         else:
             raise NotImplementedError("This projection is not implemented")

@@ -14,7 +14,7 @@ import numpy
 import footprints
 
 from epygram import epygramError
-from epygram.geometries import H2DGeometry
+from epygram.geometries import Geometry
 from . import gimme_one_point
 from .D3Field import D3Field
 from .PointField import PointField
@@ -40,7 +40,7 @@ class H2DField(D3Field):
             structure=dict(
                 values=set(['H2D'])),
             geometry=dict(
-                type=H2DGeometry),
+                type=Geometry),
         )
     )
 

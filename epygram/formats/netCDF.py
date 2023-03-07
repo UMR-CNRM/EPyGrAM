@@ -28,6 +28,8 @@ from epygram import config, epygramError, util
 from epygram.base import FieldValidity, FieldValidityList
 from epygram.resources import FileResource
 from epygram.util import Angle
+from epygram.geometries import (VGeometry, ProjectedGeometry, GaussGeometry, 
+                                RegLLGeometry, AcademicGeometry, UnstructuredGeometry)
 
 __all__ = ['netCDF']
 
@@ -329,25 +331,11 @@ class netCDF(FileResource):
                                          str(list(variable_dimensions.keys())),
                                          "=> refine behaviour dimensions or",
                                          "filter dimensions with 'only'."]))
-        else:
-            if D3:
-                structure = '3D'
-            elif H2D:
-                structure = 'H2D'
-            elif V2D:
-                structure = 'V2D'
-            elif H1D:
-                structure = 'H1D'
-                raise NotImplementedError('H1D: not yet.')  # TODO:
-            elif V1D:
-                structure = 'V1D'
-            elif points:
-                structure = 'Point'
-            kwargs_geom['structure'] = structure
+        elif H1D:
+            raise NotImplementedError('H1D: not yet.')  # TODO:
 
         # 3.2 vertical geometry (default)
-        default_kwargs_vcoord = {'structure':'V',
-                                 'typeoffirstfixedsurface':255,
+        default_kwargs_vcoord = {'typeoffirstfixedsurface':255,
                                  'position_on_grid':'mass',
                                  'grid':{'gridlevels': []},
                                  'levels':[0]}
@@ -447,6 +435,7 @@ class netCDF(FileResource):
 
         # 3.3.3 horizontal part
         # find grid in variables
+        geometryclass = UnstructuredGeometry #Default geometry
         if H2D or D3:
             def find_grid_in_variables():
                 var_corresponding_to_X_grid = behaviour.get('X_grid', False)
@@ -576,6 +565,7 @@ class netCDF(FileResource):
                     if (hasattr(grid_mapping, 'x_resolution') or
                         not behaviour.get('grid_is_lonlat', False)):
                         # if resolution is either in grid_mapping attributes or in the grid itself
+                        geometryclass = ProjectedGeometry
                         kwargs_geom['name'] = _proj_dict_inv[grid_mapping.grid_mapping_name]
                         if hasattr(grid_mapping, 'x_resolution'):
                             Xresolution = grid_mapping.x_resolution
@@ -739,6 +729,7 @@ class netCDF(FileResource):
                     grid = {'latitudes':FPList([Angle(l, 'degrees') for l in latitudes]),
                             'dilatation_coef':1.}
                     if hasattr(grid_mapping, 'lon_number_by_lat'):
+                        geometryclass = GaussGeometry
                         if isinstance(grid_mapping.lon_number_by_lat, six.string_types):
                             lon_number_by_lat = self._variables[grid_mapping.lon_number_by_lat.split(' ')[1]][:]
                         else:
@@ -777,6 +768,7 @@ class netCDF(FileResource):
                                  'resolution')) and
                         len(Xgrid.shape) == 2):
                             # then this is a regular lon lat
+                            geometryclass = RegLLGeometry
                             kwargs_geom['name'] = 'regular_lonlat'
                             if hasattr(self._variables[variable.grid_mapping],
                                        'x_resolution'):
@@ -815,6 +807,7 @@ class netCDF(FileResource):
                         y_regular = numpy.all(y_res - y_res[0, 0] <= loose_epsilon)
                         regll = x_regular and y_regular
                     if regll:
+                        geometryclass = RegLLGeometry
                         kwargs_geom['name'] = 'regular_lonlat'
                         grid = {'input_lon': Angle(Xgrid[0, 0], 'degrees'),
                                 'input_lat': Angle(Ygrid[0, 0], 'degrees'),
@@ -826,6 +819,7 @@ class netCDF(FileResource):
                                 'latitudes':Ygrid}
                 else:
                     # grid is not lon/lat and no other metadata available : Academic
+                    geometryclass = AcademicGeometry
                     kwargs_geom['name'] = 'academic'
                     grid = {'LAMzone':None,
                             'X_resolution':abs(Xgrid[0, 1] - Xgrid[0, 0]),
@@ -857,15 +851,15 @@ class netCDF(FileResource):
                     'latitudes':lat}
 
         # 3.4 build geometry
-        vcoordinate = fpx.geometry(**kwargs_vcoord)
+        vcoordinate = VGeometry(**kwargs_vcoord)
         kwargs_geom['grid'] = grid
         kwargs_geom['dimensions'] = dimensions
         kwargs_geom['vcoordinate'] = vcoordinate
-        geometry = fpx.geometry(**kwargs_geom)
+        geometry = geometryclass(**kwargs_geom)
 
         # 4. build field
         field_kwargs['geometry'] = geometry
-        field_kwargs['structure'] = kwargs_geom['structure']
+        field_kwargs['structure'] = geometry.structure
         comment = {}
         for a in variable.ncattrs():
             if a != 'validity':
