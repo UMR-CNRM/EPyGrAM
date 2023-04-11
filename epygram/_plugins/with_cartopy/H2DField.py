@@ -242,7 +242,7 @@ def _cartoplot_mesh_coords(self, subzone):
         jj = numpy.arange(Jmin, Jmax + 1)
         # compute upper line, upper border
         up_lon, up_lat = self.geometry.ij2ll(ii,
-                                             numpy.full((len(ii),), Jmax, dtype=numpy.int),
+                                             numpy.full((len(ii),), Jmax, dtype=int),
                                              position='upper-right')
         ul = self.geometry.ij2ll(Imin, Jmax,
                                  position='upper-left')
@@ -251,7 +251,7 @@ def _cartoplot_mesh_coords(self, subzone):
         up_lon = up_lon.reshape((1, len(up_lon)))
         up_lat = up_lat.reshape((1, len(up_lat)))
         # compute right line, right border
-        right_lon, right_lat = self.geometry.ij2ll(numpy.full((len(jj),), Imax, dtype=numpy.int),
+        right_lon, right_lat = self.geometry.ij2ll(numpy.full((len(jj),), Imax, dtype=int),
                                                    jj,
                                                    position='upper-right')
         lr = self.geometry.ij2ll(Imax, Jmin,
