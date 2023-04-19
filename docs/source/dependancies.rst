@@ -7,6 +7,7 @@ Some of which may be dynamically needed only, i.e. needed at actual use of some 
 
 - :mod:`PIL`
 - :mod:`cartopy`
+- :mod:`contourpy`
 - :mod:`eccodes`
 - :mod:`gribapi`
 - :mod:`h5py`
