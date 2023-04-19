@@ -57,9 +57,9 @@ def _default_numpy2json(obj):
     if type(obj).__module__ == numpy.__name__:
         if isinstance(obj, numpy.ndarray):
             return obj.tolist()
-        elif isinstance(obj, numpy.integer):
+        elif any([isinstance(value, t) for t in [numpy.int8, numpy.int16, numpy.int32, numpy.int64]]):
             return int(obj)
-        elif isinstance(obj, numpy.float):
+        elif any([isinstance(obj, t) for t in [numpy.float32, numpy.float64]]):
             return float(obj)
         else:
             return obj.item()

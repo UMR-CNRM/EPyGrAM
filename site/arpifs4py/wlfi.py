@@ -81,10 +81,10 @@ def wlficas(KNUMER, LDAVAN):
     """
     return ([KNUMER, LDAVAN],
             [(np.int64, None, IN),
-             (np.str, (16,), OUT),
+             (str, (16,), OUT),
              (np.int64, None, OUT),
              (np.int64, None, OUT),
-             (np.bool, None, IN)],
+             (bool, None, IN)],
             None)
 
 
@@ -103,8 +103,8 @@ def wlfiouv(CDFILE, CDSTATE):
     1) KNUMER: logical unit number associated to file
     """
     return ([CDFILE, CDSTATE],
-            [(np.str, (len(CDFILE.encode('utf8')),), IN),
-             (np.str, (len(CDSTATE.encode('utf8')),), IN),
+            [(str, (len(CDFILE.encode('utf8')),), IN),
+             (str, (len(CDSTATE.encode('utf8')),), IN),
              (np.int64, None, OUT)],
             None)
 
@@ -122,7 +122,7 @@ def wlfifer(KNUMER, CDSTTC):
     """
     return ([KNUMER, CDSTTC],
             [(np.int64, None, IN),
-             (np.str, (7,), IN)],
+             (str, (7,), IN)],
             None)
 
 
@@ -143,7 +143,7 @@ def wlfinfo(KNUMER, CDNOMA):
     """
     return ([KNUMER, CDNOMA],
             [(np.int64, None, IN),
-             (np.str, (16,), IN),
+             (str, (16,), IN),
              (np.int64, None, OUT),
              (np.int64, None, OUT)],
             None)
@@ -167,9 +167,9 @@ def wlfilec(KNUMER, CDNOMA, KLONG, LDABORT):
     """
     return ([KNUMER, CDNOMA, KLONG, LDABORT],
             [(np.int64, None, IN),
-             (np.str, (16,), IN),
+             (str, (16,), IN),
              (np.int64, None, IN),
-             (np.bool, None, IN),
+             (bool, None, IN),
              (np.int64, (KLONG,), OUT)],
             None)
 
@@ -189,7 +189,7 @@ def wlfiecr(KNUMER, CDNOMA, KSIZE, KTAB):
     """
     return ([KNUMER, CDNOMA, KSIZE, KTAB],
             [(np.int64, None, IN),
-             (np.str, (16,), IN),
+             (str, (16,), IN),
              (np.int64, None, IN),
              (np.int64, (KSIZE,), IN)],
             None)
@@ -209,8 +209,8 @@ def wlfiren(KNUMER, CDNOM1, CDNOM2):
     """
     return ([KNUMER, CDNOM1, CDNOM2],
             [(np.int64, None, IN),
-             (np.str, (16,), IN),
-             (np.str, (16,), IN)],
+             (str, (16,), IN),
+             (str, (16,), IN)],
             None)
 
 
@@ -227,7 +227,7 @@ def wlfisup(KNUMER, CDNOMA):
     """
     return ([KNUMER, CDNOMA],
             [(np.int64, None, IN),
-             (np.str, (16,), IN)],
+             (str, (16,), IN)],
             None)
 
 

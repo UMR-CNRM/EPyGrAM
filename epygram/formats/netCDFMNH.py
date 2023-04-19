@@ -1137,7 +1137,7 @@ class netCDFMNH(FileResource):
                 meta['c_grid_dynamic_range'] = str(jphext + 1) + ':' + str(len(value) - jphext)
             elif name in ['nj_v']:
                 meta['c_grid_dynamic_range'] = str(jphext + 1) + ':' + str(len(value))
-            if numpy.array(value).dtype == numpy.bool:
+            if numpy.array(value).dtype == bool:
                 value = numpy.where(numpy.array(value), numpy.array(1, dtype=numpy.int8),
                                                         numpy.array(0, dtype=numpy.int8))
             if name in self._nc.variables:

@@ -71,10 +71,10 @@ def ctypesForFortranFactory(solib):
     The arguments must be put in the same order as the one declared in the fortran routine.
     The second element of the signature tuple is also a list, each element of the list is
     a tuple (type, shape, in_out_status), where:
-      - type must be one of np.str, np.bool, np.float64, np.int64
-      - shape is - None in case of a scalar value (np.bool, np.float64, np.int64)
+      - type must be one of str, bool, np.float64, np.int64
+      - shape is - None in case of a scalar value (bool, np.float64, np.int64)
                  - a tuple which represent the shape of the array
-                 - in case of np.str, first shape element is the string size,
+                 - in case of str, first shape element is the string size,
                    if other elements are present, variable is a string array whose
                    shape is given by shape[1:]
       - in_out_status is one of IN, OUT or INOUT constant declared in the module
@@ -92,8 +92,8 @@ def ctypesForFortranFactory(solib):
       - a single value if only one argument is OUT or INOUT
 
     Note on strings: scalars strings are converted from and to unicode; it is certainly not tatally wanted
-                     strings arrays are declared (in signature) with np.str but must be
-                     created with the 'S' dtype with python3 (numpy.str is OK with python2)
+                     strings arrays are declared (in signature) with str but must be
+                     created with the 'S' dtype with python3 (str is OK with python2)
 
     Note on inout arrays: there is only one version of the array (if `a' is an array declared
                           in inout "foo(a)" will return `a' with new values (except for bool
@@ -244,8 +244,8 @@ def ctypesForFortranFactory(solib):
             @ctypesFF()
             def f_bool(LIN):
                 return ([LIN],
-                        [(numpy.bool, None, IN)], #LOGICAL(KIND=1), INTENT(IN) :: LIN
-                        (numpy.bool, None))
+                        [(bool, None, IN)], #LOGICAL(KIND=1), INTENT(IN) :: LIN
+                        (bool, None))
 
             @ctypesFF()
             def foo(KIN, KINOUT,    # Integer scalars  # Only IN and INOUT variabes.
@@ -274,13 +274,13 @@ def ctypesForFortranFactory(solib):
                          (numpy.int64, (KIN, ), OUT), #INTEGER(KIND=8), DIMENSION(KIN), INTENT(OUT) :: KAOUT
                          (numpy.int64, (KIN, ), INOUT), #INTEGER(KIND=8), DIMENSION(KIN), INTENT(INOUT) :: KAINOUT
 
-                         (numpy.str, (10, ), IN), #CHARACTER(LEN=10), INTENT(IN) :: CDIN
-                         (numpy.str, (20, ), OUT), #CHARACTER(LEN=20), INTENT(OUT) :: CDOUT
-                         (numpy.str, (20, ), INOUT), #CHARACTER(LEN=20), INTENT(INOUT) :: CDINOUT
+                         (str, (10, ), IN), #CHARACTER(LEN=10), INTENT(IN) :: CDIN
+                         (str, (20, ), OUT), #CHARACTER(LEN=20), INTENT(OUT) :: CDOUT
+                         (str, (20, ), INOUT), #CHARACTER(LEN=20), INTENT(INOUT) :: CDINOUT
 
-                         (numpy.str, (10, 2, 3), IN), #CHARACTER(LEN=10), DIMENSION(2, 3),, INTENT(IN) :: CDAIN
-                         (numpy.str, (10, 2, 3), OUT), #CHARACTER(LEN=10), DIMENSION(2, 3),, INTENT(OUT) :: CDAOUT
-                         (numpy.str, (10, 2, 3), INOUT), #CHARACTER(LEN=10), DIMENSION(2, 3),, INTENT(INOUT) :: CDAINOUT
+                         (str, (10, 2, 3), IN), #CHARACTER(LEN=10), DIMENSION(2, 3),, INTENT(IN) :: CDAIN
+                         (str, (10, 2, 3), OUT), #CHARACTER(LEN=10), DIMENSION(2, 3),, INTENT(OUT) :: CDAOUT
+                         (str, (10, 2, 3), INOUT), #CHARACTER(LEN=10), DIMENSION(2, 3),, INTENT(INOUT) :: CDAINOUT
 
                          (numpy.float64, None, IN), #REAL(KIND=8), INTENT(IN) :: PIN
                          (numpy.float64, None, OUT), #REAL(KIND=8), INTENT(OUT) :: POUT
@@ -290,13 +290,13 @@ def ctypesForFortranFactory(solib):
                          (numpy.float64, (KIN, ), OUT), #REAL(KIND=8), DIMENSION(KIN), INTENT(OUT) :: PAOUT
                          (numpy.float64, (KIN, ), INOUT), #REAL(KIND=8), DIMENSION(KIN), INTENT(INOUT) :: PAINOUT
 
-                         (numpy.bool, None, IN), #LOGICAL(KIND=1), INTENT(IN) :: LIN
-                         (numpy.bool, None, OUT), #LOGICAL(KIND=1), INTENT(OUT) :: LOUT
-                         (numpy.bool, None, INOUT), #LOGICAL(KIND=1), INTENT(INOUT) :: LINOUT
+                         (bool, None, IN), #LOGICAL(KIND=1), INTENT(IN) :: LIN
+                         (bool, None, OUT), #LOGICAL(KIND=1), INTENT(OUT) :: LOUT
+                         (bool, None, INOUT), #LOGICAL(KIND=1), INTENT(INOUT) :: LINOUT
 
-                         (numpy.bool, (40, ), IN), #LOGICAL(KIND=1), DIMENSION(40), INTENT(IN) :: LAIN
-                         (numpy.bool, (40, ), OUT), #LOGICAL(KIND=1), DIMENSION(40), INTENT(OUT) :: LAOUT
-                         (numpy.bool, (40, ), INOUT), #LOGICAL(KIND=1), DIMENSION(40), INTENT(INOUT) :: LAINOUT
+                         (bool, (40, ), IN), #LOGICAL(KIND=1), DIMENSION(40), INTENT(IN) :: LAIN
+                         (bool, (40, ), OUT), #LOGICAL(KIND=1), DIMENSION(40), INTENT(OUT) :: LAOUT
+                         (bool, (40, ), INOUT), #LOGICAL(KIND=1), DIMENSION(40), INTENT(INOUT) :: LAINOUT
 
                          (numpy.int64, (4, 5), IN), #INTEGER(KIND=8), DIMENSION(4, 5), INTENT(IN) :: KAIN2
                          (numpy.int64, (4, 5), OUT), #INTEGER(KIND=8), DIMENSION(4, 5), INTENT(OUT) :: KAOUT2
@@ -444,14 +444,13 @@ def ctypesForFortranFactory(solib):
                 assert isinstance(signature, list), "signature must be a list"
                 assert all([s is None or isinstance(s, tuple) for s in signature]), \
                     "all elements of the signature must be a tuple"
-                if not all([s[0] in [numpy.str, numpy.bool, numpy.int64, numpy.float64, numpy.int32, numpy.float32] for s in signature]):
+                if not all([s[0] in [str, bool, numpy.int64, numpy.float64, numpy.int32, numpy.float32] for s in signature]):
                     raise NotImplementedError("This type is not (yet?) implemented")
                 assert all([s[1] is None or isinstance(s[1], tuple) for s in signature]), \
                     "second element of argument signature must be None or a tuple"
                 assert all([len(s[1]) > 0 for s in signature if isinstance(s[1], tuple)]), \
                     "if second element of argument is a tuple, it must not be empty"
                 assert all([all([((isinstance(item, int) or
-                                   isinstance(item, numpy.int) or
                                    isinstance(item, numpy.int64)) and
                                   item >= 0) for item in s[1]])
                             for s in signature if isinstance(s[1], tuple)]), \
@@ -471,10 +470,10 @@ def ctypesForFortranFactory(solib):
                 resultArgs = []
                 iarg = 0
                 for s in signature:
-                    if s[0] == numpy.str:
+                    if s[0] == str:
                         if not isinstance(s[1], tuple):
                             raise ValueError("Signature for string must provide a length")
-                    if s[0] == numpy.str and len(s[1]) == 1:
+                    if s[0] == str and len(s[1]) == 1:
                         argtypes.append(ctypes.c_char_p)
                         if s[2] in [IN, INOUT]:
                             argument = sorted_args[iarg].encode("utf-8")
@@ -492,7 +491,7 @@ def ctypesForFortranFactory(solib):
                     else:
                         if s[1] is None:
                             # scalar value
-                            if s[0] == numpy.bool:
+                            if s[0] == bool:
                                 if (true, false) == (1, 0):
                                     cl = ctypes.c_bool
                                 else:
@@ -518,12 +517,12 @@ def ctypesForFortranFactory(solib):
                                 resultArgs.append(argument)
                         else:
                             # Arrays
-                            if s[0] == numpy.str:
+                            if s[0] == str:
                                 expected_dtype = numpy.dtype(('S', s[1][0]))
                                 effective_dtype = expected_dtype
                                 expected_shape = s[1][1:]
                             else:
-                                if s[0] == numpy.bool and (true, false) != (1, 0):
+                                if s[0] == bool and (true, false) != (1, 0):
                                     expected_dtype = s[0]
                                     effective_dtype = numpy.int8
                                 else:
@@ -543,9 +542,9 @@ def ctypesForFortranFactory(solib):
                                     raise ValueError("Wrong shape for input array (#arg " +
                                                      str(iarg - 1) + "), get " + str(argument.shape) +
                                                      ", expected " + str(expected_shape))
-                                if s[0] == numpy.str:
+                                if s[0] == str:
                                     argument = numpy.core.defchararray.ljust(argument, s[1][0])
-                                if s[0] == numpy.bool and (true, false) != (1, 0):
+                                if s[0] == bool and (true, false) != (1, 0):
                                     arr = numpy.empty_like(argument, dtype=numpy.int8, order='F')
                                     arr[argument is True] = true
                                     arr[argument is False] = false
@@ -554,7 +553,7 @@ def ctypesForFortranFactory(solib):
                                     argument = numpy.asfortranarray(argument)
                             else:
                                 argument = numpy.ndarray(expected_shape, dtype=effective_dtype, order='F')
-                                if s[0] == numpy.str:
+                                if s[0] == str:
                                     argument = numpy.asfortranarray(numpy.core.defchararray.ljust(argument, s[1][0]))
                             argtypes.append(numpy.ctypeslib.ndpointer(dtype=effective_dtype,
                                                                       ndim=len(argument.shape),
@@ -566,8 +565,8 @@ def ctypesForFortranFactory(solib):
                 f.argtypes = argtypes + additionalArgtypes
                 if ret is not None:
                     assert len(ret) == 2, "returned value must be described by a two-values tuple"
-                    if ret[1] is None or (ret[0] == numpy.str and len(ret[1]) == 1):
-                        if ret[0] == numpy.bool:
+                    if ret[1] is None or (ret[0] == str and len(ret[1]) == 1):
+                        if ret[0] == bool:
                             if (true, false) == (1, 0):
                                 cl = ctypes.c_bool
                             else:
@@ -580,7 +579,7 @@ def ctypesForFortranFactory(solib):
                             cl = ctypes.c_long
                         elif ret[0] == numpy.float32:
                             cl = ctypes.c_float
-                        elif ret[0] == numpy.str:
+                        elif ret[0] == str:
                             cl = ctypes.c_char_p
                             raise NotImplementedError("Functions with string as output value are not working")
                         else:
@@ -591,11 +590,11 @@ def ctypesForFortranFactory(solib):
                         """
                         assert isinstance(ret[1], tuple), \
                             "if second element of returned value signature is not None, it must be a tuple"
-                        if ret[0] == numpy.str:
+                        if ret[0] == str:
                             dtype = numpy.dtype(('S', ret[1][0]))
                             ctype = ctypes.c_char_p
                             shape = ret[1][1:]
-                        elif ret[0] == numpy.bool and (true, false) != (1, 0):
+                        elif ret[0] == bool and (true, false) != (1, 0):
                             dtype = numpy.int8
                             ctype = ctypes.c_int8
                             shape = ret[1]
@@ -617,7 +616,7 @@ def ctypesForFortranFactory(solib):
                 val = f(*(effectiveArgs + additionalArgs))
 
                 if ret is not None:
-                    if ret[0] == numpy.bool and (true, false) != (1, 0):
+                    if ret[0] == bool and (true, false) != (1, 0):
                         result = [val == true]
                     else:
                         result = [val]
@@ -628,18 +627,18 @@ def ctypesForFortranFactory(solib):
                     if s[2] in [OUT, INOUT]:
                         argument = resultArgs[iarg]
                         iarg += 1
-                        if s[0] == numpy.str and len(s[1]) == 1:
+                        if s[0] == str and len(s[1]) == 1:
                             argument = argument.value.decode('utf-8')
                         else:
                             if s[1] is None:
                                 # scalar
-                                if s[0] == numpy.bool and (true, false) != (1, 0):
+                                if s[0] == bool and (true, false) != (1, 0):
                                     argument = argument.value == true
                                 else:
                                     argument = argument.value
                             else:
                                 # array
-                                if s[0] == numpy.bool and (true, false) != (1, 0):
+                                if s[0] == bool and (true, false) != (1, 0):
                                     argument = argument == true
                                 pass  # If needed, we could reverse F_CONTIGOUS here (we then would need to track those changes)
                         result.append(argument)
@@ -809,7 +808,7 @@ def fortran2signature(filename=None, fortran_code=None, as_string=True,
               ('integer', 2): numpy.int16,
               ('integer', 4): numpy.int32,
               ('integer', 8): numpy.int64,
-              ('logical', 1): numpy.bool}
+              ('logical', 1): bool}
     for line in lines:
         if line.lower().startswith('module') and line[6] in [" ", "\t"]:
             if in_module:
@@ -918,9 +917,9 @@ def fortran2signature(filename=None, fortran_code=None, as_string=True,
                                 decode_kind = True
                             elif opt.startswith("character") and (len(opt) == 9 or opt[9] in [' ', '\t', '(']):
                                 if as_string:
-                                    dtype = "numpy.str"
+                                    dtype = "str"
                                 else:
-                                    dtype = numpy.str
+                                    dtype = str
                                 if '(' not in opt:
                                     raise RuntimeError("character type must provide a length")
                                 length = opt[opt.find('(') + 1:opt.find(')')].strip()
@@ -1028,7 +1027,7 @@ def fortran2signature(filename=None, fortran_code=None, as_string=True,
         result += "select = {('real', 2): numpy.float16,\n          ('real', 4): numpy.float32,\n"
         result += "          ('real', 8): numpy.float64,\n          ('integer', 1): numpy.int8,\n"
         result += "          ('integer', 2): numpy.int16,\n          ('integer', 4): numpy.int32,\n"
-        result += "          ('integer', 8): numpy.int64,\n          ('logical', 1): numpy.bool}\n\n"
+        result += "          ('integer', 8): numpy.int64,\n          ('logical', 1): bool}\n\n"
         result += "pre_suf = {}\n"
         for module_name in set([obj['module'] for obj in objs]):
             result += "pre_suf['" + module_name + "'] = ('"

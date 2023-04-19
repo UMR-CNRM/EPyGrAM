@@ -58,10 +58,10 @@ def wfaitou(CDFILE, CDSTATE, CDNOMC):
     1) KNUMER: logical unit number associated to file
     """
     return ([CDFILE, CDSTATE, CDNOMC],
-            [(np.str, (len(CDFILE.encode('utf8')),), IN),
-             (np.str, (len(CDSTATE.encode('utf8')),), IN),
+            [(str, (len(CDFILE.encode('utf8')),), IN),
+             (str, (len(CDSTATE.encode('utf8')),), IN),
              (np.int64, None, OUT),
-             (np.str, (16,), IN)],
+             (str, (16,), IN)],
             None)
 
 
@@ -109,7 +109,7 @@ def wfalsif(KNUMER):
     """
     return ([KNUMER],
             [(np.int64, None, IN),
-             (np.str, (80,), OUT)],
+             (str, (80,), OUT)],
             None)
 
 
@@ -136,11 +136,11 @@ def wfanion(KNUMER, CDPREF, KNIVAU, CDSUFF):
     """
     return ([KNUMER, CDPREF, KNIVAU, CDSUFF],
             [(np.int64, None, IN),
-             (np.str, (4,), IN),
+             (str, (4,), IN),
              (np.int64, None, IN),
-             (np.str, (12,), IN),
-             (np.bool, None, OUT),
-             (np.bool, None, OUT),
+             (str, (12,), IN),
+             (bool, None, OUT),
+             (bool, None, OUT),
              (np.int64, None, OUT),
              (np.int64, None, OUT),
              (np.int64, None, OUT),
@@ -180,7 +180,7 @@ def wfacies(KXPAH, KXIND, KXGEO, KXNIV, CDNOMC):
              (np.int64, None, IN),
              (np.int64, None, IN),
              (np.int64, None, IN),
-             (np.str, (16,), IN),
+             (str, (16,), IN),
              (np.int64, None, OUT),
              (np.float64, None, OUT),
              (np.float64, None, OUT),
@@ -196,7 +196,7 @@ def wfacies(KXPAH, KXIND, KXGEO, KXNIV, CDNOMC):
              (np.float64, None, OUT),
              (np.float64, (KXNIV + 1,), OUT),
              (np.float64, (KXNIV + 1,), OUT),
-             (np.bool, None, OUT),],
+             (bool, None, OUT),],
             None)
 
 
@@ -282,7 +282,7 @@ def wfacade(CDNOMC, KTYPTR,
              KSSINLA, PSINLA,
              KNIVER, PREFER, PAHYBR, PBHYBR,
              LDGARD],
-            [(np.str, (16,), IN),
+            [(str, (16,), IN),
              (np.int64, None, IN),
              (np.float64, None, IN),
              (np.float64, None, IN),
@@ -301,7 +301,7 @@ def wfacade(CDNOMC, KTYPTR,
              (np.float64, None, IN),
              (np.float64, (KNIVER + 1,), IN),
              (np.float64, (KNIVER + 1,), IN),
-             (np.bool, None, IN)],
+             (bool, None, IN)],
             None)
 
 
@@ -345,7 +345,7 @@ def wfautif(KNUMER, CDIDEN):
     """
     return ([KNUMER, CDIDEN],
             [(np.int64, None, IN),
-             (np.str, (80,), IN),],
+             (str, (80,), IN),],
             None)
 
 
@@ -404,11 +404,11 @@ def wfacile(KSIZE, KNUMER, CDPREF, KNIVAU, CDSUFF, LDCOSP):
     return ([KSIZE, KNUMER, CDPREF, KNIVAU, CDSUFF, LDCOSP],
             [(np.int64, None, IN),
              (np.int64, None, IN),
-             (np.str, (4,), IN),
+             (str, (4,), IN),
              (np.int64, None, IN),
-             (np.str, (12,), IN),
+             (str, (12,), IN),
              (np.float64, (KSIZE,), OUT),
-             (np.bool, None, IN)],
+             (bool, None, IN)],
             None)
 
 
@@ -435,12 +435,12 @@ def wfacilo(KSIZE, KNUMER, CDPREF, KNIVAU, CDSUFF, LDCOSP):
     return ([KSIZE, KNUMER, CDPREF, KNIVAU, CDSUFF, LDCOSP],
             [(np.int64, None, IN),
              (np.int64, None, IN),
-             (np.str, (4,), IN),
+             (str, (4,), IN),
              (np.int64, None, IN),
-             (np.str, (12,), IN),
+             (str, (12,), IN),
              (np.float64, (KSIZE,), OUT),
-             (np.bool, None, IN),
-             (np.bool, None, OUT),
+             (bool, None, IN),
+             (bool, None, OUT),
              (np.float64, None, OUT)],
             None)
 
@@ -463,12 +463,12 @@ def wfaienc(KNUMER, CDPREF, KNIVAU, CDSUFF, KSIZE, PCHAMP, LDCOSP):
     """
     return ([KNUMER, CDPREF, KNIVAU, CDSUFF, KSIZE, PCHAMP, LDCOSP],
             [(np.int64, None, IN),
-             (np.str, (4,), IN),
+             (str, (4,), IN),
              (np.int64, None, IN),
-             (np.str, (12,), IN),
+             (str, (12,), IN),
              (np.int64, None, IN),
              (np.float64, (KSIZE,), IN),
-             (np.bool, None, IN)],
+             (bool, None, IN)],
             None)
 
 
@@ -492,13 +492,13 @@ def wfaieno(KNUMER, CDPREF, KNIVAU, CDSUFF, KSIZE, PCHAMP, LDCOSP, LDUNDEF, PDUN
     """
     return ([KNUMER, CDPREF, KNIVAU, CDSUFF, KSIZE, PCHAMP, LDCOSP, LDUNDEF, PDUNDEF],
             [(np.int64, None, IN),
-             (np.str, (4,), IN),
+             (str, (4,), IN),
              (np.int64, None, IN),
-             (np.str, (12,), IN),
+             (str, (12,), IN),
              (np.int64, None, IN),
              (np.float64, (KSIZE,), IN),
-             (np.bool, None, IN),
-             (np.bool, None, IN),
+             (bool, None, IN),
+             (bool, None, IN),
              (np.float64, None, IN),],
             None)
 
@@ -520,7 +520,7 @@ def wfalais(KNUMER, CDNOMA, KLONGD):
     """
     return ([KNUMER, CDNOMA, KLONGD],
             [(np.int64, None, IN),
-             (np.str, (16,), IN),
+             (str, (16,), IN),
              (np.float64, (KLONGD,), OUT),
              (np.int64, None, IN)],
             None)
@@ -541,7 +541,7 @@ def wfaisan(KNUMER, CDNOMA, KSIZE, PDONNE):
     """
     return ([KNUMER, CDNOMA, KSIZE, PDONNE],
             [(np.int64, None, IN),
-             (np.str, (16,), IN),
+             (str, (16,), IN),
              (np.int64, None, IN),
              (np.float64, (KSIZE,), IN)],
             None)
@@ -560,5 +560,5 @@ def wfairme(KNUMER, CDSTTU):
     """
     return ([KNUMER, CDSTTU],
             [(np.int64, None, IN),
-             (np.str, (7,), IN),],
+             (str, (7,), IN),],
             None)

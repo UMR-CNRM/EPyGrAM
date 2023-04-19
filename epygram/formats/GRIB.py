@@ -507,9 +507,9 @@ class GRIBmessage(RecursiveObject, dict):
     def __setitem__(self, key, value):
         if value is not None:
             if lowlevelgrib.version <= '1.10.4':
-                if isinstance(value, numpy.float):
+                if any([isinstance(value, t) for t in [numpy.float32, numpy.float64]]):
                     value = float(value)
-                elif isinstance(value, numpy.int):
+                elif any([isinstance(value, t) for t in [numpy.int8, numpy.int16, numpy.int32, numpy.int64]]):
                     value = int(value)
             if isinstance(value, six.string_types):  # gribapi str/unicode incompatibility
                 v = str(value)
