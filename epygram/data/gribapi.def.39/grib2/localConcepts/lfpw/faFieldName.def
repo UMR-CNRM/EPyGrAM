@@ -1288,6 +1288,18 @@
     scaledValueOfFirstFixedSurface = 0 ;
 }
 
+#Maximum of thermical vert velocity
+"CLPVMAXT.MOD.XFU" = {
+    discipline = 0 ;
+    parameterCategory = 2 ;
+    parameterNumber = 193 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 10 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+    statisticalProcess = 2 ;
+    productDefinitionTemplateNumber = 15;
+}
+
 # "Diagnostic value at 2 m of the relative humidity "
 "CLSHUMI.RELATIVE" = {
     discipline = 0 ;
@@ -1573,6 +1585,17 @@
     typeOfFirstFixedSurface = 1 ;
     scaledValueOfFirstFixedSurface = 0 ;
 }
+
+# Snow Depth
+"SURFHAUTEUR.NEIG"= {
+    discipline = 0 ;
+    parameterCategory = 1 ;
+    parameterNumber = 11;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
 
 # Surface temperature
 "SURFTEMPERATURE" = {
@@ -2024,6 +2047,16 @@
     scaledValueOfSecondFixedSurface = 5500 ;
     scaleFactorOfSecondFixedSurface = 0 ;
 }
+
+"STORMRELHELICITY" = {
+    discipline = 0 ;
+    parameterCategory = 7 ;
+    parameterNumber = 8 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 1 ;
+    scaledValueOfFirstFixedSurface = 0 ;
+}
+
 "SURFDIAG.FLASH" = {
     discipline = 0 ;
     parameterCategory = 17 ;
@@ -2613,6 +2646,25 @@
     typeOfFirstFixedSurface = 12 ;
     scaledValueOfFirstFixedSurface = 0;
 }
+
+"ATMOCLD.TOPCON.P" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 0 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 12 ;
+    scaledValueOfFirstFixedSurface = 0;
+}
+
+"ATMOCLD.BASCON.P" = {
+    discipline = 0 ;
+    parameterCategory = 3 ;
+    parameterNumber = 0 ;
+    tablesVersion = 15 ;
+    typeOfFirstFixedSurface = 11 ;
+    scaledValueOfFirstFixedSurface = 0;
+}
+
 "ATMOCLD.TOP.P" = {
     discipline = 0 ;
     parameterCategory = 3;
@@ -2621,6 +2673,7 @@
     typeOfFirstFixedSurface = 3 ;
     scaledValueOfFirstFixedSurface = 0;
 }
+
 "ATMOCLD.CEIL.P" = {
     discipline = 0 ;
     parameterCategory = 3 ;
@@ -2629,14 +2682,16 @@
     typeOfFirstFixedSurface = 13 ;
     scaledValueOfFirstFixedSurface = 50;
 }
+
 "ATMOCLD.CEIL.H" = {
     discipline = 0 ;
     parameterCategory = 6 ;
     parameterNumber = 13 ;
     tablesVersion = 15 ;
     typeOfFirstFixedSurface = 1 ;
-    scaledValueOfFirstFixedSurface = 50;
+    scaledValueOfFirstFixedSurface = 0;
 }
+
 "ATMOCLD.BASE.P" = {
     discipline = 0 ;
     parameterCategory = 3 ;
@@ -2645,6 +2700,7 @@
     typeOfFirstFixedSurface = 2 ;
     scaledValueOfFirstFixedSurface = 0;
 }
+
 "ATMOCLD.BASE.H" = {
     discipline = 0 ;
     parameterCategory = 6 ;
@@ -2653,6 +2709,7 @@
     typeOfFirstFixedSurface = 1 ;
     scaledValueOfFirstFixedSurface = 0;
 }
+
 # Radar reflectivity in dbZ
 "REFLEC_DBZ" = {
     discipline = 0 ;
@@ -3057,9 +3114,6 @@
     discipline = 0 ;
     parameterCategory = 19 ;
     parameterNumber = 29 ;
-    typeOfFirstFixedSurface = 100 ;
-    typeOfSecondFixedSurface = 255 ;
-    scaleFactorOfFirstFixedSurface = 0 ;
     tablesVersion = 15 ;
 }
 # High_levels EDR diagnostic

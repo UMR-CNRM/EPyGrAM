@@ -50,8 +50,8 @@
 ## AROME-PE
 	{% for kpearo in range(defs.n_members_pearo) %}
 		{% set kpearostr = '{:03d}'.format(kpearo) %}
-		'arome-pefrance-production-oper-fc_m{{kpearostr}}' = { generatingProcessIdentifier = 117; numberOfForecastsInEnsemble = 016; perturbationNumber = {{kpearostr}}; productDefinitionTemplateNumber = 11; }
-		'arome-pefrance-production-dble-fc_m{{kpearostr}}' = { generatingProcessIdentifier = 119; numberOfForecastsInEnsemble = 016; perturbationNumber = {{kpearostr}}; productDefinitionTemplateNumber = 11; }
+		'arome-pefrance-production-oper-fc_m{{kpearostr}}' = { generatingProcessIdentifier = 117; numberOfForecastsInEnsemble = 017; perturbationNumber = {{kpearostr}}; productDefinitionTemplateNumber = 11; }
+		'arome-pefrance-production-dble-fc_m{{kpearostr}}' = { generatingProcessIdentifier = 119; numberOfForecastsInEnsemble = 017; perturbationNumber = {{kpearostr}}; productDefinitionTemplateNumber = 11; }
 	{% endfor %}
 ## AROME-PI
 	'arome-pifrance-production-oper-fc' = { generatingProcessIdentifier = 62; indicatorOfUnitOfTimeRange = "m"; }
@@ -73,6 +73,36 @@
 ## Polynesie
 	'arome-polynesie-production-oper-fc' = { generatingProcessIdentifier = 121; }
 	'arome-polynesie-production-dble-fc' = { generatingProcessIdentifier = 122; }
+## AROME-PE Antilles
+        {% for kpearo in range(defs.n_members_pearo) %}
+                {% set kpearostr = '{:03d}'.format(kpearo) %}
+                'arome-peantilles-production-oper-fc_m{{kpearostr}}' = { generatingProcessIdentifier = 248; numberOfForecastsInEnsemble = 016; perturbationNumber = {{kpearostr}}; productDefinitionTemplateNumber = 11; subCentre = 0; }
+                'arome-peantilles-production-dble-fc_m{{kpearostr}}' = { generatingProcessIdentifier = 249; numberOfForecastsInEnsemble = 016; perturbationNumber = {{kpearostr}}; productDefinitionTemplateNumber = 11; subCentre = 0; }
+        {% endfor %}
+## AROME-PE N-Caledonie
+        {% for kpearo in range(defs.n_members_pearo) %}
+                {% set kpearostr = '{:03d}'.format(kpearo) %}
+                'arome-pecaledonie-production-oper-fc_m{{kpearostr}}' = { generatingProcessIdentifier = 248; numberOfForecastsInEnsemble = 016; perturbationNumber = {{kpearostr}}; productDefinitionTemplateNumber = 11; subCentre = 0; }
+                'arome-pecaledonie-production-dble-fc_m{{kpearostr}}' = { generatingProcessIdentifier = 249; numberOfForecastsInEnsemble = 016; perturbationNumber = {{kpearostr}}; productDefinitionTemplateNumber = 11; subCentre = 0; }
+        {% endfor %}
+## AROME-PE Guyane
+        {% for kpearo in range(defs.n_members_pearo) %}
+                {% set kpearostr = '{:03d}'.format(kpearo) %}
+                'arome-peguyane-production-oper-fc_m{{kpearostr}}' = { generatingProcessIdentifier = 248; numberOfForecastsInEnsemble = 016; perturbationNumber = {{kpearostr}}; productDefinitionTemplateNumber = 11; subCentre = 0; }
+                'arome-peguyane-production-dble-fc_m{{kpearostr}}' = { generatingProcessIdentifier = 249; numberOfForecastsInEnsemble = 016; perturbationNumber = {{kpearostr}}; productDefinitionTemplateNumber = 11; subCentre = 0; }
+        {% endfor %}
+## AROME-PE Indien
+        {% for kpearo in range(defs.n_members_pearo) %}
+                {% set kpearostr = '{:03d}'.format(kpearo) %}
+                'arome-peindien-production-oper-fc_m{{kpearostr}}' = { generatingProcessIdentifier = 248; numberOfForecastsInEnsemble = 016; perturbationNumber = {{kpearostr}}; productDefinitionTemplateNumber = 11; subCentre = 0; }
+                'arome-peindien-production-dble-fc_m{{kpearostr}}' = { generatingProcessIdentifier = 249; numberOfForecastsInEnsemble = 016; perturbationNumber = {{kpearostr}}; productDefinitionTemplateNumber = 11; subCentre = 0; }
+        {% endfor %}
+## AROME-PE Polynesie
+        {% for kpearo in range(defs.n_members_pearo) %}
+                {% set kpearostr = '{:03d}'.format(kpearo) %}
+                'arome-pepolynesie-production-oper-fc_m{{kpearostr}}' = { generatingProcessIdentifier = 248; numberOfForecastsInEnsemble = 016; perturbationNumber = {{kpearostr}}; productDefinitionTemplateNumber = 11; subCentre = 0; }
+                'arome-pepolynesie-production-dble-fc_m{{kpearostr}}' = { generatingProcessIdentifier = 249; numberOfForecastsInEnsemble = 016; perturbationNumber = {{kpearostr}}; productDefinitionTemplateNumber = 11; subCentre = 0; }
+        {% endfor %}
 ## IFS
 	'arome-ifsfr-production-oper-fc' = { generatingProcessIdentifier = 254; }
 	'arome-ifsfr-production-dble-fc' = { generatingProcessIdentifier = 250; }
