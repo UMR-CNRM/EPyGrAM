@@ -1166,17 +1166,11 @@ class _D3CommonField(Field):
         # PART 0: computation of parameters for PARTS 1 & 2
         lons, lats = target_geometry.get_lonlat_grid(subzone=subzone, d4=True, nb_validities=1,
                                                      force_longitudes=']-180,180]')
-        if 'gauss' in target_geometry.name and six.PY3:
-            raise NotImplementedError("Python3 issue: pyresample Gauss grid masked array")  # FIXME:
-            lons = target_geometry.horizontally_flattened(lons)[0,0,:]
-            lons = lons.reshape((1, len(lons)))
-            lats = target_geometry.horizontally_flattened(lats)[0,0,:]
-            lats = lons.reshape((1, len(lats)))
-            target_geo = SwathDefinition(lons, lats)
-        else:
-            lons = lons[0, 0, :, :]
-            lats = lats[0, 0, :, :]
-            target_geo = GridDefinition(lons, lats)
+        lons = lons[0, 0, :, :]
+        lats = lats[0, 0, :, :]
+        if isinstance(lons, numpy.ma.MaskedArray) and lons.mask.any():
+            reduce_data = False  # functionality does not work properly
+        target_geo = GridDefinition(lons, lats)
 
         def _resolution():
             if 'gauss' in self.geometry.name:
@@ -1194,17 +1188,11 @@ class _D3CommonField(Field):
         if neighbour_info in (True, None, False):
             lons, lats = self.geometry.get_lonlat_grid(subzone=subzone, d4=True, nb_validities=1,
                                                        force_longitudes=']-180,180]')
-            if 'gauss' in self.geometry.name and six.PY3:
-                raise NotImplementedError("Python3 issue: pyresample Gauss grid masked array")  # FIXME:
-                lons = self.geometry.horizontally_flattened(lons)[0,0,:]
-                lons = lons.reshape((1, len(lons)))
-                lats = self.geometry.horizontally_flattened(lats)[0,0,:]
-                lats = lons.reshape((1, len(lats)))
-                source_geo = SwathDefinition(lons, lats)
-            else:
-                lons = lons[0,0,:,:]
-                lats = lats[0,0,:,:]
-                source_geo = GridDefinition(lons, lats)
+            lons = lons[0,0,:,:]
+            lats = lats[0,0,:,:]
+            if isinstance(lons, numpy.ma.MaskedArray) and lons.mask.any():
+                reduce_data = False  # functionality does not work properly
+            source_geo = GridDefinition(lons, lats)
             if radius_of_influence is None:
                 radius_of_influence = 4. * _resolution()
             if weighting == 'nearest':
@@ -1232,12 +1220,7 @@ class _D3CommonField(Field):
              index_array,
              distance_array) = neighbour_info
         # PART 2: computation of resampling
-        if 'gauss' in self.geometry.name and six.PY3:
-            source_data = self.geometry.horizontally_flattened(self.getdata(d4=True))
-            shp = (source_data.shape[0], source_data.shape[1], 1, source_data.shape[2])
-            source_data = source_data.reshape(shp)
-        else:
-            source_data = self.getdata(d4=True, subzone=subzone)
+        source_data = self.getdata(d4=True, subzone=subzone)
         resampled_data = numpy.ma.zeros((source_data.shape[0],  # t
                                          source_data.shape[1],  # z
                                          target_geo.shape[0],  # y
@@ -1295,8 +1278,6 @@ class _D3CommonField(Field):
         newfield = fpx.field(**field_kwargs)
         if not resampled_data.mask.any():
             resampled_data = resampled_data.data
-        if 'gauss' in target_geometry.name:
-            resampled_data = target_geometry.reshape_data(resampled_data[:,:,0,:])
         newfield.setdata(resampled_data)
         if with_uncert:
             stddev_field = newfield.deepcopy()
