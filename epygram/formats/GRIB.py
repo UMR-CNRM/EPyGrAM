@@ -1792,8 +1792,8 @@ class GRIBmessage(RecursiveObject, dict):
                     'input_position':input_position,
                     'LAMzone':None}
         # ----------------------------------------------------------------------
-        elif self['gridType'] in ('lambert',):
-            geometryname = self['gridType']
+        elif self['gridType'] in ('lambert', 'lambert_lam'):
+            geometryname = 'lambert'  # self['gridType'] # account for lambert_lam
             lon_0 = self['LoVInDegrees']
             lat_0 = self['LaDInDegrees']
             lat_1 = self['Latin1InDegrees']
