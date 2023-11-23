@@ -893,7 +893,12 @@ class netCDF(FileResource):
                 buffdata = variable
                 for k, i in only.items():
                     d = variable.dimensions.index(k)
-                    buffdata = util.restrain_to_index_i_of_dim_d(buffdata, i, d, n=n)
+                    if isinstance(i, slice):
+                        ibuff = [util.restrain_to_index_i_of_dim_d(buffdata, j, d, n=n) for j in
+                                 range(i.start, i.stop, i.step)]
+                        buffdata = numpy.concatenate(ibuff, axis=d)
+                    else:
+                        buffdata = util.restrain_to_index_i_of_dim_d(buffdata, i, d, n=n)
             else:
                 buffdata = variable[...]
             # check there is no leftover unknown dimension
