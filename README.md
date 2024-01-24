@@ -10,15 +10,18 @@ The epygram library package is a set of Python classes and functions designed to
 Dependencies
 ------------
 
-EPyGrAM dependencies are mostly available from Pypi (pip install ...), except a few site packages from the [Vortex](https://opensource.umr-cnrm.fr/projects/vortex) project, mainly the `footprints` and `bronx` packages.
+EPyGrAM dependencies are available from Pypi (pip install ...), including the packages [`footprints`](https://pypi.org/project/footprints/) and [`bronx`](https://pypi.org/project/bronx/) from the Vortex project.
 
 Installation
 ------------
 
+Installation can be done manually by setting up path to `epygram` package and `site` subdirectories in your PYTHONPATH.
 Installation can be done in local user site-packages with the help of the `_install/setup_epygram.py` script.
 This script usage is autodocumented (option `-h`) about its options.
 
 Then follow instructions printed by the script to complete installation.
+
+NOTE: from version 1.5.0 (not released yet) it is planned to set EPyGrAM on PyPI so as to install it with `pip`.
 
 Tests
 -----
