@@ -944,7 +944,7 @@ class FA(FileResource):
                                            for k in range(levels)]).max())
             else:
                 diffmax = 0.
-            assert diffmax < 1e-10 or not field.geometry.vcoordinate.grid, \
+            assert diffmax < config.epsilon or not field.geometry.vcoordinate.grid, \
                    "vertical geometry mismatch between field and file."
 
             if field.spectral_geometry is not None and\
