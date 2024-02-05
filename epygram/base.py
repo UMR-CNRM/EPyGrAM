@@ -293,8 +293,8 @@ class Field(RecursiveObject, FootprintBase):
                     normalizedself = (self - selfmin).__div__(selfmax - selfmin)  # FIXME: classical operators seem to fail ?
             else:
                 # ref is constant not 0.
-                normalizedref = ref / refmin
-                normalizedself = self / refmin
+                normalizedref = ref.__div__(refmin)
+                normalizedself = self.__div__(refmin)
         else:
             # ref is not constant
             normalizedself = (self - refmin).__div__(refmax - refmin)  # FIXME: classical operators seem to fail ?
