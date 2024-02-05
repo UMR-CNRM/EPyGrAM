@@ -1294,7 +1294,7 @@
     parameterCategory = 2 ;
     parameterNumber = 193 ;
     tablesVersion = 15 ;
-    typeOfFirstFixedSurface = 10 ;
+    typeOfFirstFixedSurface = 1 ;
     scaledValueOfFirstFixedSurface = 0 ;
     statisticalProcess = 2 ;
     productDefinitionTemplateNumber = 15;
