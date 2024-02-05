@@ -1462,6 +1462,20 @@ class _D3CommonField(Field):
         """
         return super(_D3CommonField, self).nonzero(subzone=subzone)
 
+    def sgmean(self):
+        """Returns an average of the field, weighted by the map factor at each point."""
+        map_factor = self.geometry.map_factor_field()  # Extraction of the map_factor field from geometry object
+        map_factor_data = map_factor.getdata()
+        nonmasked_value = map_factor_data.count(1)  # Number of longitude points for each (pseudo)latitude circle
+
+        myfield_data = self.getdata()
+        myfield_data_norm = numpy.ma.divide(myfield_data, map_factor_data)  # Global map factor normalisation
+        myfield_data_norm_sumlat = numpy.sum(myfield_data_norm, 1)  # Sum over longitude for each latitude circle
+        myfield_data_norm_sumlat = numpy.ma.divide(myfield_data_norm_sumlat, nonmasked_value)  # Normalisation by the number of longitude points for each latitude circle
+        Nb_lat = len(myfield_data_norm_sumlat)  # Nb of latitude circles
+        myfield_data_sgmean = numpy.sum(myfield_data_norm_sumlat) / Nb_lat  # Sum over latitude normalised by the number of latitude circles
+        return myfield_data_sgmean
+
     def dctspectrum(self, subzone=None, level_index=None, validity_index=None):
         """
         Returns the DCT spectrum of the field, as a
