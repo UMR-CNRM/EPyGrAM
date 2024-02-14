@@ -728,14 +728,14 @@ class D3RectangularGridGeometry(D3Geometry):
             selectionE.append(slice(y1, y2))
             y1 = self.dimensions['Y_Iwidth']
             y2 = -self.dimensions['Y_Iwidth']
-            selectionI.append(slice(y1, y2))
+            selectionI.append(slice(y1, None if y2 == 0 else y2))
         if self.datashape['i']:
             x1 = self.dimensions.get('X_CIoffset', 0)
             x2 = self.dimensions.get('X_CIoffset', 0) + self.dimensions['X_CIzone']
             selectionE.append(slice(x1, x2))
             x1 = self.dimensions['X_Iwidth']
             x2 = -self.dimensions['X_Iwidth']
-            selectionI.append(slice(x1, x2))
+            selectionI.append(slice(x1, None if x2 == 0 else x2))
 
         if self.grid['LAMzone'] == 'CIE':
             # remove E-zone
