@@ -675,175 +675,197 @@ class FA(FileResource):
         assert fieldname in self.listfields(), ' '.join(["field",
                                                          str(fieldname),
                                                          "not found in resource."])
-        # Get field info
-        ftype = self._field_type_from_file(fieldname)
+        try:
+            field = self._readH2DField(fieldname,
+                                       getdata=getdata,
+                                       footprints_proxy_as_builder=footprints_proxy_as_builder)
+        except Exception:
+            field = self._readMiscField(fieldname, getdata=getdata)
+        return field
+
+    @FileResource._openbeforedelayed
+    def _readH2DField(self, fieldname,
+                      getdata=True,
+                      footprints_proxy_as_builder=config.footprints_proxy_as_builder):
+        """
+        Reads one H2D field, given its FA name, and returns a Field instance.
+        Interface to Fortran routine FACILO.
+
+        :param fieldname: FA fieldname
+        :param getdata: if *False*, only metadata are read, the field do not
+          contain data.
+        :param footprints_proxy_as_builder: if *True*, uses footprints.proxy
+          to build fields.
+        """
         if footprints_proxy_as_builder:
             builder = fpx.field
         else:
-            if ftype == 'H2D':
-                builder = H2DField
+            builder = H2DField
+        encoding = self.fieldencoding(fieldname, update_fieldscompression=True)
+        # vertical geometry
+        kwargs_vcoord = {'structure': 'V',
+                         'typeoffirstfixedsurface': self.geometry.vcoordinate.typeoffirstfixedsurface,
+                         'position_on_grid': self.geometry.vcoordinate.position_on_grid,
+                         'grid': self.geometry.vcoordinate.grid,
+                         'levels': self.geometry.vcoordinate.levels}
+        field_info = self.gribdef.FA2GRIB(fieldname)
+        # change from default (FA header) to actual levels
+        kwargs_vcoord['typeoffirstfixedsurface'] = field_info.get('typeOfFirstFixedSurface', 0)
+        if 'level' in field_info:
+            kwargs_vcoord['levels'] = [field_info['level']]
+        else:
+            kwargs_vcoord['levels'] = [0]
+        if 'scaledValueOfFirstFixedSurface' in field_info:
+            exp = field_info.get('scaleFactorOfFirstFixedSurface', 0)
+            kwargs_vcoord['levels'] = [field_info['scaledValueOfFirstFixedSurface'] * (10 ** -exp)]
+        if kwargs_vcoord['typeoffirstfixedsurface'] != 119:  # hybrid-pressure
+            kwargs_vcoord.pop('grid', None)
+        vcoordinate = fpx.geometry(**kwargs_vcoord)
+        # Prepare field dimensions
+        spectral = encoding['spectral']
+        if spectral and self.spectral_geometry is not None:
+            if 'fourier' in self.spectral_geometry.space:
+                # LAM
+                gpdims = copy.deepcopy(self.geometry.dimensions)
+                gpdims.update({k:v for k, v in self.geometry.grid.items() if 'resolution' in k})
+                SPdatasize = self.spectral_geometry.etrans_inq(gpdims)[1]
+            elif self.spectral_geometry.space == 'legendre':
+                # Global
+                # SPdatasize may be stored to avoid calling trans_inq ?
+                SPdatasize = self.spectral_geometry.legendre_known_spectraldata_size()
+                if SPdatasize is None:
+                    # if not, call trans_inq
+                    SPdatasize = self.spectral_geometry.trans_inq(self.geometry.dimensions)[1]
+                SPdatasize *= 2  # complex coefficients
+            datasize = SPdatasize
+            spectral_geometry = self.spectral_geometry
+        else:
+            if self.geometry.rectangular_grid:
+                GPdatasize = self.geometry.dimensions['X'] * self.geometry.dimensions['Y']
             else:
-                builder = MiscField
-        if ftype == 'H2D':
-            encoding = self.fieldencoding(fieldname, update_fieldscompression=True)
-            # vertical geometry
-            kwargs_vcoord = {'structure': 'V',
-                             'typeoffirstfixedsurface': self.geometry.vcoordinate.typeoffirstfixedsurface,
-                             'position_on_grid': self.geometry.vcoordinate.position_on_grid,
-                             'grid': self.geometry.vcoordinate.grid,
-                             'levels': self.geometry.vcoordinate.levels}
-            field_info = self.gribdef.FA2GRIB(fieldname)
-            # change from default (FA header) to actual levels
-            kwargs_vcoord['typeoffirstfixedsurface'] = field_info.get('typeOfFirstFixedSurface', 0)
-            if 'level' in field_info:
-                kwargs_vcoord['levels'] = [field_info['level']]
-            else:
-                kwargs_vcoord['levels'] = [0]
-            if 'scaledValueOfFirstFixedSurface' in field_info:
-                exp = field_info.get('scaleFactorOfFirstFixedSurface', 0)
-                kwargs_vcoord['levels'] = [field_info['scaledValueOfFirstFixedSurface'] * (10 ** -exp)]
-            if kwargs_vcoord['typeoffirstfixedsurface'] != 119:  # hybrid-pressure
-                kwargs_vcoord.pop('grid', None)
-            vcoordinate = fpx.geometry(**kwargs_vcoord)
-            # Prepare field dimensions
-            spectral = encoding['spectral']
-            if spectral and self.spectral_geometry is not None:
-                if 'fourier' in self.spectral_geometry.space:
-                    # LAM
-                    gpdims = copy.deepcopy(self.geometry.dimensions)
-                    gpdims.update({k:v for k, v in self.geometry.grid.items() if 'resolution' in k})
-                    SPdatasize = self.spectral_geometry.etrans_inq(gpdims)[1]
-                elif self.spectral_geometry.space == 'legendre':
-                    # Global
-                    # SPdatasize may be stored to avoid calling trans_inq ?
-                    SPdatasize = self.spectral_geometry.legendre_known_spectraldata_size()
-                    if SPdatasize is None:
-                        # if not, call trans_inq
-                        SPdatasize = self.spectral_geometry.trans_inq(self.geometry.dimensions)[1]
-                    SPdatasize *= 2  # complex coefficients
-                datasize = SPdatasize
-                spectral_geometry = self.spectral_geometry
-            else:
-                if self.geometry.rectangular_grid:
-                    GPdatasize = self.geometry.dimensions['X'] * self.geometry.dimensions['Y']
-                else:
-                    GPdatasize = sum(self.geometry.dimensions['lon_number_by_lat'])
-                datasize = GPdatasize
-                spectral_geometry = None
-            # Make geometry object
-            kwargs_geom = dict(structure='H2D',
-                               name=self.geometry.name,
-                               grid=copy.copy(self.geometry.grid),
-                               dimensions=self.geometry.dimensions,
-                               vcoordinate=vcoordinate,
-                               position_on_horizontal_grid=self.geometry.position_on_horizontal_grid,
-                               geoid=config.FA_default_geoid)
-
-            if self.geometry.projected_geometry or self.geometry.name == 'academic':
-                kwargs_geom['projection'] = self.geometry.projection
-            geometry = fpx.geometry(**kwargs_geom)
-
-        # Get data if requested
-        if getdata:
-            if ftype != 'H2D':
-                nature = self.sfxflddesc.nature(fieldname, 'int')
-                dim = self.sfxflddesc.dim(fieldname, 1)
-                field_length = wlfi.wlfinfo(self._unit, fieldname)[0]
-                data = wfa.wfalais(self._unit, fieldname, field_length)
-                if dim == 0:
-                    if nature == 'int':
-                        dataOut = data.view('int64')[0]
-                    elif nature == 'str':
-                        dataInt = data.view('int64')
-                        dataOut = ""
-                        for num in dataInt:
-                            dataOut += chr(num)
-                    elif nature == 'bool':
-                        dataOut = bool(data.view('int64')[0])
-                    elif nature == 'float':
-                        dataOut = data[0]
-                    else:
-                        raise NotImplementedError("field={}, reading of datatype: {}".format(
-                            fieldname, nature))
-                else:
-                    # copy is necessary for garbage collector
-                    if nature == 'int':
-                        dataOut = numpy.copy(data.view('int64')[:])
-                    elif nature == 'float':
-                        dataOut = numpy.copy(data)
-                    elif nature == 'str':
-                        raise NotImplementedError("reading of datatype: " +
-                                                  nature + " array.")
-                        dataOut = numpy.copy(data)
-                    elif nature == 'bool':
-                        dataOut = numpy.copy(data.view('bool')[:])
-                    else:
-                        raise NotImplementedError("field={}, reading of datatype: {} array".format(
-                            fieldname, nature))
-                data = dataOut
-            elif ftype == 'H2D':
-                if config.spectral_coeff_order == 'model':
-                    data, masked, masked_value = wfa.wfacilo(datasize,
-                                                             self._unit,
-                                                             fieldname[0:4],
-                                                             0,
-                                                             fieldname[4:],
-                                                             spectral)
-                    data = numpy.array(data)
-                    if masked:
-                        data = numpy.ma.masked_equal(data, masked_value)
-                else:
-                    # FIXME: next export version CLEANME: when everybody can use facilo (CY41T1_op1 onwards)
-                    data = numpy.array(wfa.wfacile(datasize,
-                                                   self._unit,
-                                                   fieldname[0:4],
-                                                   0,
-                                                   fieldname[4:],
-                                                   spectral))
-
+                GPdatasize = sum(self.geometry.dimensions['lon_number_by_lat'])
+            datasize = GPdatasize
+            spectral_geometry = None
+        # Make geometry object
+        kwargs_geom = dict(structure='H2D',
+                           name=self.geometry.name,
+                           grid=copy.copy(self.geometry.grid),
+                           dimensions=self.geometry.dimensions,
+                           vcoordinate=vcoordinate,
+                           position_on_horizontal_grid=self.geometry.position_on_horizontal_grid,
+                           geoid=config.FA_default_geoid)
+        if self.geometry.projected_geometry or self.geometry.name == 'academic':
+            kwargs_geom['projection'] = self.geometry.projection
+        geometry = fpx.geometry(**kwargs_geom)
         # Create field
         fid = {self.format:fieldname}
-        if ftype == 'H2D':
-            # Create H2D field
-            fid['generic'] = FPDict(get_generic_fid(fieldname))
-            cumul = field_info.get('productDefinitionTemplateNumber', None)
-            if cumul is None or cumul == 0:
-                validity = FieldValidity(basis=self.validity.getbasis(),
-                                         term=self.validity.term())
-            else:
-                validity = self.validity.deepcopy()
-                validity.set(statistical_process_on_duration=self.gribdef.FA2GRIB(fieldname).get('typeOfStatisticalProcessing', None))
-            # MOCAGE surface fields: different terms can be stored in one file !
-            if all([config.FA_allow_MOCAGE_multivalidities,
-                    fieldname[0:2] in ('SF', 'EM', 'DV'),
-                    all([c.isdigit() for c in fieldname[2:4]])]
-                   ):
-                term_in_seconds = datetime.timedelta(seconds=3600 * int(fieldname[2:4]))
-                validity.set(term=term_in_seconds)
-            field = builder(fid=fid,
-                            structure=geometry.structure,
-                            geometry=geometry,
-                            validity=validity,
-                            spectral_geometry=spectral_geometry,
-                            processtype=self.processtype)
-            if 'gauss' in self.geometry.name and config.FA_buffered_gauss_grid:
-                # trick: link the gauss lonlat grid so that it can be shared by
-                # several geometry objects or fields !
-                if not hasattr(self.geometry, '_buffered_gauss_grid'):
-                    (igrid, jgrid) = self.geometry._allocate_colocation_grid(compressed=False, as_float=True)
-                    self.geometry._buffered_gauss_grid = {'lons':igrid,
-                                                          'lats':jgrid,
-                                                          'filled':False}
-                field.geometry._buffered_gauss_grid = self.geometry._buffered_gauss_grid
+        # Create H2D field
+        fid['generic'] = FPDict(get_generic_fid(fieldname))
+        cumul = field_info.get('productDefinitionTemplateNumber', None)
+        if cumul is None or cumul == 0:
+            validity = FieldValidity(basis=self.validity.getbasis(),
+                                     term=self.validity.term())
         else:
-            # Create Misc field
-            fid['generic'] = FPDict()
-            field = builder(fid=fid)
+            validity = self.validity.deepcopy()
+            validity.set(statistical_process_on_duration=self.gribdef.FA2GRIB(fieldname).get('typeOfStatisticalProcessing', None))
+        # MOCAGE surface fields: different terms can be stored in one file !
+        if all([config.FA_allow_MOCAGE_multivalidities,
+                fieldname[0:2] in ('SF', 'EM', 'DV'),
+                all([c.isdigit() for c in fieldname[2:4]])]
+               ):
+            term_in_seconds = datetime.timedelta(seconds=3600 * int(fieldname[2:4]))
+            validity.set(term=term_in_seconds)
+        field = builder(fid=fid,
+                        structure=geometry.structure,
+                        geometry=geometry,
+                        validity=validity,
+                        spectral_geometry=spectral_geometry,
+                        processtype=self.processtype)
+        if 'gauss' in self.geometry.name and config.FA_buffered_gauss_grid:
+            # trick: link the gauss lonlat grid so that it can be shared by
+            # several geometry objects or fields !
+            if not hasattr(self.geometry, '_buffered_gauss_grid'):
+                (igrid, jgrid) = self.geometry._allocate_colocation_grid(compressed=False, as_float=True)
+                self.geometry._buffered_gauss_grid = {'lons':igrid,
+                                                      'lats':jgrid,
+                                                      'filled':False}
+            field.geometry._buffered_gauss_grid = self.geometry._buffered_gauss_grid
+        # Get data if requested
         if getdata:
-            if ftype == 'H2D' and not field.spectral:
+            if config.spectral_coeff_order == 'model':
+                data, masked, masked_value = wfa.wfacilo(datasize,
+                                                         self._unit,
+                                                         fieldname[0:4],
+                                                         0,
+                                                         fieldname[4:],
+                                                         spectral)
+                data = numpy.array(data)
+                if masked:
+                    data = numpy.ma.masked_equal(data, masked_value)
+            else:
+                # FIXME: next export version CLEANME: when everybody can use facilo (CY41T1_op1 onwards)
+                data = numpy.array(wfa.wfacile(datasize,
+                                               self._unit,
+                                               fieldname[0:4],
+                                               0,
+                                               fieldname[4:],
+                                               spectral))
+            if not field.spectral:
                 data = geometry.reshape_data(data)
             field.setdata(data)
 
+        return field
+
+    def _readMiscField(self, fieldname, getdata=True):
+        """
+        Reads one metadata field, given its FA name, and returns a MiscField instance.
+        Interface to Fortran routine FALAIS.
+
+        :param fieldname: FA fieldname
+        :param getdata: if *False*, only metadata are read, the field do not
+          contain data.
+        """
+        # Create field
+        fid = {self.format:fieldname}
+        fid['generic'] = FPDict()
+        field = MiscField(fid=fid)
+        # Get data if requested
+        if getdata:
+            nature = self.sfxflddesc.nature(fieldname, 'int')
+            dim = self.sfxflddesc.dim(fieldname, 1)
+            field_length = wlfi.wlfinfo(self._unit, fieldname)[0]
+            data = wfa.wfalais(self._unit, fieldname, field_length)
+            if dim == 0:
+                if nature == 'int':
+                    dataOut = data.view('int64')[0]
+                elif nature == 'str':
+                    dataInt = data.view('int64')
+                    dataOut = ""
+                    for num in dataInt:
+                        dataOut += chr(num)
+                elif nature == 'bool':
+                    dataOut = bool(data.view('int64')[0])
+                elif nature == 'float':
+                    dataOut = data[0]
+                else:
+                    raise NotImplementedError("field={}, reading of datatype: {}".format(
+                        fieldname, nature))
+            else:
+                # copy is necessary for garbage collector
+                if nature == 'int':
+                    dataOut = numpy.copy(data.view('int64')[:])
+                elif nature == 'float':
+                    dataOut = numpy.copy(data)
+                elif nature == 'str':
+                    raise NotImplementedError("reading of datatype: " +
+                                              nature + " array.")
+                    dataOut = numpy.copy(data)
+                elif nature == 'bool':
+                    dataOut = numpy.copy(data.view('bool')[:])
+                else:
+                    raise NotImplementedError("field={}, reading of datatype: {} array".format(
+                        fieldname, nature))
+            field.setdata(dataOut)
         return field
 
     def readfields(self, requestedfields=None, getdata=True):
