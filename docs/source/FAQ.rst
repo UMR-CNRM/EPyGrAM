@@ -81,6 +81,13 @@ FAQ --- Frequently Asked Questions
 
 -----------------------------------------------------------
 
++ **How to modify the validity of a FA file ?**
+
+    => e.g. to set the cumulativeduration to 0:
+    ``fa_resource.modify_validity(basis=fa_resource.validity.get(), cumulativeduration=datetime.timedelta(0))``
+
+-----------------------------------------------------------
+
 **(to be continued...)**
 
 
