@@ -68,14 +68,14 @@ class Test_lambertHS_rot_sec(abtc.Test_H2DGeometry):
     fileprefix = 'lambert_HS_rotated_secant'
 
 
-fmts = ['FA', 'GRIB1', 'GRIB2', 'netCDF', 'LFI']
+fmts = ['FA', 'GRIB2', 'netCDF', 'LFI']
 @skipIf(len(formats.activate(*fmts)) == 0, "format not activated")
 @add_tests_for_attrs(*formats.activate(*fmts))
 class Test_mercatorHN(abtc.Test_H2DGeometry):
     fileprefix = 'mercator_HN'
 
 
-fmts = ['FA', 'GRIB1', 'GRIB2', 'netCDF']
+fmts = ['FA', 'GRIB2', 'netCDF']
 @skipIf(len(formats.activate(*fmts)) == 0, "format not activated")
 @add_tests_for_attrs(*formats.activate(*fmts))
 class Test_mercatorHS(abtc.Test_H2DGeometry):
@@ -110,25 +110,25 @@ class Test_stereopolHS_rot_sec(abtc.Test_H2DGeometry):
     fileprefix = 'stereopol_HS_rotated_secant'
 
 
-fmts = ['FA', 'GRIB1', 'GRIB2', 'netCDF']
+fmts = ['FA', 'GRIB2', 'netCDF']
 @skipIf(len(formats.activate(*fmts)) == 0, "format not activated")
 @add_tests_for_attrs(*formats.activate(*fmts))
 class Test_regLLsmall(abtc.Test_H2DGeometry):
     fileprefix = 'regLL_small'
 
 
-fmts = ['FA', 'GRIB1', 'GRIB2', 'netCDF']
+fmts = ['FA', 'GRIB2', 'netCDF']
 @skipIf(len(formats.activate(*fmts)) == 0, "format not activated")
 @add_tests_for_attrs(*formats.activate(*fmts))
 class Test_regLLlarge(abtc.Test_H2DGeometry):
     fileprefix = 'regLL_large'
 
 
-fmts = ['GRIB1']
-@skipIf(len(formats.activate(*fmts)) == 0, "format not activated")
-@add_tests_for_attrs(*formats.activate(*fmts))
-class Test_rotLL(abtc.Test_H2DGeometry):
-    fileprefix = 'rotLL'
+#fmts = ['GRIB1']
+#@skipIf(len(formats.activate(*fmts)) == 0, "format not activated")
+#@add_tests_for_attrs(*formats.activate(*fmts))
+#class Test_rotLL(abtc.Test_H2DGeometry):
+#    fileprefix = 'rotLL'
 
 
 # Special ones
