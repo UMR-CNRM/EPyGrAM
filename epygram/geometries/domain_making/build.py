@@ -25,7 +25,8 @@ from .util import (Ezone_minimum_width, maxdims_security_barrier,
 from epygram import epygramError, epylog
 from epygram.config import epsilon, margin_points_within_Czone
 from epygram.util import Angle
-from epygram.geometries.SpectralGeometry import nearest_greater_FFT992compliant_int
+from epygram.geometries.SpectralGeometry import SpectralGeometry, nearest_greater_FFT992compliant_int
+from epygram.geometries import ProjectedGeometry, RegLLGeometry
 
 
 def build_geometry(center_lon, center_lat,
@@ -108,13 +109,12 @@ def build_geometry(center_lon, center_lat,
     if abs(center_lat) >= threshold_mercator_lambert:  # lambert or polar stereographic
         # we make a "first guess" with Lambert Geometry, just to check the pole is not inside the domain
         geometryname = 'lambert'
-        geometry = fpx.geometry(structure='H2D',
-                                name=geometryname,
-                                grid=FPDict(grid),
-                                dimensions=FPDict(dimensions),
-                                projection=FPDict(projection),
-                                vcoordinate=vgeom,
-                                position_on_horizontal_grid='center')
+        geometry = ProjectedGeometry(name=geometryname,
+                                     grid=grid,
+                                     dimensions=dimensions,
+                                     projection=projection,
+                                     vcoordinate=vgeom,
+                                     position_on_horizontal_grid='center')
 
         # test if pole in lambert grid
         pole_in_domain = (geometry.point_is_inside_domain_ll(0, 90) or
@@ -160,13 +160,12 @@ def build_geometry(center_lon, center_lat,
             else:
                 reference_lat = float(center_lat)
     projection['reference_lat'] = Angle(reference_lat, 'degrees')
-    geometry = fpx.geometry(structure='H2D',
-                            name=projname,
-                            grid=FPDict(grid),
-                            dimensions=FPDict(dimensions),
-                            projection=FPDict(projection),
-                            vcoordinate=vgeom,
-                            position_on_horizontal_grid='center',)
+    geometry = ProjectedGeometry(name=projname,
+                                 grid=grid,
+                                 dimensions=dimensions,
+                                 projection=projection,
+                                 vcoordinate=vgeom,
+                                 position_on_horizontal_grid='center',)
     return geometry
 
 
@@ -223,12 +222,11 @@ def build_lonlat_geometry(ll_boundaries, resolution=None):
               'Y_resolution':Angle(yres, 'degrees')
               }
     lldims = {'X':xwidth + 1, 'Y':ywidth + 1}
-    llgeometry = fpx.geometry(structure='H2D',
-                              name='regular_lonlat',
-                              grid=FPDict(llgrid),
-                              dimensions=FPDict(lldims),
-                              vcoordinate=vgeom,
-                              position_on_horizontal_grid='center')
+    llgeometry = RegLLGeometry(name='regular_lonlat',
+                               grid=llgrid,
+                               dimensions=lldims,
+                               vcoordinate=vgeom,
+                               position_on_horizontal_grid='center')
     return llgeometry
 
 
@@ -356,13 +354,12 @@ def build_geometry_fromlonlat(lonmin, lonmax,
                 }
         # first guess for lambert, to check that pole is not in domain
         if projname == 'lambert':
-            geometry = fpx.geometry(structure='H2D',
-                                    name=projname,
-                                    grid=FPDict(grid),
-                                    dimensions=FPDict(dimensions),
-                                    projection=FPDict(projection),
-                                    vcoordinate=vgeom,
-                                    position_on_horizontal_grid='center')
+            geometry = ProjectedGeometry(name=projname,
+                                         grid=grid,
+                                         dimensions=dimensions,
+                                         projection=projection,
+                                         vcoordinate=vgeom,
+                                         position_on_horizontal_grid='center')
             pole_in_domain = (geometry.point_is_inside_domain_ll(0, 90) or geometry.point_is_inside_domain_ll(0, -90))
             if pole_in_domain:
                 epylog.warning("Pole is inside Lambert domain => shifted to Polar Stereographic projection !")
@@ -370,13 +367,12 @@ def build_geometry_fromlonlat(lonmin, lonmax,
                 projection['reference_lat'] = Angle(math.copysign(90.0, center_lat), 'degrees')
 
         # guess
-        geometry = fpx.geometry(structure='H2D',
-                                name=projname,
-                                grid=FPDict(grid),
-                                dimensions=FPDict(dimensions),
-                                projection=FPDict(projection),
-                                vcoordinate=vgeom,
-                                position_on_horizontal_grid='center')
+        geometry = ProjectedGeometry(name=projname,
+                                     grid=grid,
+                                     dimensions=dimensions,
+                                     projection=projection,
+                                     vcoordinate=vgeom,
+                                     position_on_horizontal_grid='center')
         # test whether the lonlat corners are inside domain
         points_to_test = [(lonmax, latmax), (lonmax, latmin),
                           (lonmin, latmax), (lonmin, latmin),
@@ -412,6 +408,7 @@ def build_geom_from_e923nam(nam):
     blocks.
     """
     if nam['NAMCT0']['LRPLANE']:
+        geometryclass = ProjectedGeometry
         if nam['NEMGEO']['ELAT0'] <= epsilon:
             geometryname = 'mercator'
         elif 90. - abs(nam['NEMGEO']['ELAT0']) <= epsilon:
@@ -438,27 +435,26 @@ def build_geom_from_e923nam(nam):
                             X_Iwidth=nam['NEMDIM']['NBZONL'],
                             Y_Iwidth=nam['NEMDIM']['NBZONG']))
     else:
+        geometryclass = RegLLGeometry
         geometryname = 'regular_lonlat'
         kwargs = dict(
             grid=dict(input_lat=Angle(nam['NEMGEO']['ELATC'], 'degrees'),
                       input_lon=Angle(nam['NEMGEO']['ELONC'], 'degrees'),
                       input_position=((nam['NAMDIM']['NDLON'] - 1) / 2,
                                       (nam['NAMDIM']['NDGLG'] - 1) / 2),
-                      X_resolution=nam['NEMGEO']['EDELX'],
-                      Y_resolution=nam['NEMGEO']['EDELY'],
-                      LAMzone=None),
+                      X_resolution=Angle(nam['NEMGEO']['EDELX'], 'degrees'),
+                      Y_resolution=Angle(nam['NEMGEO']['EDELY'], 'degrees')),
             dimensions=dict(X=nam['NAMDIM']['NDLON'],
                             Y=nam['NAMDIM']['NDGLG']))
-    geom = fpx.geometry(structure='H2D',
-                        name=geometryname,
-                        vcoordinate=vgeom,
-                        position_on_horizontal_grid='center',
-                        **kwargs
-                        )
+    geom = geometryclass(name=geometryname,
+                         vcoordinate=vgeom,
+                         position_on_horizontal_grid='center',
+                         **kwargs
+                         )
     if 'NMSMAX' in nam['NAMDIM'].keys() and 'NSMAX' in nam['NAMDIM'].keys():
-        spgeom = fpx.geometry(space='bi-fourier',
-                              truncation=dict(in_X=nam['NAMDIM']['NMSMAX'],
-                                              in_Y=nam['NAMDIM']['NSMAX']))
+        spgeom = SpectralGeometry(space='bi-fourier',
+                                  truncation=dict(in_X=nam['NAMDIM']['NMSMAX'],
+                                                  in_Y=nam['NAMDIM']['NSMAX']))
     else:
         spgeom = None
     return (geom, spgeom)

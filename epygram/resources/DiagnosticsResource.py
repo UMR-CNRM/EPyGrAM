@@ -358,7 +358,7 @@ class DiagnosticsResource(Resource):
                            field. If None, defaults to the horizontal resolution
                            of the field.
         :param vertical_coordinate: defines the requested vertical coordinate of the
-                                    V2DField (cf. :class:`epygram.geometries.V1DGeometry`
+                                    V2DField (cf. :module:`epygram.geometries`
                                     coordinate possible values).
         :param interpolation: defines the interpolation function used to compute
                               the profile points locations from the fields grid: \n
@@ -404,7 +404,7 @@ class DiagnosticsResource(Resource):
         :param handgrip: MUST define the parameter and the type of levels
         :param geometry: is the geometry on which extract data.
         :param vertical_coordinate: defines the requested vertical coordinate of the
-                                    V2DField (cf. :class:`epygram.geometries.V1DGeometry`
+                                    V2DField (cf. :module:`epygram.geometries`
                                     coordinate possible values).
         :param interpolation: defines the interpolation function used to compute
                               the profile points locations from the fields grid: \n
@@ -1168,30 +1168,16 @@ class DiagnosticsResource(Resource):
             fieldset = FieldSet()
             for fid in fids:
                 P = self.resource.readfield(hybridP['fid_for_vcoord'], getdata=False)
-                kwargs_geom = P.geometry.footprint_as_dict()
-                del kwargs_geom['vcoordinate'].levels[:]
+                geometry = P.geometry.deepcopy()
+                if 'level' in fid:
+                    geometry.vcoordinate.levels = [fid['level']]
+                else:
+                    A = hybridP['A']
+                    geometry.vcoordinate.levels = list(range(1, len(A) + 1))
+                geometry.vcoordinate.position_on_grid = option_pos
                 myfid_P = fid.copy()
                 myfid_P.update(fid_P)
                 myfid_P = {self.format:myfid_P, 'generic':myfid_P}
-                if 'level' in fid:
-                    kwargs_geom['structure'] = {'3D':'H2D',
-                                                'H2D':'H2D',
-                                                'V1D':'Point',
-                                                'V2D':'H1D',
-                                                'H1D':'H1D',
-                                                'Point':'Point'}[P.structure]
-                    kwargs_geom['vcoordinate'].levels.append(fid['level'])
-                else:
-                    A = hybridP['A']
-                    kwargs_geom['structure'] = {'H2D':'3D',
-                                                '3D':'3D',
-                                                'Point':'V1D',
-                                                'H1D':'V2D',
-                                                'V2D':'V2D',
-                                                'V1D':'V1D'}[P.structure]
-                    kwargs_geom['vcoordinate'].levels.extend(range(1, len(A) + 1))
-                kwargs_geom['vcoordinate'].position_on_grid = option_pos
-                geometry = fpx.geometry(**kwargs_geom)
                 P = fpx.field(structure=geometry.structure,
                               geometry=geometry,
                               validity=Ps.validity,
@@ -1282,30 +1268,16 @@ class DiagnosticsResource(Resource):
             fieldset = FieldSet()
             for fid in fids:
                 Z = self.resource.readfield(hybridH['fid_for_vcoord'], getdata=False)
-                kwargs_geom = Z.geometry.footprint_as_dict()
-                del kwargs_geom['vcoordinate'].levels[:]
+                geometry = Z.geometry.deepcopy()
+                geometry.position_on_horizontal_grid = Zs.geometry.position_on_horizontal_grid
+                if 'level' in fid:
+                    geometry.vcoordinate.levels = [fid['level']]
+                else:
+                    geometry.vcoordinate.levels = list(range(0, len(A) + 2))
+                geometry.vcoordinate.position_on_grid = option_pos
                 myfid_Z = fid.copy()
                 myfid_Z.update(fid_Z)
                 myfid_Z = {self.format:myfid_Z, 'generic':myfid_Z}
-                kwargs_geom['position_on_horizontal_grid'] = Zs.geometry.position_on_horizontal_grid
-                if 'level' in fid:
-                    kwargs_geom['structure'] = {'3D':'H2D',
-                                                'H2D':'H2D',
-                                                'V1D':'Point',
-                                                'V2D':'H1D',
-                                                'H1D':'H1D',
-                                                'Point':'Point'}[Z.structure]
-                    kwargs_geom['vcoordinate'].levels.append(fid['level'])
-                else:
-                    kwargs_geom['structure'] = {'H2D':'3D',
-                                                '3D':'3D',
-                                                'Point':'V1D',
-                                                'H1D':'V2D',
-                                                'V2D':'V2D',
-                                                'V1D':'V1D'}[Z.structure]
-                    kwargs_geom['vcoordinate'].levels.extend(range(0, len(A) + 2))
-                kwargs_geom['vcoordinate'].position_on_grid = option_pos
-                geometry = fpx.geometry(**kwargs_geom)
                 Z = fpx.field(structure=geometry.structure,
                               geometry=geometry,
                               validity=Zs.validity,
@@ -1447,28 +1419,14 @@ class DiagnosticsAROMEResource(DiagnosticsResource):
             fieldset = FieldSet()
             for fid in fids:
                 HGeopot = self.resource.readfield(hybridP['fid_for_vcoord'], getdata=False)
-                kwargs_geom = HGeopot.geometry.footprint_as_dict()
-                del kwargs_geom['vcoordinate'].levels[:]
+                geometry = HGeopot.geometry.deepcopy()
+                if 'level' in fid:
+                    geometry.vcoordinate.levels = [fid['level']]
+                else:
+                    geometry.vcoordinate.levels = list(range(1, len(A) + 1))
                 myfid_HGeopot = fid.copy()
                 myfid_HGeopot.update(fid_HGeopot)
                 myfid_HGeopot = {self.format:myfid_HGeopot, 'generic':myfid_HGeopot}
-                if 'level' in fid:
-                    kwargs_geom['structure'] = {'3D':'H2D',
-                                                'H2D':'H2D',
-                                                'V1D':'Point',
-                                                'V2D':'H1D',
-                                                'H1D':'H1D',
-                                                'Point':'Point'}[HGeopot.structure]
-                    kwargs_geom['vcoordinate'].levels.append(fid['level'])
-                else:
-                    kwargs_geom['structure'] = {'H2D':'3D',
-                                                '3D':'3D',
-                                                'Point':'V1D',
-                                                'H1D':'V2D',
-                                                'V2D':'V2D',
-                                                'V1D':'V1D'}[HGeopot.structure]
-                    kwargs_geom['vcoordinate'].levels.extend(range(1, len(A) + 1))
-                geometry = fpx.geometry(**kwargs_geom)
                 HGeopot = fpx.field(structure=geometry.structure,
                                     geometry=geometry,
                                     validity=Ps.validity,

@@ -16,7 +16,7 @@ import math
 from footprints import proxy as fpx
 
 from epygram.util import Angle, get_file, epygramError
-from epygram.geometries import D3AcademicGeometry
+from epygram.geometries import AcademicGeometry, VGeometry, RegLLGeometry, ProjectedGeometry
 
 
 def activate():
@@ -26,11 +26,11 @@ def activate():
     notify_doc_requires_plugin([make_vtkGrid, plot3DProjImage, plot3DBluemarble,
                                 plot3DMaptiles],
                                plugin_name)
-    from epygram.geometries import D3Geometry, _need_pyproj_geod
-    D3Geometry.make_vtkGrid = _need_pyproj_geod(make_vtkGrid)
-    D3Geometry.plot3DProjImage = plot3DProjImage
-    D3Geometry.plot3DBluemarble = plot3DBluemarble
-    D3Geometry.plot3DMaptiles = plot3DMaptiles
+    from epygram.geometries import Geometry, _need_pyproj_geod
+    Geometry.make_vtkGrid = _need_pyproj_geod(make_vtkGrid)
+    Geometry.plot3DProjImage = plot3DProjImage
+    Geometry.plot3DBluemarble = plot3DBluemarble
+    Geometry.plot3DMaptiles = plot3DMaptiles
 
 
 def make_vtkGrid(self, rendering, subzone=None):
@@ -234,7 +234,7 @@ def plot3DBluemarble(self, rendering,
     """
     from PIL import Image
 
-    if isinstance(self, D3AcademicGeometry):
+    if isinstance(self, AcademicGeometry):
         raise epygramError("We cannot plot lon-lat images in an academic projection")
 
     path = tempfile.mkstemp()[1]
@@ -249,20 +249,18 @@ def plot3DBluemarble(self, rendering,
             'input_position':(0, 0),
             'X_resolution':Angle(resol[0], 'degrees'),
             'Y_resolution':Angle(resol[1], 'degrees')}
-    kwargs_vcoord = {'structure': 'V',
-                     'typeoffirstfixedsurface': self.vcoordinate.typeoffirstfixedsurface,
+    kwargs_vcoord = {'typeoffirstfixedsurface': self.vcoordinate.typeoffirstfixedsurface,
                      'position_on_grid': self.vcoordinate.position_on_grid,
                      'grid': self.vcoordinate.grid,
                      'levels': [0]
                      }
-    kwargs_geom = dict(structure='3D',
-                       name='regular_lonlat',
+    kwargs_geom = dict(name='regular_lonlat',
                        grid=grid,
                        dimensions=dict(X=size[0], Y=size[1]),
-                       vcoordinate=fpx.geometry(**kwargs_vcoord),
+                       vcoordinate=VGeometry(**kwargs_vcoord),
                        position_on_horizontal_grid='center',
                        geoid=self.geoid)
-    geometry = fpx.geometry(**kwargs_geom)
+    geometry = RegLLGeometry(**kwargs_geom)
 
     result = self.plot3DProjImage(rendering, path, geometry, subzone,
                                   interpolation, color_transform=color_transform)
@@ -316,7 +314,7 @@ def plot3DMaptiles(self, rendering, url, resol_factor,
     """
     from PIL import Image
     
-    if isinstance(self, D3AcademicGeometry):
+    if isinstance(self, AcademicGeometry):
         raise epygramError("We cannot plot lon-lat images in an academic projection")
 
     def deg2num(lon, lat, zoom):
@@ -391,8 +389,7 @@ def plot3DMaptiles(self, rendering, url, resol_factor,
             'X_resolution':resol[0],
             'Y_resolution':resol[1],
             'LAMzone':None}
-    kwargs_vcoord = {'structure': 'V',
-                     'typeoffirstfixedsurface': self.vcoordinate.typeoffirstfixedsurface,
+    kwargs_vcoord = {'typeoffirstfixedsurface': self.vcoordinate.typeoffirstfixedsurface,
                      'position_on_grid': self.vcoordinate.position_on_grid,
                      'grid': self.vcoordinate.grid,
                      'levels': [0]
@@ -400,15 +397,14 @@ def plot3DMaptiles(self, rendering, url, resol_factor,
     projection = {'reference_lon':Angle(0, 'radians'),
                   'reference_lat':Angle(0, 'radians'),
                   'rotation':Angle(0., 'radians')}
-    kwargs_geom = dict(structure='3D',
-                       name='mercator',
+    kwargs_geom = dict(name='mercator',
                        grid=grid,
                        dimensions=dict(X=(xmax + 1 - xmin) * size[0], Y=(ymax + 1 - ymin) * size[1]),
                        projection=projection,
-                       vcoordinate=fpx.geometry(**kwargs_vcoord),
+                       vcoordinate=VGeometry(**kwargs_vcoord),
                        position_on_horizontal_grid='center',
                        geoid={'a':radius, 'b':radius})
-    geometry = fpx.geometry(**kwargs_geom)
+    geometry = ProjectedGeometry(**kwargs_geom)
 
     # Rendering
     result = self.plot3DProjImage(rendering, path, geometry, subzone,
