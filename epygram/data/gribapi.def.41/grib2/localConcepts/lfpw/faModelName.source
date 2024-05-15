@@ -50,8 +50,8 @@
 ## AROME-PE
 	{% for kpearo in range(defs.n_members_pearo) %}
 		{% set kpearostr = '{:03d}'.format(kpearo) %}
-		'arome-pefrance-production-oper-fc_m{{kpearostr}}' = { generatingProcessIdentifier = 117; numberOfForecastsInEnsemble = 017; perturbationNumber = {{kpearostr}}; productDefinitionTemplateNumber = 11; }
-		'arome-pefrance-production-dble-fc_m{{kpearostr}}' = { generatingProcessIdentifier = 119; numberOfForecastsInEnsemble = 017; perturbationNumber = {{kpearostr}}; productDefinitionTemplateNumber = 11; }
+		'arome-pefrance-production-oper-fc_m{{kpearostr}}' = { generatingProcessIdentifier = 117; numberOfForecastsInEnsemble = 025; perturbationNumber = {{kpearostr}}; productDefinitionTemplateNumber = 11; }
+		'arome-pefrance-production-dble-fc_m{{kpearostr}}' = { generatingProcessIdentifier = 119; numberOfForecastsInEnsemble = 025; perturbationNumber = {{kpearostr}}; productDefinitionTemplateNumber = 11; }
 	{% endfor %}
 ## AROME-PI
 	'arome-pifrance-production-oper-fc' = { generatingProcessIdentifier = 62; indicatorOfUnitOfTimeRange = "m"; }
