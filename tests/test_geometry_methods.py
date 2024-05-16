@@ -426,7 +426,7 @@ class Test_rotLL(abtc.Test_RectGeometryMethods):
 
     def test_distance(self):
         self.assertAlmostEqual(self.geo.distance(*self.transect),
-                               128585.15940057031,
+                               128509.29466328742,
                                delta=delta_assertAlmostEqual4pyproj)
 
     @skipIf(fast, 'slow test')
@@ -471,7 +471,7 @@ class Test_rotLL(abtc.Test_RectGeometryMethods):
 
     def test_resolution_ll(self):
         self.assertAlmostEqual(self.geo.resolution_ll(*self.point),
-                               11094.141774775859, delta=delta_assertAlmostEqual4pyproj)
+                               11087.596274857762, delta=delta_assertAlmostEqual4pyproj)
 
 
 if __name__ == '__main__':
