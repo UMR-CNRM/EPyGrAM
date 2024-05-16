@@ -1010,10 +1010,16 @@ class netCDFMNH(FileResource):
         else:
             lat0 = v('LAT0')
             lon0 = v('LON0')
-            if 'LATORI' in listnames and 'LONORI' in listnames:
+            xres, yres = xhat[1] - xhat[0], yhat[1] - yhat[0]
+            if 'latitude' in listnames and 'longitude' in listnames:
+                input_position = (0, 0)
+                lat1 = v('latitude')[input_position[0], input_position[1]]
+                lon1 = v('longitude')[input_position[0], input_position[1]]
+            elif 'LATORI' in listnames and 'LONORI' in listnames:
                 lat1 = v('LATORI')
                 lon1 = v('LONORI')
-                input_position = (jphext - 1, jphext - 1) #deduced from run output
+                xoffset, yoffset = .5 * (xhat[0] + xhat[1]) / xres, .5 * (yhat[0] + yhat[1]) / yres
+                input_position = (jphext - 1 - xoffset, jphext - 1 - yoffset) #deduced from run output
             else:
                 lat1 = v('LATOR')
                 lon1 = v('LONOR')
@@ -1037,8 +1043,8 @@ class netCDFMNH(FileResource):
                     latin1, latin2 = self._get_latin1_latin2_lambert(lat0, rpk)
                     projection['secant_lat1'] = latin1
                     projection['secant_lat2'] = latin2
-            grid = {'X_resolution':xhat[1] - xhat[0],
-                    'Y_resolution':yhat[1] - yhat[0],
+            grid = {'X_resolution':xres,
+                    'Y_resolution':yres,
                     'LAMzone':'CIE',
                     'input_lon':Angle(float(lon1), 'degrees'),
                     'input_lat':Angle(float(lat1), 'degrees'),
