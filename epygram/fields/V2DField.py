@@ -15,7 +15,7 @@ import footprints
 from bronx.graphics.axes import set_figax
 
 from epygram import config, util, epygramError
-from epygram.geometries import V2DGeometry
+from epygram.geometries import Geometry
 from .D3Field import D3Field, _D3CommonField, D3VirtualField
 
 epylog = footprints.loggers.getLogger(__name__)
@@ -28,7 +28,7 @@ class V2DCommonField(_D3CommonField):
     its data, its geometry, and its validity.
 
     At least for now, it is designed somehow like a collection of V1DFields.
-    And so is V2DGeometry.
+    And so is Geometry.
     """
 
     _collector = ('field',)
@@ -363,7 +363,7 @@ class V2DField(V2DCommonField, D3Field):
     its data, its geometry, and its validity.
 
     At least for now, it is designed somehow like a collection of V1DFields.
-    And so is V2DGeometry.
+    And so is Geometry.
     """
 
     _collector = ('field',)
@@ -372,7 +372,7 @@ class V2DField(V2DCommonField, D3Field):
             structure=dict(
                 values=set(['V2D'])),
             geometry=dict(
-                type=V2DGeometry),
+                type=Geometry),
         )
     )
 

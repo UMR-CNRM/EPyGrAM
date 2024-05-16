@@ -30,6 +30,7 @@ from epygram.util import Angle, RecursiveObject
 from epygram.base import FieldValidity, Field, FieldValidityList
 from epygram.resources import FileResource
 from epygram.fields import MiscField
+from epygram.geometries import VGeometry, AcademicGeometry, ProjectedGeometry
 from epygram.geometries.VGeometry import hybridH2altitude, hybridH2pressure
 
 __all__ = ['netCDFMNH']
@@ -417,19 +418,16 @@ class netCDFMNH(FileResource):
                 self._read_validity()
 
             # Make geometry object
-            kwargs_geom = dict(structure=field_info['type'],
-                               name=self.geometry.name,
+            kwargs_geom = dict(name=self.geometry.name,
                                grid=copy.deepcopy(self.geometry.grid),
                                dimensions=copy.deepcopy(self.geometry.dimensions),
                                geoid=config.netCDFMNH_default_geoid,
-                               position_on_grid=None,
                                projection=copy.deepcopy(self.geometry.projection)  # Also used for academic geometries
                                )
 
             if self.geometry.vcoordinate is not None:
                 # vertical geometry
-                kwargs_vcoord = {'structure': 'V',
-                                 'typeoffirstfixedsurface': self.geometry.vcoordinate.typeoffirstfixedsurface,
+                kwargs_vcoord = {'typeoffirstfixedsurface': self.geometry.vcoordinate.typeoffirstfixedsurface,
                                  'position_on_grid': self.geometry.vcoordinate.position_on_grid,
                                  'grid': copy.copy(self.geometry.vcoordinate.grid),
                                  'levels': copy.copy(self.geometry.vcoordinate.levels)}
@@ -475,8 +473,8 @@ class netCDFMNH(FileResource):
                 kwargs_vcoord['position_on_grid'] = 'mass'
             else:
                 kwargs_vcoord['position_on_grid'] = gridIndicator['vertical']
-            kwargs_geom['vcoordinate'] = fpx.geometry(**kwargs_vcoord)
-            geometry = fpx.geometry(**kwargs_geom)
+            kwargs_geom['vcoordinate'] = VGeometry(**kwargs_vcoord)
+            geometry = self.geometry.__class__(**kwargs_geom)
             if 'time' in var.dimensions:
                 validity = self.validity.deepcopy()
             else:
@@ -630,8 +628,7 @@ class netCDFMNH(FileResource):
         :param geometry: the geometry on which extract data. If None, it is built from
           lon/lat.
         :param vertical_coordinate: defines the requested vertical coordinate of the
-          V1DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
-          possible values).
+          V1DField (cf. :module:`epygram.geometries` coordinate possible values).
         :param interpolation: defines the interpolation function used to compute
           the profile at requested lon/lat from the fields grid:\n
           - if 'nearest' (default), extracts profile at the horizontal nearest neighboring gridpoint;
@@ -690,8 +687,7 @@ class netCDFMNH(FileResource):
         :param resolution: defines the horizontal resolution to be given to the
           field. If None, defaults to the horizontal resolution of the field.
         :param vertical_coordinate: defines the requested vertical coordinate of the
-          V2DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
-          possible values).
+          V2DField (cf. :module:`epygram.geometries` coordinate possible values).
         :param interpolation: defines the interpolation function used to compute
           the profile points locations from the fields grid: \n
           - if 'nearest', each horizontal point of the section is
@@ -743,8 +739,7 @@ class netCDFMNH(FileResource):
         :param geometry: the geometry on which extract data.
                          None to keep the geometry untouched.
         :param vertical_coordinate: defines the requested vertical coordinate of the
-          V2DField (cf. :class:`epygram.geometries.V1DGeometry` coordinate
-          possible values).
+          V2DField (cf. :module:`epygram.geometries` coordinate possible values).
         :param interpolation defines the interpolation function used to compute
           the profile points locations from the fields grid: \n
           - if 'nearest', each horizontal point of the section is
@@ -984,6 +979,7 @@ class netCDFMNH(FileResource):
                       }
 
         if cartesian:
+            geometryclass = AcademicGeometry
             lat0 = v('LAT0')
             lon0 = v('LON0')
             
@@ -1008,6 +1004,7 @@ class netCDFMNH(FileResource):
                                geoid=config.netCDFMNH_default_geoid,
                                )
         else:
+            geometryclass = ProjectedGeometry
             lat0 = v('LAT0')
             lon0 = v('LON0')
             xres, yres = xhat[1] - xhat[0], yhat[1] - yhat[0]
@@ -1057,8 +1054,7 @@ class netCDFMNH(FileResource):
             else:
                 geometryname = 'lambert'
 
-            kwargs_geom = dict(structure='3D',
-                               name=geometryname,
+            kwargs_geom = dict(name=geometryname,
                                grid=grid,
                                dimensions=dimensions,
                                geoid=config.netCDFMNH_default_geoid,
@@ -1076,20 +1072,18 @@ class netCDFMNH(FileResource):
             grid = {'gridlevels': tuple([(i + 1, FPDict({'Ai':Ai[i], 'Bi':Bi[i]})) for
                                          i in range(len(Ai))]),
                     'ABgrid_position':'flux'}
-            kwargs_vcoord = {'structure': 'V',
-                             'typeoffirstfixedsurface':118 if not sleve else 255,
+            kwargs_vcoord = {'typeoffirstfixedsurface':118 if not sleve else 255,
                              'position_on_grid': 'mass',
                              'grid': grid,
                              'levels': list([i for i in range(len(Ai) + 1)])
                              }
         else:
-            kwargs_vcoord = {'structure': 'V',
-                             'typeoffirstfixedsurface': 255,
+            kwargs_vcoord = {'typeoffirstfixedsurface': 255,
                              'position_on_grid': '__unknown__',
                              'levels':[255]}
         kwargs_geom['position_on_horizontal_grid'] = 'center'
-        kwargs_geom['vcoordinate'] = fpx.geometry(**kwargs_vcoord)
-        self.geometry = fpx.geometry(**kwargs_geom)
+        kwargs_geom['vcoordinate'] = VGeometry(**kwargs_vcoord)
+        self.geometry = geometryclass(**kwargs_geom)
 
     @FileResource._openbeforedelayed
     def _read_validity(self):

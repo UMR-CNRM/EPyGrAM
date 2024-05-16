@@ -24,8 +24,7 @@ from epygram import config, epygramError
 from epygram.util import Angle, write_formatted, separation_line
 from epygram.base import FieldValidity, FieldValidityList, FieldSet
 from .LFA import LFA
-from epygram.geometries import PointGeometry, VGeometry
-from epygram.geometries.V1DGeometry import V1D_DDHGeometry
+from epygram.geometries import UnstructuredGeometry, VGeometry
 from epygram.fields import V1DField, PointField, MiscField
 from epygram.resources import FileResource
 from epygram import profiles
@@ -169,14 +168,11 @@ class DDHLFA(LFA):
         """
         if footprints_proxy_as_builder:
             field_builder = footprints.proxy.field
-            geom_builder = footprints.proxy.geometry
         else:
             if fieldname[0] in ('S', 'G'):
                 field_builder = PointField
-                geom_builder = PointGeometry
             else:
                 field_builder = V1DField
-                geom_builder = V1D_DDHGeometry
         field_from_LFA = super(DDHLFA, self).readfield(fieldname,
                                                        getdata=getdata)
         if fieldname in ('INDICE EXPERIENCE', 'DATE', 'DOCFICHIER', 'ECHEANCE')\
@@ -208,14 +204,12 @@ class DDHLFA(LFA):
                     if getdata:
                         value = field_from_LFA.getdata()[d]
                     domain = self.domains['geometry'][d]
-                    pgeometry = geom_builder(structure='Point',
-                                             name='DDH:' + domain['type'],
-                                             grid={'DDH_domain':domain},
-                                             vcoordinate=VGeometry(
-                                                 structure='V',
-                                                 typeoffirstfixedsurface=1,
-                                                 levels=FPList([1])),
-                                             dimensions={'X':1, 'Y':1})
+                    pgeometry = UnstructuredGeometry(name='DDH:' + domain['type'],
+                                                     grid={'DDH_domain':domain},
+                                                     vcoordinate=VGeometry(
+                                                         typeoffirstfixedsurface=1,
+                                                         levels=FPList([1])),
+                                                     dimensions={'X':1, 'Y':1})
                     field = field_builder(structure='Point',
                                           fid={self.format:fieldname},
                                           geometry=pgeometry,
@@ -252,17 +246,15 @@ class DDHLFA(LFA):
                             pressure_vertical_grid = self.domains['vertical_grid'][d]['fluxlevels_pressure_init']
                         else:
                             pressure_vertical_grid = self.domains['vertical_grid'][d]['fluxlevels_pressure_term']
-                    vcoordinate = VGeometry(structure='V',
-                                            typeoffirstfixedsurface=100,
+                    vcoordinate = VGeometry(typeoffirstfixedsurface=100,
                                             levels=FPList(pressure_vertical_grid / 100.),
                                             # grid={'gridposition':gridposition,  # TODO: ?
                                             #       'gridlevels':pressure_vertical_grid},  # TODO: ?
                                             position_on_grid=position_on_grid)
-                    vgeometry = geom_builder(structure='V1D',
-                                             name='DDH:' + domain['type'],
-                                             grid={'DDH_domain':domain},
-                                             vcoordinate=vcoordinate,
-                                             dimensions={'X':1, 'Y':1})
+                    vgeometry = UnstructuredGeometry(name='DDH:' + domain['type'],
+                                                     grid={'DDH_domain':domain},
+                                                     vcoordinate=vcoordinate,
+                                                     dimensions={'X':1, 'Y':1})
                     if getdata:
                         profile = field_from_LFA.getdata()[d * fieldlevels:(d + 1) * fieldlevels]
                     field = field_builder(structure='V1D',

@@ -30,6 +30,7 @@ from epygram.args_catalog import (add_arg_to_parser,
                                   runtime_options, graphical_options,
                                   extraction_options)
 from epygram.base import FieldSet
+from epygram.geometries import VGeometry
 from usevtk import Usevtk
 
 import numpy
@@ -505,12 +506,11 @@ def main(plotmode,
                         raise epygramError("No terrain height field found, ground cannot be plotted")
                 geometry.vcoordinate = zs.as_vcoordinate(force_kind=102)
             else:
-                kwargs_vcoord = {'structure': 'V',
-                                 'typeoffirstfixedsurface': 103,
+                kwargs_vcoord = {'typeoffirstfixedsurface': 103,
                                  'position_on_grid': geometry.vcoordinate.position_on_grid,
                                  'grid': geometry.vcoordinate.grid,
                                  'levels': [0]}
-                geometry.vcoordinate = fpx.geometry(**kwargs_vcoord)
+                geometry.vcoordinate = VGeometry(**kwargs_vcoord)
             if ground == 'bluemarble':
                 actor, _ = geometry.plot3DBluemarble(ren, interpolation='nearest', subzone=subzone)
             else:
