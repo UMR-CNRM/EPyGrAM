@@ -1091,6 +1091,11 @@ class netCDF(FileResource):
                 self._variables[tgrid][:] = datetimes
                 self._variables[tgrid].units = ' '.join(['seconds', 'since', datetime0])
             else:
+                units = self._variables[tgrid].units.split(sep=' ')
+                units_base = datetime.datetime.strptime(' '.join(units[2:4]), '%Y-%m-%d %H:%M:%S')
+                if field.validity[0].getbasis() != units_base:
+                    basediff = field.validity[0].getbasis() - units_base
+                    datetimes = [dt + int(basediff.total_seconds()) for dt in datetimes]
                 assert (self._variables[tgrid][:] == datetimes).all(), \
                     ' '.join(['variable', tgrid, 'mismatch.'])
 
