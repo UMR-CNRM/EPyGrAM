@@ -23,7 +23,7 @@ from footprints import FPDict, FPList, proxy as fpx
 from bronx.meteo.conversion import q2R
 from bronx.syntax.arrays import stretch_array
 
-from arpifs4py import wfa, wlfi
+from  epygram.extra.arpifs4py import wfa, wlfi
 
 from epygram import config, epygramError, util
 from epygram.util import Angle, separation_line, write_formatted_fields

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "epygram"
-version = "0.0.2"
+version = "1.4.18"
 description = "Bah C'est EPyGrAM quoi d'autre !!!"
 authors = [
     { name = "walid CHIKHI", email = "waliidchikhi@gmail.com" }

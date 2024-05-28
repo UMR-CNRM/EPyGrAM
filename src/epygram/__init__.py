@@ -203,7 +203,7 @@ def init_env(omp_num_threads=1,
     # 1. arpifs4py library
     # FA & LFI need some special environment setting
     if any([f in formats.runtime_available_formats for f in ('FA', 'LFI')]):
-        import arpifs4py
+        from epygram.extra import arpifs4py
         if mute_FA4py is None:
             mute_FA4py = config.FA_mute_FA4py
         arpifs4py.init_env(omp_num_threads=omp_num_threads, no_mpi=no_mpi,  # common

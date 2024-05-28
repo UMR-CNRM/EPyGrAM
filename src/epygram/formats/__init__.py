@@ -38,7 +38,7 @@ def available_format(fmt):
     available = True
     try:
         if fmt in ('FA', 'LFI', 'DDHLFA', 'LFA'):
-            import arpifs4py
+            from epygram.extra import arpifs4py
         elif fmt == 'GRIB':
             if config.GRIB_lowlevel_api.lower() in ('gribapi', 'grib_api'):
                 import gribapi
@@ -50,7 +50,7 @@ def available_format(fmt):
         elif fmt in ('netCDF', 'netCDFMNH'):
             import netCDF4
         elif fmt == 'TIFFMF':
-            import pyexttiff
+            from epygram.extra import pyexttiff
         elif fmt == 'HDF5SAF':
             import h5py
     except Exception as e:

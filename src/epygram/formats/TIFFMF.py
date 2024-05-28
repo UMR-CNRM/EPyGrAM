@@ -17,7 +17,7 @@ import six
 import footprints
 from footprints import FPDict, proxy as fpx
 
-import pyexttiff
+from epygram.extra import pyexttiff
 
 from epygram import config, epygramError, util
 from epygram.util import Angle

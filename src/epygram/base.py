@@ -967,7 +967,7 @@ class FieldValidity(RecursiveObject):
 
         If *asGRIB2code*, returned as a GRIB2 code (cf. GRIB2 table 4.10).
         """
-        import griberies
+        from epygram.extra import griberies
         if not asGRIB2code and isinstance(self._statistical_process_on_duration, int):
             out = griberies.tables.statistical_processes.get(self._statistical_process_on_duration, None)
         elif asGRIB2code and isinstance(self._statistical_process_on_duration, six.string_types):
