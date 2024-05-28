@@ -12,7 +12,7 @@ import numpy
 
 from epygram import epygramError
 from epygram.util import as_numpy_array
-from usevtk import modify_grid, write_grid
+from epygram.extra.usevtk import modify_grid, write_grid
 
 from epygram.fields import D3VirtualField
 
