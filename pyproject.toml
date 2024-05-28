@@ -4,18 +4,27 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "epygram"
-version = "1.4.18"
+version = "1.4.21"
 description = "Bah C'est EPyGrAM quoi d'autre !!!"
 authors = [
-    { name = "walid CHIKHI", email = "waliidchikhi@gmail.com" }
+    { name = "Alexandre MARY", email = "a.mary@meteo.fr" },
+    { name = "Suzat ** "  , email = "f.suzat@meteo.fr"}
 ]
+maintainers = [
+  {name = "Walid CHIKHI", email = "waliidchikhi@gmail.com" }
+]
+
+
 readme = "README.md"
+license = {file = "LICENSE.txt"}
+
+
 requires-python = ">=3.9"
 dependencies=[
+"taylorism",
 "footprints",
 "bronx",
 "numpy",
-"pandas",
 "cartopy == 0.23.0",
 "matplotlib == 3.8.4",
 "eccodes",
@@ -30,7 +39,6 @@ dependencies=[
 "scipy",
 "six",
 "web.py",
-"taylorism",
 ]
 
 [project.urls]
