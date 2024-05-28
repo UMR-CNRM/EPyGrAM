@@ -14,7 +14,7 @@ import numpy
 import sys
 import six
 
-from arpifs4py import wlfa
+from epygram.extra.arpifs4py import wlfa
 
 import epygram
 from epygram import epygramError, config, util

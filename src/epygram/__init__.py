@@ -87,7 +87,7 @@ package_rootdir = os.path.dirname(os.path.realpath(__path__[0]))  # realpath to 
 
 __all__ = []
 
-__version__ = io.open(os.path.join(package_rootdir, 'VERSION'), 'r').read().strip()
+__version__ = "1.4.18"  #  io.open(os.path.join(package_rootdir, 'VERSION'), 'r').read().strip()
 
 __license__ = 'CeCILL-C'
 

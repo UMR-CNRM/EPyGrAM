@@ -22,7 +22,7 @@ import footprints
 from footprints import FPDict, proxy as fpx
 from bronx.datagrip.misc import read_dict_in_CSV
 
-from arpifs4py import wlfi
+from epygram.extra.arpifs4py import wlfi
 
 from epygram import config, epygramError, util
 from epygram.util import Angle

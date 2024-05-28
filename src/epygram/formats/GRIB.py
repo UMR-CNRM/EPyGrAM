@@ -27,7 +27,7 @@ import footprints
 from footprints import proxy as fpx, FPDict, FPList
 from bronx.meteo.conversion import q2R
 from bronx.meteo import constants
-import griberies
+from epygram.extra import griberies
 
 from epygram import config, epygramError, util
 from epygram.base import FieldSet, FieldValidity
