@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "epygram"
+version = "0.0.2"
+description = "Bah C'est EPyGrAM quoi d'autre !!!"
+authors = [
+    { name = "walid CHIKHI", email = "waliidchikhi@gmail.com" }
+]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies=[
+"footprints",
+"bronx",
+"numpy",
+"pandas",
+"cartopy == 0.23.0",
+"matplotlib == 3.8.4",
+"eccodes",
+"vtk",
+"vortex",
+"pillow",
+"contourpy",
+"h5py",
+"netCDF4",
+"pyproj",
+"pyresample",
+"scipy",
+"six",
+"web.py",
+"taylorism",
+]
+
+[project.urls]
+documentation = "https://github.com/UMR-CNRM/EPyGrAM-doc.git"
+source = "https://github.com/UMR-CNRM/EPyGrAM.git"
+download = "https://github.com/UMR-CNRM/EPyGrAM/releases"
+tracker = "https://github.com/UMR-CNRM/EPyGrAM/issues"
+
+
+[tool.setuptools]
+include-package-data = true
+
+
+[tool.setuptools.packages.find]
+where = ["src"]
