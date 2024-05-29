@@ -41,8 +41,6 @@ dependencies=[
 "web.py",
 ]
 
-[tool.coverage.run]
-source = ["src"]
 [project.urls]
 documentation = "https://umr-cnrm.github.io/EPyGrAM-doc"
 source = "https://github.com/UMR-CNRM/EPyGrAM.git"
