@@ -48,7 +48,7 @@ class H2DGeometry(D3Geometry):
 
     def _GRIB2_sample(self, prefix):
         """Build GRIB2 sample name."""
-        from griberies.tables import typeoffixedsurface2sample as levels
+        from epygram.extra.griberies.tables import typeoffixedsurface2sample as levels
         return '_'.join([prefix,
                          levels.get(self.vcoordinate.typeoffirstfixedsurface, 'sfc'),
                          'grib2'])
