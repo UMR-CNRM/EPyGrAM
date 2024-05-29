@@ -4,22 +4,22 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "epygram"
-version = "1.4.21"
-description = "Bah C'est EPyGrAM quoi d'autre !!!"
+version = "1.4.22"
+description = "EPyGrAM : Enhanced Python for Graphics and Analysis of Meteorological fields"
 authors = [
     { name = "Alexandre MARY", email = "a.mary@meteo.fr" },
-    { name = "Suzat ** "  , email = "f.suzat@meteo.fr"}
+    { name = "Sébastien Riette"  , email = "s.riette@meteo.fr"}
 ]
 maintainers = [
+  { name = "Alexandre MARY", email = "a.mary@meteo.fr" }, 
   {name = "Walid CHIKHI", email = "waliidchikhi@gmail.com" }
 ]
-
 
 readme = "README.md"
 license = {file = "LICENSE.txt"}
 
 
-requires-python = ">=3.9"
+requires-python = ">=3.7"
 dependencies=[
 "taylorism",
 "footprints",
@@ -41,16 +41,20 @@ dependencies=[
 "web.py",
 ]
 
+[tool.coverage.run]
+source = ["src"]
 [project.urls]
-documentation = "https://github.com/UMR-CNRM/EPyGrAM-doc.git"
+documentation = "https://umr-cnrm.github.io/EPyGrAM-doc"
 source = "https://github.com/UMR-CNRM/EPyGrAM.git"
 download = "https://github.com/UMR-CNRM/EPyGrAM/releases"
 tracker = "https://github.com/UMR-CNRM/EPyGrAM/issues"
 
-
+[tool.pytest.ini_options]
+testpaths = [
+    "tests"
+]
 [tool.setuptools]
 include-package-data = true
-
 
 [tool.setuptools.packages.find]
 where = ["src"]
