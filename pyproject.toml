@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
+requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -12,6 +12,8 @@ authors = [
 ]
 maintainers = [
   { name = "Alexandre MARY", email = "a.mary@meteo.fr" }, 
+  { name = "AA", email = "AA@meteo.fr" }, 
+  { name = "BB", email = "BB@meteo.fr" }, 
   {name = "Walid CHIKHI", email = "waliidchikhi@gmail.com" }
 ]
 
@@ -19,27 +21,38 @@ readme = "README.md"
 license = {file = "LICENSE.txt"}
 
 
+
 requires-python = ">=3.7"
 dependencies=[
-"taylorism",
-"footprints",
-"bronx",
-"numpy",
-"cartopy == 0.23.0",
-"matplotlib == 3.8.4",
-"eccodes",
-"vtk",
-"vortex",
-"pillow",
-"contourpy",
-"h5py",
-"netCDF4",
-"pyproj",
-"pyresample",
-"scipy",
-"six",
-"web.py",
-]
+        "taylorism",
+        "footprints",
+        "bronx",
+        "numpy",
+        "cartopy == 0.23.0",
+        "matplotlib == 3.8.4",
+        "eccodes",
+        "vtk",
+        "vortex",
+        "pillow",
+        "contourpy",
+        "h5py",
+        "netCDF4",
+        "pyproj",
+        "pyresample",
+        "scipy",
+        "six",
+        "web.py"
+            ]
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.optional-dependencies]
+docs = [
+    "sphinx",
+       ]
 
 [project.urls]
 documentation = "https://umr-cnrm.github.io/EPyGrAM-doc"
@@ -48,11 +61,13 @@ download = "https://github.com/UMR-CNRM/EPyGrAM/releases"
 tracker = "https://github.com/UMR-CNRM/EPyGrAM/issues"
 
 [tool.pytest.ini_options]
+pythonpath = [
+    "src",
+             ]
+
 testpaths = [
     "tests"
-]
-[tool.setuptools]
-include-package-data = true
+            ]
 
-[tool.setuptools.packages.find]
-where = ["src"]
+
+
