@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "epygram"
-version = "1.4.22"
+version = "1.4.23"
 description = "EPyGrAM : Enhanced Python for Graphics and Analysis of Meteorological fields"
 authors = [
     { name = "Alexandre MARY", email = "a.mary@meteo.fr" },
@@ -20,28 +20,33 @@ maintainers = [
 readme = "README.md"
 license = {file = "LICENSE.txt"}
 
+classifiers = [
+    'Development Status :: 5 - Production/Stable',
+    'Intended Audience :: Science/Research',
+    'Intended Audience :: Developers',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Operating System :: Unix',
+]
 
 
-requires-python = ">=3.7"
+requires-python = ">=3.6"
 dependencies=[
-        "taylorism",
         "footprints",
         "bronx",
         "numpy",
-        "cartopy == 0.23.0",
+        "cartopy == 0.23.0",   
         "matplotlib == 3.8.4",
-        "eccodes",
-        "vtk",
-        "vortex",
-        "pillow",
-        "contourpy",
-        "h5py",
-        "netCDF4",
-        "pyproj",
-        "pyresample",
-        "scipy",
+        "eccodes",      
+        "netCDF4",   
+        "pyproj",      
         "six",
-        "web.py"
+	"pyyaml" , # issue with bronx !!          
             ]
 [tool.setuptools]
 include-package-data = true
@@ -53,6 +58,44 @@ where = ["src"]
 docs = [
     "sphinx",
        ]
+graphics = [
+        "vtk",
+        "contourpy",
+        ]
+features=[
+  "taylorism",
+  "pyresample",
+  "scipy",
+  "web.py"
+    ]
+format=[
+  "h5py",
+  "pillow"
+  ]
+
+vortex = [
+  "vortex"
+      ]
+all = [
+        "taylorism",  
+        "footprints",
+        "bronx",
+        "numpy",
+        "cartopy == 0.23.0",   
+        "matplotlib == 3.8.4",
+        "eccodes",      
+        "vtk",   
+        "vortex",  
+        "pillow",  
+        "contourpy",    
+        "h5py",     
+        "netCDF4",   
+        "pyproj",      
+        "pyresample",    
+        "scipy", 
+        "six",         
+        "web.py"
+         ]
 
 [project.urls]
 documentation = "https://umr-cnrm.github.io/EPyGrAM-doc"
@@ -68,6 +111,3 @@ pythonpath = [
 testpaths = [
     "tests"
             ]
-
-
-
