@@ -32,12 +32,17 @@ from .colormapping import register_colormap_from_json
 epylog = loggers.getLogger(__name__)
 
 class CheckAttribute(object):
-    def add_attr(self, name, set_check, error_message):
+    def add_attr(self, name, set_check, error_message, extra=None):
         """
         :param name: name of the attribute
         :param set_check: function called each time the attribute is modified to check
-                          the validity of new value (e.g. lambda x: isinstance(x, int))
+                          the validity of new value. This function takes two arguments:
+                            - the value to test
+                            - the extra parameter
+                          To enable pickle to be used, functions must be named (no lambda)
+                          and not local (nested functions).
         :param error_message: message to display in assertion when value is not valid
+        :param extra: an argument to provide to the test function
 
         The method adds a control on the authorised value of an attribute
         """
@@ -46,48 +51,45 @@ class CheckAttribute(object):
         assert isinstance(error_message, str), "*error_message* must be a string"
         if not hasattr(self, '_epyattr'):
             super().__setattr__('_epyattr', {})
-        self._epyattr[name] = (set_check, error_message)
+        self._epyattr[name] = (set_check, error_message, extra)
 
     def add_attr_int(self, name):
         """
         :param name: name of the attribute
         The method adds a control to check if the attribute is an integer
         """
-        return self.add_attr(name, lambda x: isinstance(x, int),
-                             "*{name}* must be an integer (and not a {cls})".format(name=name, cls='{cls}'))
+        return self.add_attr_class(name, int)
 
     def add_attr_str(self, name):
         """
         :param name: name of the attribute
         The method adds a control to check if the attribute is a string
         """
-        return self.add_attr(name, lambda x: isinstance(x, str),
-                             "*{name}* must be a string (and not a {cls})".format(name=name, cls='{cls}'))
+        return self.add_attr_class(name, str)
 
     def add_attr_float(self, name):
         """
         :param name: name of the attribute
         The method adds a control to check if the attribute is a float
         """
-        return self.add_attr(name, lambda x: isinstance(x, float),
-                             "*{name}* must be a float (and not a {cls})".format(name=name, cls='{cls}'))
+        return self.add_attr_class(name, float)
 
     def add_attr_list(self, name):
         """
         :param name: name of the attribute
         The method adds a control to check if the attribute is a list
         """
-        return self.add_attr(name, lambda x: isinstance(x, list),
-                             "*{name}* must be a list (and not a {cls})".format(name=name, cls='{cls}'))
+        return self.add_attr_class(name, list)
 
     def add_attr_dict(self, name):
         """
         :param name: name of the attribute
         The method adds a control to check if the attribute is a dict
         """
-        return self.add_attr(name, lambda x: isinstance(x, dict),
-                             "*{name}* must be a dict (and not a {cls})".format(name=name, cls='{cls}'))
+        return self.add_attr_class(name, dict)
 
+    @staticmethod
+    def _inlist(x, values): return x in values
     def add_attr_inlist(self, name, values):
         """
         :param name: name of the attribute
@@ -95,10 +97,11 @@ class CheckAttribute(object):
         The method adds a control to check if the attribute value is allowed
         """
         assert isinstance(values, list), "*values* must be a list"
-        return self.add_attr(name, lambda x: x in values,
+        return self.add_attr(name, self._inlist,
                              "*{name}* (={value}) must be a among {values}".format(name=name,
                                                                                    values=str(values),
-                                                                                   value='{value}'))
+                                                                                   value='{value}'),
+                             values)
 
     def add_attr_class(self, name, cls):
         """
@@ -106,16 +109,18 @@ class CheckAttribute(object):
         :param cls: authorised class
         The method adds a control to check if the attribute is an instance of *cls*
         """
-        return self.add_attr(name, lambda x: isinstance(x, cls),
-                             "*{name}* must be an {clsc} instance (and not a {cls})".format(name=name,
-                                                                                            clsc=cls.__name__,
-                                                                                            cls='{cls}'))
+        return self.add_attr(name, isinstance,
+                             "*{name}* must be a {clsc} instance (and not a {cls})".format(name=name,
+                                                                                           clsc=cls.__name__,
+                                                                                           cls='{cls}'),
+                             cls)
 
     def __setattr__(self, name, value):
         if not hasattr(self, '_epyattr'):
             super().__setattr__('_epyattr', {})
         if name in self._epyattr:
-            assert self._epyattr[name][0](value), self._epyattr[name][1].format(cls=type(value).__name__, value=value)
+            assert self._epyattr[name][0](value, self._epyattr[name][2]), \
+                   self._epyattr[name][1].format(cls=type(value).__name__, value=value)
         super().__setattr__(name, value)
 
 
