@@ -315,8 +315,6 @@ class D3VectorField(Field):
                                                                           reverse=reverse)
                     u[t, k, ...][~u[t, k, ...].mask] = newu
                     v[t, k, ...][~v[t, k, ...].mask] = newv
-            u = self.geometry.reshape_data(u.compressed(), first_dimension='T')
-            v = self.geometry.reshape_data(v.compressed(), first_dimension='T')
         else:
             for t in range(u.shape[0]):
                 for k in range(u.shape[1]):
