@@ -182,7 +182,7 @@ netCDF_default_behaviour = {'reverse_Yaxis':False,
                             # writing behaviours:
                             'flatten_horizontal_grids':False,
                             'write_lonlat_grid':True,
-                            'H1D_is_H2D_unstructured':True,
+                            'H1D_is_H2D_unstructured':False,
                             }
 #: netCDF default compression
 netCDF_default_compression = 4
