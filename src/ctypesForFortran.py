@@ -457,7 +457,7 @@ def ctypesForFortranFactory(solib):
     true, false = {'ifort': (-1, 0),
                    'gfortran': (1, 0)}[compiler.pop()]
 
-    def ctypesForFortran(prefix="", suffix="_"):
+    def ctypesFF(prefix="", suffix="_"):
         """
         This function returns the decorator to use.
         prefix (resp. suffix) is the string that we must put before (resp. after)
@@ -690,7 +690,7 @@ def ctypesForFortranFactory(solib):
             wrapper.__doc__ = func.__doc__
             return wrapper
         return decorator
-    return ctypesForFortran, my_solib._handle
+    return ctypesFF, my_solib._handle
 
 
 def fortran2signature(filename=None, fortran_code=None, as_string=True,
