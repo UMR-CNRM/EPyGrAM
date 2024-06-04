@@ -1,7 +1,6 @@
 
 NB_DIR		= source/gallery
-VERSION = $(shell head -1 ../VERSION)
-TAR_DOC = ~/tmp/EPyGrAM-$(VERSION)_doc.tgz
+TAR_DOC = ~/tmp/EPyGrAM-doc.tgz
 
 all: doc clean
 

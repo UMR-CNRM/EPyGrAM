@@ -12,7 +12,7 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 import numpy as np
 import os
 
-from ctypesForFortran import addReturnCode, treatReturnCode, IN, OUT
+from epygram.extra.ctypesForFortran import addReturnCode, treatReturnCode, IN, OUT
 from . import ctypesFF
 # Note to developers:
 # Using the ctypesFF decorator, the Python function return a tuple containing:

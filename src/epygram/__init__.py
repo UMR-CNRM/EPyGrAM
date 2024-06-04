@@ -87,7 +87,7 @@ package_rootdir = os.path.dirname(os.path.realpath(__path__[0]))  # realpath to 
 
 __all__ = []
 
-__version__ = "1.4.23"  #  io.open(os.path.join(package_rootdir, 'VERSION'), 'r').read().strip()
+__version__ = "1.5.0"  #  io.open(os.path.join(package_rootdir, 'VERSION'), 'r').read().strip()
 
 __license__ = 'CeCILL-C'
 
@@ -209,7 +209,7 @@ def init_env(omp_num_threads=1,
         arpifs4py.FALFI_init_env(omp_num_threads=omp_num_threads, no_mpi=no_mpi,  # common
                                  lfi_C=lfi_C, mute_FA4py=mute_FA4py)  # LFI/FA
         if ensure_consistent_GRIB_paths:
-            import griberies
+            from epygram.extra import griberies
             libs_grib_api = arpifs4py.FALFI_get_dynamic_gribapi_lib_paths()
             for apilib, libpath in libs_grib_api.items():
                 griberies.complete_grib_paths(libpath, apilib, reset=ignore_gribenv_paths)
