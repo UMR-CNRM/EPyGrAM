@@ -18,7 +18,7 @@ import footprints
 from footprints import FPDict, FPList
 from bronx.meteo.constants import g0
 
-from arpifs4py import wlfa
+from  epygram.extra.arpifs4py import wlfa
 
 from epygram import config, epygramError
 from epygram.util import Angle, write_formatted, separation_line

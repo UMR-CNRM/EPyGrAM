@@ -145,7 +145,7 @@ def cartoplot_background(self,
             gridlines_kw.pop('draw_labels', False)
             # home-made workaround for Lambert
             if isinstance(projection, ccrs.LambertConformal) and not 'gauss' in self.geometry.name:
-                from cartopy_plus import lambert_parallels_meridians_labels
+                from epygram.extra.cartopy_plus import lambert_parallels_meridians_labels
                 lambert_parallels_meridians_labels(ax, self.geometry, projection,
                                                    meridians, parallels,
                                                    subzone=subzone)

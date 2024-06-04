@@ -29,7 +29,7 @@ from epygram.args_catalog import (add_arg_to_parser,
                                   files_management, fields_management,
                                   misc_options, runtime_options,
                                   operational_options, output_options)
-import griberies
+from epygram.extra  import griberies
 
 epylog = footprints.loggers.getLogger(__name__)
 fmt_dict = {'grb':'GRIB', 'nc':'netCDF', 'geo':'GeoPoints'}

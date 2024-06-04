@@ -87,7 +87,7 @@ package_rootdir = os.path.dirname(os.path.realpath(__path__[0]))  # realpath to 
 
 __all__ = []
 
-__version__ = io.open(os.path.join(package_rootdir, 'VERSION'), 'r').read().strip()
+__version__ = "1.4.23"  #  io.open(os.path.join(package_rootdir, 'VERSION'), 'r').read().strip()
 
 __license__ = 'CeCILL-C'
 
@@ -203,7 +203,7 @@ def init_env(omp_num_threads=1,
     # 1. arpifs4py library
     # FA & LFI need some special environment setting
     if any([f in formats.runtime_available_formats for f in ('FA', 'LFI')]):
-        import arpifs4py
+        from epygram.extra import arpifs4py
         if mute_FA4py is None:
             mute_FA4py = config.FA_mute_FA4py
         arpifs4py.FALFI_init_env(omp_num_threads=omp_num_threads, no_mpi=no_mpi,  # common

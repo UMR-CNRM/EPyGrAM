@@ -17,7 +17,7 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 
 import os
 
-import ctypesForFortran
+from epygram.extra import ctypesForFortran
 
 _libs4py = "libs4py.so"  # local name in the directory
 

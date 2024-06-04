@@ -173,7 +173,7 @@ class SpectralGeometry(RecursiveObject):
         call.
         """
         if not hasattr(cls, '_transforms_lib'):
-            from arpifs4py import wtransforms
+            from epygram.extra.arpifs4py import wtransforms
             cls._transforms_lib = wtransforms
             if transforms_lib_init_env_kwargs.pop('trigger', False):
                 wtransforms.init_env(**transforms_lib_init_env_kwargs)

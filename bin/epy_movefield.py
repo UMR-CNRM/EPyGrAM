@@ -22,7 +22,7 @@ from epygram import epylog, epygramError
 from epygram.args_catalog import (add_arg_to_parser,
                                   files_management, fields_management,
                                   runtime_options)
-import griberies
+from epygram.extra import griberies
 
 
 def main(filename, refname, fieldseed,

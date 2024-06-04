@@ -12,7 +12,7 @@ import six
 import numpy
 
 from epygram import epygramError
-from usevtk import proj, modify_grid, write_grid
+from epygram.extra.usevtk import proj, modify_grid, write_grid
 
 
 def activate():
