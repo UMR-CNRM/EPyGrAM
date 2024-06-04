@@ -24,6 +24,46 @@ OUT = 2
 INOUT = 3
 
 
+def addReturnCode(func):
+    def wrapper(*args, **kwargs):
+        """
+        This decorator adds an integer at the beginning of the "returned"
+        signature of the Python function.
+        """
+        out = func(*args, **kwargs)
+        out[1].insert(0, (numpy.int64, None, OUT))
+        return out
+    wrapper.__name__ = func.__name__
+    wrapper.__doc__ = func.__doc__
+    return wrapper
+
+
+def treatReturnCode(func):
+    def wrapper(*args):
+        """
+        This decorator raises a Python error if the integer returned by
+        addReturnCode is different from 0.
+        """
+        result = func(*args)
+        try:
+            nout = len(result)
+        except Exception:
+            nout = 1
+        if nout == 1:
+            result = (result,)
+        if result[0] != 0:
+            raise RuntimeError("arpifs4py: Error code " + str(result[0]) + " was raised.")
+        result = result[1:]
+        if len(result) == 1:
+            result = result[0]
+        elif len(result) == 0:
+            result = None
+        return result
+    wrapper.__name__ = func.__name__
+    wrapper.__doc__ = func.__doc__
+    return wrapper
+
+
 def get_dynamic_libs(obj):
     libs = {}
     osname = str(os.uname()[0])

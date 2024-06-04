@@ -11,7 +11,8 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 
 import numpy as np
 
-from . import ctypesFF, IN, OUT, treatReturnCode_LFA, addReturnCode
+from ctypesForFortran import addReturnCode, IN, OUT
+from . import ctypesFF
 # Note to developers:
 # Using the ctypesFF decorator, the Python function return a tuple containing:
 #    tup[0]:
@@ -21,6 +22,41 @@ from . import ctypesFF, IN, OUT, treatReturnCode_LFA, addReturnCode
 #        [the python signature of all Fortran subroutine arguments]
 #    tup[2]:
 #        None in case of a Fortran subroutine, the output in case of a Fortran function)
+
+
+def treatReturnCode_LFA(func):
+    def wrapper(*args):
+        """
+        This decorator raises a Python error if the integer returned by
+        addReturnCode is different from 0.
+        The message raised is linked to the LFA library.
+        """
+        LFA_errors = {'-999':'Error while searching for an available logical\
+                              unit.',
+                      '-1':'Field not found in file.',
+                      '1':'Field not found in file.',
+                      '-6':'Article bigger than expected (argument kdimb).',
+                      '-8':'Wrong data type (real, integer, char.).'}
+        result = func(*args)
+        try:
+            nout = len(result)
+        except Exception:
+            nout = 1
+        if nout == 1:
+            result = (result,)
+        if result[0] != 0:
+            raise RuntimeError("Error code " + str(result[0]) +
+                               " was raised : " +
+                               LFA_errors[str(result[0])])
+        result = result[1:]
+        if len(result) == 1:
+            result = result[0]
+        elif len(result) == 0:
+            result = None
+        return result
+    wrapper.__name__ = func.__name__
+    wrapper.__doc__ = func.__doc__
+    return wrapper
 
 
 @treatReturnCode_LFA

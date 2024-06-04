@@ -679,7 +679,7 @@ class FA(FileResource):
             field = self._readH2DField(fieldname,
                                        getdata=getdata,
                                        footprints_proxy_as_builder=footprints_proxy_as_builder)
-        except Exception:
+        except epygramError:
             epylog.warning("! Tried to read field '{}' as H2D and failed: try as MiscField".format(fieldname))
             field = self._readMiscField(fieldname, getdata=getdata)
         return field

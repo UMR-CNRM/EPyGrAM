@@ -10,8 +10,10 @@ Wrappers for trans/etrans library.
 from __future__ import print_function, absolute_import, unicode_literals, division
 
 import numpy as np
+import os
 
-from . import ctypesFF, IN, OUT, treatReturnCode, addReturnCode
+from ctypesForFortran import addReturnCode, treatReturnCode, IN, OUT
+from . import ctypesFF
 # Note to developers:
 # Using the ctypesFF decorator, the Python function return a tuple containing:
 #    tup[0]:
@@ -21,6 +23,21 @@ from . import ctypesFF, IN, OUT, treatReturnCode, addReturnCode
 #        [the python signature of all Fortran subroutine arguments]
 #    tup[2]:
 #        None in case of a Fortran subroutine, the output in case of a Fortran function)
+
+
+def init_env(omp_num_threads=None,
+             no_mpi=False):
+    """
+    Set adequate environment for the inner libraries.
+
+    :param int omp_num_threads: sets OMP_NUM_THREADS
+    :param bool no_mpi: environment variable DR_HOOK_NOT_MPI set to 1
+    """
+    # because arpifs library is compiled with MPI & openMP
+    if omp_num_threads is not None:
+        os.environ['OMP_NUM_THREADS'] = str(omp_num_threads)
+    if no_mpi:
+        os.environ['DR_HOOK_NOT_MPI'] = '1'
 
 
 @treatReturnCode

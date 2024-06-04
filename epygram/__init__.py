@@ -206,10 +206,13 @@ def init_env(omp_num_threads=1,
         import arpifs4py
         if mute_FA4py is None:
             mute_FA4py = config.FA_mute_FA4py
-        arpifs4py.init_env(omp_num_threads=omp_num_threads, no_mpi=no_mpi,  # common
-                           lfi_C=lfi_C, mute_FA4py=mute_FA4py,  # LFI/FA
-                           ensure_consistent_GRIB_paths=ensure_consistent_GRIB_paths,  # GRIB paths
-                           ignore_gribenv_paths=ignore_gribenv_paths)
+        arpifs4py.FALFI_init_env(omp_num_threads=omp_num_threads, no_mpi=no_mpi,  # common
+                                 lfi_C=lfi_C, mute_FA4py=mute_FA4py)  # LFI/FA
+        if ensure_consistent_GRIB_paths:
+            import griberies
+            libs_grib_api = arpifs4py.FALFI_get_dynamic_gribapi_lib_paths()
+            for apilib, libpath in libs_grib_api.items():
+                griberies.complete_grib_paths(libpath, apilib, reset=ignore_gribenv_paths)
     # 2. SpectralGeometry inner transformation lib may need some special
     # environment setting, delayed to actual invocation:
     # we simply pass kwargs, initialization is done at first call to the library

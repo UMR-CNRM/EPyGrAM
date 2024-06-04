@@ -11,7 +11,8 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 
 import numpy as np
 
-from . import ctypesFF, IN, OUT, INOUT, treatReturnCode, addReturnCode
+from ctypesForFortran import addReturnCode, treatReturnCode, IN, OUT, INOUT
+from . import ctypesFF
 # Note to developers:
 # Using the ctypesFF decorator, the Python function return a tuple containing:
 #    tup[0]:
