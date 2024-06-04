@@ -16,7 +16,6 @@ WHERE_TO_BUILD=$1
 BASEDIR=$(dirname $(readlink -f ${BASH_SOURCE[0]}))
 export FOOTPRINT_DOCSTRINGS=2
 DOC_FMT="html"
-VERSION=`head -1 ../VERSION`
 LAST_COMMIT=`git log -1 --oneline`
 
 # 1. Output dir for the doc

@@ -51,9 +51,10 @@ copyright = u'2014 --- 2022, A.Mary, S.Riette'
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
-#import epygram
-release = io.open(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))),
-                               'VERSION'), 'r').read().strip()
+import epygram
+release = epygram.__version__
+#release = io.open(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))),
+#                               'VERSION'), 'r').read().strip()
 # The short X.Y version.
 version = release[0:3]
 
