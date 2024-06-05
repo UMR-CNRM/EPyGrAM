@@ -242,13 +242,6 @@ activate_plugins = ['with_vtk', 'with_cartopy']
 
 # USER CUSTOMIZATION #
 ######################
-# user modules: actually should remain empty here !
-#: In userconfig, this should be a list of dict containing two keys:
-#: the module name and the source absolute path;
-#: e.g. {'name':'mymodule', 'abspath':'/home/.../mymodule.py'}.
-#:
-#: The import is done in epygram *__init__.py*.
-usermodules = []  # TODO: ? CLEANME
 # usercolormaps should also remain empty here
 #: In userconfig, this should be a dict whose keys are the colormap name and
 #: values the source absolute path of the colormap definition;

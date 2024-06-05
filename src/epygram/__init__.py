@@ -93,8 +93,6 @@ __license__ = 'CeCILL-C'
 
 __authors__ = ['Alexandre Mary', 'Sébastien Riette']
 
-__contributors__ = ['Stéphanie Faroux', 'Ghislain Faure']
-
 
 class epygramError(Exception):
     """Errors class for the package."""
@@ -111,9 +109,7 @@ if sys.version_info.major == 3:
         epylog.warning('*epygram* requires Python3.5 at least. ' +
                        'It may not work properly with older versions.')
 else:
-    if sys.version_info.minor < 7:
-        epylog.warning('*epygram* requires Python2.7 at least. ' +
-                       'It may not work properly with older versions.')
+    epylog.warning('*epygram* support for Python2 is not maintained !')
 
 # config
 from . import config
@@ -140,20 +136,6 @@ for p in config.activate_plugins:
         _plugins.activate(p)
     else:
         epylog.info("Plugin '{}' from config.activate_plugins is not available.".format(p))
-
-# User modules  # TODO: ? CLEANME
-if len(config.usermodules) > 0:
-    footprints.priorities.set_before('debug', 'user')
-    for m in config.usermodules:
-        if sys.version_info.major == 3 and sys.version_info.minor >= 4:
-            import importlib.util as imputil  # @UnresolvedImport
-            spec = imputil.spec_from_file_location(m['name'],
-                                                   m['abspath'])
-            spec.loader.exec_module(imputil.module_from_spec(spec))
-            del spec
-        else:
-            import imp
-            imp.load_source(m['name'], m['abspath'])
 
 # Further initializations
 if config.hide_footprints_warnings:

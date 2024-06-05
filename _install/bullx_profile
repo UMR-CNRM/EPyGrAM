@@ -1,3 +1,0 @@
-#module load gcc  # for scipy.interpolate !! conflict w/ OOPS compilation
-#module load openblas  # for scipy.interpolate !! and perturbs results of model
-module load python

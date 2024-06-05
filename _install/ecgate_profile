@@ -1,3 +1,0 @@
-
-export PATH=/usr/local/apps/python/2.7.12-01/bin:$PATH
-export LD_LIBRARY_PATH=/usr/local/apps/python/2.7.12-01/lib:$LD_LIBRARY_PATH

@@ -52,7 +52,7 @@ def treatReturnCode(func):
         if nout == 1:
             result = (result,)
         if result[0] != 0:
-            raise RuntimeError("arpifs4py: Error code " + str(result[0]) + " was raised.")
+            raise RuntimeError("Error code " + str(result[0]) + " was raised.")
         result = result[1:]
         if len(result) == 1:
             result = result[0]
@@ -65,6 +65,7 @@ def treatReturnCode(func):
 
 
 def get_dynamic_libs(obj):
+    """Get dynamic libs from a shared object lib or executable."""
     libs = {}
     osname = str(os.uname()[0])
     if osname == 'Linux':

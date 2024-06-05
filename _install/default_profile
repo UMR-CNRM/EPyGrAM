@@ -1,5 +1,0 @@
-# unless you have a good reason for it, let the library manage on her own:
-unset GRIB_SAMPLES_PATH
-unset GRIB_DEFINITION_PATH
-unset ECCODES_SAMPLES_PATH
-unset ECCODES_DEFINITION_PATH

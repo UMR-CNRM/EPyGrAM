@@ -1,5 +1,0 @@
-
-# Vortex & Footprints
-VORTEX_INSTALL_DIR=$HOME/.epygram/vortex
-export PYTHONPATH=$VORTEX_INSTALL_DIR:$VORTEX_INSTALL_DIR/src:$VORTEX_INSTALL_DIR/site:$PYTHONPATH
-export PATH=$VORTEX_INSTALL_DIR/bin:$VORTEX_INSTALL_DIR/site/arpifs_listings/bin:$PATH
