@@ -75,7 +75,7 @@ Genesis
 -------
 
 The ``epygram`` conception comes from the observation that more and more people
-in Météo France / CNRM-GAME were coming to Python in order to process NWP/CM 
+in Météo France / UMR-CNRM were coming to Python in order to process NWP/CM 
 data. Rather than letting everyone face the same obstacles with geometries and
 historical data formats, raised the good idea to develop a Python package once 
 for all, releasing time for scientific activities rather than technical common

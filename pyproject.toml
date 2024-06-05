@@ -4,17 +4,16 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "epygram"
-version = "1.4.23"
+version = "1.5.0"
 description = "EPyGrAM : Enhanced Python for Graphics and Analysis of Meteorological fields"
 authors = [
-    { name = "Alexandre MARY", email = "a.mary@meteo.fr" },
-    { name = "Sébastien Riette"  , email = "s.riette@meteo.fr"}
+    { name = "Alexandre MARY", email = "alexandre.mary@meteo.fr" },
+    { name = "Sébastien Riette"  , email = "sebastien.riette@meteo.fr"}
 ]
 maintainers = [
-  { name = "Alexandre MARY", email = "a.mary@meteo.fr" }, 
-  { name = "AA", email = "AA@meteo.fr" }, 
-  { name = "BB", email = "BB@meteo.fr" }, 
-  {name = "Walid CHIKHI", email = "waliidchikhi@gmail.com" }
+  { name = "Alexandre MARY", email = "alexandre.mary@meteo.fr" }, 
+  { name = "Sébastien Riette"  , email = "sebastien.riette@meteo.fr"}
+  { name = "Walid CHIKHI", email = "waliidchikhi@gmail.com" }
 ]
 
 readme = "README.md"

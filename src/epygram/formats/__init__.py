@@ -82,8 +82,7 @@ for f in _formats_in_loading_order:
     _available, _reason = available_format(f)
     if _available:
         runtime_available_formats.append(f)
-        if f not in [m['name'] for m in config.usermodules]:
-            importlib.import_module('.' + f, __name__)
+        importlib.import_module('.' + f, __name__)
     else:
         epylog.warning(("Format: {} is deactivated at runtime (Error: {}). " +
                         "Please deactivate from config.implemented_formats or fix error.").format(f, _reason))

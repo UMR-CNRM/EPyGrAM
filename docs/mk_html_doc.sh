@@ -45,14 +45,10 @@ fi
 echo "> Create cmaps..."
 python3 dynamic/make_cmaps_png_for_doc.py -d $EPYGRAM_DOC
 
-# 3. Dependancies
-echo "> List external dependancies..."
-python3 dynamic/list_external_dependancies.py
-
 # Source compilation
 cd source
 
-  # 4. Cheatsheet
+  # 3. Cheatsheet
   echo "> Build cheatsheet..."
   pdflatex cheatsheet.tex
   if [ ! -d _static ]
@@ -61,7 +57,7 @@ cd source
   fi
   cp -f cheatsheet.pdf _static/.
 
-  # 5. Sphinx
+  # 4. Sphinx
   echo "> Build Sphinx doc..."
   set +e
   bld=`which sphinx-build-3`
@@ -73,7 +69,7 @@ cd source
   $bld -b $DOC_FMT . $EPYGRAM_DOC
 cd ..
 
-# 6. cleanings
+# 5. cleanings
 find $EPYGRAM_DOC -name "*.ipynb" -print0 | xargs -0r rm
 rm -rf $EPYGRAM_DOC/.doctrees
 

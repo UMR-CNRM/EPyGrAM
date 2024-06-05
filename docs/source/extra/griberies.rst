@@ -1,7 +1,7 @@
 :mod:`griberies` --- utilities around GRIB
 ==========================================
 
-.. automodule:: griberies
+.. automodule:: epygram.extra.griberies
    :synopsis: utilities around GRIB.
 
 -----------------------------------------------------------
@@ -30,21 +30,21 @@ functions
 tables
 ------
 
-.. autodata:: griberies.tables.productionStatusOfProcessedData_dict
-.. autodata:: griberies.tables.typeOfGeneratingProcess_dict
-.. autodata:: griberies.tables.pyproj_geoid_shapes
-.. autodata:: griberies.tables.statistical_processes
-.. autodata:: griberies.tables.typeoffixedsurface2sample
+.. autodata:: epygram.extra.tables.productionStatusOfProcessedData_dict
+.. autodata:: epygram.extra.tables.typeOfGeneratingProcess_dict
+.. autodata:: epygram.extra.tables.pyproj_geoid_shapes
+.. autodata:: epygram.extra.tables.statistical_processes
+.. autodata:: epygram.extra.tables.typeoffixedsurface2sample
 
 -----------------------------------------------------------
 
 defaults
 --------
 
-.. autodata:: griberies.defaults.GRIB2_keyvalue
-.. autodata:: griberies.defaults.GRIB2_metadata_to_embark
+.. autodata:: epygram.extra.defaults.GRIB2_keyvalue
+.. autodata:: epygram.extra.defaults.GRIB2_metadata_to_embark
 
-.. autodata:: griberies.defaults.GRIB1_sample
-.. autodata:: griberies.defaults.GRIB1_packing
-.. autodata:: griberies.defaults.GRIB1_ordering
-.. autodata:: griberies.defaults.GRIB1_keyvalue
+.. autodata:: epygram.extra.defaults.GRIB1_sample
+.. autodata:: epygram.extra.defaults.GRIB1_packing
+.. autodata:: epygram.extra.defaults.GRIB1_ordering
+.. autodata:: epygram.extra.defaults.GRIB1_keyvalue

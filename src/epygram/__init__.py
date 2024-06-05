@@ -12,27 +12,8 @@ Enhanced Python for Graphics and Analysis of Meteorological fields
 and various resource Formats from which the Fields can be extracted.
 
 It is distributed along with a series of applicative tools using the package,
-that can be used 'as is', or can be taken as templates for building more complex
+that can be used as command line tools, or can be taken as templates for building more complex
 applications with the ``epygram`` package.
-
-The package uses extensively the ``footprints`` package (included in epygram
-distributions), designed by the VORTEX team (MF) in order (basically) to tackle
-once-for-all with Factories for families of similar classes. The basic idea
-behind this concept is that similar classes have a similar set of attributes,
-but with behavioral differences (values or name/number of attributes), viewed
-as their "footprint".
-
-For the needs of the FA, LFI & LFA formats and spectral transforms of fields
-from ARPEGE/ALADIN/AROME models, the :mod:`arpifs4py` library is needed. It is also
-therein included, already compiled for Mageia4 platforms, and with necessary
-stuff for recompiling it on other platforms. Be aware to be recompiled, this
-library needs an *arpifs* pack pre-compiled with *gmkpack*, and *gribex*
-library.
-
-Complete dependencies to be found in :ref:`Dependancies <dependancies>`.
-
-It is recalled that packages available on Pypi.org can be installed locally
-using: ``pip[2|3] install --user <packagename>``
 
 ********************************************************************************
 
@@ -41,7 +22,7 @@ using: ``pip[2|3] install --user <packagename>``
 License
 -------
 
-Copyright Météo France (2014 - 2022), authors:
+Copyright Météo France (2014 - 2024), authors:
 
 * A. Mary - Météo France, CNRM/GMAP/COOPE - alexandre.mary@meteo.fr
 * S. Riette - Météo France
@@ -87,7 +68,7 @@ package_rootdir = os.path.dirname(os.path.realpath(__path__[0]))  # realpath to 
 
 __all__ = []
 
-__version__ = "1.5.0"  #  io.open(os.path.join(package_rootdir, 'VERSION'), 'r').read().strip()
+__version__ = "1.5.0"
 
 __license__ = 'CeCILL-C'
 

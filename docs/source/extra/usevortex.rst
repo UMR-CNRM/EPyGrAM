@@ -1,7 +1,7 @@
 :mod:`usevortex` --- Proxies to reach resources using Vortex
 ============================================================
 
-.. automodule:: usevortex
+.. automodule:: epygram.extra.usevortex
    :synopsis: Contains proxies to reach resources using Vortex
 
 -----------------------------------------------------------

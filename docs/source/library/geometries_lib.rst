@@ -6,13 +6,15 @@
 .. toctree::
    :maxdepth: 3
 
-   D3Geometry
-   H2DGeometry
-   H1DGeometry
+   Geometry
+   RectangularGridGeometry
+   ProjectedGeometry
+   UnstructuredGeometry
+   AcademicGeometry
+   GaussGeometry
+   RegLLGeometry
+   RotLLGeometry
    VGeometry
-   V2DGeometry
-   V1DGeometry
-   PointGeometry
    
    SpectralGeometry
    
@@ -26,6 +28,3 @@
 
 .. autofunction:: build_surf_VGeometry
 
------------------------------------------------------------
-
-.. autofunction:: build_geometry

@@ -15,13 +15,14 @@ EPyGrAM dependencies are available from Pypi (pip install ...), including the pa
 Installation
 ------------
 
-Installation can be done manually by setting up path to `epygram` package and `site` subdirectories in your PYTHONPATH.
-Installation can be done in local user site-packages with the help of the `_install/setup_epygram.py` script.
-This script usage is autodocumented (option `-h`) about its options.
+``pip install epygram``
 
-Then follow instructions printed by the script to complete installation.
-
-NOTE: from version 1.5.0 (not released yet) it is planned to set EPyGrAM on PyPI so as to install it with `pip`.
+You may need:
+``ulimit -s unlimited``
+``unset ECCODES_SAMPLES_PATH``
+``unset ECCODES_DEFINITION_PATH``
+``unset GRIB_SAMPLES_PATH``
+``unset GRIB_SAMPLES_PATH``
 
 Tests
 -----

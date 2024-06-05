@@ -1,7 +1,7 @@
 :mod:`pyexttiff` --- Classes to read Tiff
 =========================================
 
-.. automodule:: pyexttiff
+.. automodule:: epygram.extra.pyexttiff
    :synopsis: Classes to read Tiff
 
 Classes

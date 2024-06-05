@@ -38,3 +38,4 @@ Outer utilities
    profiles
    spectra
    args_catalog
+   extra

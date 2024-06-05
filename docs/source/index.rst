@@ -25,7 +25,7 @@ Technical documentation:
    :maxdepth: 2
 
    library/index
-   Side packages <site/index>
+   Side packages <extra/index>
 
 User Guide:
 -----------

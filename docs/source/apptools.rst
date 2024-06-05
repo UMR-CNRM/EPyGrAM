@@ -4,10 +4,9 @@ Applicative tools
 .. highlight:: python
 
 A series of applicative tools, to be used in shell command-line, is also
-developped and distributed along epygram.
-They are available in directory ``apptools``.
+developped and distributed along epygram, under directory ``bin/``.
 
-Each tool is self-documented: ``epy_tool.py -h`` 
+Each tool is self-documented: ``epy_[tool].py -h`` 
 
 Currently available:
 
@@ -19,7 +18,7 @@ Currently available:
 - ``epy_profile.py``: extract and plot a vertical profile from 3D fields
 - ``epy_section.py``: extract and plot a vertical section from 3D fields
 - ``epy_stats.py``: compute basic statistics on fields
-- ``epy_plot.py``: plot horizontal 2D fields using basemap package (DEPRECATED)
+- ``epy_plot3D.py``: plot 3D fields
 - ``epy_cartoplot.py``: plot horizontal 2D fields using cartopy package
 - ``epy_hist.py``: compute and plot a histogram of fields values
 - ``epy_point.py``: extract the value of fields on a given location
