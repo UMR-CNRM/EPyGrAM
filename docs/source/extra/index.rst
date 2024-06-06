@@ -1,8 +1,9 @@
-External, side packages
-=======================
+``epygram.extra`` : independant side packages, used by epygram
+==============================================================
 
-Some external, side modules: modules needed for some optional purposes of
-``epygram``, often developped along, distributed with it but that may be used from outside.
+Extra side modules: modules needed for some optional purposes of
+``epygram``, developped along and distributed with it,
+but that may be used from outside.
 
 .. toctree::
    :maxdepth: 1

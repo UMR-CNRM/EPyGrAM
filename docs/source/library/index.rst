@@ -1,5 +1,5 @@
-:mod:`epygram` --- Package
-==========================
+:mod:`epygram` main package
+===========================
 
 :Release: |release|
 :Date: |today|
@@ -17,8 +17,8 @@ Core library
    resources
    config
 
-Inner utilities
----------------
+Internals
+---------
 
 .. toctree::
    :maxdepth: 1
@@ -28,8 +28,8 @@ Inner utilities
    base
    containers
 
-Outer utilities
----------
+Accessories
+-----------
 
 .. toctree::
    :maxdepth: 2
@@ -38,4 +38,3 @@ Outer utilities
    profiles
    spectra
    args_catalog
-   extra

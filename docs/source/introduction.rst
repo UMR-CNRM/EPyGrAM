@@ -1,11 +1,8 @@
 Introduction
 ============
 
-The ``epygram`` library package is a set of Python classes and functions
-designed to handle meteorological fields in Python, as well as interfacing
-their storage in various usual (or not) data formats.
-
-
+.. automodule:: epygram
+   :synopsis: About the package
 
 For who, for what ?
 -------------------
@@ -31,8 +28,6 @@ so that the user should:
   functionality dealing with the data/meta-data processing he faces;
  
 - 3/ print the object to have a recursively indented overview of its components.
-
-
 
 .. _general-design:
 
@@ -69,8 +64,6 @@ The ``epygram`` package hence provides as much as possible easy read/write of
 fields from/to resources, as well as basic features on fields and geometries,
 described further in the documentation.
 
-
-
 Genesis
 -------
 
@@ -80,5 +73,4 @@ data. Rather than letting everyone face the same obstacles with geometries and
 historical data formats, raised the good idea to develop a Python package once 
 for all, releasing time for scientific activities rather than technical common
 problems...
-
 

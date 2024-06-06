@@ -1,5 +1,5 @@
 *epygram*-|release| documentation
-===================================
+=================================
 
 *Enhanced Python for Graphics and Analysis of Meteorological fields*
 --------------------------------------------------------------------
@@ -11,21 +11,10 @@ their storage in various usual (or not) data formats.
 .. toctree::
    :maxdepth: 1
 
-   Introduction - motivations and concepts <introduction>
-   About <library/about>
+   introduction
    distribution
-   dependancies
 
 --------------------------------------------------------------------------------
-
-Technical documentation:
-------------------------
-
-.. toctree::
-   :maxdepth: 2
-
-   library/index
-   Side packages <extra/index>
 
 User Guide:
 -----------
@@ -40,13 +29,14 @@ User Guide:
    AppTools - commandline tools <apptools>
    Colormaps <cmaps>
 
-- :download:`Cheatsheet <_static/cheatsheet.pdf>`
+The ``epygram`` :download:`Cheatsheet <_static/cheatsheet.pdf>`
 
---------------------------------------------------------------------------------
+Technical documentation:
+------------------------
 
-Indices and tables
-==================
+.. toctree::
+   :maxdepth: 3
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   library/index
+   extra/index
+

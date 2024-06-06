@@ -30,21 +30,21 @@ functions
 tables
 ------
 
-.. autodata:: epygram.extra.tables.productionStatusOfProcessedData_dict
-.. autodata:: epygram.extra.tables.typeOfGeneratingProcess_dict
-.. autodata:: epygram.extra.tables.pyproj_geoid_shapes
-.. autodata:: epygram.extra.tables.statistical_processes
-.. autodata:: epygram.extra.tables.typeoffixedsurface2sample
+.. autodata:: epygram.extra.griberies.tables.productionStatusOfProcessedData_dict
+.. autodata:: epygram.extra.griberies.tables.typeOfGeneratingProcess_dict
+.. autodata:: epygram.extra.griberies.tables.pyproj_geoid_shapes
+.. autodata:: epygram.extra.griberies.tables.statistical_processes
+.. autodata:: epygram.extra.griberies.tables.typeoffixedsurface2sample
 
 -----------------------------------------------------------
 
 defaults
 --------
 
-.. autodata:: epygram.extra.defaults.GRIB2_keyvalue
-.. autodata:: epygram.extra.defaults.GRIB2_metadata_to_embark
+.. autodata:: epygram.extra.griberies.defaults.GRIB2_keyvalue
+.. autodata:: epygram.extra.griberies.defaults.GRIB2_metadata_to_embark
 
-.. autodata:: epygram.extra.defaults.GRIB1_sample
-.. autodata:: epygram.extra.defaults.GRIB1_packing
-.. autodata:: epygram.extra.defaults.GRIB1_ordering
-.. autodata:: epygram.extra.defaults.GRIB1_keyvalue
+.. autodata:: epygram.extra.griberies.defaults.GRIB1_sample
+.. autodata:: epygram.extra.griberies.defaults.GRIB1_packing
+.. autodata:: epygram.extra.griberies.defaults.GRIB1_ordering
+.. autodata:: epygram.extra.griberies.defaults.GRIB1_keyvalue

@@ -1,19 +1,15 @@
 Distribution
 ============
 
-The package is distributed under open-source licensing (CeCILL-C).
+The package is distributed under open-source licensing (CeCILL-C); cf. :ref:`Distribution license <license>`.
+
 The management of its development is done on https://github.com/UMR-CNRM/EPyGrAM
 
 Dependancies
 ------------
 
-Dependancies are handled by pip. Cf. pyproject.toml for more details.
+Dependancies are handled by pip/PyPI. Cf. pyproject.toml for more details.
 Some formats libraries are optional: if not available, the support for these format is deactivated at runtime.
-  
-License
--------
-
-:ref:`Distribution license <license>` 
 
 Maintenance & Obligations
 -------------------------

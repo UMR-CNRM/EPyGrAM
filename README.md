@@ -15,14 +15,16 @@ EPyGrAM dependencies are available from Pypi (pip install ...), including the pa
 Installation
 ------------
 
-``pip install epygram``
+`pip install epygram`
 
-You may need:
-``ulimit -s unlimited``
-``unset ECCODES_SAMPLES_PATH``
-``unset ECCODES_DEFINITION_PATH``
-``unset GRIB_SAMPLES_PATH``
-``unset GRIB_SAMPLES_PATH``
+Depending on the machine and environment, you may need:
+```
+ulimit -s unlimited
+unset ECCODES_SAMPLES_PATH
+unset ECCODES_DEFINITION_PATH
+unset GRIB_SAMPLES_PATH
+unset GRIB_SAMPLES_PATH
+```
 
 Tests
 -----

@@ -1,2 +1,3 @@
+LICENSE.txt
 recursive-include src/epygram/data *
 

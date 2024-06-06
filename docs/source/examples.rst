@@ -7,7 +7,7 @@ possibilities.*
 
 For a more comprehensive introduction to the package, please refer to the :ref:`Tutorial <tuto-index>`.
 
-For more advanced examples, please refer to the :ref:`Gallery <tuto-index>`.
+For more advanced examples, please refer to the :ref:`Gallery <gallery-index>`.
 
 About Resources
 ---------------
