@@ -14,7 +14,6 @@ maintainers = [
   { name = "Alexandre MARY", email = "a.mary@meteo.fr" }, 
   { name = "AA", email = "AA@meteo.fr" }, 
   { name = "BB", email = "BB@meteo.fr" }, 
-  {name = "Walid CHIKHI", email = "waliidchikhi@gmail.com" }
 ]
 
 readme = "README.md"
