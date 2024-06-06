@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "epygram"
-version = "1.5.0"
+dynamic = ["version"]
 description = "EPyGrAM : Enhanced Python for Graphics and Analysis of Meteorological fields"
 authors = [
     { name = "Alexandre MARY", email = "alexandre.mary@meteo.fr" },
@@ -13,11 +13,11 @@ authors = [
 maintainers = [
   { name = "Alexandre MARY", email = "alexandre.mary@meteo.fr" }, 
   { name = "Sébastien Riette"  , email = "sebastien.riette@meteo.fr"}
-  { name = "Walid CHIKHI", email = "waliidchikhi@gmail.com" }
 ]
 
 readme = "README.md"
 license = {file = "LICENSE.txt"}
+keywords = ["NWP", "meteorology", "GRIB", "FA"]
 
 classifiers = [
     'Development Status :: 5 - Production/Stable',
@@ -52,6 +52,9 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.dynamic]
+version = {attr = "epygram.__version__"}
 
 [project.optional-dependencies]
 docs = [
