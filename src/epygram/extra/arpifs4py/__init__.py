@@ -19,13 +19,25 @@ import os
 
 import ctypesForFortran
 
-_libs4py = "libs4py.so"  # local name in the directory
+_libs4py = "libs4py.so.0"  # local name in the directory
 
 
 # shared objects library
 ########################
-shared_objects_library = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                      _libs4py)
+potential_locations = [
+                       #os.path.dirname(os.path.realpath(__file__)),  # in package ?
+                       "/home/common/epygram/public/EPyGrAM/libs4py",  # CNRM
+                       "/home/gmap/mrpe/mary/public/EPyGrAM/libs4py",  # belenos/taranis
+                       "/home/acrd/public/EPyGrAM/libs4py",  # ECMWF's Atos aa-ad
+                       ]
+for _libs4py_dir in potential_locations:
+    shared_objects_library = os.path.join(_libs4py_dir, _libs4py)
+    if os.path.exists(shared_objects_library):
+        break
+    else:
+        shared_objects_library = None
+if shared_objects_library is None:
+    raise FileNotFoundError("'{}' was not found in any of potential locations: {}".format(_libs4py, potential_locations))
 ctypesFF, handle = ctypesForFortran.ctypesForFortranFactory(shared_objects_library)
 
 
