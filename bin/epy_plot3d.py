@@ -20,8 +20,7 @@ from footprints import proxy as fpx
 
 # Automatically set the python path
 package_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-sys.path.insert(0, package_path)
-sys.path.insert(0, os.path.join(package_path, 'site'))
+sys.path.insert(0, os.path.join(package_path, 'src'))
 import epygram
 from epygram import epylog, epygramError
 from epygram.args_catalog import (add_arg_to_parser,
