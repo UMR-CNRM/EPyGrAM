@@ -45,7 +45,8 @@ dependencies=[
         "netCDF4",   
         "pyproj",      
         "six",
-	"pyyaml" , # issue with bronx !!          
+	"pyyaml" , # issue with bronx !!
+        "ctypesForFortran == 1.0.1",  # temporary, until complete externalisation of arpifs4py
             ]
 [tool.setuptools]
 include-package-data = true
