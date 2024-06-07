@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Copyright (c) Météo France (2014-)
+# This software is governed by the CeCILL-C license under French law.
+# http://www.cecill.info
 
 """
 This module provides a function (ctypesForFortranFactory) which return a decorator
@@ -17,6 +21,15 @@ import os
 import re
 
 from _ctypes import dlclose
+
+__all__ = []
+
+__version__ = "1.0.0"
+
+__license__ = 'CeCILL-C'
+
+__authors__ = ['Sébastien Riette']
+
 
 # Static values used to define input/output status of arguments
 IN = 1
@@ -598,7 +611,7 @@ def ctypesForFortranFactory(solib):
                                     argument = numpy.asfortranarray(numpy.core.defchararray.ljust(argument, s[1][0]))
                             argtypes.append(numpy.ctypeslib.ndpointer(dtype=effective_dtype,
                                                                       ndim=len(argument.shape),
-                                                                      flags=str('F_CONTIGUOUS')))  # Note: str() needed in Python2 for unicode/str obscure inner incompatibility
+                                                                      flags='F_CONTIGUOUS'))
                             effectiveArgs.append(argument)
                             if s[2] in [OUT, INOUT]:
                                 resultArgs.append(argument)
