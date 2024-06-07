@@ -173,10 +173,10 @@ class SpectralGeometry(RecursiveObject):
         call.
         """
         if not hasattr(cls, '_transforms_lib'):
-            from epygram.extra.arpifs4py import wtransforms
-            cls._transforms_lib = wtransforms
+            from epygram.extra import ialsptrans4py
+            cls._transforms_lib = ialsptrans4py
             if transforms_lib_init_env_kwargs.pop('trigger', False):
-                wtransforms.init_env(**transforms_lib_init_env_kwargs)
+                ialsptrans4py.init_env(**transforms_lib_init_env_kwargs)
         return cls._transforms_lib
 
     def _prevent_swapping(self):
@@ -202,7 +202,7 @@ class SpectralGeometry(RecursiveObject):
 
     def trans_inq(self, gpdims):
         """
-        Wrapper to arpifs4py TRANS_INQ.
+        Wrapper to IAL's TRANS_INQ.
 
         :param dict gpdims: gridpoints dimensions
         """
@@ -216,7 +216,7 @@ class SpectralGeometry(RecursiveObject):
 
     def etrans_inq(self, gpdims):
         """
-        Wrapper to arpifs4py ETRANS_INQ.
+        Wrapper to IAL's ETRANS_INQ.
 
         :param dict gpdims: gridpoints dimensions
         """

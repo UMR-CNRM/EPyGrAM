@@ -38,7 +38,7 @@ def available_format(fmt):
     available = True
     try:
         if fmt in ('FA', 'LFI', 'DDHLFA', 'LFA'):
-            from epygram.extra import arpifs4py
+            from epygram.extra import falfilfa4py
         elif fmt == 'GRIB':
             if config.GRIB_lowlevel_api.lower() in ('gribapi', 'grib_api'):
                 import gribapi
@@ -62,7 +62,7 @@ def available_format(fmt):
 # Formats loading used to have to follow an order,
 # for common dynamic libraries of different versions.
 # Still necessary WHEN we do not use the same gribapi/eccodes
-# in arpifs4py and GRIB interface
+# in falfilfa4py and GRIB interface
 # There is also known issues between netCDF and FA/GRIB on some platforms:
 # - GRIB and arpifs4py formats need to be loaded before netCDF/netCDF;
 # - netCDF crash later on if arpifs4py is loaded...

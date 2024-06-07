@@ -1,29 +1,44 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Copyright (c) Météo France (2014-)
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 """
-Wrappers for trans/etrans library.
+ialsptrans4py:
+
+Contains the interface to spectral transforms from the IAL/ecTrans.
+Note that this is temporary between the former package arpifs4py and a direct python interface to ecTrans.
 """
 
 from __future__ import print_function, absolute_import, unicode_literals, division
 
-import numpy as np
 import os
-
+import numpy as np
+import ctypesForFortran
 from ctypesForFortran import addReturnCode, treatReturnCode, IN, OUT
-from . import ctypesFF
-# Note to developers:
-# Using the ctypesFF decorator, the Python function return a tuple containing:
-#    tup[0]:
-#        [the arguments of the Python function,
-#         to be passed as in/inout arguments to the Fortran subroutine]
-#    tup[1]:
-#        [the python signature of all Fortran subroutine arguments]
-#    tup[2]:
-#        None in case of a Fortran subroutine, the output in case of a Fortran function)
 
+
+# Shared objects library
+########################
+so_filename = "IALsptrans4py.so.0"  # local name in the directory
+potential_locations = [
+                       #os.path.dirname(os.path.realpath(__file__)),  # in package ?
+                       "/home/common/epygram/public/EPyGrAM/libs4py",  # CNRM
+                       "/home/gmap/mrpe/mary/public/EPyGrAM/libs4py",  # belenos/taranis
+                       "/home/acrd/public/EPyGrAM/libs4py",  # ECMWF's Atos aa-ad
+                       ]
+for _libs4py_dir in potential_locations:
+    shared_objects_library = os.path.join(_libs4py_dir, so_filename)
+    if os.path.exists(shared_objects_library):
+        break
+    else:
+        shared_objects_library = None
+if shared_objects_library is None:
+    raise FileNotFoundError("'{}' was not found in any of potential locations: {}".format(so_filename, potential_locations))
+ctypesFF, handle = ctypesForFortran.ctypesForFortranFactory(shared_objects_library)
+
+# Initialization
+################
 
 def init_env(omp_num_threads=None,
              no_mpi=False):
@@ -39,6 +54,8 @@ def init_env(omp_num_threads=None,
     if no_mpi:
         os.environ['DR_HOOK_NOT_MPI'] = '1'
 
+# Transforms interfaces
+#######################
 
 @treatReturnCode
 @ctypesFF()

@@ -14,7 +14,7 @@ import numpy
 import sys
 import six
 
-from epygram.extra.arpifs4py import wlfa
+from epygram.extra.falfilfa4py import LFA as LFA4py
 
 import epygram
 from epygram import epygramError, config, util
@@ -38,7 +38,7 @@ class LFA(FileResource):
     def __init__(self, *args, **kwargs):
         self.isopen = False
         super(LFA, self).__init__(*args, **kwargs)
-        if not wlfa.wlfatest(self.container.abspath):
+        if not LFA4py.wlfatest(self.container.abspath):
             raise IOError("This resource is not a LFA one.")
         if not self.fmtdelayedopen:
             self.open()
@@ -54,14 +54,14 @@ class LFA(FileResource):
         if self.openmode in ('r', 'a'):
             # open, getting logical unit
             if self.openmode == 'r':
-                self._unit = wlfa.wlfaouv(self.container.abspath, 'R')
+                self._unit = LFA4py.wlfaouv(self.container.abspath, 'R')
             elif self.openmode == 'a':
-                self._unit = wlfa.wlfaouv(self.container.abspath, 'A')
+                self._unit = LFA4py.wlfaouv(self.container.abspath, 'A')
             self.isopen = True
             self.empty = False
         elif self.openmode == 'w':
             # open
-            self._unit = wlfa.wlfaouv(self.container.abspath, 'W')
+            self._unit = LFA4py.wlfaouv(self.container.abspath, 'W')
             self.isopen = True
             self.empty = True
 
@@ -69,7 +69,7 @@ class LFA(FileResource):
         """Closes a LFA properly."""
         if self.isopen:
             try:
-                wlfa.wlfafer(self._unit)
+                LFA4py.wlfafer(self._unit)
             except Exception:
                 raise IOError("closing " + self.container.abspath)
             self.isopen = False
@@ -115,17 +115,17 @@ class LFA(FileResource):
         """
         field = MiscField(fid={'LFA':fieldname})
         if getdata:
-            (fieldtype, fieldlength) = wlfa.wlfacas(self._unit, fieldname)
+            (fieldtype, fieldlength) = LFA4py.wlfacas(self._unit, fieldname)
             if fieldtype[0] == 'R':
-                (data, fieldlength) = wlfa.wlfalecr(self._unit, fieldname,
-                                                    fieldlength)
+                (data, fieldlength) = LFA4py.wlfalecr(self._unit, fieldname,
+                                                      fieldlength)
             elif fieldtype[0] == 'I':
-                (data, fieldlength) = wlfa.wlfaleci(self._unit, fieldname,
-                                                    fieldlength)
+                (data, fieldlength) = LFA4py.wlfaleci(self._unit, fieldname,
+                                                      fieldlength)
             elif fieldtype[0] == 'C':
-                (data, fieldlength) = wlfa.wlfalecc(self._unit, fieldname,
-                                                    fieldlength,
-                                                    config.LFA_maxstrlen)
+                (data, fieldlength) = LFA4py.wlfalecc(self._unit, fieldname,
+                                                      fieldlength,
+                                                      config.LFA_maxstrlen)
                 data = [data[i].strip().decode() for i in range(fieldlength)]
             field.setdata(numpy.array(data))
 
@@ -146,11 +146,11 @@ class LFA(FileResource):
             raise epygramError("LFA can only hold 1D arrays.")
 
         if data.dtype[0:5] == 'float':
-            wlfa.wlfaecrr(self._unit, field.fid['LFA'], data)
+            LFA4py.wlfaecrr(self._unit, field.fid['LFA'], data)
         elif data.dtype[0:3] == 'int':
-            wlfa.wlfaecri(self._unit, field.fid['LFA'], data)
+            LFA4py.wlfaecri(self._unit, field.fid['LFA'], data)
         elif data.dtype[0:3] == 'str':
-            wlfa.wlfaecrc(self._unit, field.fid['LFA'], data)
+            LFA4py.wlfaecrc(self._unit, field.fid['LFA'], data)
         else:
             raise epygramError("LFA can only hold float, int or str arrays.")
 
@@ -166,9 +166,9 @@ class LFA(FileResource):
         """
         Returns a list containing the names of the fields in LFA.
         """
-        (list_length, fieldslist) = wlfa.wlfalaft(self._unit,
-                                                  config.LFA_max_num_fields,
-                                                  config.LFA_maxstrlen)
+        (list_length, fieldslist) = LFA4py.wlfalaft(self._unit,
+                                                    config.LFA_max_num_fields,
+                                                    config.LFA_maxstrlen)
         fieldslist = [fieldslist[i].strip().decode() for i in range(list_length)]
         return fieldslist
 

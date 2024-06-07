@@ -146,17 +146,17 @@ def init_env(omp_num_threads=1,
         GRIB_SAMPLES_PATH and GRIB_DEFINITION_PATH
         (or equivalent ECCODES variables)
     """
-    # 1. arpifs4py library
+    # 1. falfilfa4py library
     # FA & LFI need some special environment setting
     if any([f in formats.runtime_available_formats for f in ('FA', 'LFI')]):
-        from epygram.extra import arpifs4py
+        from epygram.extra import falfilfa4py
         if mute_FA4py is None:
             mute_FA4py = config.FA_mute_FA4py
-        arpifs4py.FALFI_init_env(omp_num_threads=omp_num_threads, no_mpi=no_mpi,  # common
-                                 lfi_C=lfi_C, mute_FA4py=mute_FA4py)  # LFI/FA
+        falfilfa4py.init_env(omp_num_threads=omp_num_threads, no_mpi=no_mpi,
+                             lfi_C=lfi_C, mute_FA4py=mute_FA4py)
         if ensure_consistent_GRIB_paths:
             from epygram.extra import griberies
-            libs_grib_api = arpifs4py.FALFI_get_dynamic_gribapi_lib_paths()
+            libs_grib_api = falfilfa4py.get_dynamic_eccodes_lib_paths_from_FA()
             for apilib, libpath in libs_grib_api.items():
                 griberies.complete_grib_paths(libpath, apilib, reset=ignore_gribenv_paths)
     # 2. SpectralGeometry inner transformation lib may need some special

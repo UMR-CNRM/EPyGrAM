@@ -23,7 +23,8 @@ from footprints import FPDict, FPList, proxy as fpx
 from bronx.meteo.conversion import q2R
 from bronx.syntax.arrays import stretch_array
 
-from  epygram.extra.arpifs4py import wfa, wlfi
+from epygram.extra.falfilfa4py import FA as FA4py
+from epygram.extra.falfilfa4py import LFI as LFI4py
 
 from epygram import config, epygramError, util
 from epygram.util import Angle, separation_line, write_formatted_fields
@@ -74,7 +75,7 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
       truncations are computed from field dimension, as linear grid.
       In global case, an error is raised.
 
-    Contains a call to arpifs4py.wfa.wfacade (wrapper for FACADE routine).
+    Contains a call to FA4py.wfacade (wrapper for FACADE routine).
     """
     assert isinstance(geometry, Geometry), \
            "geometry must be a Geometry (or heirs) instance."
@@ -242,15 +243,15 @@ def _create_header_from_geometry(geometry, spectral_geometry=None):
         PAHYBR = numpy.array([0., 0.])
         PBHYBR = numpy.array([0., 1.])
     LDGARD = True
-    wfa.wfacade(CDNOMC,
-                KTYPTR, PSLAPO, PCLOPO, PSLOPO,
-                PCODIL, KTRONC,
-                KNLATI, KNXLON,
-                len(KNLOPA), KNLOPA,
-                len(KNOZPA), KNOZPA,
-                len(PSINLA), PSINLA,
-                KNIVER, PREFER, PAHYBR, PBHYBR,
-                LDGARD)
+    FA4py.wfacade(CDNOMC,
+                  KTYPTR, PSLAPO, PCLOPO, PSLOPO,
+                  PCODIL, KTRONC,
+                  KNLATI, KNXLON,
+                  len(KNLOPA), KNLOPA,
+                  len(KNOZPA), KNOZPA,
+                  len(PSINLA), PSINLA,
+                  KNIVER, PREFER, PAHYBR, PBHYBR,
+                  LDGARD)
 
     return headername
 
@@ -302,7 +303,7 @@ class FA(FileResource):
     def _FAsoft_init(cls):
         """Initialize the FA software maximum dimensions."""
         cls._FAsoftware_cst = dict(zip(('JPXPAH', 'JPXIND', 'JPXGEO', 'JPXNIV'),
-                                       wfa.get_facst()))
+                                       FA4py.get_facst()))
 
     @classmethod
     def field_type(cls, fieldname):
@@ -370,15 +371,15 @@ class FA(FileResource):
                                " with this openmode ('r','a').")
             # open, getting logical unit
             try:
-                self._unit = wfa.wfaitou(self.container.abspath,
-                                         'OLD',
-                                         self.headername)
+                self._unit = FA4py.wfaitou(self.container.abspath,
+                                           'OLD',
+                                           self.headername)
             except RuntimeError as e:
                 raise IOError(e)
             self.isopen = True
             self.empty = False
             # read info
-            self._attributes['cdiden'] = wfa.wfalsif(self._unit)
+            self._attributes['cdiden'] = FA4py.wfalsif(self._unit)
             self._read_geometry()
             self._read_validity()
             if self.openmode == 'a':
@@ -406,7 +407,7 @@ class FA(FileResource):
                         raise IOError('This file already exist: ' + self.container.abspath)
                     else:
                         os.remove(self.container.abspath)
-                (self._unit) = wfa.wfaitou(self.container.abspath,
+                (self._unit) = FA4py.wfaitou(self.container.abspath,
                                            'NEW',
                                            self.headername)
                 self.isopen = True
@@ -416,7 +417,7 @@ class FA(FileResource):
                     self.processtype = 'forecast'
                 self._set_validity()
                 # set CDIDEN
-                wfa.wfautif(self._unit, self.cdiden)
+                FA4py.wfautif(self._unit, self.cdiden)
                 if self.default_compression is None:
                     self._attributes['default_compression'] = config.FA_default_compression
                 self._setrunningcompression(**self.default_compression)
@@ -430,7 +431,7 @@ class FA(FileResource):
         """Closes a FA with ifsaux' FAIRME."""
         if self.isopen:
             try:
-                wfa.wfairme(self._unit, 'KEEP')
+                FA4py.wfairme(self._unit, 'KEEP')
             except Exception:
                 raise IOError("closing " + self.container.abspath)
             self.isopen = False
@@ -509,11 +510,11 @@ class FA(FileResource):
                            'generic':generic_fid}
                          - if False method return a list of FA_fid
         """
-        records_number = wlfi.wlfinaf(self._unit)[0]
-        wlfi.wlfipos(self._unit)  # rewind
+        records_number = LFI4py.wlfinaf(self._unit)[0]
+        LFI4py.wlfipos(self._unit)  # rewind
         fieldslist = []
         for i in range(records_number):
-            fieldname = (wlfi.wlficas(self._unit, True)[0])
+            fieldname = (LFI4py.wlficas(self._unit, True)[0])
             if i >= 7 and fieldname != 'DATX-DES-DONNEES':
                 fieldslist.append(fieldname.strip())
             # i >= 7: 7 first fields in LFI are the header ("cadre")
@@ -632,13 +633,13 @@ class FA(FileResource):
              KNGRIB,
              KNBITS,
              KSTRON,
-             KPUILA) = wfa.wfanion(self._unit,
-                                   fieldname[0:4],
-                                   0,
-                                   fieldname[4:])[1:6]
+             KPUILA) = FA4py.wfanion(self._unit,
+                                     fieldname[0:4],
+                                     0,
+                                     fieldname[4:])[1:6]
         except RuntimeError as e:
-            if 'arpifs4py: Error code -93 was raised' in str(e) or \
-               'arpifs4py: Error code -91 was raised' in str(e):
+            if 'falfilfa4py: Error code -93 was raised' in str(e) or \
+               'falfilfa4py: Error code -91 was raised' in str(e):
                 raise epygramError(fieldname + ': seems like you try to read a MiscField as a H2DField...')
             else:
                 raise e
@@ -792,23 +793,22 @@ class FA(FileResource):
         # Get data if requested
         if getdata:
             if config.spectral_coeff_order == 'model':
-                data, masked, masked_value = wfa.wfacilo(datasize,
-                                                         self._unit,
-                                                         fieldname[0:4],
-                                                         0,
-                                                         fieldname[4:],
-                                                         spectral)
+                data, masked, masked_value = FA4py.wfacilo(datasize,
+                                                           self._unit,
+                                                           fieldname[0:4],
+                                                           0,
+                                                           fieldname[4:],
+                                                           spectral)
                 data = numpy.array(data)
                 if masked:
                     data = numpy.ma.masked_equal(data, masked_value)
             else:
-                # FIXME: next export version CLEANME: when everybody can use facilo (CY41T1_op1 onwards)
-                data = numpy.array(wfa.wfacile(datasize,
-                                               self._unit,
-                                               fieldname[0:4],
-                                               0,
-                                               fieldname[4:],
-                                               spectral))
+                data = numpy.array(FA4py.wfacile(datasize,
+                                                 self._unit,
+                                                 fieldname[0:4],
+                                                 0,
+                                                 fieldname[4:],
+                                                 spectral))
             if not field.spectral:
                 data = geometry.reshape_data(data)
             field.setdata(data)
@@ -832,8 +832,8 @@ class FA(FileResource):
         if getdata:
             nature = self.sfxflddesc.nature(fieldname, 'int')
             dim = self.sfxflddesc.dim(fieldname, 1)
-            field_length = wlfi.wlfinfo(self._unit, fieldname)[0]
-            data = wfa.wfalais(self._unit, fieldname, field_length)
+            field_length = LFI4py.wlfinfo(self._unit, fieldname)[0]
+            data = FA4py.wfalais(self._unit, fieldname, field_length)
             if dim == 0:
                 if nature == 'int':
                     dataOut = data.view('int64')[0]
@@ -944,10 +944,10 @@ class FA(FileResource):
                     raise NotImplementedError("writing of datatype " +
                                               field.datatype.__name__ +
                                               " array.")
-            wfa.wfaisan(self._unit,
-                        field.fid[self.format],
-                        dataReal.size,
-                        dataReal)
+            FA4py.wfaisan(self._unit,
+                          field.fid[self.format],
+                          dataReal.size,
+                          dataReal)
 
         elif isinstance(field, H2DField):
             assert (self.geometry.name == field.geometry.name and
@@ -1007,22 +1007,22 @@ class FA(FileResource):
             if modified_compression:
                 self._setrunningcompression(**compression)
             if config.spectral_coeff_order == 'model':
-                wfa.wfaieno(self._unit,
-                            field.fid[self.format][0:4],
-                            0,
-                            field.fid[self.format][4:],
-                            len(data), data,
-                            field.spectral,
-                            masked,
-                            fill_value)
+                FA4py.wfaieno(self._unit,
+                              field.fid[self.format][0:4],
+                              0,
+                              field.fid[self.format][4:],
+                              len(data), data,
+                              field.spectral,
+                              masked,
+                              fill_value)
             else:
                 # FIXME: next export version CLEANME: when everybody can use faieno (CY41T1_op1 onwards)
-                wfa.wfaienc(self._unit,
-                            field.fid[self.format][0:4],
-                            0,
-                            field.fid[self.format][4:],
-                            len(data), data,
-                            field.spectral)
+                FA4py.wfaienc(self._unit,
+                              field.fid[self.format][0:4],
+                              0,
+                              field.fid[self.format][4:],
+                              len(data), data,
+                              field.spectral)
             if modified_compression:
                 # set back to default
                 self._setrunningcompression(**self.default_compression)
@@ -1067,11 +1067,11 @@ class FA(FileResource):
 
     def rename_field(self, fieldname, new_name):
         """Renames a field "in place"."""
-        wlfi.wlfiren(self._unit, fieldname, new_name)
+        LFI4py.wlfiren(self._unit, fieldname, new_name)
 
     def delfield(self, fieldname):
         """Deletes a field from file "in place"."""
-        wlfi.wlfisup(self._unit, fieldname)
+        LFI4py.wlfisup(self._unit, fieldname)
 
     def modify_validity(self, **kwargs):
         """
@@ -1540,11 +1540,11 @@ class FA(FileResource):
                                 'KNLATI', 'KNXLON', 'KNLOPA', 'KNOZPA', 'PSINLA',
                                 'KNIVER', 'PREFER', 'PAHYBR', 'PBHYBR')
             zvars = list(zip(vars_from_facies,
-                             wfa.wfacies(self._FAsoftware_cst['JPXPAH'],
-                                         self._FAsoftware_cst['JPXIND'],
-                                         self._FAsoftware_cst['JPXGEO'],
-                                         self._FAsoftware_cst['JPXNIV'],
-                                         self.headername)[:-1]))
+                             FA4py.wfacies(self._FAsoftware_cst['JPXPAH'],
+                                           self._FAsoftware_cst['JPXIND'],
+                                           self._FAsoftware_cst['JPXGEO'],
+                                           self._FAsoftware_cst['JPXNIV'],
+                                           self.headername)[:-1]))
             for ab in [8, 9, 10]:  # 'KNLOPA', 'KNOZPA', 'PSINLA'
                 zvars[ab] = (zvars[ab][0], zvars[ab][1][:zvars[6][1] // 2])  # 6 == KNLATI
             for ab in [13, 14]:  # 'PAHYBR', 'PBHYBR'
@@ -1554,17 +1554,17 @@ class FA(FileResource):
                 out.write(str(v[1]) + '\n')
                 out.write('\n')
 
-            KDATEF = wfa.wfadiex(self._unit)
+            KDATEF = FA4py.wfadiex(self._unit)
             out.write('KDATEF\n')
             out.write(str(KDATEF) + '\n')
 
     def _field_type_from_file(self, fieldname):
         """Return type of the field, based on FANION or FA field dict."""
         try:
-            exist = wfa.wfanion(self._unit,
-                                fieldname[0:4],
-                                0,
-                                fieldname[4:])[0]
+            exist = FA4py.wfanion(self._unit,
+                                  fieldname[0:4],
+                                  0,
+                                  fieldname[4:])[0]
         except RuntimeError:
             exist = False
         ftype = self.field_type(fieldname)
@@ -1578,24 +1578,24 @@ class FA(FileResource):
                             'KNLATI', 'KNXLON', 'KNLOPA', 'KNOZPA', 'PSINLA',
                             'KNIVER', 'PREFER', 'PAHYBR', 'PBHYBR')
         zvars = list(zip(vars_from_facies,
-                         wfa.wfacies(self._FAsoftware_cst['JPXPAH'],
-                                     self._FAsoftware_cst['JPXIND'],
-                                     self._FAsoftware_cst['JPXGEO'],
-                                     self._FAsoftware_cst['JPXNIV'],
-                                     self.headername)[:-1]))
+                         FA4py.wfacies(self._FAsoftware_cst['JPXPAH'],
+                                       self._FAsoftware_cst['JPXIND'],
+                                       self._FAsoftware_cst['JPXGEO'],
+                                       self._FAsoftware_cst['JPXNIV'],
+                                       self.headername)[:-1]))
         return zvars
 
     def _raw_header_set(self, header_vars):
         h = header_vars
-        wfa.wfacade(self.headername,
-                h['KTYPTR'], h['PSLAPO'], h['PCLOPO'], h['PSLOPO'],
-                h['PCODIL'], h['KTRONC'],
-                h['KNLATI'], h['KNXLON'],
-                len(h['KNLOPA']), h['KNLOPA'],
-                len(h['KNOZPA']), h['KNOZPA'],
-                len(h['PSINLA']), h['PSINLA'],
-                h['KNIVER'], h['PREFER'], h['PAHYBR'], h['PBHYBR'],
-                True)
+        FA4py.wfacade(self.headername,
+                      h['KTYPTR'], h['PSLAPO'], h['PCLOPO'], h['PSLOPO'],
+                      h['PCODIL'], h['KTRONC'],
+                      h['KNLATI'], h['KNXLON'],
+                      len(h['KNLOPA']), h['KNLOPA'],
+                      len(h['KNOZPA']), h['KNOZPA'],
+                      len(h['PSINLA']), h['PSINLA'],
+                      h['KNIVER'], h['PREFER'], h['PAHYBR'], h['PBHYBR'],
+                      True)
 
     def _read_geometry(self):
         """
@@ -1606,11 +1606,11 @@ class FA(FileResource):
          PCODIL, KTRONC,
          KNLATI, KNXLON, KNLOPA, KNOZPA, PSINLA,
          KNIVER, PREFER, PAHYBR, PBHYBR
-         ) = wfa.wfacies(self._FAsoftware_cst['JPXPAH'],
-                         self._FAsoftware_cst['JPXIND'],
-                         self._FAsoftware_cst['JPXGEO'],
-                         self._FAsoftware_cst['JPXNIV'],
-                         self.headername)[:-1]
+         ) = FA4py.wfacies(self._FAsoftware_cst['JPXPAH'],
+                           self._FAsoftware_cst['JPXIND'],
+                           self._FAsoftware_cst['JPXGEO'],
+                           self._FAsoftware_cst['JPXNIV'],
+                           self.headername)[:-1]
         Ai = [c * PREFER for c in PAHYBR[0:KNIVER + 1]]
         Bi = [c for c in PBHYBR[0:KNIVER + 1]]
         vertical_grid = {'gridlevels': tuple([(i + 1, FPDict({'Ai':Ai[i],
@@ -1788,7 +1788,7 @@ class FA(FileResource):
         Reads the validity in the FA header.
         Interface to Fortran routines from 'ifsaux'.
         """
-        KDATEF = wfa.wfadiex(self._unit)
+        KDATEF = FA4py.wfadiex(self._unit)
         year = int(KDATEF[0])
         month = int(KDATEF[1])
         day = int(KDATEF[2])
@@ -1863,7 +1863,7 @@ class FA(FileResource):
         KDATEF[8] = processtype
         # KDATEF[10] = 0
         if not config.FA_fandax:
-            wfa.wfandar(self._unit, KDATEF)
+            FA4py.wfandar(self._unit, KDATEF)
         else:
             # fandax
             KDATEF[11] = 1
@@ -1874,7 +1874,7 @@ class FA(FileResource):
             if self.validity.cumulativeduration() is not None:
                 KDATEF[15] = (self.validity.term(fmt='IntSeconds') -
                               self.validity.cumulativeduration(fmt='IntSeconds'))
-            wfa.wfandax(self._unit, KDATEF)
+            FA4py.wfandax(self._unit, KDATEF)
 
     @FileResource._openbeforedelayed
     def _getrunningcompression(self):
@@ -1884,7 +1884,7 @@ class FA(FileResource):
         """
         comp = dict()
         (comp['KNGRIB'], comp['KNBPDG'], comp['KNBCSP'], comp['KSTRON'],
-         comp['KPUILA'], comp['KDMOPL']) = wfa.wfaveur(self._unit)
+         comp['KPUILA'], comp['KDMOPL']) = FA4py.wfaveur(self._unit)
 
         return comp
 
@@ -1905,10 +1905,10 @@ class FA(FileResource):
             else:
                 raise epygramError("unknown parameter: " + k +
                                    " passed as argument.")
-        wfa.wfagote(self._unit,
-                    comp['KNGRIB'],
-                    comp['KNBPDG'],
-                    comp['KNBCSP'],
-                    comp['KSTRON'],
-                    comp['KPUILA'],
-                    comp['KDMOPL'])
+        FA4py.wfagote(self._unit,
+                      comp['KNGRIB'],
+                      comp['KNBPDG'],
+                      comp['KNBCSP'],
+                      comp['KSTRON'],
+                      comp['KPUILA'],
+                      comp['KDMOPL'])

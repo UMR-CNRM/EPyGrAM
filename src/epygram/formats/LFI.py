@@ -22,7 +22,7 @@ import footprints
 from footprints import FPDict, proxy as fpx
 from bronx.datagrip.misc import read_dict_in_CSV
 
-from epygram.extra.arpifs4py import wlfi
+from epygram.extra.falfilfa4py import LFI as LFI4py
 
 from epygram import config, epygramError, util
 from epygram.util import Angle
@@ -233,7 +233,7 @@ class LFI(FileResource):
             # LFI already exists
             # open, getting logical unit
             try:
-                self._unit = wlfi.wlfiouv(self.container.abspath, 'OLD')
+                self._unit = LFI4py.wlfiouv(self.container.abspath, 'OLD')
             except RuntimeError as e:
                 raise IOError(e)
             self.isopen = True
@@ -243,7 +243,7 @@ class LFI(FileResource):
             # open, getting logical unit
             if os.path.exists(self.container.abspath):
                 raise IOError('This file already exist: ' + self.container.abspath)
-            self._unit = wlfi.wlfiouv(self.container.abspath, 'NEW')
+            self._unit = LFI4py.wlfiouv(self.container.abspath, 'NEW')
             self.isopen = True
             self.empty = True
 
@@ -251,7 +251,7 @@ class LFI(FileResource):
         """Closes a LFI with ifsaux' LFIFER."""
         if self.isopen:
             try:
-                wlfi.wlfifer(self._unit, 'KEEP')
+                LFI4py.wlfifer(self._unit, 'KEEP')
             except Exception:
                 raise IOError("closing " + self.container.abspath)
             self.isopen = False
@@ -387,11 +387,11 @@ class LFI(FileResource):
     def _listLFInames(self):
         """List of LFI article names contained in file."""
         if self._listLFInamesCache is None:
-            records_number = wlfi.wlfinaf(self._unit)[0]
-            wlfi.wlfipos(self._unit)  # rewind
+            records_number = LFI4py.wlfinaf(self._unit)[0]
+            LFI4py.wlfipos(self._unit)  # rewind
             self._listLFInamesCache = []
             for _ in range(records_number):
-                fname = wlfi.wlficas(self._unit, True)[0].strip()
+                fname = LFI4py.wlficas(self._unit, True)[0].strip()
                 self._listLFInamesCache.append(fname)
 
         return self._listLFInamesCache
@@ -483,11 +483,11 @@ class LFI(FileResource):
                 if field_info['type'] != '3D':
                     kwargs_vcoord.pop('grid', None)
         # Get data if requested or only metadata
-        field_length = wlfi.wlfinfo(self._unit, fieldname)[0]  # Record length
+        field_length = LFI4py.wlfinfo(self._unit, fieldname)[0]  # Record length
         if field_length == 0:
             raise epygramError("This record does not exist.")
         lengthToRead = min(field_length, 2 + LFI._LFIsoftware_cst['JPXKRK'] + 3) if not getdata else field_length  # Length needed
-        rawData = wlfi.wlfilec(self._unit, fieldname, lengthToRead, getdata)  # Reading
+        rawData = LFI4py.wlfilec(self._unit, fieldname, lengthToRead, getdata)  # Reading
         (h, v) = gridIndicatorDict[rawData[0]]
         gridIndicator = {'vertical':v, 'horizontal':h}
         comment_length = rawData[1]
@@ -502,9 +502,9 @@ class LFI(FileResource):
             if self._compressed is None and fieldname != 'LFI_COMPRESSED':
                 self._read_compression()
             if self._compressed:
-                (lengthAfter, compressionType) = wlfi.wget_compheader(len(data), data, lengthToRead)
+                (lengthAfter, compressionType) = LFI4py.wget_compheader(len(data), data, lengthToRead)
                 if lengthAfter > 0:
-                    data = wlfi.wdecompress_field(len(data), data, compressionType, lengthAfter)
+                    data = LFI4py.wdecompress_field(len(data), data, compressionType, lengthAfter)
             if field_info['type'] == 'Misc':
                 if field_info['dimension'] == 0:
                     if field_info['nature'] == 'int':
@@ -902,24 +902,24 @@ class LFI(FileResource):
                 if ('LFI_COMPRESSED' in specialValues and specialValues['LFI_COMPRESSED'] and
                    dataInt.size % ((specialValues['IMAX'] + 2) * (specialValues['JMAX'] + 2)) == 0 and
                    name != 'ZS' and '.DATIM' not in name):
-                    (dataInt, size) = wlfi.wcompress_field(dataInt,
+                    (dataInt, size) = LFI4py.wcompress_field(dataInt,
                                                            specialValues['IMAX'] + 2,
                                                            specialValues['JMAX'] + 2,
                                                            dataInt.size)
                     dataInt = dataInt[:size]
                 dataToWrite = numpy.concatenate((header, dataInt))
-                wlfi.wlfiecr(self._unit, name, len(dataToWrite), dataToWrite)
+                LFI4py.wlfiecr(self._unit, name, len(dataToWrite), dataToWrite)
 
                 if self.empty:
                     self.empty = False
 
     def rename_field(self, fid, new_fid):
         """Renames a field "in place"."""
-        wlfi.wlfiren(self._unit, fid if self.true3d else fid[0], new_fid if self.true3d else new_fid[0])
+        LFI4py.wlfiren(self._unit, fid if self.true3d else fid[0], new_fid if self.true3d else new_fid[0])
 
     def delfield(self, fid):
         """Deletes a field from file "in place"."""
-        wlfi.wlfisup(self._unit, fid if self.true3d else fid[0])
+        LFI4py.wlfisup(self._unit, fid if self.true3d else fid[0])
 
     @FileResource._openbeforedelayed
     def extractprofile(self, fid, lon=None, lat=None,

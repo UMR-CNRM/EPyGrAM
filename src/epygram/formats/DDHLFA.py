@@ -18,7 +18,7 @@ import footprints
 from footprints import FPDict, FPList
 from bronx.meteo.constants import g0
 
-from  epygram.extra.arpifs4py import wlfa
+from  epygram.extra.falfilfa4py import LFA as LFA4py
 
 from epygram import config, epygramError
 from epygram.util import Angle, write_formatted, separation_line
@@ -67,7 +67,7 @@ class DDHLFA(LFA):
     def __init__(self, *args, **kwargs):
         self.isopen = False
         super(LFA, self).__init__(*args, **kwargs)
-        if not wlfa.wlfatest(self.container.abspath):
+        if not LFA4py.wlfatest(self.container.abspath):
             raise IOError("This resource is not a LFA one.")
         if self.openmode in ('r', 'a'):
             guess = LFA(filename=self.container.abspath, openmode=self.openmode)
@@ -221,7 +221,7 @@ class DDHLFA(LFA):
             else:
                 # profile fields
                 if not getdata:
-                    fieldlevels = (wlfa.wlfacas(self._unit, fieldname)[1] //
+                    fieldlevels = (LFA4py.wlfacas(self._unit, fieldname)[1] //
                                    self.domains['number'])
                 else:
                     fieldlevels = (len(field_from_LFA.getdata()) //
