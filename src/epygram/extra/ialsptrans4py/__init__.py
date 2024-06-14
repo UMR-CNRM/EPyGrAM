@@ -8,6 +8,8 @@ ialsptrans4py:
 
 Contains the interface to spectral transforms from the IAL/ecTrans.
 Note that this is temporary between the former package arpifs4py and a direct python interface to ecTrans.
+
+Actual .so library should be in one of the preinstalled paths or in a directory specified via LD_LIBRARY_PATH
 """
 
 from __future__ import print_function, absolute_import, unicode_literals, division
@@ -21,12 +23,12 @@ from ctypesForFortran import addReturnCode, treatReturnCode, IN, OUT
 # Shared objects library
 ########################
 so_filename = "IALsptrans4py.so.0"  # local name in the directory
-potential_locations = [
-                       #os.path.dirname(os.path.realpath(__file__)),  # in package ?
-                       "/home/common/epygram/public/EPyGrAM/libs4py",  # CNRM
-                       "/home/gmap/mrpe/mary/public/EPyGrAM/libs4py",  # belenos/taranis
-                       "/home/acrd/public/EPyGrAM/libs4py",  # ECMWF's Atos aa-ad
-                       ]
+LD_LIBRARY_PATH = [p for p in os.environ.get('LD_LIBRARY_PATH', '').split(':') if p != '']
+potential_locations = LD_LIBRARY_PATH + [
+    "/home/common/epygram/public/EPyGrAM/libs4py",  # CNRM
+    "/home/gmap/mrpe/mary/public/EPyGrAM/libs4py",  # belenos/taranis
+    "/home/acrd/public/EPyGrAM/libs4py",  # ECMWF's Atos aa-ad
+    ]
 for _libs4py_dir in potential_locations:
     shared_objects_library = os.path.join(_libs4py_dir, so_filename)
     if os.path.exists(shared_objects_library):
@@ -34,7 +36,10 @@ for _libs4py_dir in potential_locations:
     else:
         shared_objects_library = None
 if shared_objects_library is None:
-    raise FileNotFoundError("'{}' was not found in any of potential locations: {}".format(so_filename, potential_locations))
+    msg = ' '.join(["'{}' was not found in any of potential locations: {}.",
+                    "You can specify a different location using env var LD_LIBRARY_PATH"]).format(
+                            so_filename, str(potential_locations))
+    raise FileNotFoundError(msg)
 ctypesFF, handle = ctypesForFortran.ctypesForFortranFactory(shared_objects_library)
 
 # Initialization
