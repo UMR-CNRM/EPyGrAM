@@ -8,7 +8,8 @@ but that may be used from outside.
 .. toctree::
    :maxdepth: 1
 
-   arpifs4py
+   falfilfa4py
+   ialsptrans4py
    pyexttiff
    usevortex
    griberies
