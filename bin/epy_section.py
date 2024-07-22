@@ -363,7 +363,7 @@ if __name__ == '__main__':
          global_shift_center=args.global_shift_center,
          zoom=zoom,
          legend=args.legend,
-         output=args.output,
+         output=args.output if args.output != 'X' else None,
          outputfilename=args.outputfilename,
          figures_dpi=args.figures_dpi,
          section_abscissa=args.section_abscissa,

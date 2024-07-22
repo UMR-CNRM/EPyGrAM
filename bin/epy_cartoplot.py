@@ -458,7 +458,7 @@ if __name__ == '__main__':
         cartopy_features = args.cartopy_features.split(',')
     else:
         cartopy_features = []
-    if args.outputfilename or args.outputfmt:
+    if args.outputfilename or args.outputfmt != 'X':
         savefig = True
     else:
         savefig = False
@@ -518,4 +518,4 @@ if __name__ == '__main__':
          savefig=savefig,
          outputfilename=args.outputfilename,
          figures_dpi=args.figures_dpi,
-         outputfmt=args.outputfmt)
+         outputfmt=args.outputfmt if args.outputfmt != 'X' else None)

@@ -368,7 +368,7 @@ if __name__ == '__main__':
          operation=operation,
          diffoperation=diffoperation,
          legend=args.legend,
-         output=args.output,
+         output=args.output if args.output != 'X' else None,
          outputfilename=args.outputfilename,
          minmax=minmax,
          diffminmax=diffminmax,

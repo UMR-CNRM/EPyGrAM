@@ -298,18 +298,16 @@ output_options = {
         '-o', '--output',
         dict(help="store graphical output in file in with specified format,\
                    among ('png', pdf). Pdf is kind of disadvised, for it is\
-                   very slow and produces much too big files...",
-             choices=['png', 'pdf'],
-             default=_defaults.get('default_graphical_output')
-                     if not util.mpl_interactive_backend() else False)],
+                   very slow and produces much too big files. 'X' to open GUI.",
+             choices=['png', 'pdf', 'X'],
+             default=_defaults.get('default_graphical_output'))],
     'outputfmt':[
         '-o', '--outputfmt',
         dict(help="specify format for output file,\
                    among ('png', pdf). Pdf is kind of disadvised, for it is\
-                   very slow and produces much too big files...",
-             choices=['png', 'pdf'],
-             default=_defaults.get('default_graphical_output')
-                     if not util.mpl_interactive_backend() else False)],
+                   very slow and produces much too big files. 'X' to open GUI.",
+             choices=['png', 'pdf', 'X'],
+             default=_defaults.get('default_graphical_output'))],
     'savefig':[
         '--sf', '--savefig',
         dict(help="save figure in file.",

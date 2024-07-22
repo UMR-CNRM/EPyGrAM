@@ -773,7 +773,7 @@ if __name__ == '__main__':
          hide_axes=args.hide_axes,
          ground=args.ground,
          legend=args.legend,
-         output=args.output,
+         output=args.output if args.output != 'X' else None,
          outputfilename=args.outputfilename,
          specificproj=specificproj,
          z_factor=args.z_factor,

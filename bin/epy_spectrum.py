@@ -433,6 +433,6 @@ if __name__ == '__main__':
          slopes=slopes,
          zoom=zoom,
          unit=args.unit,
-         output=args.output,
+         output=args.output if args.output != 'X' else None,
          outputfilename=args.outputfilename,
          figures_dpi=args.figures_dpi)
