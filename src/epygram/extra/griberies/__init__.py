@@ -144,14 +144,14 @@ def parse_GRIBstr_todict(strfid):
 
 def read_gribdef(filename):
     """Read a grib definition file and return it as a dict."""
-    re_name = re.compile('("|\')(?P<name>[\w\.\-\_ ]+)("|\')\s*=')
-    re_real = '\+|-?\d*\.\d*e\+|-?\d*'
-    re_real_g = '(?P<real>' + re_real + ')'
-    re_int = '\+|-?\d+'
-    re_int_g = '(?P<int>' + re_int + ')'
+    re_name = re.compile(r'("|\')(?P<name>[\w\.\-\_ ]+)("|\')\s*=')
+    re_real = r'\+|-?\d*\.\d*e\+|-?\d*'
+    re_real_g = r'(?P<real>' + re_real + ')'
+    re_int = r'\+|-?\d+'
+    re_int_g = r'(?P<int>' + re_int + ')'
     # re_num = '(' + re_real + ')|(' + re_int + ')'
-    re_num_g = re_int_g + '|' + re_real_g
-    re_keyvalue = re.compile('(?P<key>\w+)\s*=\s*' + re_num_g + '\s*;')
+    re_num_g = re_int_g + r'|' + re_real_g
+    re_keyvalue = re.compile(r'(?P<key>\w+)\s*=\s*' + re_num_g + r'\s*;')
     # read file
     with io.open(filename, 'r', encoding='utf-8') as f:
         lines_unfold = [l.strip() for l in f.readlines()]

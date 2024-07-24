@@ -566,7 +566,7 @@ class FA(FileResource):
         Returns a sorted list of fields with regards to their name and nature,
         as a dict of lists.
         """
-        re_3D = re.compile('(?P<prefix>[A-Z])(?P<level>\d+)(?P<param>[A-Z]+.*)')
+        re_3D = re.compile(r'(?P<prefix>[A-Z])(?P<level>\d+)(?P<param>[A-Z]+.*)')
         list3D = []
         list2D = []
         # final lists

@@ -25,7 +25,7 @@ class FaGribDef(griberies.GribDef):
     b) move it under {config.userlocaldir}/{FaGribDef.dirname}
     """
 
-    _re_dirname = re.compile('gribapi\.def\.[\d_]+')
+    _re_dirname = re.compile(r'gribapi\.def\.[\d_]+')
     _official_rootdir = os.path.join(config.installdir, 'data')
     _non_GRIB_keys = ('LSTCUM', 'FMULTM', 'FMULTE', 'ZLMULT')
 
@@ -80,7 +80,7 @@ class FaGribDef(griberies.GribDef):
         :param filter_non_GRIB_keys: filter out the non-GRIB keys that may be
             present in grib def of field
         """
-        _re_altitude = re.compile('(?P<ltype>[A-W]+)(?P<level>\d+)(?P<param>.+)')
+        _re_altitude = re.compile(r'(?P<ltype>[A-W]+)(?P<level>\d+)(?P<param>.+)')
         if fieldname in self.tables[grib_edition]['faFieldName']:
             fid = self._get_def(fieldname, 'faFieldName',
                                 grib_edition, include_comments)
@@ -208,8 +208,8 @@ class FaGribDef(griberies.GribDef):
 
 class SfxFldDesc_Mod(object):
     """Handle fields catalog from sfxflddesc.F90 source file."""
-    _pattern = re.compile('"\.(?P<name>[\w\d%]+)\.+(?P<gridtype>\d)\.{2}(?P<type>\w\d)\.{2}(?P<comment>.+)\.{2}(?P<mask>.{20})\.{2}",? ?(&|/)')
-    _unit = re.compile('(?P<comment>.*)\((?P<unit>.+)\)')
+    _pattern = re.compile(r'"\.(?P<name>[\w\d%]+)\.+(?P<gridtype>\d)\.{2}(?P<type>\w\d)\.{2}(?P<comment>.+)\.{2}(?P<mask>.{20})\.{2}",? ?(&|/)')
+    _unit = re.compile(r'(?P<comment>.*)\((?P<unit>.+)\)')
     _fortran_sourcename = 'sfxflddesc_mod.F90'
     type2nature = {'X':'float', 'L':'bool', 'C':'str', 'N':'int', 'Y':'float',
                    'T':'int'}  # FIXME: T: cf mode_write_surf_fa.F90
@@ -313,11 +313,11 @@ def find_wind_pair(fieldname):
     """For a wind **fieldname**, find and return the pair."""
     pairs = {'U':'V', 'V':'U',
              'ZONAL':'MERIDIEN', 'MERIDIEN':'ZONAL', 'MERID':'ZONAL'}
-    patterns = ['S\d+WIND\.(?P<d>[U,V])\.PHYS',
-                '[P,H,V]\d+VENT_(?P<d>(ZONAL)|(MERID)|(MERIDIEN))',
-                'CLSVENTNEUTRE.(?P<d>[U,V])',
-                'CLSVENT.(?P<d>(ZONAL)|(MERIDIEN))',
-                'CLS(?P<d>[U,V]).RAF.MOD.XFU']
+    patterns = [r'S\d+WIND\.(?P<d>[U,V])\.PHYS',
+                r'[P,H,V]\d+VENT_(?P<d>(ZONAL)|(MERID)|(MERIDIEN))',
+                r'CLSVENTNEUTRE.(?P<d>[U,V])',
+                r'CLSVENT.(?P<d>(ZONAL)|(MERIDIEN))',
+                r'CLS(?P<d>[U,V]).RAF.MOD.XFU']
     axes = {'U':'x', 'ZONAL':'x',
             'V':'y', 'MERIDIEN':'y', 'MERID':'y'}
     pair = None

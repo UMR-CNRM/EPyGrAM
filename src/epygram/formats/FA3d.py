@@ -55,12 +55,12 @@ class FA3d(FileResource):
             self.open()
 
         self._cache_find_re_in_list = {}
-        self._3dnames = [(re.compile('P[0-9][0-9][0-9][0-9][0-9]'), 'P-----'),
-                         (re.compile('S[0-9][0-9][0-9]'), 'S---'),
-                         (re.compile('H[0-9][0-9][0-9][0-9][0-9]'), 'H-----'),
-                         (re.compile('V[0-9][0-9][0-9]'), 'V---'),
-                         (re.compile('T[0-9][0-9][0-9]'), 'T---'),
-                         (re.compile('KT[0-9][0-9][0-9]'), 'KT---')]
+        self._3dnames = [(re.compile(r'P[0-9][0-9][0-9][0-9][0-9]'), 'P-----'),
+                         (re.compile(r'S[0-9][0-9][0-9]'), 'S---'),
+                         (re.compile(r'H[0-9][0-9][0-9][0-9][0-9]'), 'H-----'),
+                         (re.compile(r'V[0-9][0-9][0-9]'), 'V---'),
+                         (re.compile(r'T[0-9][0-9][0-9]'), 'T---'),
+                         (re.compile(r'KT[0-9][0-9][0-9]'), 'KT---')]
         self._cont = {}
 
     def open(self, openmode=None):
@@ -214,7 +214,7 @@ class FA3d(FileResource):
         Returns a sorted list of fields with regards to their name and nature,
         as a dict of lists.
         """
-        re_3D = re.compile('(?P<prefix>[A-Z])(?P<level>\d+)(?P<param>[A-Z]+.*)')
+        re_3D = re.compile(r'(?P<prefix>[A-Z])(?P<level>\d+)(?P<param>[A-Z]+.*)')
         list3D = []
         list2D = []
         # final lists

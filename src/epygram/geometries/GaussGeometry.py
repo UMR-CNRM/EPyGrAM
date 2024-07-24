@@ -31,7 +31,7 @@ from .AbstractGeometry import Geometry
 from . import _need_pyproj_geod
 
 epylog = footprints.loggers.getLogger(__name__)
-_re_nearest_sq = re.compile('(?P<n>\d+)\*(?P<m>\d+)')
+_re_nearest_sq = re.compile(r'(?P<n>\d+)\*(?P<m>\d+)')
 
 
 

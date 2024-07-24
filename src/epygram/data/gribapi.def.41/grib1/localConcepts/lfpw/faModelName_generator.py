@@ -5,7 +5,7 @@ import re
 
 from jinja2 import Template
 
-re_comment = re.compile('^\s*([#%!]|$)')
+re_comment = re.compile(r'^\s*([#%!]|$)')
 
 if __name__ == "__main__":
 
