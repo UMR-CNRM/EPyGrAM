@@ -42,11 +42,12 @@ dependencies=[
         "cartopy",   
         "matplotlib",
         "eccodes",      
-        "netCDF4",   
+        "netCDF4",
+        "h5py",   
         "pyproj",      
         "six",
 	"pyyaml" , # issue with bronx !!
-        "ctypesForFortran == 1.0.1",  # temporary, until complete externalisation of arpifs4py
+        "ctypesForFortran <= 1.1.2",  # temporary, until complete externalisation of arpifs4py
             ]
 [tool.setuptools]
 include-package-data = true

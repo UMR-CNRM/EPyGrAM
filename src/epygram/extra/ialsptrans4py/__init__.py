@@ -22,24 +22,30 @@ from ctypesForFortran import addReturnCode, treatReturnCode, IN, OUT
 
 # Shared objects library
 ########################
-so_filename = "IALsptrans4py.so.0"  # local name in the directory
-LD_LIBRARY_PATH = [p for p in os.environ.get('LD_LIBRARY_PATH', '').split(':') if p != '']
-potential_locations = LD_LIBRARY_PATH + [
-    "/home/common/epygram/public/EPyGrAM/libs4py",  # CNRM
-    "/home/gmap/mrpe/mary/public/EPyGrAM/libs4py",  # belenos/taranis
-    "/home/acrd/public/EPyGrAM/libs4py",  # ECMWF's Atos aa-ad
-    ]
-for _libs4py_dir in potential_locations:
-    shared_objects_library = os.path.join(_libs4py_dir, so_filename)
-    if os.path.exists(shared_objects_library):
-        break
-    else:
-        shared_objects_library = None
-if shared_objects_library is None:
-    msg = ' '.join(["'{}' was not found in any of potential locations: {}.",
-                    "You can specify a different location using env var LD_LIBRARY_PATH"]).format(
-                            so_filename, str(potential_locations))
-    raise FileNotFoundError(msg)
+shared_objects_library = os.environ.get('IALSPTRANS4PY_SO', None)
+if shared_objects_library is None or not os.path.exists(shared_objects_library):
+    # not specified or path does not exist : find in known locations
+    so_basename = "IALsptrans4py.so.0"  # local name in the directory
+    LD_LIBRARY_PATH = [p for p in os.environ.get('LD_LIBRARY_PATH', '').split(':') if p != '']
+    potential_locations = LD_LIBRARY_PATH + [
+        "/home/common/epygram/public/EPyGrAM/libs4py",  # CNRM
+        "/home/gmap/mrpe/mary/public/EPyGrAM/libs4py",  # belenos/taranis
+        "/home/acrd/public/EPyGrAM/libs4py",  # ECMWF's Atos aa-ad
+        ]
+    for _libs4py_dir in potential_locations:
+        shared_objects_library = os.path.join(_libs4py_dir, so_basename)
+        if os.path.exists(shared_objects_library):
+            break
+        else:
+            shared_objects_library = None
+    if shared_objects_library is None:
+        msg = ' '.join(["'{}' was not found in any of potential locations: {}.",
+                        "You can specify a different location using env var LD_LIBRARY_PATH",
+                        "or specify a precise full path using env var IALSPTRANS4PY_SO."]).format(
+                                so_filename, str(potential_locations))
+        raise FileNotFoundError(msg)
+else:
+    so_basename = os.path.basename(shared_objects_library)
 ctypesFF, handle = ctypesForFortran.ctypesForFortranFactory(shared_objects_library)
 
 # Initialization

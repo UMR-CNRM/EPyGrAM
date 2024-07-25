@@ -15,7 +15,7 @@ EPyGrAM dependencies are available from Pypi (pip install ...), including the pa
 Installation
 ------------
 
-`pip install epygram`
+`pip3 install epygram`
 
 Depending on the machine and environment, you may need:
 ```
