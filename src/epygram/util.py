@@ -521,12 +521,11 @@ def as_numpy_array(x):
     if isinstance(x, list):
         missing = set([item.fill_value for item in x if isinstance(item, numpy.ma.masked_array)])
         if len(missing) > 0:
-            return numpy.ma.array(x, copy=False, ndmin=1, subok=True,
-                                  fill_value=missing.pop() if len(missing) == 1 else None)
+            return numpy.ma.atleast_1d(numpy.ma.asanyarray(x, fill_value=missing.pop() if len(missing) == 1 else None))
         else:
-            return numpy.array(x, copy=False, ndmin=1, subok=True)
+            return numpy.atleast_1d(numpy.asanyarray(x))
     else:
-        return numpy.array(x, copy=False, ndmin=1, subok=True)
+        return numpy.atleast_1d(numpy.asanyarray(x))
 
 
 def find_re_in_list(regexp, a_list):
