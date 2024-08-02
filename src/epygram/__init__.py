@@ -51,7 +51,7 @@ package_rootdir = os.path.dirname(os.path.realpath(__path__[0]))  # realpath to 
 
 __all__ = []
 
-__version__ = "1.5.0"
+__version__ = "1.5.1"
 
 __license__ = 'CeCILL-C'
 
