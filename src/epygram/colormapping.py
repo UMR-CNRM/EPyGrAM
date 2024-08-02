@@ -39,7 +39,7 @@ def register_colormap_from_json(filename):
     cmap = matplotlib.colors.ListedColormap(colors, name=colormap)
     asdict['cmap'] = cmap
     if colormap not in plt.colormaps():
-        plt.register_cmap(name=colormap, cmap=cmap)
+        matplotlib.colormaps.register(cmap=cmap)
     else:
         raise ValueError('this colormap is already registered: {}'.format(colormap))
     _loaded_colormaps[filename] = asdict
