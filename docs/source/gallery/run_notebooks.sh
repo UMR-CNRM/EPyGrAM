@@ -21,5 +21,5 @@ fi
 
 for f in `ls */*.ipynb`
 do
-  jupyter nbconvert $args $f >> /dev/null
+  jupyter nbconvert $args $f --to html >> /dev/null
 done
