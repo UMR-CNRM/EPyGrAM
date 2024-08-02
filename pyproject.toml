@@ -43,11 +43,11 @@ dependencies=[
         "matplotlib",
         "eccodes",      
         "netCDF4",
-        "h5py",   
+        #"h5py",  # incompatibility with netCDF4 on Ubuntu24.04 - deactivation by default, up to the user to reactivate
         "pyproj",      
         "six",
 	"pyyaml" , # issue with bronx !!
-        "ctypesForFortran <= 1.1.2",  # temporary, until complete externalisation of arpifs4py
+        "ctypesForFortran < 2.0.0",  # temporary, until complete externalisation of arpifs4py
             ]
 [tool.setuptools]
 include-package-data = true
