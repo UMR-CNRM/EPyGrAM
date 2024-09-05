@@ -43,7 +43,7 @@ dependencies=[
         "matplotlib",
         "eccodes",      
         "netCDF4",
-        #"h5py",  # incompatibility with netCDF4 on Ubuntu24.04 - deactivation by default, up to the user to reactivate
+        "h5py",
         "pyproj",      
         "six",
 	"pyyaml" , # issue with bronx !!

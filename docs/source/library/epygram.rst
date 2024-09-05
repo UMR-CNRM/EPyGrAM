@@ -15,3 +15,7 @@
 
 .. autofunction:: epygram.showconfig
 
+-----------------------------------------------------------
+
+.. autofunction:: epygram.open
+

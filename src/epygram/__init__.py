@@ -174,5 +174,8 @@ def init_env(omp_num_threads=1,
         lowlevelgrib.init_env(reset=ignore_gribenv_paths)
 
 
+#: shortcut for epygram.formats.resource()
+open = formats.resource
+
 if config.init_at_import:
     init_env()

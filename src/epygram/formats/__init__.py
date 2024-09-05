@@ -59,26 +59,13 @@ def available_format(fmt):
     return available, reason
 
 
-# Formats loading used to have to follow an order,
-# for common dynamic libraries of different versions.
-# Still necessary WHEN we do not use the same gribapi/eccodes
-# in falfilfa4py and GRIB interface
-# There is also known issues between netCDF and FA/GRIB on some platforms:
-# - GRIB and arpifs4py formats need to be loaded before netCDF/netCDF;
-# - netCDF crash later on if arpifs4py is loaded...
-# - HDF5 currently to be loaded before FA&co
+# Formats loading may have to follow an order,
+# for common dynamic libraries of different versions. Order to be set in config.implemented_formats
 
-# _loaded_first_formats = ['FA', 'LFI', 'DDHLFA', 'LFA', 'GRIB']
-_loaded_first_formats = ['HDF5SAF', 'GRIB', 'FA', 'LFI', 'DDHLFA', 'LFA']
-_formats_in_loading_order = copy.copy(config.implemented_formats)
-# set ordering
-for lff in _loaded_first_formats[::-1]:
-    if lff in _formats_in_loading_order:
-        _formats_in_loading_order = [lff] + [f for f in _formats_in_loading_order if f != lff]
 #: list of formats actually available at runtime
 runtime_available_formats = []
 # import formats modules
-for f in _formats_in_loading_order:
+for f in config.implemented_formats:
     _available, _reason = available_format(f)
     if _available:
         runtime_available_formats.append(f)
