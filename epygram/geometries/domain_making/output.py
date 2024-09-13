@@ -54,9 +54,14 @@ def gauss_rgrid2namelists(rgrid_namelist,
     nam['NAMDIM']['NDLON'] = longitudes
     nam['NAMDIM']['NSMAX'] = truncation
     nam['NAMGEM']['NHTYP'] = 2
-    nam['NAMGEM']['NSTTYP'] = 2 if pole != {'pole_sin_lat': 1., 'pole_lon_in_rad':0.} else 1
-    nam['NAMGEM']['RMUCEN'] = float(pole['pole_sin_lat'])
-    nam['NAMGEM']['RLOCEN'] = float(pole['pole_lon_in_rad'])
+    if set(pole.keys()) == {'lon', 'lat'}:  # DEPRECATED:
+        nam['NAMGEM']['NSTTYP'] = 2 if pole != {'lon': 0., 'lat': 90.} else 1
+        nam['NAMGEM']['RMUCEN'] = math.sin(math.radians(float(pole['lat'])))
+        nam['NAMGEM']['RLOCEN'] = math.radians(float(pole['lon']))
+    elif set(pole.keys()) == {'pole_sin_lat', 'pole_lon_in_rad'}:
+        nam['NAMGEM']['NSTTYP'] = 2 if pole != {'pole_sin_lat': 1., 'pole_lon_in_rad':0.} else 1
+        nam['NAMGEM']['RMUCEN'] = float(pole['pole_sin_lat'])
+        nam['NAMGEM']['RLOCEN'] = float(pole['pole_lon_in_rad'])
     nam['NAMGEM']['RSTRET'] = stretching
     # numbers of longitudes
     with io.open(rgrid_namelist, 'r') as n:
@@ -100,9 +105,14 @@ def gauss_rgrid2namelists(rgrid_namelist,
     nam['NAMFPD']['NLON'] = longitudes
     nam['NAMFPG']['NFPMAX'] = truncation
     nam['NAMFPG']['NFPHTYP'] = 2
-    nam['NAMFPG']['NFPTTYP'] = 2 if pole != {'pole_sin_lat': 1., 'pole_lon_in_rad':0.} else 1
-    nam['NAMFPG']['FPMUCEN'] = float(pole['pole_sin_lat'])
-    nam['NAMFPG']['FPLOCEN'] = float(pole['pole_lon_in_rad'])
+    if set(pole.keys()) == {'lon', 'lat'}:  # DEPRECATED:
+        nam['NAMFPG']['NFPTTYP'] = 2 if pole != {'lon': 0., 'lat': 90.} else 1
+        nam['NAMFPG']['FPMUCEN'] = math.sin(math.radians(float(pole['lat'])))
+        nam['NAMFPG']['FPLOCEN'] = math.radians(float(pole['lon']))
+    elif set(pole.keys()) == {'pole_sin_lat', 'pole_lon_in_rad'}:
+        nam['NAMFPG']['NFPTTYP'] = 2 if pole != {'pole_sin_lat': 1., 'pole_lon_in_rad':0.} else 1
+        nam['NAMFPG']['FPMUCEN'] = float(pole['pole_sin_lat'])
+        nam['NAMFPG']['FPLOCEN'] = float(pole['pole_lon_in_rad'])
     nam['NAMFPG']['FPSTRET'] = stretching
     nrgri = [v for _, v in sorted(namrgri['NAMRGRI'].items())]
     for i in range(len(nrgri)):
