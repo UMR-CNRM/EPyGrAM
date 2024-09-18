@@ -16,6 +16,7 @@ Contains the interface routines to arpifs code:
 from __future__ import print_function, absolute_import, unicode_literals, division
 
 import os
+import resource
 
 import ctypesForFortran
 
@@ -52,7 +53,8 @@ def FALFI_get_dynamic_gribapi_lib_paths():
 def FALFI_init_env(omp_num_threads=None,
                    no_mpi=False,
                    lfi_C=False,
-                   mute_FA4py=False):
+                   mute_FA4py=False,
+                   unlimited_stack=False):
     """
     Set adequate environment for the inner libraries.
 
@@ -60,6 +62,7 @@ def FALFI_init_env(omp_num_threads=None,
     :param bool no_mpi: environment variable DR_HOOK_NOT_MPI set to 1
     :param bool lfi_C: if True, LFI_HNDL_SPEC set to ':1', to use the C version of LFI
     :param bool mute_FA4py: mute messages from FAIPAR in FA4py library
+    :param unlimited_stack: equivalent of 'ulimit -s unlimited'
     """
     # because arpifs library is compiled with MPI & openMP
     if omp_num_threads is not None:
@@ -72,3 +75,6 @@ def FALFI_init_env(omp_num_threads=None,
     # option for FA
     if mute_FA4py:
         os.environ['FA4PY_MUTE'] = '1'
+    # unlimited stack
+    if unlimited_stack:
+        resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY,resource.RLIM_INFINITY))

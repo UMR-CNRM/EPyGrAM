@@ -184,6 +184,7 @@ def init_env(omp_num_threads=1,
              no_mpi=True,
              lfi_C=True,
              mute_FA4py=None,
+             unlimited_stack=True,
              ensure_consistent_GRIB_paths=True,
              ignore_gribenv_paths=False):
     """
@@ -207,7 +208,8 @@ def init_env(omp_num_threads=1,
         if mute_FA4py is None:
             mute_FA4py = config.FA_mute_FA4py
         arpifs4py.FALFI_init_env(omp_num_threads=omp_num_threads, no_mpi=no_mpi,  # common
-                                 lfi_C=lfi_C, mute_FA4py=mute_FA4py)  # LFI/FA
+                                 lfi_C=lfi_C, mute_FA4py=mute_FA4py,  # LFI/FA
+                                 unlimited_stack=unlimited_stack)
         if ensure_consistent_GRIB_paths:
             import griberies
             libs_grib_api = arpifs4py.FALFI_get_dynamic_gribapi_lib_paths()
