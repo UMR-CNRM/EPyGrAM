@@ -130,6 +130,7 @@ def init_env(omp_num_threads=1,
              no_mpi=True,
              lfi_C=True,
              mute_FA4py=None,
+             unlimited_stack=True,
              ensure_consistent_GRIB_paths=True,
              ignore_gribenv_paths=False):
     """
@@ -140,6 +141,7 @@ def init_env(omp_num_threads=1,
     :param no_mpi: environment variable DR_HOOK_NOT_MPI set to 1
     :param lfi_C: if True, LFI_HNDL_SPEC set to ':1', to use the C version of LFI
     :param mute_FA4py: mute messages from FAIPAR in FA4py library
+    :param unlimited_stack: equivalent to 'ulimit -s unlimited'
     :param bool ensure_consistent_GRIB_paths: complete GRIB samples/definition
         paths to be consistent with inner library
     :param ignore_gribenv_paths: ignore predefined values of the variables
@@ -153,7 +155,8 @@ def init_env(omp_num_threads=1,
         if mute_FA4py is None:
             mute_FA4py = config.FA_mute_FA4py
         falfilfa4py.init_env(omp_num_threads=omp_num_threads, no_mpi=no_mpi,
-                             lfi_C=lfi_C, mute_FA4py=mute_FA4py)
+                             lfi_C=lfi_C, mute_FA4py=mute_FA4py,
+                             unlimited_stack=unlimited_stack)
         if ensure_consistent_GRIB_paths:
             from epygram.extra import griberies
             libs_grib_api = falfilfa4py.get_dynamic_eccodes_lib_paths_from_FA()
