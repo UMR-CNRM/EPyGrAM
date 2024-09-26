@@ -80,7 +80,7 @@ def uv2psikhi(u, v):
     vor.gp2sp(u.spectral_geometry)
     div.gp2sp(u.spectral_geometry)
 
-    if u.geometry['name'] == 'lambert':
+    if u.geometry.projected_geometry:
         # Prepare elliptic truncation
         M = spectral_geometry.truncation["in_X"]
         N = spectral_geometry.truncation["in_Y"]
@@ -115,7 +115,7 @@ def uv2psikhi(u, v):
                         lapinv[inm] = 1.0/lapdir[inm]
                     inm += 1
     else:
-        raise epygramError("uv2psikhi implemented for lambert geometry only so far.")
+        raise epygramError("uv2psikhi implemented for projected geometry only so far.")
 
     # Apply inverse laplacian to compute stream function and velocity potential
     psi = copy.deepcopy(u)
