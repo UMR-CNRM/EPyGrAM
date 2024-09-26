@@ -82,8 +82,8 @@ def uv2psikhi(u, v):
 
     if u.geometry.projected_geometry:
         # Prepare elliptic truncation
-        M = spectral_geometry.truncation["in_X"]
-        N = spectral_geometry.truncation["in_Y"]
+        M = u.spectral_geometry.truncation["in_X"]
+        N = u.spectral_geometry.truncation["in_Y"]
         ellips = np.zeros((M+1),dtype=int)
         ellips[0] = N
         for jm in range(0,M-1):
@@ -124,10 +124,10 @@ def uv2psikhi(u, v):
     khi.data = div.data*lapinv
     psi.sp2gp()
     khi.sp2gp()
-    psi.fid["FA"] = f.replace("WIND.U.PHYS","FONC.COURANT")
-    khi.fid["FA"] = f.replace("WIND.U.PHYS","POT.VITESSE")
+    psi.fid["FA"] = u.fid["FA"].replace("WIND.U.PHYS","FONC.COURANT")
+    khi.fid["FA"] = u.fid["FA"].replace("WIND.U.PHYS","POT.VITESSE")
 
-    return make_vector_field(psi, khi)
+    return psi, khi
 
 class D3VectorField(Field):
     """
