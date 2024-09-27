@@ -175,7 +175,7 @@ class D3VectorField(Field):
     @property
     def spectral(self):
         """Returns True if the field is spectral."""
-        return self.spectral_geometry is not None
+        return all([c.spectral for c in self.components])
 
     @property
     def geometry(self):
