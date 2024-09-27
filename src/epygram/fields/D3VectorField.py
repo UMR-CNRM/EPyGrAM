@@ -65,6 +65,69 @@ def psikhi2uv(psi, khi):
     v.validity = psi.validity
     return make_vector_field(u, v)
 
+def uv2psikhi(u, v):
+    """
+    Compute streamfunction **psi** and velocity potential **khi**
+    as a D3VectorField (or subclass) from wind (on the grid).
+    """
+    # Check space
+    if not (u.spectral and v.spectral):
+        raise epygramError("Wind must be in spectral space to compute psi/khi.")
+
+    # Compute voriticity / divergence
+    uv = epygram.fields.make_vector_field(u, v)
+    vor, div = uv.compute_vordiv()
+    vor.gp2sp(u.spectral_geometry)
+    div.gp2sp(u.spectral_geometry)
+
+    if u.geometry.projected_geometry:
+        # Prepare elliptic truncation
+        M = u.spectral_geometry.truncation["in_X"]
+        N = u.spectral_geometry.truncation["in_Y"]
+        ellips = np.zeros((M+1),dtype=int)
+        ellips[0] = N
+        for jm in range(0,M-1):
+            ellips[jm+1] = int(float(N)/float(M)*np.sqrt(float(M**2-(jm+1)**2))+1.0e-10)
+        ellips[M] = 0
+        nsefre = 0
+        for jm in range(0,M+1):
+            nsefre += 4*(ellips[jm]+1)
+        if nsefre != np.size(u.data):
+            raise epygramError("Inconsistent elliptic truncation.")
+
+        # Prepare laplacian and inverse laplacian
+        exwn = 2.0*np.pi/(u.geometry.grid["X_resolution"]*float(u.geometry.dimensions["X"]))
+        eywn = 2.0*np.pi/(u.geometry.grid["Y_resolution"]*float(u.geometry.dimensions["Y"]))
+        lapdir = np.zeros(nsefre)
+        lapinv = np.zeros(nsefre)
+        inm = 0
+        for jm in range(0,M+1):
+            for jn in range(0,ellips[jm]+1):
+                for jq in range(0,4):
+                    if jm == 0 and jn == 0:
+                        lapdir[inm] = 0.0
+                        lapinv[inm] = 0.0
+                    elif jn == 0:
+                        lapdir[inm] = -float(jm**2)*exwn**2
+                        lapinv[inm] = 1.0/lapdir[inm]
+                    else:
+                        lapdir[inm] = -(float(jm**2)*exwn**2+float(jn**2)*eywn**2)
+                        lapinv[inm] = 1.0/lapdir[inm]
+                    inm += 1
+    else:
+        raise epygramError("uv2psikhi implemented for projected geometry only so far.")
+
+    # Apply inverse laplacian to compute stream function and velocity potential
+    psi = copy.deepcopy(u)
+    khi = copy.deepcopy(v)
+    psi.data = vor.data*lapinv
+    khi.data = div.data*lapinv
+    psi.sp2gp()
+    khi.sp2gp()
+    psi.fid["FA"] = u.fid["FA"].replace("WIND.U.PHYS","FONC.COURANT")
+    khi.fid["FA"] = u.fid["FA"].replace("WIND.U.PHYS","POT.VITESSE")
+
+    return psi, khi
 
 class D3VectorField(Field):
     """
