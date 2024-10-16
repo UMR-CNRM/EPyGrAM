@@ -43,7 +43,6 @@ dependencies=[
         "matplotlib",
         "eccodes < 2.0.0",  # incompatibility btw the new eccodes-2.37.0 and FA, for now
         "netCDF4",
-        "h5py",
         "pyproj",      
         "six",
 	"pyyaml" , # issue with bronx !!
