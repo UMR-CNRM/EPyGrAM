@@ -675,12 +675,11 @@ class FA(FileResource):
         assert fieldname in self.listfields(), ' '.join(["field",
                                                          str(fieldname),
                                                          "not found in resource."])
-        try:
+        if self._field_type_from_file(fieldname) == 'H2D':
             field = self._readH2DField(fieldname,
                                        getdata=getdata,
                                        footprints_proxy_as_builder=footprints_proxy_as_builder)
-        except epygramError:
-            epylog.warning("! Tried to read field '{}' as H2D and failed: try as MiscField".format(fieldname))
+        else:
             field = self._readMiscField(fieldname, getdata=getdata)
         return field
 
