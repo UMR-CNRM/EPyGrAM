@@ -16,7 +16,7 @@ import footprints
 from footprints import FPDict, FPList
 from bronx.meteo.constants import g0
 
-from  epygram.extra.falfilfa4py import LFA as LFA4py
+from  falfilfa4py import LFA as LFA4py
 
 from epygram import config, epygramError
 from epygram.util import Angle, write_formatted, separation_line

@@ -19,7 +19,7 @@ import footprints
 from footprints import FPDict, proxy as fpx
 from bronx.datagrip.misc import read_dict_in_CSV
 
-from epygram.extra.falfilfa4py import LFI as LFI4py
+from falfilfa4py import LFI as LFI4py
 
 from epygram import config, epygramError, util
 from epygram.util import Angle

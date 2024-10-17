@@ -36,7 +36,7 @@ def available_format(fmt):
     available = True
     try:
         if fmt in ('FA', 'LFI', 'DDHLFA', 'LFA'):
-            from epygram.extra import falfilfa4py
+            import falfilfa4py
         elif fmt == 'GRIB':
             if config.GRIB_lowlevel_api.lower() in ('gribapi', 'grib_api'):
                 import gribapi
