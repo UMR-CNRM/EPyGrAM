@@ -173,10 +173,10 @@ class SpectralGeometry(RecursiveObject):
         call.
         """
         if not hasattr(cls, '_transforms_lib'):
-            from epygram.extra import ialsptrans4py
-            cls._transforms_lib = ialsptrans4py
+            import ectrans4py
+            cls._transforms_lib = ectrans4py
             if transforms_lib_init_env_kwargs.pop('trigger', False):
-                ialsptrans4py.init_env(**transforms_lib_init_env_kwargs)
+                ectrans4py.init_env(**transforms_lib_init_env_kwargs)
         return cls._transforms_lib
 
     def _prevent_swapping(self):
@@ -208,11 +208,11 @@ class SpectralGeometry(RecursiveObject):
         """
         self._prevent_swapping()
         self._prevent_limited_stack()
-        return self._translib().w_trans_inq(gpdims['lat_number'],
-                                            self.truncation['max'],
-                                            len(gpdims['lon_number_by_lat']),
-                                            numpy.array(gpdims['lon_number_by_lat']),
-                                            config.KNUMMAXRESOL)
+        return self._translib().trans_inq4py(gpdims['lat_number'],
+                                             self.truncation['max'],
+                                             len(gpdims['lon_number_by_lat']),
+                                             numpy.array(gpdims['lon_number_by_lat']),
+                                             config.KNUMMAXRESOL)
 
     def etrans_inq(self, gpdims):
         """
@@ -222,15 +222,15 @@ class SpectralGeometry(RecursiveObject):
         """
         self._prevent_swapping()
         self._prevent_limited_stack()
-        return self._translib().w_etrans_inq(gpdims['X'],
-                                             gpdims['Y'],
-                                             gpdims['X_CIzone'],
-                                             gpdims['Y_CIzone'],
-                                             self.truncation['in_X'],
-                                             self.truncation['in_Y'],
-                                             config.KNUMMAXRESOL,
-                                             gpdims['X_resolution'],
-                                             gpdims['Y_resolution'])
+        return self._translib().etrans_inq4py(gpdims['X'],
+                                              gpdims['Y'],
+                                              gpdims['X_CIzone'],
+                                              gpdims['Y_CIzone'],
+                                              self.truncation['in_X'],
+                                              self.truncation['in_Y'],
+                                              config.KNUMMAXRESOL,
+                                              gpdims['X_resolution'],
+                                              gpdims['Y_resolution'])
 
     @property
     def needed_memory(self):
@@ -257,36 +257,36 @@ class SpectralGeometry(RecursiveObject):
         self._prevent_swapping()
         self._prevent_limited_stack()
         if self.space == 'bi-fourier':
-            gpdata = self._translib().w_spec2gpt_lam(gpdims['X'],
-                                                     gpdims['Y'],
-                                                     gpdims['X_CIzone'],
-                                                     gpdims['Y_CIzone'],
-                                                     self.truncation['in_X'],
-                                                     self.truncation['in_Y'],
+            gpdata = self._translib().sp2gp_lam4py(gpdims['X'],
+                                                   gpdims['Y'],
+                                                   gpdims['X_CIzone'],
+                                                   gpdims['Y_CIzone'],
+                                                   self.truncation['in_X'],
+                                                   self.truncation['in_Y'],
+                                                   config.KNUMMAXRESOL,
+                                                   len(data),
+                                                   False,  # no derivatives
+                                                   spectral_coeff_order != 'model',
+                                                   gpdims['X_resolution'],
+                                                   gpdims['Y_resolution'],
+                                                   data)[0]
+        elif self.space == 'legendre':
+            gpdata = self._translib().sp2gp_gauss4py(gpdims['lat_number'],
+                                                     self.truncation['max'],
                                                      config.KNUMMAXRESOL,
+                                                     sum(gpdims['lon_number_by_lat']),
+                                                     len(gpdims['lon_number_by_lat']),
+                                                     numpy.array(gpdims['lon_number_by_lat']),
                                                      len(data),
                                                      False,  # no derivatives
                                                      spectral_coeff_order != 'model',
-                                                     gpdims['X_resolution'],
-                                                     gpdims['Y_resolution'],
                                                      data)[0]
-        elif self.space == 'legendre':
-            gpdata = self._translib().w_spec2gpt_gauss(gpdims['lat_number'],
-                                                       self.truncation['max'],
-                                                       config.KNUMMAXRESOL,
-                                                       sum(gpdims['lon_number_by_lat']),
-                                                       len(gpdims['lon_number_by_lat']),
-                                                       numpy.array(gpdims['lon_number_by_lat']),
-                                                       len(data),
-                                                       False,  # no derivatives
-                                                       spectral_coeff_order != 'model',
-                                                       data)[0]
         elif self.space == 'fourier':
             if self.truncation['in_Y'] > 1:
-                gpdata = self._translib().w_spec2gpt_fft1d(len(data),
-                                                           self.truncation['in_Y'],
-                                                           data,
-                                                           gpdims['Y'])
+                gpdata = self._translib().sp2gp_fft1d4py(len(data),
+                                                         self.truncation['in_Y'],
+                                                         data,
+                                                         gpdims['Y'])
             else:
                 gpdata = numpy.ones(gpdims['Y']) * data[0]
         else:
@@ -311,30 +311,30 @@ class SpectralGeometry(RecursiveObject):
         self._prevent_limited_stack()
         if self.space == 'bi-fourier':
             SPdatasize = self.etrans_inq(gpdims)[1]
-            spdata = self._translib().w_gpt2spec_lam(SPdatasize,
-                                                     gpdims['X'],
-                                                     gpdims['Y'],
-                                                     gpdims['X_CIzone'],
-                                                     gpdims['Y_CIzone'],
-                                                     self.truncation['in_X'],
-                                                     self.truncation['in_Y'],
-                                                     config.KNUMMAXRESOL,
-                                                     gpdims['X_resolution'],
-                                                     gpdims['Y_resolution'],
-                                                     spectral_coeff_order != 'model',
-                                                     data)
+            spdata = self._translib().gp2sp_lam4py(SPdatasize,
+                                                   gpdims['X'],
+                                                   gpdims['Y'],
+                                                   gpdims['X_CIzone'],
+                                                   gpdims['Y_CIzone'],
+                                                   self.truncation['in_X'],
+                                                   self.truncation['in_Y'],
+                                                   config.KNUMMAXRESOL,
+                                                   gpdims['X_resolution'],
+                                                   gpdims['Y_resolution'],
+                                                   spectral_coeff_order != 'model',
+                                                   data)
         elif self.space == 'legendre':
             SPdatasize = self.trans_inq(gpdims)[1]
             SPdatasize *= 2  # complex coefficients
-            spdata = self._translib().w_gpt2spec_gauss(SPdatasize,
-                                                       gpdims['lat_number'],
-                                                       self.truncation['max'],
-                                                       config.KNUMMAXRESOL,
-                                                       len(gpdims['lon_number_by_lat']),
-                                                       numpy.array(gpdims['lon_number_by_lat']),
-                                                       len(data),
-                                                       spectral_coeff_order != 'model',
-                                                       data)
+            spdata = self._translib().gp2sp_gauss4py(SPdatasize,
+                                                     gpdims['lat_number'],
+                                                     self.truncation['max'],
+                                                     config.KNUMMAXRESOL,
+                                                     len(gpdims['lon_number_by_lat']),
+                                                     numpy.array(gpdims['lon_number_by_lat']),
+                                                     len(data),
+                                                     spectral_coeff_order != 'model',
+                                                     data)
         elif self.space == 'fourier':
             # 1D case
             SPdatasize = self.etrans_inq(gpdims)[1]
@@ -368,31 +368,31 @@ class SpectralGeometry(RecursiveObject):
         self._prevent_swapping()
         self._prevent_limited_stack()
         if self.space == 'bi-fourier':
-            gpdata = self._translib().w_spec2gpt_lam(gpdims['X'],
-                                                     gpdims['Y'],
-                                                     gpdims['X_CIzone'],
-                                                     gpdims['Y_CIzone'],
-                                                     self.truncation['in_X'],
-                                                     self.truncation['in_Y'],
+            gpdata = self._translib().sp2gp_lam4py(gpdims['X'],
+                                                   gpdims['Y'],
+                                                   gpdims['X_CIzone'],
+                                                   gpdims['Y_CIzone'],
+                                                   self.truncation['in_X'],
+                                                   self.truncation['in_Y'],
+                                                   config.KNUMMAXRESOL,
+                                                   len(data),
+                                                   True,  # derivatives
+                                                   spectral_coeff_order != 'model',
+                                                   gpdims['X_resolution'],
+                                                   gpdims['Y_resolution'],
+                                                   data)
+            gpdata = (gpdata[2], gpdata[1])
+        elif self.space == 'legendre':
+            gpdata = self._translib().sp2gp_gauss4py(gpdims['lat_number'],
+                                                     self.truncation['max'],
                                                      config.KNUMMAXRESOL,
+                                                     sum(gpdims['lon_number_by_lat']),
+                                                     len(gpdims['lon_number_by_lat']),
+                                                     numpy.array(gpdims['lon_number_by_lat']),
                                                      len(data),
                                                      True,  # derivatives
                                                      spectral_coeff_order != 'model',
-                                                     gpdims['X_resolution'],
-                                                     gpdims['Y_resolution'],
                                                      data)
-            gpdata = (gpdata[2], gpdata[1])
-        elif self.space == 'legendre':
-            gpdata = self._translib().w_spec2gpt_gauss(gpdims['lat_number'],
-                                                       self.truncation['max'],
-                                                       config.KNUMMAXRESOL,
-                                                       sum(gpdims['lon_number_by_lat']),
-                                                       len(gpdims['lon_number_by_lat']),
-                                                       numpy.array(gpdims['lon_number_by_lat']),
-                                                       len(data),
-                                                       True,  # derivatives
-                                                       spectral_coeff_order != 'model',
-                                                       data)
             gpdata = (gpdata[2], gpdata[1])
         elif self.space == 'fourier':
             raise NotImplementedError('fourier(1D): not yet !')

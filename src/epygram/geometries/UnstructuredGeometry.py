@@ -17,6 +17,7 @@ import sys
 import footprints
 from bronx.syntax.arrays import stretch_array
 
+from epygram import epygramError
 from epygram.util import (Angle,
                           positive_longitudes, longitudes_between_minus180_180,
                           write_formatted,

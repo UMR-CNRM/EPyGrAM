@@ -168,6 +168,7 @@ def init_env(omp_num_threads=1,
     from .geometries.SpectralGeometry import transforms_lib_init_env_kwargs
     transforms_lib_init_env_kwargs.update(omp_num_threads=omp_num_threads,
                                           no_mpi=no_mpi,
+                                          unlimited_stack=unlimited_stack,
                                           trigger=True)
     # 3. grib_api or eccodes
     # need some special environment setting
