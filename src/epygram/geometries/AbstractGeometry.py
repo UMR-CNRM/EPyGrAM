@@ -1376,8 +1376,6 @@ class LLGeometry(RectangularGridGeometry):
                 raise epygramError(("*longitude_shift* ({}) has to be a multiple" +
                                     " of the grid's resolution in longitude ({}).").
                                    format(longitude_shift, self.grid['X_resolution'].get('degrees')))
-            self._center_lon = Angle(self._center_lon.get('degrees') + longitude_shift,
-                                     'degrees')
             self.grid['input_lon'] = Angle(self.grid['input_lon'].get('degrees') + longitude_shift,
                                            'degrees')
         else:

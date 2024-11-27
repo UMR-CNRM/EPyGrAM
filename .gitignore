@@ -40,6 +40,9 @@ geometries.rst
 .pydevproject
 .idea
 
+# Vim
+.*.swp
+
 # Locals
 docs/html
 docs/build

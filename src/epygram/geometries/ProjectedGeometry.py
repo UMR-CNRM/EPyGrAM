@@ -11,6 +11,7 @@ Contains the classes for 3D geometries of fields.
 
 from __future__ import print_function, absolute_import, unicode_literals, division
 
+from functools import lru_cache
 import numpy
 import math
 import copy
@@ -67,12 +68,18 @@ class ProjectedGeometry(RectangularGridGeometry):
         super(ProjectedGeometry, self).__init__(grid, dimensions, vcoordinate,
                                                       position_on_horizontal_grid, geoid)
 
+    @property
+    @lru_cache
+    def _get_proj(self):
+        """
+        Returns (proj, K, center_lon, center_lat)
+        """
         import pyproj
 
         def compute_center_proj(p, center):
             if center == self.grid['input_position']:
-                self._center_lon = self.grid['input_lon']
-                self._center_lat = self.grid['input_lat']
+                _center_lon = self.grid['input_lon']
+                _center_lat = self.grid['input_lat']
             else:
                 # x1, y1: coordinates in non rotated proj of input point
                 x1, y1 = p(float(self.grid['input_lon'].get('degrees')),
@@ -91,8 +98,9 @@ class ProjectedGeometry(RectangularGridGeometry):
                 xc = x1 + dx
                 yc = y1 + dy
                 center_lon, center_lat = p(xc, yc, inverse=True)
-                self._center_lon = Angle(center_lon, 'degrees')
-                self._center_lat = Angle(center_lat, 'degrees')
+                _center_lon = Angle(center_lon, 'degrees')
+                _center_lat = Angle(center_lat, 'degrees')
+            return _center_lon, _center_lat
 
         projdict = {'lambert':'lcc',
                     'mercator':'merc',
@@ -122,25 +130,26 @@ class ProjectedGeometry(RectangularGridGeometry):
                 m2 = math.cos(math.radians(lat_2))
                 t1 = math.tan(math.pi / 4. - math.radians(lat_1) / 2.)
                 t2 = math.tan(math.pi / 4. - math.radians(lat_2) / 2.)
-                self._K = (math.log(m1) - math.log(m2)) / \
-                          (math.log(t1) - math.log(t2))
+                _K = (math.log(m1) - math.log(m2)) / \
+                     (math.log(t1) - math.log(t2))
             else:
                 lat_1 = self.projection['reference_lat'].get('degrees')
                 lat_2 = self.projection['reference_lat'].get('degrees')
-                self._K = abs(self.projection['reference_lat'].get('cos_sin')[1])
+                _K = abs(self.projection['reference_lat'].get('cos_sin')[1])
             p = pyproj.Proj(proj=proj,
                             lon_0=self.projection['reference_lon'].get('degrees'),
                             lat_1=lat_1, lat_2=lat_2,
                             **self.geoid)
-            compute_center_proj(p, centerPoint)
-            x0, y0 = p(self._center_lon.get('degrees'),
-                       self._center_lat.get('degrees'))
-            self._proj = pyproj.Proj(proj=proj,
-                                     lon_0=self.projection['reference_lon'].get('degrees'),
-                                     lat_1=lat_1, lat_2=lat_2,
-                                     x_0=-x0, y_0=-y0,
-                                     **self.geoid)
+            _center_lon, _center_lat = compute_center_proj(p, centerPoint)
+            x0, y0 = p(_center_lon.get('degrees'),
+                       _center_lat.get('degrees'))
+            _proj = pyproj.Proj(proj=proj,
+                                lon_0=self.projection['reference_lon'].get('degrees'),
+                                lat_1=lat_1, lat_2=lat_2,
+                                x_0=-x0, y_0=-y0,
+                                **self.geoid)
         elif self.name == 'mercator':
+            _K = None
             if self.secant_projection:
                 lat_ts = self.projection['secant_lat'].get('degrees')
             else:
@@ -149,15 +158,16 @@ class ProjectedGeometry(RectangularGridGeometry):
                             lon_0=self.projection['reference_lon'].get('degrees'),
                             lat_ts=lat_ts,
                             **self.geoid)
-            compute_center_proj(p, centerPoint)
-            x0, y0 = p(self._center_lon.get('degrees'),
-                       self._center_lat.get('degrees'))
-            self._proj = pyproj.Proj(proj=proj,
-                                     lon_0=self.projection['reference_lon'].get('degrees'),
-                                     lat_ts=lat_ts,
-                                     x_0=-x0, y_0=-y0,
-                                     **self.geoid)
+            _center_lon, _center_lat = compute_center_proj(p, centerPoint)
+            x0, y0 = p(_center_lon.get('degrees'),
+                       _center_lat.get('degrees'))
+            _proj = pyproj.Proj(proj=proj,
+                                lon_0=self.projection['reference_lon'].get('degrees'),
+                                lat_ts=lat_ts,
+                                x_0=-x0, y_0=-y0,
+                                **self.geoid)
         elif self.name == 'polar_stereographic':
+            _K = None
             lat_0 = self.projection['reference_lat'].get('degrees')
             if self.secant_projection:
                 lat_ts = self.projection['secant_lat'].get('degrees')
@@ -167,15 +177,16 @@ class ProjectedGeometry(RectangularGridGeometry):
                             lon_0=self.projection['reference_lon'].get('degrees'),
                             lat_0=lat_0, lat_ts=lat_ts,
                             **self.geoid)
-            compute_center_proj(p, centerPoint)
-            x0, y0 = p(self._center_lon.get('degrees'),
-                       self._center_lat.get('degrees'))
-            self._proj = pyproj.Proj(proj=proj,
-                                     lon_0=self.projection['reference_lon'].get('degrees'),
-                                     lat_0=lat_0, lat_ts=lat_ts,
-                                     x_0=-x0, y_0=-y0,
-                                     **self.geoid)
+            _center_lon, _center_lat = compute_center_proj(p, centerPoint)
+            x0, y0 = p(_center_lon.get('degrees'),
+                       _center_lat.get('degrees'))
+            _proj = pyproj.Proj(proj=proj,
+                                lon_0=self.projection['reference_lon'].get('degrees'),
+                                lat_0=lat_0, lat_ts=lat_ts,
+                                x_0=-x0, y_0=-y0,
+                                **self.geoid)
         elif self.name == 'space_view':
+            _K = None
             latSat = self.projection['satellite_lat'].get('degrees')
             lonSat = self.projection['satellite_lon'].get('degrees')
             height = self.projection['satellite_height']  # Height above ellipsoid
@@ -185,16 +196,42 @@ class ProjectedGeometry(RectangularGridGeometry):
                             h=height,
                             lon_0=lonSat,
                             **self.geoid)
-            compute_center_proj(p, centerPoint)
-            x0, y0 = p(self._center_lon.get('degrees'),
-                       self._center_lat.get('degrees'))
-            self._proj = pyproj.Proj(proj=proj,
-                                     h=height,
-                                     lon_0=lonSat,
-                                     x_0=-x0, y_0=-y0,
-                                     **self.geoid)
+            _center_lon, _center_lat = compute_center_proj(p, centerPoint)
+            x0, y0 = p(_center_lon.get('degrees'),
+                       _center_lat.get('degrees'))
+            _proj = pyproj.Proj(proj=proj,
+                                h=height,
+                                lon_0=lonSat,
+                                x_0=-x0, y_0=-y0,
+                                **self.geoid)
         else:
             raise NotImplementedError("projection: " + self.name)
+
+        return (_proj, _K, _center_lon, _center_lat)
+
+    @property
+    def _center_lon(self):
+        """Get the center's longitude"""
+        proj, K, center_lon, center_lat = self._get_proj
+        return center_lon
+
+    @property
+    def _center_lat(self):
+        """Get the center's latitude"""
+        proj, K, center_lon, center_lat = self._get_proj
+        return center_lat
+
+    @property
+    def _K(self):
+        """Get the K parameter"""
+        proj, K, center_lon, center_lat = self._get_proj
+        return K
+
+    @property
+    def _proj(self):
+        """Get the projection"""
+        proj, K, center_lon, center_lat = self._get_proj
+        return proj
 
     @property
     def secant_projection(self):
