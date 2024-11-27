@@ -287,22 +287,28 @@ def plot3DVolume(self, rendering,
 
     fil = vtk.vtkThreshold()
     fil.SetInputConnection(grid.GetOutputPort())
-    if maxval is None:
-        fil.ThresholdByUpper(minval)
-    elif minval is None:
-        fil.ThresholdByLower(maxval)
-    elif minval is None and maxval is None:
-        pass
+    if hasattr(fil, 'ThresholdByUpper'):
+        if maxval is None:
+            fil.ThresholdByUpper(minval)
+        elif minval is None:
+            fil.ThresholdByLower(maxval)
+        elif minval is None and maxval is None:
+            pass
+        else:
+            fil.ThresholdBetween(minval, maxval)
     else:
-        fil.ThresholdBetween(minval, maxval)
+        if minval is not None:
+            fil.SetLowerThreshold(minval)
+        if maxval is not None:
+            fil.SetUpperThreshold(maxval)
 
     tri = vtk.vtkDataSetTriangleFilter()
     tri.SetInputConnection(fil.GetOutputPort())
 
-    volumeMapper = {'RayCast':vtk.vtkUnstructuredGridVolumeRayCastMapper,
-                    'ZSweep':vtk.vtkUnstructuredGridVolumeZSweepMapper,
-                    'ProjectedTetrahedra':vtk.vtkProjectedTetrahedraMapper,
-                    'OpenGLProjectedTetrahedra':vtk.vtkOpenGLProjectedTetrahedraMapper}[algo]()
+    volumeMapper = {'RayCast': vtk.vtkUnstructuredGridVolumeRayCastMapper,
+                    'ZSweep': vtk.vtkUnstructuredGridVolumeZSweepMapper,
+                    'ProjectedTetrahedra': vtk.vtkProjectedTetrahedraMapper,
+                    'OpenGLProjectedTetrahedra': vtk.vtkOpenGLProjectedTetrahedraMapper}[algo]()
     volumeMapper.SetInputConnection(tri.GetOutputPort())
 
     volumeProperty = vtk.vtkVolumeProperty()

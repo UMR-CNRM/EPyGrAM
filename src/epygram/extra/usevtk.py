@@ -164,7 +164,10 @@ def modify_grid(grid, grid_type, datamin=None):
         if datamin is None:
             raise epygramError("datamin must be provided for unstructured grid types")
         minScalar = datamin
-        fil.ThresholdByUpper(minScalar - 1.)
+        if hasattr(fil, 'ThresholdByUpper'):
+            fil.ThresholdByUpper(minScalar - 1.)
+        else:
+            fil.SetLowerThreshold(minScalar - 1.)
         grid = fil
         # Grid is now unstructured
 
