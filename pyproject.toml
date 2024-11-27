@@ -74,7 +74,7 @@ features=[
     ]
 format=[
   "h5py",
-  "pillow"
+  "pillow >= 5.4.1"
   ]
 
 vortex = [
@@ -90,7 +90,7 @@ all = [
         "eccodes",      
         "vtk",   
         "vortex",  
-        "pillow",  
+        "pillow >= 5.4.1",  
         "contourpy",    
         "h5py",     
         "netCDF4",   
