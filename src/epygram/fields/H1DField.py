@@ -222,7 +222,10 @@ def plothorizontalhovmoller(transect,
         d = transect.validity[i].get() if yaxis_label == 'Validity' else transect.validity[i].getbasis()
         timedelta = d - epoch
         p = (timedelta.microseconds + (timedelta.seconds + timedelta.days * 24 * 3600) * 10 ** 6) / 1e6
-        y[i, :] = mdates.epoch2num(p)
+        if hasattr(mdates, 'epoch2num'):
+            y[i, :] = mdates.epoch2num(p)
+        else:
+            y[i, :] = mdates.date2num(mdates.datetime.datetime.utcfromtimestamp(p))
     x = numpy.zeros((len(transect.validity),
                      transect.geometry.dimensions['X']))
     lonlat = zip(*transect.geometry.get_lonlat_grid())
