@@ -10,6 +10,7 @@ Contains the class that handle a Horizontal 2D field.
 from __future__ import print_function, absolute_import, unicode_literals, division
 
 import numpy
+from numpy import unravel_index
 
 import footprints
 
@@ -125,6 +126,25 @@ class H2DField(D3Field):
                 line.append((lon,lat))
             lines.append(line)
         return lines
+
+    def index_of_minmax_value(self, min_or_max):
+        """
+        Return (i, j) indices of the point of min or max value of the field.
+        """
+        if min_or_max == 'min':
+            j, i = unravel_index(self._data.argmin(), self._data.shape)
+        elif min_or_max == 'max':
+            j, i = unravel_index(self._data.argmax(), self._data.shape)
+        else:
+            raise ValueError("'min_or_max' argument must be 'min' or 'max'.")
+        return i, j
+
+    def lonlat_of_minmax_value(self, min_or_max):
+        """
+        Return lon/lat coordinates of the point of min or max value of the field.
+        """
+        i, j = self.index_of_minmax_value(min_or_max)
+        return self.geometry.ij2ll(i, j)
 
 ###################
 # PRE-APPLICATIVE #
