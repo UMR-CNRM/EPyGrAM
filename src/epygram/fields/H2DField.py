@@ -127,24 +127,27 @@ class H2DField(D3Field):
             lines.append(line)
         return lines
 
-    def index_of_minmax_value(self, min_or_max):
+    def indices_of_minmax_value(self, min_or_max):
         """
-        Return (i, j) indices of the point of min or max value of the field.
+        Return indices of the point of min or max value of the field.
         """
+        d = self._data  #.squeeze()
         if min_or_max == 'min':
-            j, i = unravel_index(self._data.argmin(), self._data.shape)
+            indices = unravel_index(d.argmin(), d.shape)
         elif min_or_max == 'max':
-            j, i = unravel_index(self._data.argmax(), self._data.shape)
+            indices = unravel_index(d.argmax(), d.shape)
         else:
             raise ValueError("'min_or_max' argument must be 'min' or 'max'.")
-        return i, j
+        return tuple(list(indices)[::-1])
 
     def lonlat_of_minmax_value(self, min_or_max):
         """
         Return lon/lat coordinates of the point of min or max value of the field.
         """
-        i, j = self.index_of_minmax_value(min_or_max)
-        return self.geometry.ij2ll(i, j)
+        #if len(self.validity) > 1:
+        #    raise NotImplementedError("Method 'index_of_minmax_value' for multi-temporal fields")
+        indices = self.indices_of_minmax_value(min_or_max)
+        return self.geometry.ij2ll(indices[0], indices[1])
 
 ###################
 # PRE-APPLICATIVE #
