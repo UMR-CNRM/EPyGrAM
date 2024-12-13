@@ -93,17 +93,30 @@ def main(filename,
             field = resource.readfield(f)
             if not field.geometry.grid.get('LAMzone', False):
                 subzone = None
-            if field.spectral:
-                field.sp2gp()
-            if not field.geometry.projected_geometry:
-                raise NotImplementedError("cannot compute spectra on regular_lonlat or Gauss grids.")
-            variances = esp.dctspectrum(field.getdata(subzone=subzone),
-                                        log=epylog,
-                                        verbose=verbose)
-            spectra.append(esp.Spectrum(variances[1:],
-                                        name=str(f),
-                                        resolution=field.geometry.grid['X_resolution'] / 1000.,
-                                        mean2=variances[0]))
+            if isinstance(field.geometry, epygram.geometries.GaussGeometry):
+                if field.geometry.grid["dilatation_coef"] != 1.0:
+                    raise NotImplementedError("cannot compute spectra on stretched Gaussian grids")
+                if not field.spectral:
+                    field.gp2sp(resource.spectral_geometry)
+                variances = field.get_variance_spectrum()
+                nlat = field.geometry.dimensions["lat_number"]
+                resolution = field.geometry.zonal_resolution_j(nlat // 2) / 1000
+                spectra.append(esp.Spectrum(variances[1:],
+                                            name=str(f),
+                                            resolution=resolution,
+                                            mean2=variances[0]))
+            else:
+                if field.spectral:
+                    field.sp2gp()
+                if not field.geometry.projected_geometry:
+                    raise NotImplementedError("cannot compute spectra on regular_lonlat grids.")
+                variances = esp.dctspectrum(field.getdata(subzone=subzone),
+                                            log=epylog,
+                                            verbose=verbose)
+                spectra.append(esp.Spectrum(variances[1:],
+                                            name=str(f),
+                                            resolution=field.geometry.grid['X_resolution'] / 1000.,
+                                            mean2=variances[0]))
             if not noplot:
                 # plot
                 if legend is not None:
