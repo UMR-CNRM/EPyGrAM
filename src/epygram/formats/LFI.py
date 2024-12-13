@@ -7,8 +7,6 @@
 Contains the class to handle LFI format.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import datetime
 import os
 import copy
@@ -16,7 +14,6 @@ import numpy
 import math
 import re
 import sys
-import six
 
 import footprints
 from footprints import FPDict, proxy as fpx
@@ -314,18 +311,18 @@ class LFI(FileResource):
             tmplist = self.listfields()
             fill_fieldslist(tmplist)
         elif (isinstance(seed, tuple) and not self.true3d) or \
-             (isinstance(seed, six.string_types) and self.true3d):
+             (isinstance(seed, str) and self.true3d):
             tmplist = util.find_re_in_list(seed, self.listfields())
             fill_fieldslist(tmplist)
         elif isinstance(seed, list):
             tmplist = []
             for s in seed:
                 tmplist += self.find_fields_in_resource(seed=s)
-#                if isinstance(s, six.string_types):
+#                if isinstance(s, str):
 #                    s = parse_LFIstr_totuple(s)
 #                tmplist += util.find_re_in_list(s, self.listfields())
             fill_fieldslist(tmplist)
-        elif isinstance(seed, six.string_types):
+        elif isinstance(seed, str):
             seed = parse_LFIstr_totuple(seed)
             tmplist = util.find_re_in_list(seed, self.listfields())
             fill_fieldslist(tmplist)
@@ -440,10 +437,10 @@ class LFI(FileResource):
                         Default is *True*.
         """
         if self.true3d:
-            if not isinstance(fieldidentifier, six.string_types):
+            if not isinstance(fieldidentifier, str):
                 raise epygramError("fieldidentifier of a LFI field is a string (when resource opened in true3d).")
         else:
-            if isinstance(fieldidentifier, six.string_types):
+            if isinstance(fieldidentifier, str):
                 fieldidentifier = parse_LFIstr_totuple(fieldidentifier)
             if not isinstance(fieldidentifier, tuple) or len(fieldidentifier) != 2:
                 raise epygramError("fieldidentifier of a LFI field is a tuple (name, level) (when resource not opened in true3d).")
@@ -495,7 +492,7 @@ class LFI(FileResource):
             raise epygramError("comment length is superior to the limit.")
         comment = ""
         for i in rawData[2:comment_length + 2]:
-            comment += six.unichr(i)
+            comment += chr(i)
         # comment = comment.encode(errors='replace')  # CLEANME: now fixed with footprints from Vortex > v1.2.3
         data = rawData[comment_length + 2:]
         if getdata:

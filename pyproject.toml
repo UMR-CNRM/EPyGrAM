@@ -41,7 +41,6 @@ dependencies=[
         "eccodes==2.38.0",
         "netCDF4",
         "pyproj",
-        "six",
         "pyyaml" , # issue with bronx !! soon fixed
         "ctypesForFortran < 2.0.0",  # temporary, until complete externalisation of arpifs4py
             ]

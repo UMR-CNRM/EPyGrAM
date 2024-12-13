@@ -7,9 +7,6 @@
 Contains functions for outing a LAM domain to namelists, plot, summary.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
-import six
 import math
 import io
 import copy
@@ -294,7 +291,7 @@ def write_namelists(namelists, out=None, prefix='', suffix='geoblocks'):
     :param suffix: prefix for output names
     """
 
-    if isinstance(out, six.string_types):
+    if isinstance(out, str):
         out.write("# Namelists blocks #\n")
         out.write("  ================\n")
         for n in sorted(namelists.keys(), reverse=True):

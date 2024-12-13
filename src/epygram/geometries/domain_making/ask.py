@@ -7,9 +7,6 @@
 Contains functions for interactive build of a LAM domain.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-from six.moves import input
-
 from .util import default_Iwidth
 from .build import build_geometry, build_geometry_fromlonlat
 

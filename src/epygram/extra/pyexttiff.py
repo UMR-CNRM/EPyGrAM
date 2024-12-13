@@ -10,13 +10,11 @@ It uses PIL for image reading.
 This module uses code from pylibtiff (https://pypi.python.org/pypi/libtiff, https://code.google.com/p/pylibtiff or https://github.com/hmeine/pylibtiff)
 """
 
-from __future__ import print_function, absolute_import, division, unicode_literals
-
 import os
 import numpy
 import mmap
 import PIL.Image
-import six
+import io
 
 
 class PyexttiffError(Exception):
@@ -222,7 +220,7 @@ class TiffFile(object):
             meth = numpy.getbuffer
         except AttributeError:
             meth = memoryview
-        return PIL.Image.open(six.BytesIO(meth(self.get_data())))
+        return PIL.Image.open(io.BytesIO(meth(self.get_data())))
 
     def _get_uint16(self, offset):
         return self.get_data()[offset:offset + 2].view(dtype=self.dtypes.uint16)[0]
@@ -238,7 +236,7 @@ class TiffFile(object):
             dtype = typ
             size = typ().itemsize
         else:
-            if isinstance(typ, six.string_types):
+            if isinstance(typ, str):
                 ntyp = typ
                 typ = TiffFile._name2type.get(typ)
             else:

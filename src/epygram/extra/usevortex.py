@@ -9,8 +9,6 @@ Contains proxies to reach resources using Vortex.
 Of course, this module need to have a proper Vortex installation !
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import uuid
 import os
 import datetime

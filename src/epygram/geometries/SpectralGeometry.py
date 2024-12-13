@@ -7,8 +7,6 @@
 Contains the class that handles spectral parameters and spectral transforms.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import numpy
 import os
 

@@ -6,7 +6,6 @@
 """
 Extend D3VectorField with vtk vector plotting.
 """
-from __future__ import print_function, absolute_import, unicode_literals, division
 
 import numpy
 

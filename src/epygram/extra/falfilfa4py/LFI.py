@@ -7,8 +7,6 @@
 Wrappers for LFI library.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import numpy as np
 
 from ctypesForFortran import addReturnCode, treatReturnCode, IN, OUT, INOUT

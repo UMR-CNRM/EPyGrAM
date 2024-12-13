@@ -6,7 +6,6 @@
 """
 Contains the classes that handle the vtk plotting on geometries.
 """
-from __future__ import print_function, absolute_import, unicode_literals, division
 
 import numpy
 import os

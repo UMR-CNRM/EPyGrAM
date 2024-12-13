@@ -7,8 +7,6 @@
 Contains the class that handle a FileResource.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import os
 
 import footprints

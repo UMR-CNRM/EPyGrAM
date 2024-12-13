@@ -7,8 +7,6 @@
 Contains all geometries classes.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import numpy
 
 from bronx.syntax.decorators import nicedeco

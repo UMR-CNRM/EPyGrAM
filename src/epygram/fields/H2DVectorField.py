@@ -6,7 +6,6 @@
 """
 Contains the class for a Horizontal 2D Vector field.
 """
-from __future__ import print_function, absolute_import, unicode_literals, division
 
 from footprints import FPList
 

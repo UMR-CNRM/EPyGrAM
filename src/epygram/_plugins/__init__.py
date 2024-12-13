@@ -9,7 +9,6 @@ Plugins: add functionalities to standard epygram classes.
 Plugins must be packages which name starts with "with_*" and contain an
 activate() function in addition to the definition of extensions.
 """
-from __future__ import print_function, absolute_import, unicode_literals, division
 
 import os
 

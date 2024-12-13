@@ -6,7 +6,6 @@
 """
 Contains all classes needed to plot fields using cartopy.
 """
-from __future__ import print_function, absolute_import, unicode_literals, division
 
 from . import (H2DField, H2DVectorField, AcademicGeometry, GaussGeometry,
                Geometry, ProjectedGeometry, RectangularGeometry)

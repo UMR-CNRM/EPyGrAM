@@ -11,8 +11,6 @@ the user in the User config file ``userconfig.py`` to be found under
 :attr:`userlocaldir`.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import os
 import sys
 

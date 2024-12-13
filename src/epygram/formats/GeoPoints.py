@@ -7,8 +7,6 @@
 Contains the class for GeoPoints format.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import datetime
 import numpy
 import sys

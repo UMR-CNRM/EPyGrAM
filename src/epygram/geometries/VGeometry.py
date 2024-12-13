@@ -7,8 +7,6 @@
 Contains the class for Vertical geometry of fields.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import numpy
 import sys
 

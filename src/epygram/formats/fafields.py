@@ -6,11 +6,9 @@
 """
 FA fields utilities
 """
-from __future__ import print_function, absolute_import, unicode_literals, division
 
 import os
 import re
-import six
 import io
 
 from epygram.extra import griberies
@@ -192,7 +190,7 @@ class FaGribDef(griberies.GribDef):
 
     def __contains__(self, fid):
         try:
-            if isinstance(fid, six.string_types):
+            if isinstance(fid, str):
                 fid = griberies.parse_GRIBstr_todict(fid)
         except SyntaxError:  # fid is a FA fieldname
             try:

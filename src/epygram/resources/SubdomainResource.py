@@ -5,8 +5,6 @@ Contains the class that handle a SubdomainResource.
 This resource exposes the low level resource fields on a subdomain.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 from footprints import FPDict
 
 from epygram.base import Resource, FieldSet

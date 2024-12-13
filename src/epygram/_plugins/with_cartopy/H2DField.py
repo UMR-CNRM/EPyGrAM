@@ -6,8 +6,6 @@
 """
 Extend H2DField with plotting methods using cartopy.
 """
-from __future__ import print_function, absolute_import, unicode_literals, division
-import six
 
 import numpy
 import copy
@@ -124,7 +122,7 @@ def cartoplot_background(self,
     else:
         default_scale = '50m'
     for f in cartopy_features:
-        if isinstance(f, six.string_types):
+        if isinstance(f, str):
             f = getattr(cfeature, f)
         ax.add_feature(f.with_scale(default_scale))
     for f in natural_earth_features:

@@ -7,11 +7,8 @@
 Contains the class that handle a Vertical 1D field.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import datetime
 import numpy
-import six
 
 import footprints
 from bronx.graphics.axes import set_figax, set_nice_time_axis
@@ -357,7 +354,7 @@ def plotprofiles(profiles,
 
     if isinstance(profiles, V1DField):
         profiles = [profiles]
-    if isinstance(labels, six.string_types):
+    if isinstance(labels, str):
         labels = [labels]
     p0 = profiles[0]
     if p0.geometry.vcoordinate.typeoffirstfixedsurface in (119, 100):

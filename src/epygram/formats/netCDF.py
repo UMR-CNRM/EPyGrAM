@@ -7,15 +7,12 @@
 Contains classes for netCDF4 resource.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import copy
 import json
 import sys
 import numpy
 from collections import OrderedDict
 import datetime
-import six
 import re
 
 import netCDF4
@@ -140,7 +137,7 @@ class netCDF(FileResource):
 
         if seed is None:
             fieldslist = self.listfields()
-        elif isinstance(seed, six.string_types):
+        elif isinstance(seed, str):
             fieldslist = util.find_re_in_list(seed, self.listfields())
         elif isinstance(seed, list):
             fieldslist = []
@@ -730,7 +727,7 @@ class netCDF(FileResource):
                             'dilatation_coef':1.}
                     if hasattr(grid_mapping, 'lon_number_by_lat'):
                         geometryclass = GaussGeometry
-                        if isinstance(grid_mapping.lon_number_by_lat, six.string_types):
+                        if isinstance(grid_mapping.lon_number_by_lat, str):
                             lon_number_by_lat = self._variables[grid_mapping.lon_number_by_lat.split(' ')[1]][:]
                         else:
                             kwargs_geom['name'] = 'regular_gauss'
@@ -991,7 +988,7 @@ class netCDF(FileResource):
         def check_or_add_variable(varname, vartype,
                                   dimensions=(),
                                   **kwargs):
-            if six.text_type(varname) not in self._listfields():
+            if str(varname) not in self._listfields():
                 var = self._nc.createVariable(varname, vartype,
                                               dimensions=dimensions,
                                               **kwargs)
@@ -1001,7 +998,7 @@ class netCDF(FileResource):
                     ' '.join(['variable', varname,
                               'already exist with other type:',
                               str(self._variables[varname].dtype)])
-                if isinstance(dimensions, six.string_types):
+                if isinstance(dimensions, str):
                     dimensions = (dimensions,)
                 assert self._variables[varname].dimensions == tuple(dimensions), \
                        ' '.join(['variable', varname,

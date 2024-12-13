@@ -6,7 +6,6 @@
 """
 Contains defaults for GRIB encoding.
 """
-from __future__ import print_function, absolute_import, unicode_literals, division
 
 # GRIB2 ------------------------------------------------------------------------
 #: GRIB2 key/value defaults, ordered by section

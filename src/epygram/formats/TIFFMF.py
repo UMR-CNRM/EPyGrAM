@@ -7,12 +7,9 @@
 Contains the class to handle TIFFMF format.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import datetime
 import numpy
 import sys
-import six
 
 import footprints
 from footprints import FPDict, proxy as fpx
@@ -103,7 +100,7 @@ class TIFFMF(FileResource):
         fieldslist = []
         if seed is None:
             fieldslist = self.listfields()
-        elif isinstance(seed, six.string_types):
+        elif isinstance(seed, str):
             fieldslist = util.find_re_in_list(seed, self.listfields())
         elif isinstance(seed, list):
             fieldslist = []
@@ -171,7 +168,7 @@ class TIFFMF(FileResource):
 
         if self.openmode == 'w':
             raise epygramError("cannot read fields in resource with openmode == 'w'.")
-        if not isinstance(fieldidentifier, six.string_types):
+        if not isinstance(fieldidentifier, str):
             raise epygramError("fieldidentifier of a TIFFMF field is a string.")
         if fieldidentifier not in self.listfields():
             raise epygramError("fieldidentifier is not found in th TIFFMF file.")

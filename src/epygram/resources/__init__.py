@@ -15,9 +15,6 @@ Module contains:
 - a proxy function to build such meta resources
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-import six
-
 from footprints import proxy as fpx
 
 from epygram import epygramError
@@ -67,7 +64,7 @@ def meta_resource(filenames_or_resources, openmode, rtype):
 
     if not isinstance(filenames_or_resources, list):
         filenames_or_resources = [filenames_or_resources]
-    if isinstance(filenames_or_resources[0], six.string_types):
+    if isinstance(filenames_or_resources[0], str):
         resources = [resource(f, openmode, fmtdelayedopen=True) for f in filenames_or_resources]
     elif isinstance(filenames_or_resources[0], Resource):
         resources = filenames_or_resources

@@ -7,11 +7,8 @@
 Contains functions for building a LAM domain.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import math
 import numpy
-from six.moves import input
 
 from footprints import FPDict
 from footprints import proxy as fpx

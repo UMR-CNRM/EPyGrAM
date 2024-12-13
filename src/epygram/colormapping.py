@@ -3,7 +3,6 @@
 """
 Custom colormaps reading and tuning.
 """
-from __future__ import print_function, absolute_import, unicode_literals, division
 
 import numpy
 import json

@@ -14,8 +14,6 @@ Module contains:
   - FA field names recognition
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import importlib
 import copy
 import os

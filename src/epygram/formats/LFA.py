@@ -7,12 +7,9 @@
 Contains the class to handle LFA format.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import os
 import numpy
 import sys
-import six
 
 from epygram.extra.falfilfa4py import LFA as LFA4py
 
@@ -92,7 +89,7 @@ class LFA(FileResource):
         """
         if seed is None:
             fieldslist = self.listfields()
-        elif isinstance(seed, six.string_types):
+        elif isinstance(seed, str):
             fieldslist = util.find_re_in_list(seed, self.listfields())
         elif isinstance(seed, list):
             fieldslist = []

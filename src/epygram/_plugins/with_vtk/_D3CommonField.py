@@ -6,8 +6,6 @@
 """
 Extend _D3CommonField with plotting methods using 'vtk'.
 """
-from __future__ import print_function, absolute_import, unicode_literals, division
-import six
 
 import numpy
 

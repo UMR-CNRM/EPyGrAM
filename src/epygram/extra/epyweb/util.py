@@ -4,12 +4,9 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import json
 import datetime
 import copy
-import six
 import web
 
 import matplotlib
@@ -84,7 +81,7 @@ def getAjaxArgSmart(sArg, sDefault=''):
                     return False
                 elif dic[sArg] == 'true':
                     return True
-                elif isinstance(dic[sArg], six.string_types) and dic[sArg].startswith('{'):
+                elif isinstance(dic[sArg], str) and dic[sArg].startswith('{'):
                     return json.loads(dic[sArg])
                 else:
                     return dic[sArg]

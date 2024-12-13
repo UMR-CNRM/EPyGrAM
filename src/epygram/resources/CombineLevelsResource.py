@@ -8,8 +8,6 @@ Contains the class that handle a CombineLevelsResource.
 This resource exposes 3D fields when the low level resource only expose horizontal fields.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-import six
 import copy
 
 from footprints import proxy as fpx
@@ -123,7 +121,7 @@ class CombineLevelsResource(Resource):
         if select is not None:
             fidlist = [f for f in fidlist if all([(k in f and f[k] == select[k]) for k in select.keys()])]
         if onlykey is not None:
-            if isinstance(onlykey, six.string_types):
+            if isinstance(onlykey, str):
                 fidlist = [f[onlykey] for f in fidlist]
             elif isinstance(onlykey, tuple):
                 fidlist = [{k:f[k] for k in onlykey} for f in fidlist]

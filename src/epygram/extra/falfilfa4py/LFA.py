@@ -7,8 +7,6 @@
 Wrappers for LFA library.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import numpy as np
 
 from ctypesForFortran import addReturnCode, IN, OUT

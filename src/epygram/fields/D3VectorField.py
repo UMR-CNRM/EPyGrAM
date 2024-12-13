@@ -9,8 +9,6 @@ Contains the class for a 3D field.
 Plus a function to create a Vector field from 2 scalar fields.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import numpy
 import sys
 

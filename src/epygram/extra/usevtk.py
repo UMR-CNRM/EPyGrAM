@@ -14,8 +14,6 @@ A class to gather all the usefull objects (projection, window, renderer...):
  - Usevtk 
 """
 
-from __future__ import print_function, absolute_import, division , unicode_literals
-
 from epygram.util import as_numpy_array
 from epygram import epygramError
 

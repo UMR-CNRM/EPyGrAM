@@ -13,8 +13,6 @@ This module contains:
 - a function to read a dumped spectrum.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 from bronx.graphics.axes import set_figax
 
 import numpy

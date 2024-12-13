@@ -6,7 +6,6 @@
 """
 Contains all classes needed to plot 3D fields through vtk.
 """
-from __future__ import print_function, absolute_import, unicode_literals, division
 
 from . import _D3CommonField, D3VectorField, Geometry
 

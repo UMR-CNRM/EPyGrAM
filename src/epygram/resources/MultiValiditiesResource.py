@@ -7,8 +7,6 @@
 Contains the class that handle a MultiValiditiesResource.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import copy
 import numpy
 

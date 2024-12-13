@@ -3,13 +3,9 @@
 # Copyright (c) Météo France (2014-)
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
-
-
 """
 Contains the classes for 3D geometries of fields.
 """
-
-from __future__ import print_function, absolute_import, unicode_literals, division
 
 import numpy
 import copy

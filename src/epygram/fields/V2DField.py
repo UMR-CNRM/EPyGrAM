@@ -7,8 +7,6 @@
 Contains the class that handle a Vertical 2D field.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import numpy
 
 import footprints

@@ -6,14 +6,12 @@
 """
 Contains some base classes of *epygram*.
 """
-from __future__ import print_function, absolute_import, unicode_literals, division
 
 import numpy
 import datetime
 import copy
 import sys
 import hashlib
-import six
 
 import footprints
 from footprints import FootprintBase, FPDict
@@ -639,7 +637,7 @@ class FieldSet(RecursiveObject, list):
 
         If *reverse* is *True*, sorts by decreasing order.
         """
-        if isinstance(attribute, six.string_types):
+        if isinstance(attribute, str):
             if key is None:
                 def cmpfct(x, y):
                     cmp(x._attributes[attribute],
@@ -970,7 +968,7 @@ class FieldValidity(RecursiveObject):
         from epygram.extra import griberies
         if not asGRIB2code and isinstance(self._statistical_process_on_duration, int):
             out = griberies.tables.statistical_processes.get(self._statistical_process_on_duration, None)
-        elif asGRIB2code and isinstance(self._statistical_process_on_duration, six.string_types):
+        elif asGRIB2code and isinstance(self._statistical_process_on_duration, str):
             out = {v:k for k, v in griberies.tables.statistical_processes.items()}.get(self._statistical_process_on_duration, None)
         else:
             out = self._statistical_process_on_duration

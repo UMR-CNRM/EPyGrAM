@@ -7,8 +7,6 @@
 Contains the class to for Miscellaneous fields.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 from epygram.base import Field
 
 

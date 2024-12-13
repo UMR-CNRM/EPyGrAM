@@ -7,8 +7,6 @@
 Contains the class to for Point (0D == 1 value) fields.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import numpy
 
 from footprints import proxy as fpx

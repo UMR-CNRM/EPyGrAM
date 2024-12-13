@@ -12,8 +12,6 @@ This module contains functions to:
 - to plot vertical profiles.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import numpy
 
 from bronx.meteo import constants

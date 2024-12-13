@@ -6,7 +6,6 @@
 """
 Contains the class for FA format.
 """
-from __future__ import print_function, absolute_import, unicode_literals, division
 
 import datetime
 import os
@@ -15,7 +14,6 @@ import numpy
 import math
 import re
 import sys
-import six
 import io
 
 import footprints
@@ -464,7 +462,7 @@ class FA(FileResource):
                 if fieldtypeslist == [] or\
                    self._field_type_from_file(f) in fieldtypeslist:
                     fieldslist.append(f)
-        elif isinstance(seed, six.string_types):
+        elif isinstance(seed, str):
             h = (hash(seed), hash(tuple(self.listfields())))
             if h not in self._cache_find_re_in_list:
                 self._cache_find_re_in_list[h] = util.find_re_in_list(seed, self.listfields())

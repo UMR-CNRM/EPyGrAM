@@ -7,8 +7,6 @@
 Contains the class to handle the Meso-NH netCDF format.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import datetime
 import os
 import copy
@@ -16,7 +14,6 @@ import numpy
 import math
 import re
 import sys
-import six
 
 import footprints
 from footprints import FPDict, proxy as fpx
@@ -323,7 +320,7 @@ class netCDFMNH(FileResource):
         if seed is None:
             tmplist = self.listfields()
             fill_fieldslist(tmplist)
-        elif isinstance(seed, six.string_types):
+        elif isinstance(seed, str):
             tmplist = util.find_re_in_list(seed, self.listfields())
             fill_fieldslist(tmplist)
         elif isinstance(seed, list):
@@ -402,7 +399,7 @@ class netCDFMNH(FileResource):
         :param getdata: optional, if *False*, only metadata are read, the field do not contain data.
                         Default is *True*.
         """
-        if not isinstance(fieldidentifier, six.string_types):
+        if not isinstance(fieldidentifier, str):
             raise epygramError("fieldidentifier of a netCDFMNH file is a string.")
         if fieldidentifier in self._specialFieldComments:
             raise epygramError("This is a special field that is not allowed do be read as field")
@@ -545,7 +542,7 @@ class netCDFMNH(FileResource):
         if not self.format in field.fid:
             raise epygramError("field fid must contain the " + self.format + " key")
         varname = field.fid[self.format]
-        if not isinstance(varname, six.string_types):
+        if not isinstance(varname, str):
             raise epygramError("field fid of a netCDFMNH file is a string.")
         if varname in self._specialFieldComments:
             raise epygramError("This fid (" + varname + \
@@ -590,7 +587,7 @@ class netCDFMNH(FileResource):
         self._nc.createVariable(varname, data.dtype, dimensions=dims,
                                 fill_value=comment.get('_FillValue'))
         for k, v in comment.items():
-            if not isinstance(k, six.string_types):
+            if not isinstance(k, str):
                 raise ValueError("Key must be a string")
             if k != '_FillValue':
                 self._nc.variables[varname].setncattr(k, v)

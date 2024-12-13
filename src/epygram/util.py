@@ -7,9 +7,6 @@
 Some useful utilities...
 """
 
-from __future__ import print_function, absolute_import, division, unicode_literals
-import six
-
 import math
 import copy
 import numpy
@@ -17,7 +14,7 @@ import sys
 import datetime
 import hashlib
 import os
-from six.moves.urllib.request import urlopen  # @UnresolvedImport
+from urllib.request import urlopen
 
 from footprints import FootprintBase
 from bronx.graphics.colormapping import (add_cmap,
@@ -540,8 +537,8 @@ def find_re_in_list(regexp, a_list):
 
     def check_string_pattern(pattern, element):
         import re
-        if not isinstance(pattern, six.string_types) or \
-                not isinstance(element, six.string_types):
+        if not isinstance(pattern, str) or \
+                not isinstance(element, str):
             raise epygramError("pattern and element must be strings in \
                                 check_string_pattern function.")
         # protect '.'
@@ -554,7 +551,7 @@ def find_re_in_list(regexp, a_list):
         return re.match(mypattern, element.strip())
 
     found = []
-    if isinstance(regexp, six.string_types):
+    if isinstance(regexp, str):
         for field in a_list:
             if check_string_pattern(regexp, str(field)):
                 found.append(field)
@@ -780,7 +777,7 @@ def write_formatted_table(dest, table,
     for i in range(array.shape[0]):
         elements = []
         for elem in table[i][1:]:
-            if isinstance(elem, six.string_types):
+            if isinstance(elem, str):
                 elements.append(elem)
             elif isinstance(elem, float) or isinstance(elem, int):
                 elements.append(float_style.format(elem,

@@ -7,8 +7,6 @@
 Contains the class for DDH-in-LFA format.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import math
 import numpy
 import datetime

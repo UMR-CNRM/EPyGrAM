@@ -6,7 +6,6 @@
 """
 Contains equivalences tables for GRIB encoding.
 """
-from __future__ import print_function, absolute_import, unicode_literals, division
 
 #: Aliases to *productionStatusOfProcessedData* numbers
 productionStatusOfProcessedData_dict = {'oper':0,

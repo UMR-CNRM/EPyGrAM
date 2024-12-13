@@ -7,8 +7,6 @@
 Contains utilities for building a LAM domain.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import math
 
 from epygram.geometries import VGeometry
