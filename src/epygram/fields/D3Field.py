@@ -1656,6 +1656,7 @@ class _D3CommonField(Field):
 
         Other kwargs are passed to scatter() method.
         """
+        import matplotlib.pyplot  # Workaround for https://github.com/UMR-CNRM/bronx/issues/9
         for f in (self, other):
             if f.spectral:
                 f.sp2gp()

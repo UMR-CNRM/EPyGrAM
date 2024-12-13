@@ -222,12 +222,6 @@ class TiffFile(object):
             meth = numpy.getbuffer
         except AttributeError:
             meth = memoryview
-        from distutils.version import LooseVersion
-        import warnings
-        if LooseVersion(PIL.__version__) < LooseVersion('5.4.1'):
-            warnings.warn("You may have issues using an old version of PIL; please update it with " + \
-                          "'pip install --user --upgrade pillow'. This warning is issued when version " + \
-                          "of pillow is inferior to '5.4.1' but it may work, or not, with older versions...")
         return PIL.Image.open(six.BytesIO(meth(self.get_data())))
 
     def _get_uint16(self, offset):

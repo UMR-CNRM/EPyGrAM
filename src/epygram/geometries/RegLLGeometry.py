@@ -58,51 +58,6 @@ class RegLLGeometry(LLGeometry):
         super(RegLLGeometry, self).__init__(grid, dimensions, vcoordinate,
                                             position_on_horizontal_grid, geoid)
 
-        if self.grid['input_position'] == ((float(self.dimensions['X']) - 1) / 2.,
-                                           (float(self.dimensions['Y']) - 1) / 2.):
-            self._center_lon = self.grid['input_lon']
-            self._center_lat = self.grid['input_lat']
-        elif self.grid['input_position'] == (0, 0):
-            self._center_lon = Angle(round(self.grid['input_lon'].get('degrees') +
-                                           self.grid['X_resolution'].get('degrees') *
-                                           (self.dimensions['X'] - 1) / 2, _rd),
-                                     'degrees')
-            self._center_lat = Angle(round(self.grid['input_lat'].get('degrees') +
-                                           self.grid['Y_resolution'].get('degrees') *
-                                           (self.dimensions['Y'] - 1) / 2, _rd),
-                                     'degrees')
-        elif self.grid['input_position'] == (0, self.dimensions['Y'] - 1):
-            self._center_lon = Angle(round(self.grid['input_lon'].get('degrees') +
-                                           self.grid['X_resolution'].get('degrees') *
-                                           (self.dimensions['X'] - 1) / 2, _rd),
-                                     'degrees')
-            self._center_lat = Angle(round(self.grid['input_lat'].get('degrees') -
-                                           self.grid['Y_resolution'].get('degrees') *
-                                           (self.dimensions['Y'] - 1) / 2, _rd),
-                                     'degrees')
-        elif self.grid['input_position'] == (self.dimensions['X'] - 1, 0):
-            self._center_lon = Angle(round(self.grid['input_lon'].get('degrees') -
-                                           self.grid['X_resolution'].get('degrees') *
-                                           (self.dimensions['X'] - 1) / 2, _rd),
-                                     'degrees')
-            self._center_lat = Angle(round(self.grid['input_lat'].get('degrees') +
-                                           self.grid['Y_resolution'].get('degrees') *
-                                           (self.dimensions['Y'] - 1) / 2, _rd),
-                                     'degrees')
-        elif self.grid['input_position'] == (self.dimensions['X'] - 1,
-                                             self.dimensions['Y'] - 1):
-            self._center_lon = Angle(round(self.grid['input_lon'].get('degrees') -
-                                           self.grid['X_resolution'].get('degrees') *
-                                           (self.dimensions['X'] - 1) / 2, _rd),
-                                     'degrees')
-            self._center_lat = Angle(round(self.grid['input_lat'].get('degrees') -
-                                           self.grid['Y_resolution'].get('degrees') *
-                                           (self.dimensions['Y'] - 1) / 2, _rd),
-                                     'degrees')
-        else:
-            raise NotImplementedError("this 'input_position': " +
-                                      str(self.grid['input_position']))
-
         # earth-round grids: wrap TODO:
         corners = self.gimme_corners_ll()
         if abs(abs(degrees_nearest_mod(corners['ul'][0], corners['ur'][0]) -
@@ -111,6 +66,46 @@ class RegLLGeometry(LLGeometry):
             self._earthround = True
         else:
             self._earthround = False
+
+    @property
+    def _center_lon(self):
+        """Get the center's longitude"""
+        if self.grid['input_position'] == ((float(self.dimensions['X']) - 1) / 2.,
+                                           (float(self.dimensions['Y']) - 1) / 2.):
+            return self.grid['input_lon']
+        elif self.grid['input_position'][0] == 0:
+            return Angle(round(self.grid['input_lon'].get('degrees') +
+                               self.grid['X_resolution'].get('degrees') *
+                               (self.dimensions['X'] - 1) / 2, _rd),
+                         'degrees')
+        elif self.grid['input_position'][0] == self.dimensions['X'] - 1:
+            return Angle(round(self.grid['input_lon'].get('degrees') -
+                               self.grid['X_resolution'].get('degrees') *
+                               (self.dimensions['X'] - 1) / 2, _rd),
+                         'degrees')
+        else:
+            raise NotImplementedError("this 'input_position': " +
+                                      str(self.grid['input_position']))
+
+    @property
+    def _center_lat(self):
+        """Get the center's latitude"""
+        if self.grid['input_position'] == ((float(self.dimensions['X']) - 1) / 2.,
+                                           (float(self.dimensions['Y']) - 1) / 2.):
+            return self.grid['input_lat']
+        elif self.grid['input_position'][1] == 0:
+            return Angle(round(self.grid['input_lat'].get('degrees') +
+                               self.grid['Y_resolution'].get('degrees') *
+                               (self.dimensions['Y'] - 1) / 2, _rd),
+                         'degrees')
+        elif self.grid['input_position'][1] == self.dimensions['Y'] - 1:
+            return Angle(round(self.grid['input_lat'].get('degrees') -
+                               self.grid['Y_resolution'].get('degrees') *
+                               (self.dimensions['Y'] - 1) / 2, _rd),
+                         'degrees')
+        else:
+            raise NotImplementedError("this 'input_position': " +
+                                      str(self.grid['input_position']))
 
     def getcenter(self):
         """

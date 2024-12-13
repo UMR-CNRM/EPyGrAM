@@ -12,7 +12,6 @@ import sys
 import argparse
 import time
 import copy
-from distutils.version import LooseVersion
 
 import footprints
 from footprints import FPDict, FPList

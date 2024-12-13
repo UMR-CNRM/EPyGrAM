@@ -4,7 +4,8 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 
-from __future__ import print_function, absolute_import, unicode_literals, division
+from __future__ import (print_function, absolute_import, unicode_literals,
+                        division)
 import six
 
 import os
@@ -30,7 +31,7 @@ from epygram.args_catalog import (add_arg_to_parser,
                                   extraction_options)
 from epygram.base import FieldSet
 from epygram.geometries import VGeometry
-from usevtk import Usevtk
+from epygram.extra.usevtk import Usevtk
 
 import numpy
 
@@ -200,7 +201,7 @@ def _do_plot(field, plotmode,
                 except ValueError:
                     M = ff.max()
                 minmax = (m, M)
-            
+
         colorequal = colormin == colormax
         if isinstance(colormin, six.string_types):
             colormin = vtk.vtkNamedColors().GetColor3d(colormin)
@@ -213,7 +214,7 @@ def _do_plot(field, plotmode,
             opacity = vtk.vtkPiecewiseFunction()
             opacity.AddPoint(minmax[0], float(opacitymin))
             opacity.AddPoint(minmax[1], float(opacitymax))
-        
+
         if plotmode == 'contour':
             levels = numpy.linspace(minmax[0], minmax[1], levelsnumber)
             field.plot3DContour(rendering,
@@ -394,13 +395,13 @@ def main(plotmode,
     else:
         assert len(fieldseed) == 2
         (Ufid, Vfid) = fieldseed
-        
+
         U, subzone, academic = _get_field(resource, Ufid, subzone, zoom, operation,
                                           None, False, global_shift_center,
                                           Yconvert, cheap_height, empty_value)
-        V, subzone, academic  = _get_field(resource, Vfid, subzone, zoom, operation,
-                                           None, False, global_shift_center,
-                                           Yconvert, cheap_height, empty_value)
+        V, subzone, academic = _get_field(resource, Vfid, subzone, zoom, operation,
+                                          None, False, global_shift_center,
+                                          Yconvert, cheap_height, empty_value)
         field = epygram.fields.make_vector_field(U, V)
         if legend is not None:
             title = legend
@@ -543,8 +544,9 @@ def main(plotmode,
             print("  Clipping range          (vtk coordinates) :", cam.GetClippingRange())
         for ren in rendering:
             ren.window.Render()
-    for ren in rendering:
-        ren.interactor.AddObserver("EndInteractionEvent", cameraMove)
+    if not output:
+        for ren in rendering:
+            ren.interactor.AddObserver("EndInteractionEvent", cameraMove)
     cameraMove() #for printing position
 
     # Output
@@ -674,22 +676,22 @@ if __name__ == '__main__':
         zoom = None
     if args.operation is not None:
         _operation = args.operation.split(',')
-        operation = {'operation':_operation.pop(0).strip()}
+        operation = {'operation': _operation.pop(0).strip()}
         if len(_operation) > 0:
             operation['operand'] = float(_operation.pop(0).strip())
     else:
         operation = None
     if args.diffoperation is not None:
         _diffoperation = args.diffoperation.split(',')
-        diffoperation = {'operation':_diffoperation.pop(0).strip()}
+        diffoperation = {'operation': _diffoperation.pop(0).strip()}
         if len(_diffoperation) > 0:
             diffoperation['operand'] = float(_diffoperation.pop(0).strip())
     else:
         diffoperation = None
     if args.compose_with is not None:
         _composition = args.compose_with.split(',')
-        composition = {'fid':_composition.pop(0).strip(),
-                       'operation':_composition.pop(0).strip()}
+        composition = {'fid': _composition.pop(0).strip(),
+                       'operation': _composition.pop(0).strip()}
         while len(_composition) > 0:
             composition.update(str2dict(_composition.pop(0).strip()))
     else:
@@ -730,11 +732,11 @@ if __name__ == '__main__':
     if args.vectors_verticalsubsampling is not None:
         vectors_subsampling['z'] = int(args.vectors_verticalsubsampling)
     if args.focal_point is not None:
-        focal_point =[float(s) for s in args.focal_point.split(',')]
+        focal_point = [float(s) for s in args.focal_point.split(',')]
     else:
         focal_point = None
     if args.camera is not None:
-        camera =[float(s) for s in args.camera.split(',')]
+        camera = [float(s) for s in args.camera.split(',')]
     else:
         camera = None
 

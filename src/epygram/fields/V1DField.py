@@ -173,7 +173,10 @@ def plotverticalhovmoller(profile,
         d = profile.validity[i].get() if xaxis_label == 'Validity' else profile.validity[i].getbasis()
         timedelta = d - epoch
         p = (timedelta.microseconds + (timedelta.seconds + timedelta.days * 24 * 3600) * 1e6) / 1e6
-        x[i, :] = matplotlib.dates.epoch2num(p)
+        if hasattr(matplotlib.dates, 'epoch2num'):
+            x[i, :] = matplotlib.dates.epoch2num(p)
+        else:
+            x[i, :] = matplotlib.dates.date2num(matplotlib.dates.datetime.datetime.utcfromtimestamp(p))
     data = profile.getdata()
     if profile.geometry.vcoordinate.typeoffirstfixedsurface in (119, 100):
         reverseY = True

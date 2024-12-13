@@ -56,8 +56,16 @@ class AcademicGeometry(RectangularGridGeometry):
 
         if self.grid['input_position'] != (0, 0):
             raise NotImplementedError("For now, only input_position = (0, 0) is allowed for academic geometries.")
-        self._center_lon = (self.dimensions['X'] - 1) / 2.
-        self._center_lat = (self.dimensions['Y'] - 1) / 2.
+
+    @property
+    def _center_lon(self):
+        """Get the center's longitude"""
+        return (self.dimensions['X'] - 1) / 2.
+
+    @property
+    def _center_lat(self):
+        """Get the center's latitude"""
+        return (self.dimensions['Y'] - 1) / 2.
 
     def tolerant_equal(self, other, tolerance=config.epsilon):
         if self.__class__ == other.__class__:
