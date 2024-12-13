@@ -39,8 +39,6 @@ The license text is provided in the LICENSE.txt file of the package.
 ********************************************************************************
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import sys
 import io
 import os
@@ -51,7 +49,7 @@ package_rootdir = os.path.dirname(os.path.realpath(__path__[0]))  # realpath to 
 
 __all__ = []
 
-__version__ = "1.5.2"
+__version__ = "1.5.3"
 
 __license__ = 'CeCILL-C'
 
@@ -159,9 +157,8 @@ def init_env(omp_num_threads=1,
                              unlimited_stack=unlimited_stack)
         if ensure_consistent_GRIB_paths:
             from epygram.extra import griberies
-            libs_grib_api = falfilfa4py.get_dynamic_eccodes_lib_paths_from_FA()
-            for apilib, libpath in libs_grib_api.items():
-                griberies.complete_grib_paths(libpath, apilib, reset=ignore_gribenv_paths)
+            eccodes_libpath = falfilfa4py.get_dynamic_eccodes_lib_path_from_FA()
+            griberies.complete_grib_paths(eccodes_libpath, reset=ignore_gribenv_paths)
     # 2. SpectralGeometry inner transformation lib may need some special
     # environment setting, delayed to actual invocation:
     # we simply pass kwargs, initialization is done at first call to the library
@@ -172,7 +169,7 @@ def init_env(omp_num_threads=1,
                                           trigger=True)
     # 3. grib_api or eccodes
     # need some special environment setting
-    # ensure grib_api/eccodes variables are consistent with inner library
+    # ensure eccodes variables are consistent with inner library
     if 'GRIB' in formats.runtime_available_formats and ensure_consistent_GRIB_paths:
         from .formats.GRIB import lowlevelgrib
         lowlevelgrib.init_env(reset=ignore_gribenv_paths)

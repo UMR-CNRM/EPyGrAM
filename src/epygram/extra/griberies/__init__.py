@@ -6,8 +6,6 @@
 """
 Contains utilities around GRIB format.
 """
-from __future__ import print_function, absolute_import, unicode_literals, division
-import six
 
 import os
 import re
@@ -22,9 +20,10 @@ from . import tables, defaults
 
 
 def get_eccodes_from_ldconfig():
-    """Get eccodes install directory from ldconfig."""
+    """DEPRECATED.Get eccodes install directory from ldconfig."""
+    print("DEPRECATED:get_eccodes_from_ldconfig shouln't be called anymore.")
     out = str(subprocess.check_output(['/sbin/ldconfig', '-p']))
-    out_split = out.split(r'\n' if six.PY3 else str('\n'))
+    out_split = out.split(r'\n')
     libs_eccodes = [lib for lib in out_split if str('libeccodes.so') in lib]
     paths = [lib.split('=>')[1].strip() for lib in libs_eccodes]
     dirs = set([os.path.sep.join(lib.split(os.path.sep)[:-2]) for lib in paths])
@@ -45,79 +44,53 @@ def init_before(mtd):  # TODO: move to bronx decorators ?
     return initialized
 
 
-def complete_grib_paths(rootdir, api_name, reset=False):
+def complete_grib_paths(rootdir, reset=False):
     """
-    Complete [GRIB|ECCODES]_SAMPLES_PATH and [GRIB|ECCODES]_DEFINITION_PATH
-    according to **rootdir** installation path of GRIB API **api_name**.
+    Complete ECCODES_SAMPLES_PATH and ECCODES_DEFINITION_PATH
+    according to **rootdir** installation path of ECCODES.
 
     :param rootdir: the directory in which is installed the API
-    :param api_name: the name of the GRIB API, among ('eccodes', 'grib_api')
     :param reset: ignore predefined values of the variables
 
-    Reconstructed path are ``$rootdir$/share/$api_name$/samples``
-    and ``$rootdir$/share/$api_name$/definitions``
+    Reconstructed path are ``$rootdir$/share/eccodes/samples``
+    and ``$rootdir$/share/eccodes/definitions``
     """
-    complete_grib_samples_paths(rootdir, api_name, reset=reset)
-    complete_grib_definition_paths(rootdir, api_name, reset=reset)
+    complete_grib_samples_paths(rootdir, reset=reset)
+    complete_grib_definition_paths(rootdir, reset=reset)
 
 
-def complete_grib_samples_paths(rootdir, api_name, reset=False):
+def complete_grib_samples_paths(rootdir, reset=False):
     """
-    Complete [GRIB|ECCODES]_SAMPLES_PATH according to **rootdir**
-    installation path of GRIB API **api_name**.
+    Complete ECCODES_SAMPLES_PATH according to **rootdir**
+    installation path of ECCODES.
 
     :param rootdir: the directory in which is installed the API
-    :param api_name: the name of the GRIB API, among ('eccodes', 'grib_api')
     :param reset: ignore predefined values of the variables
 
-    Reconstructed path is ``$rootdir$/share/$api_name$/samples``
+    Reconstructed path is ``$rootdir$/share/eccodes/samples``
     """
-    if api_name == 'grib_api':
-        sp = 'GRIB_SAMPLES_PATH'
-    elif api_name == 'eccodes':
-        sp = 'ECCODES_SAMPLES_PATH'
-    loc_samples = [os.path.join(rootdir, 'share', api_name, 'samples')]
+    sp = 'ECCODES_SAMPLES_PATH'
+    loc_samples = [os.path.join(rootdir, 'share', 'eccodes', 'samples')]
     if not reset and os.environ.get(sp, False):
         loc_samples.append(os.environ.get(sp))
     os.environ[sp] = os.pathsep.join(loc_samples)
 
 
-def complete_grib_definition_paths(rootdir, api_name, reset=False):
+def complete_grib_definition_paths(rootdir, reset=False):
     """
-    Complete [GRIB|ECCODES]_DEFINITION_PATH according to **rootdir**
-    installation path of GRIB API **api_name**.
+    Complete ECCODES_DEFINITION_PATH according to **rootdir**
+    installation path of ECCODES.
 
     :param rootdir: the directory in which is installed the API
-    :param api_name: the name of the GRIB API, among ('eccodes', 'grib_api')
     :param reset: ignore predefined values of the variables
 
-    Reconstructed path are ``$rootdir$/share/$api_name$/definitions``
+    Reconstructed path are ``$rootdir$/share/eccodes/definitions``
     """
-    if api_name == 'grib_api':
-        dp = 'GRIB_DEFINITION_PATH'
-    elif api_name == 'eccodes':
-        dp = 'ECCODES_DEFINITION_PATH'
-    loc_defs = [os.path.join(rootdir, 'share', api_name, 'definitions')]
+    dp = 'ECCODES_DEFINITION_PATH'
+    loc_defs = [os.path.join(rootdir, 'share', 'eccodes', 'definitions')]
     if not reset and os.environ.get(dp, False):
         loc_defs.append(os.environ.get(dp))
     os.environ[dp] = os.pathsep.join(loc_defs)
-
-
-def set_definition_path(path, api_name='eccodes', reset=False):
-    """
-    Set path to GRIB|ECCODES_DEFINITION_PATH.
-
-    :param api_name: the name of the GRIB API, among ('eccodes', 'grib_api')
-    :param reset: ignore predefined values of the variables
-    """
-    paths = [path]
-    if api_name == 'grib_api':
-        dp = 'GRIB_DEFINITION_PATH'
-    elif api_name == 'eccodes':
-        dp = 'ECCODES_DEFINITION_PATH'
-    if not reset and os.environ.get(dp, False):
-        paths.append(os.environ.get(dp))
-    os.environ[dp] = os.pathsep.join(paths)
 
 
 def _get_paths(obj):
@@ -248,7 +221,7 @@ class GribDef(object):
             contains **fid**
         """
         try:
-            if isinstance(fid, six.string_types):
+            if isinstance(fid, str):
                 fid = parse_GRIBstr_todict(fid)
         except SyntaxError:  # fid is a concept value
             retrieved = self._lookup_from_conceptvalue(fid, concept,
@@ -350,7 +323,7 @@ class GribDef(object):
         :param filter_non_GRIB_keys: filter out the non-GRIB keys that may be
             present in grib def of field
         """
-        if isinstance(handgrip, six.string_types):
+        if isinstance(handgrip, str):
             handgrip = parse_GRIBstr_todict(handgrip)
         fields = {}
         for f, gribfid in self.tables[grib_edition][concept].items():

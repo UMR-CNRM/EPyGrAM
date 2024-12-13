@@ -17,8 +17,6 @@ FA_LFI/LFA library.
 Actual .so library should be in one of the preinstalled paths or in a directory specified via LD_LIBRARY_PATH
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 import os
 import resource
 import ctypesForFortran
@@ -52,14 +50,11 @@ else:
     so_basename = os.path.basename(shared_objects_library)
 ctypesFF, handle = ctypesForFortran.ctypesForFortranFactory(shared_objects_library)
 
-def get_dynamic_eccodes_lib_paths_from_FA():
-    """Get paths to the eccodes/grib_api linked for FA purpose in the shared objects library."""
-    libs_grib_api = {}
-    for apilib in ('grib_api', 'eccodes'):
-        for l, libpath in ctypesForFortran.get_dynamic_libs(shared_objects_library).items():
-            if l.startswith('lib' + apilib):
-                libs_grib_api[apilib] = libpath
-    return libs_grib_api
+def get_dynamic_eccodes_lib_path_from_FA():
+    """Get paths to the eccodes linked for FA purpose in the shared objects library."""
+    for l, libpath in ctypesForFortran.get_dynamic_libs(shared_objects_library).items():
+        if l.startswith('lib' + apilib):
+            return libpath
 
 # Initialization
 ################

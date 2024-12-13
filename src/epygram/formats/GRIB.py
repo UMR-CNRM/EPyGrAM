@@ -8,8 +8,6 @@ Contains classes for GRIB resource and GRIB individual message,
 editions 1 and 2.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-
 __all__ = ['GRIB']
 
 import datetime
@@ -17,7 +15,6 @@ import os
 import numpy
 import copy
 import sys
-import six
 import tempfile
 import uuid
 import io
@@ -49,35 +46,7 @@ epylog = footprints.loggers.getLogger(__name__)
 class LowLevelGRIB(object):
     def __init__(self, GRIB_lowlevel_api):
         self.api_name = GRIB_lowlevel_api.lower()
-        if self.api_name in ('gribapi', 'grib_api'):
-            self.api_name = 'grib_api'
-            self.samples_path_var = 'GRIB_SAMPLES_PATH'
-            import gribapi  # @UnresolvedImport
-            self.api = gribapi
-            self.count_in_file = gribapi.grib_count_in_file
-            self.any_new_from_file = gribapi.grib_new_from_file
-            self.release = gribapi.grib_release
-            self._set = gribapi.grib_set
-            self._set_missing = gribapi.grib_set_missing
-            self._new_from_samples = gribapi.grib_new_from_samples
-            self.clone = gribapi.grib_clone
-            self._get = gribapi.grib_get
-            self._get_double_array = gribapi.grib_get_double_array
-            self.get_values = gribapi.grib_get_values
-            self._set_array = gribapi.grib_set_array
-            self.set_values = gribapi.grib_set_values
-            self.keys_iterator_new = gribapi.grib_keys_iterator_new
-            self.keys_iterator_next = gribapi.grib_keys_iterator_next
-            self.keys_iterator_get_name = gribapi.grib_keys_iterator_get_name
-            self.keys_iterator_delete = gribapi.grib_keys_iterator_delete
-            self.write = gribapi.grib_write
-            self._index_new_from_file = gribapi.grib_index_new_from_file
-            self._index_select = gribapi.grib_index_select
-            self.new_from_index = gribapi.grib_new_from_index
-            self.index_release = gribapi.grib_index_release
-            self.InternalError = gribapi.GribInternalError
-            self.version = gribapi.__version__
-        elif self.api_name == 'eccodes':
+        if self.api_name == 'eccodes':
             self.samples_path_var = 'ECCODES_SAMPLES_PATH'
             import eccodes  # @UnresolvedImport
             self.api = eccodes
@@ -104,20 +73,15 @@ class LowLevelGRIB(object):
             self.index_release = eccodes.codes_index_release
             self.InternalError = eccodes.CodesInternalError
             self.version = eccodes.__version__
+        else:
+            raise NotImplementedError("GRIB_lowlevel_api:", GRIB_lowlevel_api)
 
     @property
     def install_dir(self):
-        if six.PY2:
-            # from path of low_level_api:
-            # remove /lib64/pythonX.Y/site-packages/eccodes/__init__.py
-            # or /lib64/pythonX.Y/site-packages/grib_api/gribapi.py
-            realpath = os.path.realpath(self.api.__file__)
-            install_dir = os.path.sep.join(realpath.split(os.path.sep)[:-5])
+        if 'ECCODES_DIR' in os.environ:
+            install_dir = os.environ['ECCODES_DIR']
         else:
-            if 'ECCODES_DIR' in os.environ:
-                install_dir = os.environ['ECCODES_DIR']
-            else:
-                install_dir = griberies.get_eccodes_from_ldconfig()
+            install_dir = griberies.get_eccodes_from_ldconfig()
         return install_dir
 
     def init_env(self, reset=False):
@@ -125,11 +89,9 @@ class LowLevelGRIB(object):
         # from python package eccodes 2.38.0, samples and packages are provided as eccodes_memfs
         if self.api.codes_get_api_version() < '2.38.0':
             griberies.complete_grib_samples_paths(self.install_dir,
-                                                  self.api_name,
                                                   reset=reset)
             if len(griberies.get_definition_paths()) > 0:
                 griberies.complete_grib_definition_paths(self.install_dir,
-                                                         self.api_name,
                                                          reset=reset)
 
     #  BELOW: gribapi str/unicode incompatibility
@@ -442,7 +404,7 @@ class GRIBmessage(RecursiveObject, dict):
             message in file. Defaults to 0. Negative value counts from the end.
           - ('field', :class:`epygram.fields.H2DField`)
           - ('gribid', *gribid*)
-            *gribid* being an integer, refering to the *gribid* of a GRIB_API
+            *gribid* being an integer, refering to the *gribid* of an eccodes
             message in memory.
           - ('sample', '*samplename*')
             *samplename* being the name of the sample from which to be
@@ -515,7 +477,7 @@ class GRIBmessage(RecursiveObject, dict):
                     value = float(value)
                 elif any([isinstance(value, t) for t in [numpy.int8, numpy.int16, numpy.int32, numpy.int64]]):
                     value = int(value)
-            if isinstance(value, six.string_types):  # gribapi str/unicode incompatibility
+            if isinstance(value, str):  # gribapi str/unicode incompatibility
                 v = str(value)
             else:
                 v = value
@@ -2195,7 +2157,7 @@ class GRIBmessage(RecursiveObject, dict):
           - 'ls': to get the same default keys as the grib_ls,
           - 'mars': to get the keys used by MARS.
         """
-        if isinstance(namespace, six.string_types):
+        if isinstance(namespace, str):
             namespace = str(namespace)  # gribapi str/unicode incompatibility
         key_iter = lowlevelgrib.keys_iterator_new(self._gid,
                                                   namespace=namespace)
@@ -2333,7 +2295,7 @@ class GRIB(FileResource):
         if select is not None:
             fidlist = [f for f in fidlist if all([f[k] == select[k] for k in select.keys()])]
         if onlykey is not None:
-            if isinstance(onlykey, six.string_types):
+            if isinstance(onlykey, str):
                 fidlist = [f[onlykey] for f in fidlist]
             elif isinstance(onlykey, tuple):
                 fidlist = [{k:f[k] for k in onlykey} for f in fidlist]
@@ -2404,12 +2366,12 @@ class GRIB(FileResource):
         components of wind, given a *fieldseed*.
         Syntax example: 'shortName':'u+v', or 'indicatorOfParameter':'33+34'
         """
-        if isinstance(fieldseed, six.string_types):
+        if isinstance(fieldseed, str):
             fieldseed = griberies.parse_GRIBstr_todict(fieldseed)
         seeds = [fieldseed.copy(), fieldseed.copy()]
         for i in (0, 1):
             for k, v in seeds[i].items():
-                if isinstance(v, six.string_types) and '+' in v:
+                if isinstance(v, str) and '+' in v:
                     v = v.split('+')[i]
                     try:
                         seeds[i][k] = int(v)
@@ -2517,10 +2479,10 @@ class GRIB(FileResource):
         elif isinstance(seed, list):
             fieldslist = []
             for s in seed:
-                if isinstance(s, six.string_types):
+                if isinstance(s, str):
                     s = griberies.parse_GRIBstr_todict(s)
                 fieldslist.extend(self.listfields(select=s))
-        elif isinstance(seed, six.string_types):
+        elif isinstance(seed, str):
             fieldslist = self.listfields(select=griberies.parse_GRIBstr_todict(seed))
         else:
             raise epygramError("unknown type for seed: " + str(type(seed)))
@@ -2563,7 +2525,7 @@ class GRIB(FileResource):
         :param read_misc_metadata: read the specified keys, and store it in
             field.misc_metadata
         """
-        if isinstance(handgrip, six.string_types):
+        if isinstance(handgrip, str):
             handgrip = griberies.parse_GRIBstr_todict(handgrip)
         matchingfields = self.readfields(handgrip,
                                          getdata=getdata,
@@ -2612,7 +2574,7 @@ class GRIB(FileResource):
         :param read_misc_metadata: read the specified keys, and store it in
             field.misc_metadata
         """
-        if isinstance(handgrip, six.string_types):
+        if isinstance(handgrip, str):
             handgrip = griberies.parse_GRIBstr_todict(handgrip)
         matchingfields = FieldSet()
         filtering_keys = [str(k) for k in handgrip.keys()]  # gribapi str/unicode incompatibility
@@ -2623,7 +2585,7 @@ class GRIB(FileResource):
                                                filtering_keys)
         # filter
         for k, v in handgrip.items():
-            if isinstance(v, six.string_types):  # gribapi str/unicode incompatibility
+            if isinstance(v, str):  # gribapi str/unicode incompatibility
                 v = str(v)
             lowlevelgrib.index_select(idx, k, v)
         # load messages
@@ -2725,7 +2687,7 @@ class GRIB(FileResource):
           If so, the nearest point is selected with
           distance = |target_value - external_field.data|
         """
-        if isinstance(handgrip, six.string_types):
+        if isinstance(handgrip, str):
             handgrip = griberies.parse_GRIBstr_todict(handgrip)
 
         field3d = fpx.field(fid={'GRIB':handgrip},
@@ -2793,7 +2755,7 @@ class GRIB(FileResource):
             requested angle (in degrees). Enables a [0,360] grid
             to be shifted to a [-180,180] grid, for instance (with -180 argument).
         """
-        if isinstance(handgrip, six.string_types):
+        if isinstance(handgrip, str):
             handgrip = griberies.parse_GRIBstr_todict(handgrip)
 
         field3d = fpx.field(fid={'GRIB':handgrip},
@@ -2846,7 +2808,7 @@ class GRIB(FileResource):
           - if 'cubic', each horizontal point of the section is
             computed with linear spline interpolation.
         """
-        if isinstance(handgrip, six.string_types):
+        if isinstance(handgrip, str):
             handgrip = griberies.parse_GRIBstr_todict(handgrip)
 
         if field3d is None:
@@ -3050,7 +3012,7 @@ class GRIB(FileResource):
                 for k in sorted_GRIB2_fid(f):
                     v = f[k]
                     if v != 'unknown':
-                        if isinstance(v, six.string_types):
+                        if isinstance(v, str):
                             v = "'{}'".format(v)
                         out.write('{}: {},\n'.format(k, v))
         out.write(separation_line)
