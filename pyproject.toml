@@ -11,7 +11,7 @@ authors = [
     { name = "Sébastien Riette"  , email = "sebastien.riette@meteo.fr"}
 ]
 maintainers = [
-  { name = "Alexandre MARY", email = "alexandre.mary@meteo.fr" }, 
+  { name = "Alexandre MARY", email = "alexandre.mary@meteo.fr" },
   { name = "Sébastien Riette"  , email = "sebastien.riette@meteo.fr"}
 ]
 
@@ -24,9 +24,6 @@ classifiers = [
     'Intended Audience :: Science/Research',
     'Intended Audience :: Developers',
     'Programming Language :: Python',
-    'Programming Language :: Python :: 3.6',
-    'Programming Language :: Python :: 3.7',
-    'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
@@ -34,18 +31,18 @@ classifiers = [
 ]
 
 
-requires-python = ">=3.6"
+requires-python = ">=3.10"
 dependencies=[
         "footprints",
         "bronx",
         "numpy",
-        "cartopy",   
+        "cartopy==0.21.0",  # older versions not compatible with python 3.10; more recent versions to be tested
         "matplotlib",
-        "eccodes < 2.0.0",  # incompatibility btw the new eccodes-2.37.0 and FA, for now
+        "eccodes==2.38.0",
         "netCDF4",
-        "pyproj",      
+        "pyproj",
         "six",
-	"pyyaml" , # issue with bronx !!
+        "pyyaml" , # issue with bronx !! soon fixed
         "ctypesForFortran < 2.0.0",  # temporary, until complete externalisation of arpifs4py
             ]
 [tool.setuptools]
@@ -71,7 +68,7 @@ features=[
   "scipy",
   "web.py"
     ]
-format=[
+extra_formats=[
   "h5py",
   "pillow >= 5.4.1"
   ]
@@ -80,23 +77,23 @@ vortex = [
   "vortex"
       ]
 all = [
-        "taylorism",  
+        "taylorism",
         "footprints",
         "bronx",
         "numpy",
-        "cartopy",   
+        "cartopy",
         "matplotlib",
-        "eccodes",      
-        "vtk",   
-        "vortex",  
-        "pillow >= 5.4.1",  
-        "contourpy",    
-        "h5py",     
-        "netCDF4",   
-        "pyproj",      
-        "pyresample",    
-        "scipy", 
-        "six",         
+        "eccodes",
+        "vtk",
+        "vortex",
+        "pillow >= 5.4.1", 
+        "contourpy",
+        "h5py",
+        "netCDF4",
+        "pyproj",     
+        "pyresample",
+        "scipy",
+        "six",       
         "web.py"
          ]
 
