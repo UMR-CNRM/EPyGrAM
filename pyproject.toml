@@ -39,13 +39,13 @@ dependencies=[
         "footprints",
         "bronx",
         "numpy",
-        "cartopy",   
+        "cartopy==0.21.0",
         "matplotlib",
-        "eccodes < 2.0.0",  # incompatibility btw the new eccodes-2.37.0 and FA, for now
+        "eccodes == 2.38.0",
         "netCDF4",
-        "pyproj",      
+        "pyproj",
         "six",
-	"pyyaml" , # issue with bronx !!
+        "pyyaml" , # issue with bronx !!
         "ctypesForFortran < 2.0.0",  # temporary, until complete externalisation of arpifs4py
             ]
 [tool.setuptools]

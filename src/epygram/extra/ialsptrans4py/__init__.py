@@ -25,7 +25,7 @@ from ctypesForFortran import addReturnCode, treatReturnCode, IN, OUT
 shared_objects_library = os.environ.get('IALSPTRANS4PY_SO', None)
 if shared_objects_library is None or not os.path.exists(shared_objects_library):
     # not specified or path does not exist : find in known locations
-    so_basename = "IALsptrans4py.so.0"  # local name in the directory
+    so_basename = "IALsptrans4py.so.1"  # local name in the directory
     LD_LIBRARY_PATH = [p for p in os.environ.get('LD_LIBRARY_PATH', '').split(':') if p != '']
     potential_locations = LD_LIBRARY_PATH + [
         "/home/common/epygram/public/EPyGrAM/libs4py",  # CNRM
