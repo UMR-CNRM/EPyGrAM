@@ -30,7 +30,8 @@ from epygram.args_catalog import (add_arg_to_parser,
 import matplotlib.pyplot as plt
 
 
-def prepare_field_and_get_spectrum(field, fname, resource, compute_spectrum=True, verbose=False):
+def prepare_field_and_get_spectrum(field, fname, resource, subzone,
+                                   compute_spectrum=True, verbose=False):
     """
     If the field is defined on a global non-stretched Gauss grid, convert the field
     to spectral space if needed and optionally deduce spectrum from spectral coefficients.
@@ -137,6 +138,7 @@ def main(filename,
             spectra.append(prepare_field_and_get_spectrum(field,
                                                           f,
                                                           resource,
+                                                          subzone,
                                                           compute_spectrum=True,
                                                           verbose=verbose))
             if not noplot:
@@ -182,10 +184,7 @@ def main(filename,
             field = U * U + V * V
             if not field.geometry.grid.get('LAMzone', False):
                 subzone = None
-            field.setdata(numpy.sqrt(field.getdata()))
-            variances = esp.dctspectrum(field.getdata(subzone=subzone),
-                                        log=epylog,
-                                        verbose=verbose)
+            field.setdata(numpy.ma.sqrt(field.getdata()))
             if resource.format == 'GRIB':
                 name = {k:v for k, v in Ufid[l].items()
                         if Ufid[l][k] == Vfid[l][k]}
@@ -202,10 +201,9 @@ def main(filename,
                         name += _u[i]
                     else:
                         name += '*'
-            spectra.append(esp.Spectrum(variances[1:],
-                                        name=name,
-                                        resolution=field.geometry.grid['X_resolution'] / 1000.,
-                                        mean2=variances[0]))
+            spectra.append(prepare_field_and_get_spectrum(field, name, resource, subzone,
+                                                          compute_spectrum=True,
+                                                          verbose=verbose))
             if not noplot:
                 # plot
                 if legend is not None:
@@ -249,7 +247,7 @@ def main(filename,
                 field = resource.readfield(f)
                 if not field.geometry.grid.get('LAMzone', False):
                     subzone = None
-                spectrum = prepare_field_and_get_spectrum(field, f, resource,
+                spectrum = prepare_field_and_get_spectrum(field, f, resource, subzone,
                                                           compute_spectrum=not diffonly,
                                                           verbose=verbose)
                 if not diffonly:
@@ -259,7 +257,7 @@ def main(filename,
                 reffield = reference.readfield(f)
                 if not field.geometry.grid.get('LAMzone', False):
                     subzone = None
-                refspectrum = prepare_field_and_get_spectrum(reffield, f, reference,
+                refspectrum = prepare_field_and_get_spectrum(reffield, f, reference, subzone,
                                                              compute_spectrum=not diffonly,
                                                              verbose=verbose)
                 if not diffonly:
@@ -267,7 +265,7 @@ def main(filename,
             if f in intersectionfidlist:
                 epylog.info("- on difference")
                 diff = field - reffield
-                diffspectrum = prepare_field_and_get_spectrum(diff, f, resource,
+                diffspectrum = prepare_field_and_get_spectrum(diff, f, resource, subzone,
                                                               compute_spectrum=True,
                                                               verbose=verbose)
                 diffspectra.append(diffspectrum)
