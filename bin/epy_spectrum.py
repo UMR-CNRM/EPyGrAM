@@ -30,6 +30,47 @@ from epygram.args_catalog import (add_arg_to_parser,
 import matplotlib.pyplot as plt
 
 
+def prepare_field_and_get_spectrum(field, fname, resource, compute_spectrum=True, verbose=False):
+    """
+    If the field is defined on a global non-stretched Gauss grid, convert the field
+    to spectral space if needed and optionally deduce spectrum from spectral coefficients.
+    If the field is defined on a projected geometry, convert the field to grid-point
+    space if needed and optionally compute spectrum using a DCT.
+    """
+    if isinstance(field.geometry, epygram.geometries.GaussGeometry):
+        if field.geometry.grid["dilatation_coef"] != 1.0:
+            raise NotImplementedError("cannot compute spectra on stretched Gaussian grids")
+        if not field.spectral:
+            field.gp2sp(resource.spectral_geometry)
+        if compute_spectrum:
+            variances = esp.global_spectrum(field)
+            nlat = field.geometry.dimensions["lat_number"]
+            resolution = field.geometry.zonal_resolution_j(nlat // 2) / 1000
+            spectrum =  esp.Spectrum(variances[1:],
+                                    name=str(fname),
+                                    resolution=resolution,
+                                    mean2=variances[0])
+            return spectrum
+        else:
+            return None
+    else:
+        if field.spectral:
+            field.sp2gp()
+        if not field.geometry.projected_geometry:
+            raise NotImplementedError("cannot compute spectra on regular_lonlat grids.")
+        if compute_spectrum:
+            variances = esp.dctspectrum(field.getdata(subzone=subzone),
+                                        log=epylog,
+                                        verbose=verbose)
+            spectrum = esp.Spectrum(variances[1:],
+                                    name=str(fname),
+                                    resolution=field.geometry.grid['X_resolution'] / 1000.,
+                                    mean2=variances[0])
+            return spectrum
+        else:
+            return None
+        
+        
 def main(filename,
          fieldseed,
          subzone=None,
@@ -93,30 +134,11 @@ def main(filename,
             field = resource.readfield(f)
             if not field.geometry.grid.get('LAMzone', False):
                 subzone = None
-            if isinstance(field.geometry, epygram.geometries.GaussGeometry):
-                if field.geometry.grid["dilatation_coef"] != 1.0:
-                    raise NotImplementedError("cannot compute spectra on stretched Gaussian grids")
-                if not field.spectral:
-                    field.gp2sp(resource.spectral_geometry)
-                variances = field.get_variance_spectrum()
-                nlat = field.geometry.dimensions["lat_number"]
-                resolution = field.geometry.zonal_resolution_j(nlat // 2) / 1000
-                spectra.append(esp.Spectrum(variances[1:],
-                                            name=str(f),
-                                            resolution=resolution,
-                                            mean2=variances[0]))
-            else:
-                if field.spectral:
-                    field.sp2gp()
-                if not field.geometry.projected_geometry:
-                    raise NotImplementedError("cannot compute spectra on regular_lonlat grids.")
-                variances = esp.dctspectrum(field.getdata(subzone=subzone),
-                                            log=epylog,
-                                            verbose=verbose)
-                spectra.append(esp.Spectrum(variances[1:],
-                                            name=str(f),
-                                            resolution=field.geometry.grid['X_resolution'] / 1000.,
-                                            mean2=variances[0]))
+            spectra.append(prepare_field_and_get_spectrum(field,
+                                                          f,
+                                                          resource,
+                                                          compute_spectrum=True,
+                                                          verbose=verbose))
             if not noplot:
                 # plot
                 if legend is not None:
@@ -227,43 +249,27 @@ def main(filename,
                 field = resource.readfield(f)
                 if not field.geometry.grid.get('LAMzone', False):
                     subzone = None
-                if field.spectral:
-                    field.sp2gp()
+                spectrum = prepare_field_and_get_spectrum(field, f, resource,
+                                                          compute_spectrum=not diffonly,
+                                                          verbose=verbose)
                 if not diffonly:
-                    variances = esp.dctspectrum(field.getdata(subzone=subzone),
-                                                log=epylog,
-                                                verbose=verbose)
-                    spectrum = esp.Spectrum(variances[1:],
-                                            name=str(f),
-                                            resolution=field.geometry.grid['X_resolution'] / 1000.,
-                                            mean2=variances[0])
                     spectra.append(spectrum)
             if f in reffidlist:
                 epylog.info("- in " + reference.container.basename)
                 reffield = reference.readfield(f)
                 if not field.geometry.grid.get('LAMzone', False):
                     subzone = None
-                if reffield.spectral:
-                    reffield.sp2gp()
+                refspectrum = prepare_field_and_get_spectrum(reffield, f, reference,
+                                                             compute_spectrum=not diffonly,
+                                                             verbose=verbose)
                 if not diffonly:
-                    variances = esp.dctspectrum(reffield.getdata(subzone=subzone),
-                                                log=epylog,
-                                                verbose=verbose)
-                    refspectrum = esp.Spectrum(variances[1:],
-                                               name=str(f),
-                                               resolution=reffield.geometry.grid['X_resolution'] / 1000.,
-                                               mean2=variances[0])
                     refspectra.append(refspectrum)
             if f in intersectionfidlist:
                 epylog.info("- on difference")
                 diff = field - reffield
-                variances = esp.dctspectrum(diff.getdata(subzone=subzone),
-                                            log=epylog,
-                                            verbose=verbose)
-                diffspectrum = esp.Spectrum(variances[1:],
-                                            name=str(f),
-                                            resolution=diff.geometry.grid['X_resolution'] / 1000.,
-                                            mean2=variances[0])
+                diffspectrum = prepare_field_and_get_spectrum(diff, f, resource,
+                                                              compute_spectrum=True,
+                                                              verbose=verbose)
                 diffspectra.append(diffspectrum)
             # PLOTS
             if not noplot:

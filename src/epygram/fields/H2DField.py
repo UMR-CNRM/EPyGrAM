@@ -15,7 +15,7 @@ from numpy import unravel_index
 import footprints
 
 from epygram import epygramError
-from epygram.geometries import Geometry, GaussGeometry
+from epygram.geometries import Geometry
 from . import gimme_one_point
 from .D3Field import D3Field
 from .PointField import PointField
@@ -145,33 +145,6 @@ class H2DField(D3Field):
         """
         i, j = self.index_of_minmax_value(min_or_max)
         return self.geometry.ij2ll(i, j)
-
-    def get_variance_spectrum(self):
-        """
-        Return variance spectrum of a spectral field with GaussGeometry.
-        """
-        assert self.spectral
-        assert isinstance(self.geometry, GaussGeometry)
-        assert self.spectral_geometry.truncation["shape"] == "triangular"
-        nsmax = self.spectral_geometry.truncation["max"]
-        variances = numpy.zeros(nsmax + 1)
-        jdata = 0
-        # Loop on zonal wavenumbers m
-        for m in range(nsmax + 1):
-            # Loop on total wavenumber n
-            for n in range(m, nsmax + 1):
-                squaredmodule = self._data[0, 0, jdata] ** 2 + self._data[0, 0, jdata+1] ** 2
-                if m == 0:
-                    variances[n] += squaredmodule
-                    # Check that coefficient (m, n) == (0, n) is its own complex conjugate,
-                    # i.e. it has zero imaginary part
-                    assert self._data[0, 0, jdata+1] == 0
-                else:
-                    # Coefficient (-m, n) is the complex conjugate of (m, n).
-                    # It is not stored so (m, n) should be counted twice.
-                    variances[n] += 2 * squaredmodule
-                jdata += 2
-        return variances
 
 ###################
 # PRE-APPLICATIVE #

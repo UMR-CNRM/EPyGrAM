@@ -21,6 +21,7 @@ import numpy
 import copy
 
 from epygram import epygramError, config
+from epygram.geometries import GaussGeometry
 from epygram.util import RecursiveObject, write_formatted_table
 
 
@@ -287,6 +288,38 @@ def dctspectrum(x, verbose=False, log=None):
                 variance[k_inf] += weightinf * var
 
     return variance
+
+
+def global_spectrum(field):
+    """
+    Return variance spectrum of a global spectral field on a GaussGeometry,
+    from its spectral coefficients.
+    """
+    assert field.geometry.isglobal
+    assert isinstance(field.geometry, GaussGeometry)
+    assert field.spectral_geometry.truncation["shape"] == "triangular"
+    assert field.spectral
+    data = field.getdata()
+    nsmax = field.spectral_geometry.truncation["max"]
+    assert data.size == (nsmax+1) * (nsmax+2)
+    variances = numpy.zeros(nsmax + 1)
+    jdata = 0
+    # Loop on zonal wavenumber m
+    for m in range(nsmax + 1):
+        # Loop on total wavenumber n
+        for n in range(m, nsmax + 1):
+            squaredmodule = data[jdata] ** 2 + data[jdata+1] ** 2
+            if m == 0:
+                variances[n] += squaredmodule
+                # Check that coefficient (m, n) == (0, n) is its own complex conjugate,
+                # i.e. it has zero imaginary part
+                assert data[jdata+1] == 0
+            else:
+                # Coefficient (-m, n) is the complex conjugate of (m, n).
+                # It is not stored so (m, n) should be counted twice.
+                variances[n] += 2 * squaredmodule
+            jdata += 2
+    return variances
 
 
 def plotspectra(spectra,
