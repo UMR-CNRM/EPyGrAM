@@ -30,48 +30,6 @@ from epygram.args_catalog import (add_arg_to_parser,
 import matplotlib.pyplot as plt
 
 
-def prepare_field_and_get_spectrum(field, fname, resource, subzone,
-                                   compute_spectrum=True, verbose=False):
-    """
-    If the field is defined on a global non-stretched Gauss grid, convert the field
-    to spectral space if needed and optionally deduce spectrum from spectral coefficients.
-    If the field is defined on a projected geometry, convert the field to grid-point
-    space if needed and optionally compute spectrum using a DCT.
-    """
-    if isinstance(field.geometry, epygram.geometries.GaussGeometry):
-        if field.geometry.grid["dilatation_coef"] != 1.0:
-            raise NotImplementedError("cannot compute spectra on stretched Gaussian grids")
-        if not field.spectral:
-            field.gp2sp(resource.spectral_geometry)
-        if compute_spectrum:
-            variances = esp.global_spectrum(field)
-            nlat = field.geometry.dimensions["lat_number"]
-            resolution = field.geometry.zonal_resolution_j(nlat // 2) / 1000
-            spectrum =  esp.Spectrum(variances[1:],
-                                    name=str(fname),
-                                    resolution=resolution,
-                                    mean2=variances[0])
-            return spectrum
-        else:
-            return None
-    else:
-        if field.spectral:
-            field.sp2gp()
-        if not field.geometry.projected_geometry:
-            raise NotImplementedError("cannot compute spectra on regular_lonlat grids.")
-        if compute_spectrum:
-            variances = esp.dctspectrum(field.getdata(subzone=subzone),
-                                        log=epylog,
-                                        verbose=verbose)
-            spectrum = esp.Spectrum(variances[1:],
-                                    name=str(fname),
-                                    resolution=field.geometry.grid['X_resolution'] / 1000.,
-                                    mean2=variances[0])
-            return spectrum
-        else:
-            return None
-        
-        
 def main(filename,
          fieldseed,
          subzone=None,
@@ -135,12 +93,10 @@ def main(filename,
             field = resource.readfield(f)
             if not field.geometry.grid.get('LAMzone', False):
                 subzone = None
-            spectra.append(prepare_field_and_get_spectrum(field,
-                                                          f,
-                                                          resource,
-                                                          subzone,
-                                                          compute_spectrum=True,
-                                                          verbose=verbose))
+            spectra.append(field.spectrum(f,
+                                          spectral_geometry=resource.spectral_geometry,
+                                          subzone=subzone,
+                                          verbose=verbose))
             if not noplot:
                 # plot
                 if legend is not None:
@@ -201,9 +157,10 @@ def main(filename,
                         name += _u[i]
                     else:
                         name += '*'
-            spectra.append(prepare_field_and_get_spectrum(field, name, resource, subzone,
-                                                          compute_spectrum=True,
-                                                          verbose=verbose))
+            spectra.append(field.spectrum(name,
+                                          spectral_geometry=resource.spectral_geometry,
+                                          subzone=subzone,
+                                          verbose=verbose))
             if not noplot:
                 # plot
                 if legend is not None:
@@ -247,28 +204,28 @@ def main(filename,
                 field = resource.readfield(f)
                 if not field.geometry.grid.get('LAMzone', False):
                     subzone = None
-                spectrum = prepare_field_and_get_spectrum(field, f, resource, subzone,
-                                                          compute_spectrum=not diffonly,
-                                                          verbose=verbose)
                 if not diffonly:
-                    spectra.append(spectrum)
+                    spectra.append(field.spectrum(f,
+                                                  spectral_geometry=resource.spectral_geometry,
+                                                  subzone=subzone,
+                                                  verbose=verbose))
             if f in reffidlist:
                 epylog.info("- in " + reference.container.basename)
                 reffield = reference.readfield(f)
                 if not field.geometry.grid.get('LAMzone', False):
                     subzone = None
-                refspectrum = prepare_field_and_get_spectrum(reffield, f, reference, subzone,
-                                                             compute_spectrum=not diffonly,
-                                                             verbose=verbose)
                 if not diffonly:
-                    refspectra.append(refspectrum)
+                    refspectra.append(reffield.spectrum(f,
+                                                        spectral_geometry=reference.spectral_geometry,
+                                                        subzone=subzone,
+                                                        verbose=verbose))
             if f in intersectionfidlist:
                 epylog.info("- on difference")
                 diff = field - reffield
-                diffspectrum = prepare_field_and_get_spectrum(diff, f, resource, subzone,
-                                                              compute_spectrum=True,
-                                                              verbose=verbose)
-                diffspectra.append(diffspectrum)
+                diffspectra.append(diff.spectrum(f,
+                                                 spectral_geometry=resource.spectral_geometry,
+                                                 subzone=subzone,
+                                                 verbose=verbose))
             # PLOTS
             if not noplot:
                 spectratoplot = []

@@ -15,7 +15,8 @@ from numpy import unravel_index
 import footprints
 
 from epygram import epygramError
-from epygram.geometries import Geometry
+from epygram.geometries import GaussGeometry, Geometry
+import epygram.spectra as esp
 from . import gimme_one_point
 from .D3Field import D3Field
 from .PointField import PointField
@@ -145,6 +146,48 @@ class H2DField(D3Field):
         """
         i, j = self.index_of_minmax_value(min_or_max)
         return self.geometry.ij2ll(i, j)
+
+    def spectrum(self, fname, spectral_geometry=None, subzone=None, verbose=False):
+        """
+        Get energy spectrum of the field, performing transforms to spectral or grid point
+        space if required. Implemented for global non-stretched Gauss grid (spectrum directly
+        computed from spectral coefficients), and for projected geometries (using the
+        Discrete Cosine Transform).
+
+        :param fname: str, name of field for Spectrum object
+        :param spectral_geometry: optional, spectral geometry object for a global field
+        in grid-point space.
+        :param subzone: str, optional, subzone for a projected field.
+        :param verbose: bool, optional, verbosity flag
+        """
+        if isinstance(self.geometry, GaussGeometry):
+            if self.geometry.grid["dilatation_coef"] != 1.0:
+                raise NotImplementedError("cannot compute spectra on stretched Gaussian grids")
+            if not self.spectral:
+                assert spectral_geometry, "Need spectral geometry to convert field in gp space!"
+                self.gp2sp(spectral_geometry)
+            variances = esp.global_spectrum(self)
+            nlat = self.geometry.dimensions["lat_number"]
+            resolution = self.geometry.zonal_resolution_j(nlat // 2) / 1000
+            spectrum =  esp.Spectrum(variances[1:],
+                                     name=str(fname),
+                                     resolution=resolution,
+                                     mean2=variances[0])
+            return spectrum
+        else:
+            if not self.geometry.projected_geometry:
+                raise NotImplementedError("cannot compute spectra on regular_lonlat grids.")
+            if self.spectral:
+                self.sp2gp()
+            variances = esp.dctspectrum(self.getdata(subzone=subzone),
+                                        log=epylog,
+                                        verbose=verbose)
+            spectrum = esp.Spectrum(variances[1:],
+                                    name=str(fname),
+                                    resolution=self.geometry.grid['X_resolution'] / 1000.,
+                                    mean2=variances[0])
+            return spectrum
+
 
 ###################
 # PRE-APPLICATIVE #
