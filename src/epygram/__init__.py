@@ -129,7 +129,7 @@ def init_env(omp_num_threads=1,
              lfi_C=True,
              mute_FA4py=None,
              unlimited_stack=True,
-             ensure_consistent_GRIB_paths=True,
+             ensure_consistent_GRIB_paths=False,
              ignore_gribenv_paths=False):
     """
     A function to modify execution environment (to be called early in
@@ -155,7 +155,7 @@ def init_env(omp_num_threads=1,
         falfilfa4py.init_env(omp_num_threads=omp_num_threads, no_mpi=no_mpi,
                              lfi_C=lfi_C, mute_FA4py=mute_FA4py,
                              unlimited_stack=unlimited_stack)
-        if ensure_consistent_GRIB_paths:
+        if ensure_consistent_GRIB_paths: #CLEANME:DEPRECATED:
             from epygram.extra import griberies
             eccodes_libpath = falfilfa4py.get_dynamic_eccodes_lib_path_from_FA()
             griberies.complete_grib_paths(eccodes_libpath, reset=ignore_gribenv_paths)
