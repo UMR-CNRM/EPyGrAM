@@ -69,8 +69,8 @@ for f in config.implemented_formats:
         runtime_available_formats.append(f)
         importlib.import_module('.' + f, __name__)
     else:
-        epylog.warning(("Format: {} is deactivated at runtime (Error: {}). " +
-                        "Please deactivate from config.implemented_formats or fix error.").format(f, _reason))
+        epylog.info(("Format: {} is deactivated at runtime (Error: {}). " +
+                     "Please deactivate from config.implemented_formats or fix error.").format(f, _reason))
 
 
 #############

@@ -36,14 +36,14 @@ dependencies=[
         "footprints",
         "bronx",
         "numpy",
-        "cartopy==0.21.0",  # older versions not compatible with python 3.10; more recent versions to be tested
+        "cartopy==0.23.0",  # versions older than 0.21.0 not compatible with python 3.10; more recent versions to be tested
         "matplotlib",
-        "eccodes==2.38.0",
         "netCDF4",
         "pyproj",
         "pyyaml" , # issue with bronx !! soon fixed
-        "falfilfa4py",
-	"ectrans4py"
+	"ectrans4py",
+        "falfilfa4py==1.0.0",  # consistent with eccodes 2.38.0
+        "eccodes==2.38.0",
             ]
 [tool.setuptools]
 include-package-data = true
