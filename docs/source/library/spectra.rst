@@ -20,6 +20,7 @@ Functions
 
 .. autofunction:: read_Spectrum
 .. autofunction:: dctspectrum
+.. autofunction:: global_spectrum
 .. autofunction:: sort
 .. autofunction:: plotspectra
 

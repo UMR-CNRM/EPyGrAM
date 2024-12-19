@@ -93,17 +93,10 @@ def main(filename,
             field = resource.readfield(f)
             if not field.geometry.grid.get('LAMzone', False):
                 subzone = None
-            if field.spectral:
-                field.sp2gp()
-            if not field.geometry.projected_geometry:
-                raise NotImplementedError("cannot compute spectra on regular_lonlat or Gauss grids.")
-            variances = esp.dctspectrum(field.getdata(subzone=subzone),
-                                        log=epylog,
-                                        verbose=verbose)
-            spectra.append(esp.Spectrum(variances[1:],
-                                        name=str(f),
-                                        resolution=field.geometry.grid['X_resolution'] / 1000.,
-                                        mean2=variances[0]))
+            spectra.append(field.spectrum(f,
+                                          spectral_geometry=resource.spectral_geometry,
+                                          subzone=subzone,
+                                          verbose=verbose))
             if not noplot:
                 # plot
                 if legend is not None:
@@ -147,10 +140,7 @@ def main(filename,
             field = U * U + V * V
             if not field.geometry.grid.get('LAMzone', False):
                 subzone = None
-            field.setdata(numpy.sqrt(field.getdata()))
-            variances = esp.dctspectrum(field.getdata(subzone=subzone),
-                                        log=epylog,
-                                        verbose=verbose)
+            field.setdata(numpy.ma.sqrt(field.getdata()))
             if resource.format == 'GRIB':
                 name = {k:v for k, v in Ufid[l].items()
                         if Ufid[l][k] == Vfid[l][k]}
@@ -167,10 +157,10 @@ def main(filename,
                         name += _u[i]
                     else:
                         name += '*'
-            spectra.append(esp.Spectrum(variances[1:],
-                                        name=name,
-                                        resolution=field.geometry.grid['X_resolution'] / 1000.,
-                                        mean2=variances[0]))
+            spectra.append(field.spectrum(name,
+                                          spectral_geometry=resource.spectral_geometry,
+                                          subzone=subzone,
+                                          verbose=verbose))
             if not noplot:
                 # plot
                 if legend is not None:
@@ -214,44 +204,28 @@ def main(filename,
                 field = resource.readfield(f)
                 if not field.geometry.grid.get('LAMzone', False):
                     subzone = None
-                if field.spectral:
-                    field.sp2gp()
                 if not diffonly:
-                    variances = esp.dctspectrum(field.getdata(subzone=subzone),
-                                                log=epylog,
-                                                verbose=verbose)
-                    spectrum = esp.Spectrum(variances[1:],
-                                            name=str(f),
-                                            resolution=field.geometry.grid['X_resolution'] / 1000.,
-                                            mean2=variances[0])
-                    spectra.append(spectrum)
+                    spectra.append(field.spectrum(f,
+                                                  spectral_geometry=resource.spectral_geometry,
+                                                  subzone=subzone,
+                                                  verbose=verbose))
             if f in reffidlist:
                 epylog.info("- in " + reference.container.basename)
                 reffield = reference.readfield(f)
                 if not field.geometry.grid.get('LAMzone', False):
                     subzone = None
-                if reffield.spectral:
-                    reffield.sp2gp()
                 if not diffonly:
-                    variances = esp.dctspectrum(reffield.getdata(subzone=subzone),
-                                                log=epylog,
-                                                verbose=verbose)
-                    refspectrum = esp.Spectrum(variances[1:],
-                                               name=str(f),
-                                               resolution=reffield.geometry.grid['X_resolution'] / 1000.,
-                                               mean2=variances[0])
-                    refspectra.append(refspectrum)
+                    refspectra.append(reffield.spectrum(f,
+                                                        spectral_geometry=reference.spectral_geometry,
+                                                        subzone=subzone,
+                                                        verbose=verbose))
             if f in intersectionfidlist:
                 epylog.info("- on difference")
                 diff = field - reffield
-                variances = esp.dctspectrum(diff.getdata(subzone=subzone),
-                                            log=epylog,
-                                            verbose=verbose)
-                diffspectrum = esp.Spectrum(variances[1:],
-                                            name=str(f),
-                                            resolution=diff.geometry.grid['X_resolution'] / 1000.,
-                                            mean2=variances[0])
-                diffspectra.append(diffspectrum)
+                diffspectra.append(diff.spectrum(f,
+                                                 spectral_geometry=resource.spectral_geometry,
+                                                 subzone=subzone,
+                                                 verbose=verbose))
             # PLOTS
             if not noplot:
                 spectratoplot = []

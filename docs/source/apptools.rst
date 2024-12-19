@@ -22,7 +22,7 @@ Currently available:
 - ``epy_cartoplot.py``: plot horizontal 2D fields using cartopy package
 - ``epy_hist.py``: compute and plot a histogram of fields values
 - ``epy_point.py``: extract the value of fields on a given location
-- ``epy_spectrum.py``: compute and plot the DCT spectrum of a field
+- ``epy_spectrum.py``: compute and plot the energy spectrum of a field,
 - ``fa_sp2gp.py``: convert to gridpoint the spectral fields of a FA file
 - ``domain_maker.py``: interactive construction and display of a new LAM domain
 - ``ddhlfa_plot.py``: basic plots of LFA-formatted outputs from DDH
