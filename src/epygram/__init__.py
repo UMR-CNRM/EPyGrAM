@@ -162,11 +162,11 @@ def init_env(omp_num_threads=1,
     # 2. SpectralGeometry inner transformation lib may need some special
     # environment setting, delayed to actual invocation:
     # we simply pass kwargs, initialization is done at first call to the library
-    from .geometries.SpectralGeometry import transforms_lib_init_env_kwargs
-    transforms_lib_init_env_kwargs.update(omp_num_threads=omp_num_threads,
-                                          no_mpi=no_mpi,
-                                          unlimited_stack=unlimited_stack,
-                                          trigger=True)
+    from .geometries.SpectralGeometry import ectrans4py_init_env_kwargs
+    ectrans4py_init_env_kwargs.update(omp_num_threads=omp_num_threads,
+                                      no_mpi=no_mpi,
+                                      unlimited_stack=unlimited_stack,
+                                      trigger=True)
     # 3. grib_api or eccodes
     # need some special environment setting
     # ensure eccodes variables are consistent with inner library
