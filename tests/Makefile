@@ -1,9 +1,7 @@
 
-NOSE3list     = nosetests3 nosetests-3.7
-NOSE3         = $(shell for p in $(NOSE3list) ; do if which $$p >/dev/null 2>&1 ; then echo $$p ; break ; fi ; done)
+PYTEST        = python -m pytest
 TEST_BASE     = test_formats.py test_geometries.py test_spectral.py test_util.py
 TEST_FULL     = $(TEST_BASE) test_geometry_methods.py test_combinationsextractions.py
-NOSE_OPTS     = --verbosity=2 --no-byte-compile
 APPTOOLS_DIR  = test_apptools
 NB_DIR        = ../docs/source/gallery
 VERSION       = $(shell head -1 ../VERSION)
@@ -19,10 +17,10 @@ get_data:
 
 # Run tests with nose
 tests:
-	($(NOSE3) $(TEST_BASE) $(NOSE_OPTS) 2>&1) | tee $@.log
+	($(PYTEST) $(TEST_BASE) 2>&1) | tee $@.log
 
 tests_full:
-	($(NOSE3) $(TEST_FULL) $(NOSE_OPTS) 2>&1) | tee $@.log
+	($(PYTEST) $(TEST_FULL) 2>&1) | tee $@.log
 
 # apptools
 apptools:
