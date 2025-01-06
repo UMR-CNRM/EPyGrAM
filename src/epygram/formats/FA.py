@@ -33,7 +33,8 @@ from epygram.geometries import (Geometry, SpectralGeometry, ProjectedGeometry, G
 from epygram.geometries.VGeometry import (hybridP2pressure, hybridP2altitude,
                                           pressure2altitude)
 from epygram.fields import MiscField, H2DField
-from epygram.formats.fafields import FaGribDef, SfxFldDesc_Mod
+from epygram.formats.fafields import SfxFldDesc_Mod
+from epygram.extra.griberies.definitions.fa import FaGribDef
 
 __all__ = []
 
