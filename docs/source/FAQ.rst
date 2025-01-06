@@ -8,7 +8,7 @@ FAQ --- Frequently Asked Questions
 + **I have weird errors (MPI?) when I try to read a FA file...**
 
     => the :func:`epygram.init_env` should be called at the beginning of your
-    script(s), to be sure the :mod:`arpifs4py` library do not use MPI, or uses
+    script(s), to be sure FA/ectrans underlying libraries do not use MPI, or uses
     OpenMP with an initialized environment.
 
 -----------------------------------------------------------
@@ -16,7 +16,7 @@ FAQ --- Frequently Asked Questions
 + **I have weird ecCodes errors...**
 
     => check environment variables ``$[ECCODES|GRIB]_[SAMPLES|DEFINITION]_PATH``
-    and make sure they are consistent with your ecCodes install or unset them
+    and make sure they are consistent with your ecCodes install, or rather unset them
 
 -----------------------------------------------------------
 

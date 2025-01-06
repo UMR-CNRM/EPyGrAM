@@ -10,21 +10,21 @@ The epygram library package is a set of Python classes and functions designed to
 Dependencies
 ------------
 
-EPyGrAM dependencies are available from Pypi (pip install ...), including the packages [`footprints`](https://pypi.org/project/footprints/) and [`bronx`](https://pypi.org/project/bronx/) from the Vortex project.
+EPyGrAM dependencies are available from Pypi (pip install ...), and listed in `pyproject.toml`.
+Some packages are mandatory, others are optional, only necessary for the use of specific functionalities or formats.
+Formats for which the import of the according underlying package fails are deactivated at runtime.
 
 Installation
 ------------
 
+`pip install epygram`
+
+or
+
 `pip3 install epygram`
 
-Depending on the machine and environment, you may need:
-```
-ulimit -s unlimited
-unset ECCODES_SAMPLES_PATH
-unset ECCODES_DEFINITION_PATH
-unset GRIB_SAMPLES_PATH
-unset GRIB_SAMPLES_PATH
-```
+To use specific functionalities which dependencies are not covered by default,
+you may need to manually pip install the according package(s).
 
 Tests
 -----
