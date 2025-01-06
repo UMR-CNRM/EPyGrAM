@@ -82,7 +82,7 @@ from . import base
 from . import containers
 from . import moves
 
-from . import args_catalog
+from . import cli
 from . import profiles
 from . import spectra
 

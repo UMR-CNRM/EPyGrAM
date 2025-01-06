@@ -4,31 +4,77 @@
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-import six
-
-import os
-import sys
 import argparse
 
 from bronx.syntax.parsing import str2dict
 from bronx.syntax.pretty import smooth_string
 
-# Automatically set the python path
-package_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-sys.path.insert(0, os.path.join(package_path, 'src'))
 import epygram
 from epygram import epylog, epygramError
-from epygram.args_catalog import (add_arg_to_parser,
-                                  files_management, fields_management,
-                                  misc_options, output_options,
-                                  runtime_options, graphical_options)
+from epygram.cli.args_catalog import (add_arg_to_parser,
+                                      files_management, fields_management,
+                                      misc_options, output_options,
+                                      runtime_options, graphical_options)
 
 import matplotlib.pyplot as plt
 import cartopy.feature as cf
 
 CFEATURES = [f for f in dir(cf) if all([c.isupper() for c in f])]
 
+
+def main():
+    epygram.init_env()
+    args = get_args()
+    if args.verbose:
+        epylog.setLevel('INFO')
+    else:
+        epylog.setLevel('WARNING')
+
+    cartoplot(args.filename,
+         fid=args.field,
+         Ufid=args.Ucomponentofwind,
+         Vfid=args.Vcomponentofwind,
+         refname=args.refname,
+         diffonly=args.diffonly,
+         # pre-processing
+         operation=args.operation,
+         diffoperation=args.diffoperation,
+         pressure_pa2hpa=args.pressure_unit_hpa,
+         global_shift_center=args.global_shift_center,
+         zoom=args.zoom,
+         # figure
+         title=args.title,
+         difftitle=args.difftitle,
+         # geometry
+         subzone=args.subzone,
+         # graphical settings
+         plot_method=args.plot_method,
+         minmax=args.minmax,
+         diffminmax=args.diffminmax,
+         mask_threshold=args.mask_threshold,
+         colorsnumber=args.levelsnumber,
+         diffcolorsnumber=args.difflevelsnumber,
+         colormap=args.colormap,
+         diffcolormap=args.diffcolormap,
+         center_cmap_on_0=args.center_cmap_on_0,
+         diffcenter_cmap_on_0=args.diffcenter_cmap_on_0,
+         scatter_kw=args.scatter_kw,
+         # cartography
+         parallels=args.parallels,
+         meridians=args.meridians,
+         french_depts=args.depts,
+         cartopy_features=args.cartopy_features,
+         # wind/vectors
+         vectors_subsampling=args.vectors_subsampling,
+         vector_plot_method=args.vector_plot_method,
+         wind_components_are_projected_on=args.wind_components_are_projected_on,
+         quiverkey=args.quiverkey,
+         map_factor_correction=args.map_factor_correction,
+         # output
+         savefig=args.savefig,
+         outputfilename=args.outputfilename,
+         figures_dpi=args.figures_dpi,
+         outputfmt=args.outputfmt if args.outputfmt != 'X' else None)
 
 def read_and_preprocess(resource,
                         fid,
@@ -54,7 +100,7 @@ def read_and_preprocess(resource,
     return field
 
 
-def main(filename,
+def cartoplot(filename,
          fid=None,
          Ufid=None,
          Vfid=None,
@@ -318,10 +364,10 @@ def main(filename,
             fig.savefig(outputfilename, **save_kwargs)
     else:
         plt.show()
-# end of main() ###############################################################
+# end of cartoplot() ###############################################################
 
 
-if __name__ == '__main__':
+def get_args():
 
     # 1. Parse arguments
     ####################
@@ -380,142 +426,91 @@ if __name__ == '__main__':
 
     # 2. Initializations
     ####################
-    epygram.init_env()
-    # 2.0 logs
-    epylog.setLevel('WARNING')
-    if args.verbose:
-        epylog.setLevel('INFO')
 
     # 2.1 options
     if args.Drefname is not None:
-        refname = args.Drefname
-        diffonly = True
+        args.refname = args.Drefname
+        args.diffonly = True
     else:
-        refname = args.refname
-        diffonly = False
-    diffmode = refname is not None
+        args.refname = args.refname
+        args.diffonly = False
+    args.diffmode = args.refname is not None
     if args.zone in ('C', 'CI'):
-        subzone = args.zone
+        args.subzone = args.zone
     elif args.zone == 'CIE':
-        subzone = None
+        args.subzone = None
     if args.minmax is not None:
-        minmax = args.minmax.split(',')
+        args.minmax = args.minmax.split(',')
     else:
-        minmax = None
+        args.minmax = None
     if args.diffminmax is not None:
-        diffminmax = args.diffminmax.split(',')
+        args.diffminmax = args.diffminmax.split(',')
     else:
-        diffminmax = None
+        args.diffminmax = None
     if args.zoom is not None:
-        zoom = str2dict(args.zoom, float)
+        args.zoom = str2dict(args.zoom, float)
     else:
-        zoom = None
+        args.zoom = None
     if args.operation is not None:
         _operation = args.operation.split(',')
-        operation = {'operation':_operation.pop(0).strip()}
+        args.operation = {'operation':_operation.pop(0).strip()}
         if len(_operation) > 0:
-            operation['operand'] = float(_operation.pop(0).strip())
+            args.operation['operand'] = float(_operation.pop(0).strip())
     else:
-        operation = None
+        args.operation = None
     if args.diffoperation is not None:
         _diffoperation = args.diffoperation.split(',')
-        diffoperation = {'operation':_diffoperation.pop(0).strip()}
+        args.diffoperation = {'operation':_diffoperation.pop(0).strip()}
         if len(_diffoperation) > 0:
-            diffoperation['operand'] = float(_diffoperation.pop(0).strip())
+            args.diffoperation['operand'] = float(_diffoperation.pop(0).strip())
     else:
-        diffoperation = None
+        args.diffoperation = None
     if args.parallels == 'None':
-        parallels = None
+        args.parallels = None
     elif ',' in args.parallels:
-        parallels = [float(p.strip()) for p in args.parallels.split(',')]
+        args.parallels = [float(p.strip()) for p in args.parallels.split(',')]
     else:
         try:
-            parallels = float(args.parallels)
+            args.parallels = float(args.parallels)
         except ValueError:
-            parallels = args.parallels
+            args.parallels = args.parallels
     if args.meridians == 'None':
-        meridians = None
+        args.meridians = None
     elif ',' in args.meridians:
-            meridians = [float(m.strip()) for m in args.meridians.split(',')]
+            args.meridians = [float(m.strip()) for m in args.meridians.split(',')]
     else:
         try:
-            meridians = float(args.meridians)
+            args.meridians = float(args.meridians)
         except ValueError:
-            meridians = args.meridians
+            args.meridians = args.meridians
     if args.mask_threshold is not None:
-        mask_threshold = str2dict(args.mask_threshold, float)
+        args.mask_threshold = str2dict(args.mask_threshold, float)
     else:
-        mask_threshold = None
+        args.mask_threshold = None
     if args.quiverkey is None or args.quiverkey == '':
-        quiverkey = None
+        args.quiverkey = None
     else:
-        quiverkey = str2dict(args.quiverkey, float)
+        args.quiverkey = str2dict(args.quiverkey, float)
     if args.scatter_kw is not None:
-        scatter_kw = str2dict(args.scatter_kw, int)
+        args.scatter_kw = str2dict(args.scatter_kw, int)
     else:
-        scatter_kw = None
+        args.scatter_kw = None
     if args.cartopy_features is not None:
-        cartopy_features = args.cartopy_features.split(',')
+        args.cartopy_features = args.cartopy_features.split(',')
     else:
-        cartopy_features = []
+        args.cartopy_features = []
     if args.outputfilename or args.outputfmt != 'X':
-        savefig = True
+        args.savefig = True
     else:
-        savefig = False
+        args.savefig = False
 
     # 2.2 field to be processed
     if args.Ucomponentofwind is not None or args.Vcomponentofwind is not None:
         if None in (args.Ucomponentofwind, args.Vcomponentofwind):
             raise epygramError("wind mode: both U & V components of wind must be supplied")
-        if diffmode:
+        if args.diffmode:
             raise NotImplementedError("diffmode (-d/D) AND wind mode (--wU/wV) options together.")
     elif args.field is None:
         raise epygramError("Need to specify a field (-f) or two wind fields (--wU/--wV).")
 
-    # 3. Main
-    #########
-    main(six.u(args.filename),
-         fid=args.field,
-         Ufid=args.Ucomponentofwind,
-         Vfid=args.Vcomponentofwind,
-         refname=refname,
-         diffonly=diffonly,
-         # pre-processing
-         operation=operation,
-         diffoperation=diffoperation,
-         pressure_pa2hpa=args.pressure_unit_hpa,
-         global_shift_center=args.global_shift_center,
-         zoom=zoom,
-         # figure
-         title=args.title,
-         difftitle=args.difftitle,
-         # geometry
-         subzone=subzone,
-         # graphical settings
-         plot_method=args.plot_method,
-         minmax=minmax,
-         diffminmax=diffminmax,
-         mask_threshold=mask_threshold,
-         colorsnumber=args.levelsnumber,
-         diffcolorsnumber=args.difflevelsnumber,
-         colormap=args.colormap,
-         diffcolormap=args.diffcolormap,
-         center_cmap_on_0=args.center_cmap_on_0,
-         diffcenter_cmap_on_0=args.diffcenter_cmap_on_0,
-         scatter_kw=scatter_kw,
-         # cartography
-         parallels=parallels,
-         meridians=meridians,
-         french_depts=args.depts,
-         cartopy_features=cartopy_features,
-         # wind/vectors
-         vectors_subsampling=args.vectors_subsampling,
-         vector_plot_method=args.vector_plot_method,
-         wind_components_are_projected_on=args.wind_components_are_projected_on,
-         quiverkey=quiverkey,
-         map_factor_correction=args.map_factor_correction,
-         # output
-         savefig=savefig,
-         outputfilename=args.outputfilename,
-         figures_dpi=args.figures_dpi,
-         outputfmt=args.outputfmt if args.outputfmt != 'X' else None)
+    return args

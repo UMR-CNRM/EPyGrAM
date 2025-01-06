@@ -40,11 +40,15 @@ dependencies=[
         "matplotlib",
         "netCDF4",
         "pyproj",
-        "pyyaml" , # issue with bronx !! soon fixed
+        "pyyaml" ,  # issue with bronx !! soon fixed
 	"ectrans4py",
         "falfilfa4py==1.0.0",  # consistent with eccodes 2.38.0
         "eccodes==2.38.0",
             ]
+
+[project.scripts]
+epy_cartoplot = "epygram.cli.cartoplot:main"
+
 [tool.setuptools]
 include-package-data = true
 
