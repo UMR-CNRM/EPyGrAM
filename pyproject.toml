@@ -49,6 +49,9 @@ dependencies=[
 [project.scripts]
 epy_cartoplot = "epygram.cli.cartoplot:main"
 epy_ddhlfa_plot = "epygram.cli.ddhlfa_plot:main"
+epy_domain_maker = "epygram.cli.domain_maker:main"
+epy_what_the_grib = "epygram.cli.what_the_grib:main"
+epygram = "epygram.cli:main"
 
 [tool.setuptools]
 include-package-data = true
