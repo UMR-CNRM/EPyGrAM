@@ -48,6 +48,7 @@ dependencies=[
 
 [project.scripts]
 epy_cartoplot = "epygram.cli.cartoplot:main"
+epy_ddhlfa_plot = "epygram.cli.ddhlfa_plot:main"
 
 [tool.setuptools]
 include-package-data = true
