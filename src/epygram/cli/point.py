@@ -15,9 +15,9 @@ import epygram
 from epygram import epylog
 from epygram.util import write_formatted_table
 from .args_catalog import (add_arg_to_parser,
-                           files_management, fields_management,
-                           misc_options, runtime_options,
-                           extraction_options, output_options)
+                           files_args, fields_args,
+                           misc_args, runtime_args,
+                           extraction_args, output_args)
 
 
 def main():
@@ -284,24 +284,24 @@ def get_args():
     parser = argparse.ArgumentParser(description="An EPyGrAM tool for extracting from a resource the value of meteorological fields\
                                                   on a geographical point.",
                                      epilog='End of help for: %(prog)s (EPyGrAM-' + epygram.__version__ + ')')
-    add_arg_to_parser(parser, files_management['principal_file'])
+    add_arg_to_parser(parser, files_args['principal_file'])
     flds = parser.add_mutually_exclusive_group()
-    add_arg_to_parser(flds, fields_management['field'])
-    add_arg_to_parser(flds, fields_management['list_of_fields'])
-    add_arg_to_parser(parser, extraction_options['point_coordinates'])
-    add_arg_to_parser(parser, extraction_options['horizontal_interpolation'])
-    add_arg_to_parser(parser, extraction_options['external_distance'])
+    add_arg_to_parser(flds, fields_args['field'])
+    add_arg_to_parser(flds, fields_args['list_of_fields'])
+    add_arg_to_parser(parser, extraction_args['point_coordinates'])
+    add_arg_to_parser(parser, extraction_args['horizontal_interpolation'])
+    add_arg_to_parser(parser, extraction_args['external_distance'])
     diffmodes = parser.add_mutually_exclusive_group()
-    add_arg_to_parser(diffmodes, files_management['file_to_refer_in_diff'])
-    add_arg_to_parser(diffmodes, files_management['file_to_refer_in_diffonly'])
-    add_arg_to_parser(parser, misc_options['pressure_unit_hpa'])
-    add_arg_to_parser(parser, misc_options['operation_on_field'])
-    add_arg_to_parser(parser, output_options['precision'])
-    add_arg_to_parser(parser, output_options['lonlat_precision'])
-    add_arg_to_parser(parser, output_options['GRIB_short_fid'])
-    add_arg_to_parser(parser, output_options['stdout'])
-    add_arg_to_parser(parser, output_options['outputfilename'])
-    add_arg_to_parser(parser, runtime_options['verbose'])
+    add_arg_to_parser(diffmodes, files_args['file_to_refer_in_diff'])
+    add_arg_to_parser(diffmodes, files_args['file_to_refer_in_diffonly'])
+    add_arg_to_parser(parser, misc_args['pressure_unit_hpa'])
+    add_arg_to_parser(parser, misc_args['operation_on_field'])
+    add_arg_to_parser(parser, output_args['precision'])
+    add_arg_to_parser(parser, output_args['lonlat_precision'])
+    add_arg_to_parser(parser, output_args['GRIB_short_fid'])
+    add_arg_to_parser(parser, output_args['stdout'])
+    add_arg_to_parser(parser, output_args['outputfilename'])
+    add_arg_to_parser(parser, runtime_args['verbose'])
     args = parser.parse_args()
 
     # 2. Initializations

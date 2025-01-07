@@ -11,9 +11,9 @@ from epygram import epylog
 from epygram.geometries import domain_making as dm
 
 from epygram.cli.args_catalog import (add_arg_to_parser,
-                                      domain_maker_options,
-                                      runtime_options,
-                                      graphical_options)
+                                      domain_maker_args,
+                                      runtime_args,
+                                      graphical_args)
 
 
 def main():
@@ -147,14 +147,14 @@ def get_args():
                                                   and generate the needed namelist blocks.',
                                      epilog='End of help for: %(prog)s (EPyGrAM-' + epygram.__version__ + ')')
 
-    add_arg_to_parser(parser, domain_maker_options['mode'])
-    add_arg_to_parser(parser, domain_maker_options['no_display'])
-    add_arg_to_parser(parser, domain_maker_options['maximize_CI_in_E'])
-    add_arg_to_parser(parser, domain_maker_options['truncation'])
-    add_arg_to_parser(parser, domain_maker_options['orography_subtruncation'])
-    add_arg_to_parser(parser, runtime_options['verbose'])
-    add_arg_to_parser(parser, graphical_options['french_departments'])
-    add_arg_to_parser(parser, graphical_options['background'], default=True)
+    add_arg_to_parser(parser, domain_maker_args['mode'])
+    add_arg_to_parser(parser, domain_maker_args['no_display'])
+    add_arg_to_parser(parser, domain_maker_args['maximize_CI_in_E'])
+    add_arg_to_parser(parser, domain_maker_args['truncation'])
+    add_arg_to_parser(parser, domain_maker_args['orography_subtruncation'])
+    add_arg_to_parser(parser, runtime_args['verbose'])
+    add_arg_to_parser(parser, graphical_args['french_departments'])
+    add_arg_to_parser(parser, graphical_args['background'], default=True)
 
     return parser.parse_args()
 

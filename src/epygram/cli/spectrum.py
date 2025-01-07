@@ -16,9 +16,9 @@ import epygram
 from epygram import epylog, epygramError
 import epygram.spectra as esp
 from .args_catalog import (add_arg_to_parser,
-                           files_management, fields_management,
-                           misc_options, output_options,
-                           runtime_options, graphical_options)
+                           files_args, fields_args,
+                           misc_args, output_args,
+                           runtime_args, graphical_args)
 import matplotlib.pyplot as plt
 
 
@@ -310,26 +310,26 @@ def get_args():
     parser = argparse.ArgumentParser(description="An EPyGrAM tool for computing DCT spectrum of \
                                                   meteorological fields (or difference of fields) from a resource.",
                                      epilog='End of help for: %(prog)s (EPyGrAM-' + epygram.__version__ + ')')
-    add_arg_to_parser(parser, files_management['principal_file'])
+    add_arg_to_parser(parser, files_args['principal_file'])
     flds = parser.add_mutually_exclusive_group()
-    add_arg_to_parser(flds, fields_management['field'])
-    add_arg_to_parser(flds, fields_management['list_of_fields'])
-    add_arg_to_parser(parser, fields_management['windfieldU'])
-    add_arg_to_parser(parser, fields_management['windfieldV'])
+    add_arg_to_parser(flds, fields_args['field'])
+    add_arg_to_parser(flds, fields_args['list_of_fields'])
+    add_arg_to_parser(parser, fields_args['windfieldU'])
+    add_arg_to_parser(parser, fields_args['windfieldV'])
     multi = parser.add_mutually_exclusive_group()
-    add_arg_to_parser(multi, files_management['file_to_refer_in_diff'])
-    add_arg_to_parser(multi, files_management['file_to_refer_in_diffonly'])
-    add_arg_to_parser(multi, graphical_options['superpose_spectra_plots'])
-    add_arg_to_parser(parser, output_options['output'])
-    add_arg_to_parser(parser, output_options['outputfilename'])
-    add_arg_to_parser(parser, output_options['noplot'])
-    add_arg_to_parser(parser, misc_options['LAMzone'])
-    add_arg_to_parser(parser, graphical_options['legend'])
-    add_arg_to_parser(parser, graphical_options['scientifical_unit'])
-    add_arg_to_parser(parser, graphical_options['spectra_slopes'])
-    add_arg_to_parser(parser, graphical_options['spectra_zoom'])
-    add_arg_to_parser(parser, graphical_options['figures_dpi'])
-    add_arg_to_parser(parser, runtime_options['verbose'])
+    add_arg_to_parser(multi, files_args['file_to_refer_in_diff'])
+    add_arg_to_parser(multi, files_args['file_to_refer_in_diffonly'])
+    add_arg_to_parser(multi, graphical_args['superpose_spectra_plots'])
+    add_arg_to_parser(parser, output_args['output'])
+    add_arg_to_parser(parser, output_args['outputfilename'])
+    add_arg_to_parser(parser, output_args['noplot'])
+    add_arg_to_parser(parser, misc_args['LAMzone'])
+    add_arg_to_parser(parser, graphical_args['legend'])
+    add_arg_to_parser(parser, graphical_args['scientifical_unit'])
+    add_arg_to_parser(parser, graphical_args['spectra_slopes'])
+    add_arg_to_parser(parser, graphical_args['spectra_zoom'])
+    add_arg_to_parser(parser, graphical_args['figures_dpi'])
+    add_arg_to_parser(parser, runtime_args['verbose'])
     args = parser.parse_args()
 
     # 2. Initializations

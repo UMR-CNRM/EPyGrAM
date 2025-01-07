@@ -13,9 +13,9 @@ import epygram
 from epygram.extra import griberies
 from epygram.formats.conversion.functions import batch_convert
 from .args_catalog import (add_arg_to_parser,
-                                      files_management, fields_management,
-                                      misc_options, runtime_options,
-                                      operational_options, output_options)
+                                      files_args, fields_args,
+                                      misc_args, runtime_args,
+                                      operational_args, output_args)
 
 epylog = footprints.loggers.getLogger(__name__)
 
@@ -62,36 +62,36 @@ def get_args():
                                                   Spectral fields are converted into gridpoints.',
                                      epilog='End of help for: %(prog)s (EPyGrAM-' + epygram.__version__ + ')')
 
-    add_arg_to_parser(parser, files_management['several_files'])
+    add_arg_to_parser(parser, files_args['several_files'])
     flds = parser.add_mutually_exclusive_group()
-    add_arg_to_parser(flds, fields_management['field'])
-    add_arg_to_parser(flds, fields_management['list_of_fields'])
-    add_arg_to_parser(parser, misc_options['LAMzone'])
-    add_arg_to_parser(parser, output_options['output_format'])
+    add_arg_to_parser(flds, fields_args['field'])
+    add_arg_to_parser(flds, fields_args['list_of_fields'])
+    add_arg_to_parser(parser, misc_args['LAMzone'])
+    add_arg_to_parser(parser, output_args['output_format'])
     # compression/precision options
-    add_arg_to_parser(parser, fields_management['netCDF_compression'])
-    add_arg_to_parser(parser, fields_management['GRIB2_packing'])
-    add_arg_to_parser(parser, output_options['GeoPoints_lonlat_precision'])
-    add_arg_to_parser(parser, output_options['GeoPoints_precision'])
+    add_arg_to_parser(parser, fields_args['netCDF_compression'])
+    add_arg_to_parser(parser, fields_args['GRIB2_packing'])
+    add_arg_to_parser(parser, output_args['GeoPoints_lonlat_precision'])
+    add_arg_to_parser(parser, output_args['GeoPoints_precision'])
     # GRIB specifics
-    add_arg_to_parser(parser, operational_options['suite'])
-    add_arg_to_parser(parser, operational_options['typeOfGeneratingProcess'])
-    add_arg_to_parser(parser, operational_options['numod'])
-    add_arg_to_parser(parser, output_options['GRIB_other_options'])
+    add_arg_to_parser(parser, operational_args['suite'])
+    add_arg_to_parser(parser, operational_args['typeOfGeneratingProcess'])
+    add_arg_to_parser(parser, operational_args['numod'])
+    add_arg_to_parser(parser, output_args['GRIB_other_options'])
     # GeoPoints specific
-    add_arg_to_parser(parser, misc_options['array_flattening_order'])
+    add_arg_to_parser(parser, misc_args['array_flattening_order'])
     cols = parser.add_mutually_exclusive_group()
-    add_arg_to_parser(cols, output_options['GeoPoints_llv'])
-    add_arg_to_parser(cols, output_options['GeoPoints_columns'])
-    add_arg_to_parser(parser, output_options['GeoPoints_noheader'])
+    add_arg_to_parser(cols, output_args['GeoPoints_llv'])
+    add_arg_to_parser(cols, output_args['GeoPoints_columns'])
+    add_arg_to_parser(parser, output_args['GeoPoints_noheader'])
     # netCDF
-    add_arg_to_parser(parser, misc_options['flatten_horizontal_grids'])
+    add_arg_to_parser(parser, misc_args['flatten_horizontal_grids'])
     # others
-    add_arg_to_parser(parser, output_options['GRIB_short_fid'])
-    add_arg_to_parser(parser, runtime_options['threads_number'])
+    add_arg_to_parser(parser, output_args['GRIB_short_fid'])
+    add_arg_to_parser(parser, runtime_args['threads_number'])
     status = parser.add_mutually_exclusive_group()
-    add_arg_to_parser(status, runtime_options['verbose'])
-    add_arg_to_parser(status, runtime_options['percentage'])
+    add_arg_to_parser(status, runtime_args['verbose'])
+    add_arg_to_parser(status, runtime_args['percentage'])
 
     args = parser.parse_args()
 

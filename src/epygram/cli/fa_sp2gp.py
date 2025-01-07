@@ -10,8 +10,8 @@ from bronx.fancies.display import printstatus
 
 import epygram
 from epygram import epylog
-from .args_catalog import (add_arg_to_parser, files_management,
-                           fields_management, runtime_options)
+from .args_catalog import (add_arg_to_parser, files_args,
+                           fields_args, runtime_args)
 
 
 def main():
@@ -81,12 +81,12 @@ def get_args():
 
     parser = argparse.ArgumentParser(description="An EPyGrAM tool for transforming spectral fields from a FA to gridpoint.",
                                      epilog='End of help for: %(prog)s (EPyGrAM-' + epygram.__version__ + ')')
-    add_arg_to_parser(parser, files_management['principal_file'])
-    add_arg_to_parser(parser, files_management['in_place'])
-    add_arg_to_parser(parser, fields_management['FA_set_compression'])
+    add_arg_to_parser(parser, files_args['principal_file'])
+    add_arg_to_parser(parser, files_args['in_place'])
+    add_arg_to_parser(parser, fields_args['FA_set_compression'])
     status = parser.add_mutually_exclusive_group()
-    add_arg_to_parser(status, runtime_options['verbose'])
-    add_arg_to_parser(status, runtime_options['percentage'])
+    add_arg_to_parser(status, runtime_args['verbose'])
+    add_arg_to_parser(status, runtime_args['percentage'])
     args = parser.parse_args()
 
     if args.verbose:

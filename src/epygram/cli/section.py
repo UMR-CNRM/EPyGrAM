@@ -14,10 +14,10 @@ from epygram import epylog, epygramError
 
 import matplotlib.pyplot as plt
 from .args_catalog import (add_arg_to_parser,
-                           files_management, fields_management,
-                           misc_options, output_options,
-                           runtime_options, graphical_options,
-                           extraction_options)
+                           files_args, fields_args,
+                           misc_args, output_args,
+                           runtime_args, graphical_args,
+                           extraction_args)
 
 
 def main():
@@ -270,46 +270,46 @@ def get_args():
     parser = argparse.ArgumentParser(description='An EPyGrAM tool for extracting (and plotting) vertical sections \
                                                   of meteorological fields from a resource.',
                                      epilog='End of help for: %(prog)s (EPyGrAM-' + epygram.__version__ + ')')
-    add_arg_to_parser(parser, files_management['principal_file'])
-    add_arg_to_parser(parser, fields_management['vertical_field'])
-    add_arg_to_parser(parser, extraction_options['section_starting_point'])
-    add_arg_to_parser(parser, extraction_options['section_ending_point'])
-    add_arg_to_parser(parser, extraction_options['horizontal_interpolation'],
+    add_arg_to_parser(parser, files_args['principal_file'])
+    add_arg_to_parser(parser, fields_args['vertical_field'])
+    add_arg_to_parser(parser, extraction_args['section_starting_point'])
+    add_arg_to_parser(parser, extraction_args['section_ending_point'])
+    add_arg_to_parser(parser, extraction_args['horizontal_interpolation'],
                       default='linear',
                       help="interpolation mode from field grid to point/section\
                             coordinates. Among ('nearest', 'linear', 'cubic').\
                             Defaults to 'linear'.")
     t = parser.add_mutually_exclusive_group()
-    add_arg_to_parser(t, extraction_options['section_transect_points_number'])
-    add_arg_to_parser(t, extraction_options['section_transect_resolution'])
+    add_arg_to_parser(t, extraction_args['section_transect_points_number'])
+    add_arg_to_parser(t, extraction_args['section_transect_resolution'])
     diffmodes = parser.add_mutually_exclusive_group()
-    add_arg_to_parser(diffmodes, files_management['file_to_refer_in_diff'])
-    add_arg_to_parser(diffmodes, files_management['file_to_refer_in_diffonly'])
-    add_arg_to_parser(parser, output_options['output'])
-    add_arg_to_parser(parser, output_options['outputfilename'])
+    add_arg_to_parser(diffmodes, files_args['file_to_refer_in_diff'])
+    add_arg_to_parser(diffmodes, files_args['file_to_refer_in_diffonly'])
+    add_arg_to_parser(parser, output_args['output'])
+    add_arg_to_parser(parser, output_args['outputfilename'])
     Y = parser.add_mutually_exclusive_group()
-    add_arg_to_parser(Y, extraction_options['verticalcoord2pressure'])
-    add_arg_to_parser(Y, extraction_options['verticalcoord2height'])
-    add_arg_to_parser(Y, extraction_options['verticalcoord2altitude'])
-    add_arg_to_parser(parser, extraction_options['no_cheap_height_conversion'])
-    add_arg_to_parser(parser, graphical_options['legend'])
-    add_arg_to_parser(parser, graphical_options['graphicmode'])
-    add_arg_to_parser(parser, graphical_options['minmax'])
-    add_arg_to_parser(parser, graphical_options['diffminmax'])
-    add_arg_to_parser(parser, graphical_options['levels_number'])
-    add_arg_to_parser(parser, graphical_options['diff_levels_number'])
-    add_arg_to_parser(parser, graphical_options['colormap'])
-    add_arg_to_parser(parser, graphical_options['diffcolormap'])
-    add_arg_to_parser(parser, graphical_options['center_cmap_on_0'])
-    add_arg_to_parser(parser, graphical_options['diff_center_cmap_on_0'])
-    add_arg_to_parser(parser, graphical_options['vertical_zoom'])
-    add_arg_to_parser(parser, graphical_options['figures_dpi'])
-    add_arg_to_parser(parser, graphical_options['section_abscissa'])
-    add_arg_to_parser(parser, graphical_options['global_shift_center'])
-    add_arg_to_parser(parser, misc_options['operation_on_field'])
-    add_arg_to_parser(parser, misc_options['diffoperation_on_field'])
-    add_arg_to_parser(parser, misc_options['mask_threshold'])
-    add_arg_to_parser(parser, runtime_options['verbose'])
+    add_arg_to_parser(Y, extraction_args['verticalcoord2pressure'])
+    add_arg_to_parser(Y, extraction_args['verticalcoord2height'])
+    add_arg_to_parser(Y, extraction_args['verticalcoord2altitude'])
+    add_arg_to_parser(parser, extraction_args['no_cheap_height_conversion'])
+    add_arg_to_parser(parser, graphical_args['legend'])
+    add_arg_to_parser(parser, graphical_args['graphicmode'])
+    add_arg_to_parser(parser, graphical_args['minmax'])
+    add_arg_to_parser(parser, graphical_args['diffminmax'])
+    add_arg_to_parser(parser, graphical_args['levels_number'])
+    add_arg_to_parser(parser, graphical_args['diff_levels_number'])
+    add_arg_to_parser(parser, graphical_args['colormap'])
+    add_arg_to_parser(parser, graphical_args['diffcolormap'])
+    add_arg_to_parser(parser, graphical_args['center_cmap_on_0'])
+    add_arg_to_parser(parser, graphical_args['diff_center_cmap_on_0'])
+    add_arg_to_parser(parser, graphical_args['vertical_zoom'])
+    add_arg_to_parser(parser, graphical_args['figures_dpi'])
+    add_arg_to_parser(parser, graphical_args['section_abscissa'])
+    add_arg_to_parser(parser, graphical_args['global_shift_center'])
+    add_arg_to_parser(parser, misc_args['operation_on_field'])
+    add_arg_to_parser(parser, misc_args['diffoperation_on_field'])
+    add_arg_to_parser(parser, misc_args['mask_threshold'])
+    add_arg_to_parser(parser, runtime_args['verbose'])
     args = parser.parse_args()
 
     # 2. Initializations

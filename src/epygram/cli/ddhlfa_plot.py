@@ -8,9 +8,9 @@ import argparse
 
 import epygram
 from epygram import epylog
-from epygram.cli.args_catalog import (add_arg_to_parser, files_management,
-                                      fields_management, graphical_options,
-                                      runtime_options)
+from epygram.cli.args_catalog import (add_arg_to_parser, files_args,
+                                      fields_args, graphical_args,
+                                      runtime_args)
 from epygram.fields.V1DField import plotprofiles
 
 import matplotlib.pyplot as plt
@@ -111,16 +111,16 @@ def get_args():
                                                   plots of meteorological fields from a DDHLFA.',
                                      epilog='End of help for: %(prog)s (' + epygramstr + ' v' + epygram.__version__ + ')')
 
-    add_arg_to_parser(parser, files_management['principal_file'])
+    add_arg_to_parser(parser, files_args['principal_file'])
     flds = parser.add_mutually_exclusive_group(required=True)
-    add_arg_to_parser(flds, fields_management['DDHLFA_multiple_fields'])
-    add_arg_to_parser(flds, fields_management['list_of_fields'])
-    add_arg_to_parser(parser, fields_management['DDHLFA_domain'])
-    add_arg_to_parser(parser, files_management['file_to_refer_in_diff'])
-    add_arg_to_parser(parser, graphical_options['legend'])
-    add_arg_to_parser(parser, graphical_options['scientifical_unit'])
-    add_arg_to_parser(parser, graphical_options['vertical_logscale'])
-    add_arg_to_parser(parser, runtime_options['verbose'])
+    add_arg_to_parser(flds, fields_args['DDHLFA_multiple_fields'])
+    add_arg_to_parser(flds, fields_args['list_of_fields'])
+    add_arg_to_parser(parser, fields_args['DDHLFA_domain'])
+    add_arg_to_parser(parser, files_args['file_to_refer_in_diff'])
+    add_arg_to_parser(parser, graphical_args['legend'])
+    add_arg_to_parser(parser, graphical_args['scientifical_unit'])
+    add_arg_to_parser(parser, graphical_args['vertical_logscale'])
+    add_arg_to_parser(parser, runtime_args['verbose'])
 
     args = parser.parse_args()
 

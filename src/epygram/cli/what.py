@@ -10,8 +10,8 @@ import argparse
 import epygram
 from epygram import epylog
 from .args_catalog import (add_arg_to_parser,
-                           files_management, fields_management,
-                           runtime_options, output_options)
+                           files_args, fields_args,
+                           runtime_args, output_args)
 
 
 def main():
@@ -67,12 +67,12 @@ def get_args():
 
     parser = argparse.ArgumentParser(description="An EPyGrAM tool for asking what's inside a resource.",
                                      epilog='End of help for: %(prog)s (EPyGrAM-' + epygram.__version__ + ')')
-    add_arg_to_parser(parser, files_management['principal_file'])
-    add_arg_to_parser(parser, output_options['get_field_details'])
-    add_arg_to_parser(parser, fields_management['GRIB_what_mode'])
-    add_arg_to_parser(parser, fields_management['GRIB_sort'])
-    add_arg_to_parser(parser, fields_management['sort_fields'])
-    add_arg_to_parser(parser, output_options['stdout'])
-    add_arg_to_parser(parser, runtime_options['verbose'])
+    add_arg_to_parser(parser, files_args['principal_file'])
+    add_arg_to_parser(parser, output_args['get_field_details'])
+    add_arg_to_parser(parser, fields_args['GRIB_what_mode'])
+    add_arg_to_parser(parser, fields_args['GRIB_sort'])
+    add_arg_to_parser(parser, fields_args['sort_fields'])
+    add_arg_to_parser(parser, output_args['stdout'])
+    add_arg_to_parser(parser, runtime_args['verbose'])
     return parser.parse_args()
 

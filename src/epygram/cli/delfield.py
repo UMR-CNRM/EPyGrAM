@@ -11,8 +11,8 @@ from bronx.fancies.display import printstatus
 import epygram
 from epygram import epylog, epygramError
 from .args_catalog import (add_arg_to_parser,
-                           files_management, fields_management,
-                           runtime_options)
+                           files_args, fields_args,
+                           runtime_args)
 from epygram.extra import griberies
 
 
@@ -114,15 +114,15 @@ def get_args():
     ####################
     parser = argparse.ArgumentParser(description='An EPyGrAM tool for removing field(s) from a resource.',
                                      epilog='End of help for: %(prog)s (EPyGrAM-' + epygram.__version__ + ')')
-    add_arg_to_parser(parser, files_management['principal_file'])
-    add_arg_to_parser(parser, files_management['in_place'])
+    add_arg_to_parser(parser, files_args['principal_file'])
+    add_arg_to_parser(parser, files_args['in_place'])
     flds = parser.add_mutually_exclusive_group()
-    add_arg_to_parser(flds, fields_management['field'])
-    add_arg_to_parser(flds, fields_management['list_of_fields'])
-    add_arg_to_parser(parser, fields_management['reverse_fields_selection'])
+    add_arg_to_parser(flds, fields_args['field'])
+    add_arg_to_parser(flds, fields_args['list_of_fields'])
+    add_arg_to_parser(parser, fields_args['reverse_fields_selection'])
     status = parser.add_mutually_exclusive_group()
-    add_arg_to_parser(status, runtime_options['verbose'])
-    add_arg_to_parser(status, runtime_options['percentage'])
+    add_arg_to_parser(status, runtime_args['verbose'])
+    add_arg_to_parser(status, runtime_args['percentage'])
     args = parser.parse_args()
 
     # 2. Initializations
