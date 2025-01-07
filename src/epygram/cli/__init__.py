@@ -11,7 +11,7 @@ import importlib
 import epygram
 
 
-commands = [f.strip('.py') for f in os.listdir(os.path.dirname(__file__))
+commands = [f[:-3] for f in os.listdir(os.path.dirname(__file__))
             if f.endswith('.py') and f not in ('__init__.py', 'args_catalog.py')]
 
 

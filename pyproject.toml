@@ -49,11 +49,21 @@ dependencies=[
 [project.scripts]
 epygram = "epygram.cli:main"
 epy_cartoplot = "epygram.cli.cartoplot:main"
-epy_ddhlfa_plot = "epygram.cli.ddhlfa_plot:main"
-epy_domain_maker = "epygram.cli.domain_maker:main"
-epy_what_the_grib = "epygram.cli.what_the_grib:main"
-epy_fa_sp2gp = "epygram.cli.fa_sp2gp:main"
 epy_convert = "epygram.cli.convert:main"
+epy_ddhlfa_plot = "epygram.cli.ddhlfa_plot:main"
+epy_delfield = "epygram.cli.delfield:main"
+epy_domain_maker = "epygram.cli.domain_maker:main"
+epy_fa_sp2gp = "epygram.cli.fa_sp2gp:main"
+epy_histogram = "epygram.cli.histogram:main"
+epy_movefield = "epygram.cli.movefield:main"
+epy_plot3d = "epygram.cli.plot3d:main"
+epy_point = "epygram.cli.point:main"
+epy_profile = "epygram.cli.profile:main"
+epy_section = "epygram.cli.section:main"
+epy_spectrum = "epygram.cli.spectrum:main"
+epy_stats = "epygram.cli.stats:main"
+epy_what = "epygram.cli.what:main"
+epy_what_the_grib = "epygram.cli.what_the_grib:main"
 
 [tool.setuptools]
 include-package-data = true

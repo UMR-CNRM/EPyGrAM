@@ -10,12 +10,11 @@ from bronx.fancies.display import printstatus
 
 import epygram
 from epygram import epylog
-from epygram.cli.args_catalog import (add_arg_to_parser, files_management,
-                                      fields_management, runtime_options)
+from .args_catalog import (add_arg_to_parser, files_management,
+                           fields_management, runtime_options)
 
 
 def main():
-
     epygram.init_env()
     args = get_args()
     if args.verbose:
