@@ -53,6 +53,7 @@ epy_ddhlfa_plot = "epygram.cli.ddhlfa_plot:main"
 epy_domain_maker = "epygram.cli.domain_maker:main"
 epy_what_the_grib = "epygram.cli.what_the_grib:main"
 epy_fa_sp2gp = "epygram.cli.fa_sp2gp:main"
+epy_convert = "epygram.cli.convert:main"
 
 [tool.setuptools]
 include-package-data = true

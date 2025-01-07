@@ -22,7 +22,7 @@ import footprints
 from footprints import proxy as fpx
 from bronx.system.unistd import stderr_redirected
 
-from epygram import config, epygramError
+from .. import config, epygramError
 from . import fafields
 
 __all__ = []
@@ -131,40 +131,5 @@ def resource(filename, openmode, fmt=None, **kwargs):
     return fpx.dataformat(filename=filename, openmode=openmode, format=fmt,
                           **kwargs)
 
+from . import conversion
 
-def fid_converter(initial_fid, initial_fmt, target_fmt,
-                  grib_short_fid=False):
-    """
-    Creates and returns the fid in format *target_fmt* from an *initial_fid* in
-    *initial_fmt*.
-
-    *grib_short_fid* condense GRIB fid in string.
-    """
-    if initial_fmt == 'generic' and target_fmt == 'GRIB2':
-        target_fid = copy.copy(initial_fid)
-    elif initial_fmt == 'GRIB' and target_fmt in ('netCDF', 'GeoPoints'):
-        # TODO: ? this is very basic !
-        if grib_short_fid:
-            target_fid = '-'.join([str(initial_fid[k])
-                                   for k in sorted(initial_fid.keys())])
-        else:
-            target_fid = str(initial_fid).replace(' ', '').replace("'", "").replace("{", "_")
-            """
-            FIXME: doesn't work
-            try:
-                from .GRIB import namesgribdef
-                fid = copy.copy(initial_fid)
-                fid.pop('name', None)
-                fid.pop('shortName', None)
-                fid.pop('editionNumber', None)
-                fid.pop('tablesVersion', None)
-                cfVarName = namesgribdef.cfVarName(fid,
-                                                   'grib{}'.format(initial_fid['editionNumber']))
-                if len(cfVarName) == 1:
-                    target_fid = list(cfVarName.keys())[0]
-            except Exception:
-                pass"""
-    else:
-        raise NotImplementedError("this kind of conversion.")
-
-    return target_fid

@@ -32,7 +32,7 @@ def get_args():
                                      epilog='End of help for: %(prog)s (EPyGrAM-' + epygram.__version__ + ')')
     parser.add_argument('command',
             help=' '.join(['Command to be executed: will call the "main" function from epygram.cli.<command> module.',
-                           'Available commands are: {}.'.format(commands),
-                           'Each command is then auto-documented with option -h.']))
+                           'Each command is then auto-documented: `epygram <command> -h`.']),
+            choices=commands)
     return parser.parse_args()
 
