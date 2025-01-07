@@ -37,6 +37,17 @@ Documentation
 To generate Sphinx doc: `make doc`. It will be generated in `docs/build/html`.
 Online doc of the latest release on `master` branch is available at https://umr-cnrm.github.io/EPyGrAM-doc
 
+Applicative tools
+-----------------
+
+Some applicative tools in command line are provided and installed by pip.
+These tools are available as `epy_*` (pip should have placed them in your `$PATH`) and, starting from version 1.6.0,
+through a single command line `epygram` with sub-commands:
+* cf. `epygram -h` to list available sub-commands
+* and `epygram <sub-command>` for auto-documentation of each tool/sub-command.
+
+Example: to plot a field, `epygram cartoplot <file> -f <field>` is equivalent to `epy_cartoplot <file> -f <field>` or `epy_cartoplot.py <file> -f <field>` in versions prior to 1.6.0.
+
 License
 -------
 
