@@ -5,5 +5,4 @@
 # http://www.cecill.info
 
 from . import functions
-from . import converters
 

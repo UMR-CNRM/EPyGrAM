@@ -12,6 +12,7 @@ from bronx.syntax.parsing import str2dict
 import epygram
 from epygram.extra import griberies
 from epygram.formats.conversion.functions import batch_convert
+from epygram.formats.conversion import converters
 from .args_catalog import (add_arg_to_parser,
                                       files_args, fields_args,
                                       misc_args, runtime_args,

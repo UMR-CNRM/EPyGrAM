@@ -9,7 +9,6 @@ Conversion functions (API).
 import time
 
 import footprints
-import taylorism
 from bronx.fancies.display import printstatus
 
 from .. import resource as eopen
@@ -191,6 +190,7 @@ def batch_convert(filenames,
     Other named arguments depend on the output format, and are defined in the
     Workers footprints attributes !
     """
+    import taylorism
     # build a dummy Converter of the right type
     dummy_converter = footprints.proxy.worker(filename='', output_format_suffix=output_format_suffix)
     instructions_keys = dummy_converter.footprint_attributes
