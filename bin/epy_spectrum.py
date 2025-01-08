@@ -28,6 +28,35 @@ from epygram.args_catalog import (add_arg_to_parser,
                                   misc_options, output_options,
                                   runtime_options, graphical_options)
 import matplotlib.pyplot as plt
+from epygram.geometries import GaussGeometry, SpectralGeometry
+
+
+def get_spectral_geometry(field, resource, verbose=False):
+    """
+    Returns the SpectralGeometry object of the field or resource.
+
+    If the field has no spectral geometry, return the spectral geometry of the resource.
+    If the resource has no spectral geometry and the grid is a Gaussian grid, 
+    return a spectralGeometry object assuming linear and triangular truncation.
+    """
+    spectral_geometry = None
+    if field.spectral_geometry is not None:
+        spectral_geometry = field.spectral_geometry
+    elif hasattr(resource, "spectral_geometry"):
+        spectral_geometry = resource.spectral_geometry
+    elif isinstance(field.geometry, GaussGeometry):
+        if verbose:
+            print(
+                "Build spectral geometry assuming linear and triangular truncation"
+            )
+        truncation = dict(
+            max=field.geometry.dimensions["lat_number"] - 1,
+            shape="triangular",
+        )
+        spectral_geometry = SpectralGeometry("legendre", truncation)
+    if verbose:
+        print("Spectral geometry is", spectral_geometry)
+    return spectral_geometry
 
 
 def main(filename,
@@ -93,10 +122,11 @@ def main(filename,
             field = resource.readfield(f)
             if not field.geometry.grid.get('LAMzone', False):
                 subzone = None
+            spectral_geometry = get_spectral_geometry(field, resource, verbose=verbose)
             spectra.append(field.spectrum(f,
-                                          spectral_geometry=resource.spectral_geometry,
-                                          subzone=subzone,
-                                          verbose=verbose))
+                           spectral_geometry=spectral_geometry,
+                           subzone=subzone,
+                           verbose=verbose))
             if not noplot:
                 # plot
                 if legend is not None:
@@ -157,8 +187,9 @@ def main(filename,
                         name += _u[i]
                     else:
                         name += '*'
+            spectral_geometry = get_spectral_geometry(field, resource, verbose=verbose)
             spectra.append(field.spectrum(name,
-                                          spectral_geometry=resource.spectral_geometry,
+                                          spectral_geometry=spectral_geometry,
                                           subzone=subzone,
                                           verbose=verbose))
             if not noplot:
@@ -205,8 +236,9 @@ def main(filename,
                 if not field.geometry.grid.get('LAMzone', False):
                     subzone = None
                 if not diffonly:
+                    spectral_geometry = get_spectral_geometry(field, resource, verbose=verbose)
                     spectra.append(field.spectrum(f,
-                                                  spectral_geometry=resource.spectral_geometry,
+                                                  spectral_geometry=spectral_geometry,
                                                   subzone=subzone,
                                                   verbose=verbose))
             if f in reffidlist:
@@ -215,15 +247,17 @@ def main(filename,
                 if not field.geometry.grid.get('LAMzone', False):
                     subzone = None
                 if not diffonly:
+                    spectral_geometry = get_spectral_geometry(reffield, reference, verbose=verbose)
                     refspectra.append(reffield.spectrum(f,
-                                                        spectral_geometry=reference.spectral_geometry,
+                                                        spectral_geometry=spectral_geometry,
                                                         subzone=subzone,
                                                         verbose=verbose))
             if f in intersectionfidlist:
                 epylog.info("- on difference")
                 diff = field - reffield
+                spectral_geometry = get_spectral_geometry(diff, resource, verbose=verbose)
                 diffspectra.append(diff.spectrum(f,
-                                                 spectral_geometry=resource.spectral_geometry,
+                                                 spectral_geometry=spectral_geometry,
                                                  subzone=subzone,
                                                  verbose=verbose))
             # PLOTS
