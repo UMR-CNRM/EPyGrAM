@@ -124,9 +124,9 @@ def main(filename,
                 subzone = None
             spectral_geometry = get_spectral_geometry(field, resource, verbose=verbose)
             spectra.append(field.spectrum(f,
-                           spectral_geometry=spectral_geometry,
-                           subzone=subzone,
-                           verbose=verbose))
+                                          spectral_geometry=spectral_geometry,
+                                          subzone=subzone,
+                                          verbose=verbose))
             if not noplot:
                 # plot
                 if legend is not None:
