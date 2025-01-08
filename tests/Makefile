@@ -15,7 +15,7 @@ all: tests_full apptools notebooks_check
 get_data:
 	bash ./get_data.sh
 
-# Run tests with nose
+# Run tests
 tests:
 	($(PYTEST) $(TEST_BASE) 2>&1) | tee $@.log
 

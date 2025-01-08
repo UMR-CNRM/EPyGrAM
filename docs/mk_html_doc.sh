@@ -43,7 +43,7 @@ fi
 
 # 2. Cmaps
 echo "> Create cmaps..."
-python3 dynamic/make_cmaps_png_for_doc.py -d $EPYGRAM_DOC
+python dynamic/make_cmaps_png_for_doc.py -d $EPYGRAM_DOC
 
 # Source compilation
 cd source

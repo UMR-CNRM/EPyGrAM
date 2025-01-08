@@ -8,17 +8,15 @@ dynamic = ["version"]
 description = "EPyGrAM : Enhanced Python for Graphics and Analysis of Meteorological fields"
 authors = [
     { name = "Alexandre MARY", email = "alexandre.mary@meteo.fr" },
-    { name = "Sébastien Riette"  , email = "sebastien.riette@meteo.fr"}
-]
+    { name = "Sébastien Riette", email = "sebastien.riette@meteo.fr"}
+           ]
 maintainers = [
-  { name = "Alexandre MARY", email = "alexandre.mary@meteo.fr" },
-  { name = "Sébastien Riette"  , email = "sebastien.riette@meteo.fr"}
-]
-
+    { name = "Alexandre MARY", email = "alexandre.mary@meteo.fr" },
+    { name = "Sébastien Riette", email = "sebastien.riette@meteo.fr"}
+               ]
 readme = "README.md"
 license = {file = "LICENSE.txt"}
 keywords = ["NWP", "meteorology", "GRIB", "FA"]
-
 classifiers = [
     'Development Status :: 5 - Production/Stable',
     'Intended Audience :: Science/Research',
@@ -28,23 +26,22 @@ classifiers = [
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Operating System :: Unix',
-]
-
-
+               ]
 requires-python = ">=3.10"
-dependencies=[
-        "footprints",
-        "bronx",
-        "numpy",
-        "cartopy==0.23.0",  # versions older than 0.21.0 not compatible with python 3.10; more recent versions to be tested
-        "matplotlib",
-        "netCDF4",
-        "pyproj",
-        "pyyaml" ,  # issue with bronx !! soon fixed
-	"ectrans4py",
-        "falfilfa4py==1.0.0",  # consistent with eccodes 2.38.0
-        "eccodes==2.38.0",
-            ]
+dependencies = [
+    "bronx",
+    "cartopy==0.23.0",  # versions older than 0.21.0 not compatible with python 3.10; more recent versions to be tested
+    "eccodes==2.38.0",  # ! consistency with falfilfa4py !
+    "ectrans4py",
+    "falfilfa4py==1.0.2",  # ! consistency with eccodes !
+    "footprints",
+    "matplotlib",
+    "netCDF4",
+    "numpy",
+    "pyproj",
+    "pytest",
+    "pyyaml" ,  # to be removed when bronx dependency is fixed
+                ]
 
 [project.scripts]
 epygram = "epygram.cli:main"
@@ -78,46 +75,48 @@ version = {attr = "epygram.__version__"}
 [project.optional-dependencies]
 docs = [
     "sphinx",
-       ]
-graphics = [
-        "vtk",
-        "contourpy",
+    "jupyter",  # for the gallery
+    "nbsphinx",  # for the gallery
+    "pyresample",  # used in the gallery
+    "scipy",  # used in the gallery
         ]
-features=[
-  "taylorism",
-  "pyresample",
-  "scipy",
-  "web.py"
-    ]
-extra_formats=[
-  "h5py",
-  "pillow >= 5.4.1"
-  ]
-
+graphics = [
+    "vtk",
+    "contourpy",
+            ]
+features = [
+    "taylorism",
+    "pyresample",
+    "scipy",
+    "web.py"
+            ]
+extra_formats = [
+    "h5py",
+    "pillow >= 5.4.1"
+                 ]
 vortex = [
-  "vortex"
-      ]
+    "vortex"
+          ]
 all = [
-        "taylorism",
-        "footprints",
-        "bronx",
-	"falfilfa4py",
-        "numpy",
-        "cartopy",
-        "matplotlib",
-        "eccodes",
-        "vtk",
-        "vortex",
-        "pillow >= 5.4.1", 
-        "contourpy",
-        "h5py",
-        "netCDF4",
-        "pyproj",     
-        "pyresample",
-        "scipy",
-        "six",       
-        "web.py"
-         ]
+    "bronx",
+    "cartopy",
+    "contourpy",
+    "eccodes",
+    "falfilfa4py",
+    "footprints",
+    "h5py",
+    "matplotlib",
+    "netCDF4",
+    "numpy",
+    "pillow >= 5.4.1", 
+    "pyproj",     
+    "pyresample",
+    "scipy",
+    "taylorism",
+    "vtk",
+    "vortex",
+    "web.py",
+       ]
 
 [project.urls]
 documentation = "https://umr-cnrm.github.io/EPyGrAM-doc"
@@ -128,8 +127,7 @@ tracker = "https://github.com/UMR-CNRM/EPyGrAM/issues"
 [tool.pytest.ini_options]
 pythonpath = [
     "src",
-             ]
-
+              ]
 testpaths = [
     "tests"
-            ]
+             ]
