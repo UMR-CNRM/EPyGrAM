@@ -11,8 +11,8 @@ geometries and fields coming from FA files, for convenience only.
 
 >>> import epygram
 >>> epygram.init_env()
->>> arp = epygram.formats.resource('icmsharpe+0000', 'r')  # an ARPEGE file
->>> aro = epygram.formats.resource('ICMSHAROM+0042', 'r')  # an AROME file
+>>> arp = epygram.open('icmsharpe+0000', 'r')  # an ARPEGE file
+>>> aro = epygram.open('ICMSHAROM+0042', 'r')  # an AROME file
 
 -----------------------------------------------------------
 
@@ -132,7 +132,7 @@ tiles from a map tiles server.
 >>> import epygram
 Vortex 1.4.0 loaded ( Friday 19. October 2018, at 14:40:31 )
 >>> epygram.init_env() #initialisation of environment, for FA/LFI and spectrals transforms sub-libraries
->>> r = epygram.formats.resource(filename, 'r')
+>>> r = epygram.open(filename, 'r')
 >>> 
 >>> #We need a geometry containing the altitude of the ground
 ... zs = r.readfield('SPECSURFGEOPOTEN') #surface geopotential

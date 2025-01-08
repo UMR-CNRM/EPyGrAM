@@ -13,7 +13,7 @@ What are the different formats implemented in my configuration ?
 
 There is a *proxy* to open an existing resource without making an explicit reference to its format, e.g.:
 
->>> a_resource = epygram.formats.resource('ICMSHAROM+0042', 'r')
+>>> a_resource = epygram.open('ICMSHAROM+0042', 'r')
 
 (where 'r' stands for 'read' opening mode and 'ICMSHAROM+0042' is the filename
 of the resource), that uses the underneath guessing function,
@@ -24,7 +24,7 @@ that you may find useful (?)
 
 For opening a new resource in writing mode, specifying the format is though necessary:
 
->>> a_resource = epygram.formats.resource('ICMSHAROM+0042_new', 'w', fmt='FA')
+>>> a_resource = epygram.open('ICMSHAROM+0042_new', 'w', fmt='FA')
 
 All resources of different formats share a set of common methods, such as
 :meth:`listfields`, :meth:`readfield()` and :meth:`writefield`, that behave
@@ -37,7 +37,7 @@ Explore resources
 -----------------
 Let's open an historic FA file from AROME and explore it.
 
->>> r = epygram.formats.resource('ICMSHAROM+0042', 'r')
+>>> r = epygram.open('ICMSHAROM+0042', 'r')
 >>> r.format
 'FA'
 >>> type(r)
@@ -167,7 +167,7 @@ fields differently, for instance GRIB with a set of **key:value** pairs.
 As an example for GRIB, the :mod:`epygram.formats.GRIB.GRIB.listfields` method
 returns a list of dicts:
 
->>> g = epygram.formats.resource('GRIDHSTFRANGP0025+0003', 'r')
+>>> g = epygram.open('GRIDHSTFRANGP0025+0003', 'r')
 >>> g.format
 'GRIB'
 >>> g.listfields()
@@ -188,8 +188,8 @@ Juggling with resources
 Transferring a field from one resource to another is almost as simple as
 telling it:
 
->>> source_r = epygram.formats.resource('ICMSHAROM+0042', 'r')
->>> dest_r = epygram.formats.resource('ICMSHAROM+0042_bis', 'a')
+>>> source_r = epygram.open('ICMSHAROM+0042', 'r')
+>>> dest_r = epygram.open('ICMSHAROM+0042_bis', 'a')
 >>> f = source_r.readfield('SURFTEMPERATURE')
 >>> type(f)
 <class 'epygram.fields.H2DField.H2DField'>
@@ -229,7 +229,7 @@ diagnostics on a multivalidities resource for example).
 Here are some examples to build a resource modifier:
 
 >>> from footprints import proxy as fpx
->>> r = epygram.formats.resource(filename, 'r')
+>>> r = epygram.open(filename, 'r')
 >>> rDiag = fpx.resource_modificator(name='Diagnostics', resource=r, openmode='r', ...)
 >>> r3d = fpx.resource_modificator(name='CombineLevels', resource=r)
 >>> r_time = fpx.resource_modificator(name='MultiValidities', resources=[r1, r2, ...])

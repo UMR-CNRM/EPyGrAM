@@ -18,7 +18,7 @@ About Resources
 
     >>> import epygram
     >>> epygram.init_env()
-    >>> fcst5 = epygram.formats.resource(filename='../ICMSHAROM+0005', openmode='r')
+    >>> fcst5 = epygram.open(filename='../ICMSHAROM+0005', openmode='r')
 
   And, get the list of its fields:
 
@@ -59,8 +59,8 @@ FA: Some specific features
 
     >>> import epygram
     >>> epygram.init_env()
-    >>> fcst5 = epygram.formats.resource(filename='../ICMSHAROM+0005', openmode='r', fmt='FA')
-    >>> new_fcst5 = epygram.formats.resource(filename='../ICMSHAROM+0005_bis', openmode='w',
+    >>> fcst5 = epygram.open(filename='../ICMSHAROM+0005', openmode='r', fmt='FA')
+    >>> new_fcst5 = epygram.open(filename='../ICMSHAROM+0005_bis', openmode='w',
                                              fmt='FA',
                                              headername=fcst5.headername, validity=fcst5.validity)
 
@@ -68,7 +68,7 @@ FA: Some specific features
 
   .. code-block:: python
 
-    >>> new_fcst5 = epygram.formats.resource(filename='../ICMSHAROM+0005_bis', openmode='w',
+    >>> new_fcst5 = epygram.open(filename='../ICMSHAROM+0005_bis', openmode='w',
                                              fmt='FA',
                                              headername=fcst5.headername, validity=fcst5.validity,
                                              cdiden=fcst5.cdiden,

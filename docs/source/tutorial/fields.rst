@@ -7,7 +7,7 @@ Fields
 
 >>> import epygram
 >>> epygram.init_env()
->>> r = epygram.formats.resource('ICMSHAROM+0042', 'r')
+>>> r = epygram.open('ICMSHAROM+0042', 'r')
 >>> field = r.readfield('S058WIND.U.PHYS')
 
 **Components of a meteorological field**
@@ -284,7 +284,7 @@ or :meth:`Field.plot3DStream` to plot (stream lines or tubes).
 >>> import vtk #We need to import vtk before epygram even if do not use it directly in the script
 >>> import epygram
 >>> epygram.init_env() #initialisation of environment, for FA/LFI and spectrals transforms sub-libraries
->>> r = epygram.formats.resource(filename, 'r', true3d=True)
+>>> r = epygram.open(filename, 'r', true3d=True)
 >>> 
 >>> CF = r.readfield('S---CLOUD_FRACTI')
 >>> 
