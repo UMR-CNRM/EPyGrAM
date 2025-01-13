@@ -33,7 +33,7 @@ dependencies = [
     "cartopy==0.23.0",  # versions older than 0.21.0 not compatible with python 3.10; more recent versions to be tested
     "eccodes==2.38.0",  # ! consistency with falfilfa4py !
     "ectrans4py",
-    "falfilfa4py==1.0.2",  # ! consistency with eccodes !
+    "falfilfa4py==1.0.3",  # ! consistency with eccodes !
     "footprints",
     "matplotlib",
     "netCDF4",
