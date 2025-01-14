@@ -79,6 +79,8 @@ docs = [
     "nbsphinx",  # for the gallery
     "pyresample",  # used in the gallery
     "scipy",  # used in the gallery
+    "vgrid",  # used in the gallery
+    "bokeh",  # used in the gallery
         ]
 graphics = [
     "vtk",
@@ -88,6 +90,7 @@ features = [
     "taylorism",
     "pyresample",
     "scipy",
+    "vgrid",
     "web.py"
             ]
 extra_formats = [
@@ -99,6 +102,7 @@ vortex = [
           ]
 all = [
     "bronx",
+    "bokeh",
     "cartopy",
     "contourpy",
     "eccodes",
@@ -113,8 +117,9 @@ all = [
     "pyresample",
     "scipy",
     "taylorism",
-    "vtk",
+    "vgrid",
     "vortex",
+    "vtk",
     "web.py",
        ]
 
