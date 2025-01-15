@@ -21,7 +21,7 @@
 
 \huge
 \begin{center}
-\texttt{epygram-1.5.0} \textit{cheatsheet}
+\texttt{epygram-1.6.0} \textit{cheatsheet}
 \end{center}
 \normalsize
 %\maketitle
@@ -48,9 +48,8 @@ Please refer to the complete HTML documention for description of the arguments a
 \rowcolor{gray!50}
 \multicolumn{2}{|c|}{\textbf{Resources}}\\
 \hline
-\texttt{r = epygram.formats.resource("path/to/file", "r")} & open an existing file with "r" = read mode (or "a" = append)\\
-\texttt{r = epygram.formats.resource("path/to/file", "w",
-$~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~$fmt="FA"} & open a new file with "w" = write mode; required format to be specified\\
+\texttt{r = epygram.open("path/to/file", "r")} & open an existing file with "r" = read mode (or "a" = append)\\
+\texttt{r = epygram.open("path/to/file", "w", fmt="FA")} & open a new file with "w" = write mode; required format to be specified\\
 \texttt{r.format, epygram.formats.guess("path/to/file")} & get the format of a resource, a file\\
 \texttt{r.what()} & comprehensive description of the resource contents\\
 \texttt{r.listfields()} & list the fields contained in the resource\\

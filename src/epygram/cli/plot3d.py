@@ -3,8 +3,10 @@
 # Copyright (c) Météo France (2014-)
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
+"""An EPyGrAM tool for simple 3d plots of meteorological fields from a resource using `vtk`."""
 
 import argparse
+import numpy
 
 from bronx.syntax.parsing import str2dict
 from bronx.syntax.pretty import smooth_string
@@ -12,25 +14,30 @@ from bronx.meteo import constants
 from footprints import proxy as fpx
 
 import epygram
-from epygram import epylog, epygramError
+from epygram import epylog as logger
+from epygram import epygramError
+from . import epilog
 from .args_catalog import (add_arg_to_parser,
-                           files_args, fields_args,
-                           misc_args, output_args,
-                           runtime_args, graphical_args,
+                           files_args,
+                           fields_args,
+                           misc_args,
+                           output_args,
+                           runtime_args,
+                           graphical_args,
                            extraction_args)
 from epygram.base import FieldSet
 from epygram.geometries import VGeometry
 
-import numpy
+_description = __doc__
 
 
 def main():
     epygram.init_env()
     args = get_args()
     if args.verbose:
-        epylog.setLevel('INFO')
+        logger.setLevel('INFO')
     else:
-        epylog.setLevel('WARNING')
+        logger.setLevel('WARNING')
     plot3d(
          args.plotmode,
          args.filename,
@@ -423,7 +430,7 @@ def plot3d(
     """
     if outputfilename and not output:
         raise epygramError('*output* format must be defined if outputfilename is supplied.')
-    epylog.warning("""This tool is quite new: please report anything suspect""")
+    logger.warning("""This tool is quite new: please report anything suspect""")
 
     resource = epygram.formats.resource(filename, openmode='r')
     diffmode = refname is not None
@@ -607,7 +614,7 @@ def plot3d(
     if output:
         if output not in ('png'):
             raise NotImplementedError("This output format is not (yet) implemented with 3D view: " + str(output))
-        epylog.info("save plots...")
+        logger.info("save plots...")
         suffix = '.'.join(['plot', output])
         parameter = smooth_string(fieldseed)
         # main resource
@@ -644,10 +651,7 @@ def get_args():
 
     # 1. Parse arguments
     ####################
-    parser = argparse.ArgumentParser(description=' '.join(['An EPyGrAM tool for simple 3d plots',
-                                                           'of meteorological fields from a resource.',
-                                                           'Uses and requires the Python package `vtk`.']),
-                                     epilog='End of help for: %(prog)s (EPyGrAM-' + epygram.__version__ + ')')
+    parser = argparse.ArgumentParser(description=_description, epilog=epilog)
 
     add_arg_to_parser(parser, graphical_args['plotmode'])
     add_arg_to_parser(parser, files_args['principal_file'])

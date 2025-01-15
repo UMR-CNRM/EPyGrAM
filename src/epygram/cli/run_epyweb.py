@@ -3,12 +3,16 @@
 # Copyright (c) Météo France (2014-)
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
+"""A web interface for plotting with epygram and vortex."""
 
 import argparse
 
 import epygram
 from epygram.extra import epyweb
+from . import epilog
 from .args_catalog import add_arg_to_parser, runtime_args
+
+_description = __doc__
 
 
 def main():
@@ -24,8 +28,7 @@ def main():
 
 
 def get_args():
-    parser = argparse.ArgumentParser(description='A web interface for plotting with epygram and vortex.',
-                                     epilog='End of help for: %(prog)s (EPyGrAM-' + epygram.__version__ + ')')
+    parser = argparse.ArgumentParser(description=_description, epilog=epilog)
     parser.add_argument('-o',
                         action='store_true',
                         dest='open_browser',

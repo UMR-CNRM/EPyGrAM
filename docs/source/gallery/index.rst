@@ -1,5 +1,5 @@
-Gallery
-=======
+Gallery of use-cases
+====================
 
 .. _gallery-index:
 

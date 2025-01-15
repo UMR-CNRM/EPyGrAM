@@ -3,25 +3,28 @@
 # Copyright (c) Météo France (2014-)
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
+"""An interactive EPyGrAM tool for defining a LAM domain, visualize it, and generate the needed namelist blocks."""
 
 import argparse
 
 import epygram
-from epygram import epylog
+from epygram import epylog as logger
 from epygram.geometries import domain_making as dm
+from . import epilog
+from .args_catalog import (add_arg_to_parser,
+                           domain_maker_args,
+                           runtime_args,
+                           graphical_args)
 
-from epygram.cli.args_catalog import (add_arg_to_parser,
-                                      domain_maker_args,
-                                      runtime_args,
-                                      graphical_args)
+_description = __doc__
 
 
 def main():
     args = get_args()
     if args.verbose:
-        epylog.setLevel('INFO')
+        logger.setLevel('INFO')
     else:
-        epylog.setLevel('WARNING')
+        logger.setLevel('WARNING')
     domain_maker(args.mode,
                  display=not args.no_display,
                  maximize_CI_in_E=args.maximize_CI_in_E,
@@ -143,9 +146,7 @@ def domain_maker(mode,
 
 def get_args():
 
-    parser = argparse.ArgumentParser(description='An interactive EPyGrAM tool for defining a LAM domain, visualize it, \
-                                                  and generate the needed namelist blocks.',
-                                     epilog='End of help for: %(prog)s (EPyGrAM-' + epygram.__version__ + ')')
+    parser = argparse.ArgumentParser(description=_description, epilog=epilog)
 
     add_arg_to_parser(parser, domain_maker_args['mode'])
     add_arg_to_parser(parser, domain_maker_args['no_display'])

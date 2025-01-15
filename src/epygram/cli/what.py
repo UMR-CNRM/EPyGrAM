@@ -3,24 +3,30 @@
 # Copyright (c) Météo France (2014-)
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
+"""An EPyGrAM tool for asking what's inside a resource."""
 
 import sys
 import argparse
 
 import epygram
-from epygram import epylog
+from epygram import epylog as logger
+from . import epilog
 from .args_catalog import (add_arg_to_parser,
-                           files_args, fields_args,
-                           runtime_args, output_args)
+                           files_args,
+                           fields_args,
+                           runtime_args,
+                           output_args)
+
+_description = __doc__
 
 
 def main():
     epygram.init_env()
     args = get_args()
     if args.verbose:
-        epylog.setLevel('INFO')
+        logger.setLevel('INFO')
     else:
-        epylog.setLevel('WARNING')
+        logger.setLevel('WARNING')
     what(args.filename,
          details=args.details,
          sortfields=args.sortfields,
@@ -51,7 +57,7 @@ def what(filename,
     """
     resource = epygram.formats.resource(filename, openmode='r')
     if resource.format not in ('GRIB', 'FA', 'DDHLFA', 'LFA', 'LFI', 'TIFFMF'):
-        epylog.warning(" ".join(["tool NOT TESTED with format",
+        logger.warning(" ".join(["tool NOT TESTED with format",
                                  resource.format, "!"]))
     if stdoutput:
         out = sys.stdout
@@ -65,8 +71,7 @@ def what(filename,
 
 def get_args():
 
-    parser = argparse.ArgumentParser(description="An EPyGrAM tool for asking what's inside a resource.",
-                                     epilog='End of help for: %(prog)s (EPyGrAM-' + epygram.__version__ + ')')
+    parser = argparse.ArgumentParser(description=_description, epilog=epilog)
     add_arg_to_parser(parser, files_args['principal_file'])
     add_arg_to_parser(parser, output_args['get_field_details'])
     add_arg_to_parser(parser, fields_args['GRIB_what_mode'])

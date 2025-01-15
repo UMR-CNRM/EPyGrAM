@@ -22,12 +22,12 @@ User Guide:
 .. toctree::
    :maxdepth: 1
 
-   In a glance - some examples <examples>
-   Tutorial <tutorial/index>
-   Gallery of use-cases <gallery/index>
-   FAQ <FAQ>
-   AppTools - commandline tools <apptools>
-   Colormaps <cmaps>
+   examples
+   tutorial/index
+   FAQ
+   apptools
+   cmaps
+   gallery/index
 
 The ``epygram`` :download:`Cheatsheet <_static/cheatsheet.pdf>`
 

@@ -37,4 +37,5 @@ Accessories
    colormapping
    profiles
    spectra
-   args_catalog
+   cli/index
+

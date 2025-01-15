@@ -3,26 +3,32 @@
 # Copyright (c) Météo France (2014-)
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
+"""An EPyGrAM tool for moving field(s) from a resource to another (fields are not removed from the source file)."""
 
 import argparse
 
 from bronx.fancies.display import printstatus
 
 import epygram
-from epygram import epylog, epygramError
+from epygram import epylog as logger
+from epygram import epygramError
 from epygram.extra import griberies
+from . import epilog
 from .args_catalog import (add_arg_to_parser,
-                           files_args, fields_args,
+                           files_args,
+                           fields_args,
                            runtime_args)
+
+_description = __doc__
 
 
 def main():
     epygram.init_env()
     args = get_args()
     if args.verbose:
-        epylog.setLevel('INFO')
+        logger.setLevel('INFO')
     else:
-        epylog.setLevel('WARNING')
+        logger.setLevel('WARNING')
     movefield(args.filename,
               args.refname,
               args.fieldseed,
@@ -52,7 +58,7 @@ def movefield(filename,
     """
     target = epygram.formats.resource(filename, openmode='a')
     if target.format not in ('GRIB', 'FA', 'LFI'):
-        epylog.warning(" ".join(["tool NOT TESTED with format",
+        logger.warning(" ".join(["tool NOT TESTED with format",
                                  target.format, "!"]))
     source = epygram.formats.resource(refname, openmode='r')
     fidlist = source.find_fields_in_resource(seed=fieldseed)
@@ -101,7 +107,7 @@ def movefield(filename,
         n = 1
         for f in fidlist:
             if progressmode == 'verbose':
-                epylog.info(f)
+                logger.info(f)
             elif progressmode == 'percentage':
                 printstatus(n, numfields)
                 n += 1
@@ -130,7 +136,7 @@ def movefield(filename,
         n = 1
         for f in targetfields:
             if progressmode == 'verbose':
-                epylog.info(f)
+                logger.info(f)
             elif progressmode == 'percentage':
                 printstatus(n, numfields)
                 n += 1
@@ -146,9 +152,7 @@ def get_args():
 
     # ## 1. Parse arguments
     ######################
-    parser = argparse.ArgumentParser(description="An EPyGrAM tool for moving field(s) from a resource to another\
-                                                  (fields are not removed from the source file).",
-                                     epilog='End of help for: %(prog)s (EPyGrAM-' + epygram.__version__ + ')')
+    parser = argparse.ArgumentParser(description=_description, epilog=epilog)
     add_arg_to_parser(parser, files_args['principal_file'])
     add_arg_to_parser(parser, files_args['source_file'])
     add_arg_to_parser(parser, files_args['in_place'])

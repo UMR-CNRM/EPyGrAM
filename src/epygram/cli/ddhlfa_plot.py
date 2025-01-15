@@ -3,26 +3,32 @@
 # Copyright (c) Météo France (2014-)
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
+"""An EPyGrAM tool for simple plots of meteorological fields from a DDHLFA."""
 
 import argparse
 
 import epygram
-from epygram import epylog
-from epygram.cli.args_catalog import (add_arg_to_parser, files_args,
-                                      fields_args, graphical_args,
-                                      runtime_args)
+from epygram import epylog as logger
+from . import epilog
+from .args_catalog import (add_arg_to_parser,
+                           files_args,
+                           fields_args,
+                           graphical_args,
+                           runtime_args)
 from epygram.fields.V1DField import plotprofiles
 
 import matplotlib.pyplot as plt
+
+_description = __doc__
 
 
 def main():
     epygram.init_env()
     args = get_args()
     if args.verbose:
-        epylog.setLevel('INFO')
+        logger.setLevel('INFO')
     else:
-        epylog.setLevel('WARNING')
+        logger.setLevel('WARNING')
     ddhlfa_plot(args.filename,
                 args.fieldseed,
                 args.domains,
@@ -59,7 +65,7 @@ def ddhlfa_plot(filename,
         plots = {}
         fidlist = resource.find_fields_in_resource(seed=fieldseed, fieldtype='V1D')
         for f in fidlist:
-            epylog.info(f)
+            logger.info(f)
             fields = resource.readfield(f)
             fields = epygram.base.FieldSet([fields[i - 1] for i in domains])
             if legend is not None:
@@ -79,7 +85,7 @@ def ddhlfa_plot(filename,
         intersectionfidlist = list(set(fidlist).intersection(set(reffidlist)))
         intersectionfidlist.sort()
         for f in intersectionfidlist:
-            epylog.info(f)
+            logger.info(f)
             fields = resource.readfield(f)
             fields = epygram.base.FieldSet([fields[i - 1] for i in domains])
             reffields = reference.readfield(f)
@@ -106,10 +112,7 @@ def get_args():
 
     # ## 1. Parse arguments
     ######################
-    epygramstr = 'EPyGrAM'
-    parser = argparse.ArgumentParser(description='An ' + epygramstr + ' tool for simple\
-                                                  plots of meteorological fields from a DDHLFA.',
-                                     epilog='End of help for: %(prog)s (' + epygramstr + ' v' + epygram.__version__ + ')')
+    parser = argparse.ArgumentParser(description=_description, epilog=epilog)
 
     add_arg_to_parser(parser, files_args['principal_file'])
     flds = parser.add_mutually_exclusive_group(required=True)

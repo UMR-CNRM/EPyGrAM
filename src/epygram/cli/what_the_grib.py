@@ -3,6 +3,7 @@
 # Copyright (c) Météo France (2014-)
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
+"""An interface to ask GRIB definitions."""
 
 import argparse
 
@@ -11,6 +12,9 @@ from epygram.extra.griberies import parse_GRIBstr_todict
 from epygram.extra.griberies.definitions.fa import FaGribDef
 from epygram.extra.griberies.definitions.names import NamesGribDef
 from epygram.extra.griberies.concepts import Concept
+from . import epilog
+
+_description = __doc__
 
 namesgribdef = NamesGribDef()
 fagribdef = FaGribDef()
@@ -48,8 +52,7 @@ def what_the_grib(fid, concept, grib_edition, exact, format_as_dict):
 
 def get_args():
 
-    parser = argparse.ArgumentParser(description='An interface to ask GRIB definitions.',
-                                     epilog='End of help for: %(prog)s (EPyGrAM-' + epygram.__version__ + ')')
+    parser = argparse.ArgumentParser(description=_description, epilog=epilog)
     parser.add_argument('fid',
                         help='Complete or partial GRIB fid or fieldname in any concept.')
     parser.add_argument('-c', '--concept',

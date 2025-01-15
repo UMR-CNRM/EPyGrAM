@@ -3,26 +3,32 @@
 # Copyright (c) Météo France (2014-)
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
+"""An EPyGrAM tool for removing field(s) from a resource."""
 
 import argparse
 
 from bronx.fancies.display import printstatus
 
 import epygram
-from epygram import epylog, epygramError
+from epygram import epygramError
+from epygram import epylog as logger
+from . import epilog
 from .args_catalog import (add_arg_to_parser,
-                           files_args, fields_args,
+                           files_args,
+                           fields_args,
                            runtime_args)
 from epygram.extra import griberies
+
+_description = __doc__
 
 
 def main():
     epygram.init_env()
     args = get_args()
     if args.verbose:
-        epylog.setLevel('INFO')
+        logger.setLevel('INFO')
     else:
-        epylog.setLevel('WARNING')
+        logger.setLevel('WARNING')
     delfield(args.filename,
              args.fieldseed,
              reverse=args.reverse,
@@ -50,7 +56,7 @@ def delfield(filename,
     source = epygram.formats.resource(filename, openmode='a')
     fidlist = source.find_fields_in_resource(seed=fieldseed)
     if source.format not in ('GRIB', 'FA', 'LFI'):
-        epylog.warning(" ".join(["tool NOT TESTED with format",
+        logger.warning(" ".join(["tool NOT TESTED with format",
                                  source.format, "!"]))
 
     if in_place:
@@ -88,7 +94,7 @@ def delfield(filename,
         n = 1
         for f in outputfidlist:
             if progressmode == 'verbose':
-                epylog.info(str(f))
+                logger.info(str(f))
             elif progressmode == 'percentage':
                 printstatus(n, numfields)
                 n += 1
@@ -112,8 +118,7 @@ def get_args():
 
     # 1. Parse arguments
     ####################
-    parser = argparse.ArgumentParser(description='An EPyGrAM tool for removing field(s) from a resource.',
-                                     epilog='End of help for: %(prog)s (EPyGrAM-' + epygram.__version__ + ')')
+    parser = argparse.ArgumentParser(description=_description, epilog=epilog)
     add_arg_to_parser(parser, files_args['principal_file'])
     add_arg_to_parser(parser, files_args['in_place'])
     flds = parser.add_mutually_exclusive_group()

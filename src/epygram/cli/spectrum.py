@@ -3,6 +3,7 @@
 # Copyright (c) Météo France (2014-)
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
+"""An EPyGrAM tool for computing DCT spectrum of meteorological fields (or difference of fields) from a resource."""
 
 import numpy
 import argparse
@@ -13,14 +14,21 @@ from bronx.syntax.parsing import str2dict
 from bronx.syntax.pretty import smooth_string
 
 import epygram
-from epygram import epylog, epygramError
+from epygram import epylog as logger
+from epygram import epygramError
 import epygram.spectra as esp
+from . import epilog
 from .args_catalog import (add_arg_to_parser,
-                           files_args, fields_args,
-                           misc_args, output_args,
-                           runtime_args, graphical_args)
+                           files_args,
+                           fields_args,
+                           misc_args,
+                           output_args,
+                           runtime_args,
+                           graphical_args)
 import matplotlib.pyplot as plt
 from epygram.geometries import GaussGeometry, SpectralGeometry
+
+_description = __doc__
 
 
 def get_spectral_geometry(field, resource, verbose=False):
@@ -55,9 +63,9 @@ def main():
     epygram.init_env()
     args = get_args()
     if args.verbose:
-        epylog.setLevel('INFO')
+        logger.setLevel('INFO')
     else:
-        epylog.setLevel('WARNING')
+        logger.setLevel('WARNING')
     spectrum(
         args.filename,
         args.fieldseed,
@@ -137,7 +145,7 @@ def spectrum(
         if resource.format == 'GRIB':
             fidlist = [FPDict(f) for f in fidlist]
         for f in fidlist:
-            epylog.info(str(f))
+            logger.info(str(f))
             field = resource.readfield(f)
             if not field.geometry.grid.get('LAMzone', False):
                 subzone = None
@@ -179,7 +187,7 @@ def spectrum(
             Vfid = [FPDict(f) for f in Vfid]
         assert len(Ufid) == len(Vfid), "number of fields for U mismatch those for V."
         for l in range(0, len(Ufid)):
-            epylog.info(str(Ufid[l]) + str(Vfid[l]))
+            logger.info(str(Ufid[l]) + str(Vfid[l]))
             U = resource.readfield(Ufid[l])
             if U.spectral:
                 U.sp2gp()
@@ -248,9 +256,9 @@ def spectrum(
         intersectionfidlist = list(set(fidlist).intersection(set(reffidlist)))
         unionfidlist.sort()
         for f in unionfidlist:
-            epylog.info(str(f))
+            logger.info(str(f))
             if f in fidlist:
-                epylog.info("- in " + resource.container.basename)
+                logger.info("- in " + resource.container.basename)
                 field = resource.readfield(f)
                 if not field.geometry.grid.get('LAMzone', False):
                     subzone = None
@@ -261,7 +269,7 @@ def spectrum(
                                                   subzone=subzone,
                                                   verbose=verbose))
             if f in reffidlist:
-                epylog.info("- in " + reference.container.basename)
+                logger.info("- in " + reference.container.basename)
                 reffield = reference.readfield(f)
                 if not field.geometry.grid.get('LAMzone', False):
                     subzone = None
@@ -272,7 +280,7 @@ def spectrum(
                                                         subzone=subzone,
                                                         verbose=verbose))
             if f in intersectionfidlist:
-                epylog.info("- on difference")
+                logger.info("- on difference")
                 diff = field - reffield
                 spectral_geometry = get_spectral_geometry(diff, resource, verbose=verbose)
                 diffspectra.append(diff.spectrum(f,
@@ -305,7 +313,7 @@ def spectrum(
                     plt.show()
 
     # Output
-    epylog.info("save output...")
+    logger.info("save output...")
     suffix = "spectrum.out"
     # spectra
     if not diffmode:
@@ -341,9 +349,7 @@ def get_args():
 
     # 1. Parse arguments
     ####################
-    parser = argparse.ArgumentParser(description="An EPyGrAM tool for computing DCT spectrum of \
-                                                  meteorological fields (or difference of fields) from a resource.",
-                                     epilog='End of help for: %(prog)s (EPyGrAM-' + epygram.__version__ + ')')
+    parser = argparse.ArgumentParser(description=_description, epilog=epilog)
     add_arg_to_parser(parser, files_args['principal_file'])
     flds = parser.add_mutually_exclusive_group()
     add_arg_to_parser(flds, fields_args['field'])

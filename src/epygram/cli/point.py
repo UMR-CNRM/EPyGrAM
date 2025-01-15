@@ -3,6 +3,7 @@
 # Copyright (c) Météo France (2014-)
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
+"""An EPyGrAM tool for extracting from a resource the value of meteorological fields on a geographical point."""
 
 import argparse
 import sys
@@ -12,21 +13,27 @@ from footprints import FPDict
 from bronx.syntax.pretty import smooth_string
 
 import epygram
-from epygram import epylog
+from epygram import epylog as logger
 from epygram.util import write_formatted_table
+from . import epilog
 from .args_catalog import (add_arg_to_parser,
-                           files_args, fields_args,
-                           misc_args, runtime_args,
-                           extraction_args, output_args)
+                           files_args,
+                           fields_args,
+                           misc_args,
+                           runtime_args,
+                           extraction_args,
+                           output_args)
+
+_description = __doc__
 
 
 def main():
     epygram.init_env()
     args = get_args()
     if args.verbose:
-        epylog.setLevel('INFO')
+        logger.setLevel('INFO')
     else:
-        epylog.setLevel('WARNING')
+        logger.setLevel('WARNING')
     point(
          args.filename,
          args.fieldseed,
@@ -89,7 +96,7 @@ def point(
     """
     resource = epygram.formats.resource(filename, openmode='r')
     if resource.format not in ('GRIB', 'FA', 'LFI'):
-        epylog.warning(" ".join(["tool NOT TESTED with format",
+        logger.warning(" ".join(["tool NOT TESTED with format",
                                  resource.format, "!"]))
     diffmode = refname is not None
     if diffmode:
@@ -107,7 +114,7 @@ def point(
             fidlist = [FPDict(d) for d in fidlist]
         firstfield = True
         for f in fidlist:
-            epylog.info(f)
+            logger.info(f)
             field = resource.readfield(f)
             if field.spectral:
                 field.sp2gp()
@@ -145,7 +152,7 @@ def point(
         unionfidlist.sort()
         firstfield = True
         for f in unionfidlist:
-            epylog.info(f)
+            logger.info(f)
             if f in fidlist:
                 field = resource.readfield(f)
                 if field.spectral:
@@ -281,9 +288,7 @@ def get_args():
 
     # 1. Parse arguments
     ####################
-    parser = argparse.ArgumentParser(description="An EPyGrAM tool for extracting from a resource the value of meteorological fields\
-                                                  on a geographical point.",
-                                     epilog='End of help for: %(prog)s (EPyGrAM-' + epygram.__version__ + ')')
+    parser = argparse.ArgumentParser(description=_description, epilog=epilog)
     add_arg_to_parser(parser, files_args['principal_file'])
     flds = parser.add_mutually_exclusive_group()
     add_arg_to_parser(flds, fields_args['field'])

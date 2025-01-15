@@ -3,6 +3,7 @@
 # Copyright (c) Météo France (2014-)
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
+"""An EPyGrAM tool for making histograms of meteorological fields from a resource."""
 
 import argparse
 import numpy
@@ -11,22 +12,29 @@ from bronx.syntax.parsing import str2dict
 from bronx.syntax.pretty import smooth_string
 
 import epygram
-from epygram import epylog, epygramError
+from epygram import epylog as logger
+from epygram import epygramError
+from . import epilog
 from .args_catalog import (add_arg_to_parser,
-                           files_args, fields_args,
-                           misc_args, output_args,
-                           runtime_args, graphical_args)
+                           files_args,
+                           fields_args,
+                           misc_args,
+                           output_args,
+                           runtime_args,
+                           graphical_args)
 
 import matplotlib.pyplot as plt
+
+_description = __doc__
 
 
 def main():
     epygram.init_env()
     args = get_args()
     if args.verbose:
-        epylog.setLevel('INFO')
+        logger.setLevel('INFO')
     else:
-        epylog.setLevel('WARNING')
+        logger.setLevel('WARNING')
     histogram(args.filename,
               args.fieldseed,
               refname=args.refname,
@@ -103,7 +111,7 @@ def histogram(filename,
 
     resource = epygram.formats.resource(filename, openmode='r')
     if resource.format not in ('GRIB', 'FA', 'LFI'):
-        epylog.warning(" ".join(["tool NOT TESTED with format",
+        logger.warning(" ".join(["tool NOT TESTED with format",
                                  resource.format, "!"]))
     diffmode = refname is not None
     if diffmode:
@@ -233,7 +241,7 @@ def histogram(filename,
 
     # Output
     if output:
-        epylog.info("save plots...")
+        logger.info("save plots...")
         suffix = '.'.join(['hist', output])
         parameter = smooth_string(fieldseed)
         # main resource
@@ -262,9 +270,7 @@ def get_args():
 
     # 1. Parse arguments
     ####################
-    parser = argparse.ArgumentParser(description='An EPyGrAM tool for making histograms \
-                                                  of meteorological fields from a resource.',
-                                     epilog='End of help for: %(prog)s (EPyGrAM-' + epygram.__version__ + ')')
+    parser = argparse.ArgumentParser(description=_description, epilog=epilog)
     add_arg_to_parser(parser, files_args['principal_file'])
     add_arg_to_parser(parser, fields_args['field'])
     add_arg_to_parser(parser, fields_args['windfieldU'])

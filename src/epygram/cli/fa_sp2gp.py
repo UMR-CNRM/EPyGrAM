@@ -3,24 +3,30 @@
 # Copyright (c) Météo France (2014-)
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
+"""An EPyGrAM tool for transforming spectral fields from a FA to gridpoint."""
 
 import argparse
 
 from bronx.fancies.display import printstatus
 
 import epygram
-from epygram import epylog
-from .args_catalog import (add_arg_to_parser, files_args,
-                           fields_args, runtime_args)
+from epygram import epylog as logger
+from . import epilog
+from .args_catalog import (add_arg_to_parser,
+                           files_args,
+                           fields_args,
+                           runtime_args)
+
+_description = __doc__
 
 
 def main():
     epygram.init_env()
     args = get_args()
     if args.verbose:
-        epylog.setLevel('INFO')
+        logger.setLevel('INFO')
     else:
-        epylog.setLevel('WARNING')
+        logger.setLevel('WARNING')
     fa_sp2gp(args.filename,
              progressmode=args.progressmode,
              compression=args.kompression,
@@ -55,7 +61,7 @@ def fa_sp2gp(filename,
     n = 1
     for f in fidlist:
         if progressmode == 'verbose':
-            epylog.info(f)
+            logger.info(f)
         elif progressmode == 'percentage':
             printstatus(n, numfields)
             n += 1
@@ -79,8 +85,7 @@ def fa_sp2gp(filename,
 
 def get_args():
 
-    parser = argparse.ArgumentParser(description="An EPyGrAM tool for transforming spectral fields from a FA to gridpoint.",
-                                     epilog='End of help for: %(prog)s (EPyGrAM-' + epygram.__version__ + ')')
+    parser = argparse.ArgumentParser(description=_description, epilog=epilog)
     add_arg_to_parser(parser, files_args['principal_file'])
     add_arg_to_parser(parser, files_args['in_place'])
     add_arg_to_parser(parser, fields_args['FA_set_compression'])

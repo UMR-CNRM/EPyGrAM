@@ -3,6 +3,7 @@
 # Copyright (c) Météo France (2014-)
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
+"""An EPyGrAM tool for simple plots of meteorological fields from a resource."""
 
 import argparse
 
@@ -10,25 +11,30 @@ from bronx.syntax.parsing import str2dict
 from bronx.syntax.pretty import smooth_string
 
 import epygram
-from epygram import epylog, epygramError
-from epygram.cli.args_catalog import (add_arg_to_parser,
-                                      files_args, fields_args,
-                                      misc_args, output_args,
-                                      runtime_args, graphical_args)
+from epygram import epygramError
+from epygram import epylog as logger
+from . import epilog
+from .args_catalog import (add_arg_to_parser,
+                           files_args,
+                           fields_args,
+                           misc_args,
+                           output_args,
+                           runtime_args,
+                           graphical_args)
 
 import matplotlib.pyplot as plt
 import cartopy.feature as cf
 
-CFEATURES = [f for f in dir(cf) if all([c.isupper() for c in f])]
+_description = __doc__
 
 
 def main():
     epygram.init_env()
     args = get_args()
     if args.verbose:
-        epylog.setLevel('INFO')
+        logger.setLevel('INFO')
     else:
-        epylog.setLevel('WARNING')
+        logger.setLevel('WARNING')
 
     cartoplot(args.filename,
          fid=args.field,
@@ -334,7 +340,7 @@ def cartoplot(filename,
                 fig, _ = field.cartoplot(title=title, **plot_kwargs)
     # 3/ output
     if savefig:
-        epylog.info("save plot(s)...")
+        logger.info("save plot(s)...")
         parameter = smooth_string(fid)
         save_kwargs = dict(bbox_inches='tight', dpi=figures_dpi)
         if diffmode:
@@ -371,9 +377,7 @@ def get_args():
 
     # 1. Parse arguments
     ####################
-    parser = argparse.ArgumentParser(description='An EPyGrAM tool for simple plots\
-                                                  of meteorological fields from a resource.',
-                                     epilog='End of help for: %(prog)s (EPyGrAM v' + epygram.__version__ + ')')
+    parser = argparse.ArgumentParser(description=_description, epilog=epilog)
 
     add_arg_to_parser(parser, files_args['principal_file'])
     add_arg_to_parser(parser, fields_args['field'])
@@ -399,7 +403,7 @@ def get_args():
     add_arg_to_parser(parser, graphical_args['title'])
     add_arg_to_parser(parser, graphical_args['cartopy_features'],
                       help="cartopy features (cartopy.feature.*), separated by comma " +
-                      str(CFEATURES))
+                      str([f for f in dir(cf) if all([c.isupper() for c in f])]))
     add_arg_to_parser(parser, graphical_args['french_departments'])
     add_arg_to_parser(parser, graphical_args['parallels'])
     add_arg_to_parser(parser, graphical_args['meridians'])

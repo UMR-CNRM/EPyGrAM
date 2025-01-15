@@ -3,6 +3,7 @@
 # Copyright (c) Météo France (2014-)
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
+"""An EPyGrAM tool for extracting (and plotting) vertical profiles of meteorological fields from a resource."""
 
 import argparse
 import numpy
@@ -10,24 +11,30 @@ import numpy
 from bronx.syntax.pretty import smooth_string
 
 import epygram
-from epygram import epylog
+from epygram import epylog as logger
 from epygram.fields.V1DField import plotprofiles
+from . import epilog
 from .args_catalog import (add_arg_to_parser,
-                           files_args, fields_args,
-                           misc_args, output_args,
-                           runtime_args, graphical_args,
+                           files_args,
+                           fields_args,
+                           misc_args,
+                           output_args,
+                           runtime_args,
+                           graphical_args,
                            extraction_args)
 
 import matplotlib.pyplot as plt
+
+_description = __doc__
 
 
 def main():
     epygram.init_env()
     args = get_args()
     if args.verbose:
-        epylog.setLevel('INFO')
+        logger.setLevel('INFO')
     else:
-        epylog.setLevel('WARNING')
+        logger.setLevel('WARNING')
     profile(
          args.filename,
          args.fieldseed,
@@ -117,7 +124,7 @@ def profile(
     """
     resource = epygram.formats.resource(filename, openmode='r')
     if resource.format not in ('GRIB', 'FA', 'LFI'):
-        epylog.warning(" ".join(["tool NOT TESTED with format",
+        logger.warning(" ".join(["tool NOT TESTED with format",
                                  resource.format, "!"]))
     nosave = False
     diffmode = refname is not None
@@ -197,7 +204,7 @@ def profile(
             toplot.append(diffprofile)
             same_Z = True
         else:
-            epygram.epylog.warning('profiles vertical grids differ (surface pressure ?): cannot compute difference.')
+            epygram.logger.warning('profiles vertical grids differ (surface pressure ?): cannot compute difference.')
             same_Z = False
             nosave = True
             # raise epygram.epygramError("unable to compute profiles difference because of vertical grids differ: \
@@ -274,7 +281,7 @@ def profile(
 
     # Graphical Output
     if output:
-        epylog.info("save plot...")
+        logger.info("save plot...")
         suffix = 'profile.' + output
         if outputfilename:
             filename = '.'.join([outputfilename, output])
@@ -294,9 +301,7 @@ def get_args():
 
     # 1. Parse arguments
     ####################
-    parser = argparse.ArgumentParser(description='An EPyGrAM tool for extracting (and plotting) vertical profiles\
-                                                  of meteorological fields from a resource.',
-                                     epilog='End of help for: %(prog)s (EPyGrAM-' + epygram.__version__ + ')')
+    parser = argparse.ArgumentParser(description=_description, epilog=epilog)
     add_arg_to_parser(parser, files_args['principal_file'])
     add_arg_to_parser(parser, fields_args['vertical_field'])
     add_arg_to_parser(parser, extraction_args['point_coordinates'],

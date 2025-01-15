@@ -3,6 +3,7 @@
 # Copyright (c) Météo France (2014-)
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
+"""An EPyGrAM tool for computing basic statistics on meteorological fields."""
 
 import argparse
 import sys
@@ -13,21 +14,26 @@ from bronx.fancies.display import printstatus
 from bronx.syntax.pretty import smooth_string
 
 import epygram
-from epygram import epylog
+from epygram import epylog as logger
 from epygram.util import write_formatted_table
+from . import epilog
 from .args_catalog import (add_arg_to_parser,
-                           files_args, fields_args,
-                           misc_args, runtime_args,
+                           files_args,
+                           fields_args,
+                           misc_args,
+                           runtime_args,
                            output_args)
+
+_description = __doc__
 
 
 def main():
     epygram.init_env()
     args = get_args()
     if args.verbose:
-        epylog.setLevel('INFO')
+        logger.setLevel('INFO')
     else:
-        epylog.setLevel('WARNING')
+        logger.setLevel('WARNING')
     stats(
         args.filename,
         args.fieldseed,
@@ -86,7 +92,7 @@ def stats(
     """
     resource = epygram.formats.resource(filename, openmode='r')
     if resource.format not in ('GRIB', 'FA', 'LFI', 'TIFFMF'):
-        epylog.warning(" ".join(["tool NOT TESTED with format",
+        logger.warning(" ".join(["tool NOT TESTED with format",
                                  resource.format, "!"]))
     diffmode = refname is not None
     if diffmode:
@@ -101,7 +107,7 @@ def stats(
         n = 1
         for f in fidlist:
             if progressmode == 'verbose':
-                epylog.info(str(f))
+                logger.info(str(f))
             elif progressmode == 'percentage':
                 printstatus(n, numfields)
                 n += 1
@@ -134,7 +140,7 @@ def stats(
         n = 1
         for f in unionfidlist:
             if progressmode == 'verbose':
-                epylog.info(f)
+                logger.info(f)
             elif progressmode == 'percentage':
                 printstatus(n, numfields)
                 n += 1
@@ -298,9 +304,7 @@ def get_args():
 
     # 1. Parse arguments
     ####################
-    parser = argparse.ArgumentParser(description='An EPyGrAM tool for computing basic statistics on \
-                                                  meteorological fields.',
-                                     epilog='End of help for: %(prog)s (EPyGrAM-' + epygram.__version__ + ')')
+    parser = argparse.ArgumentParser(description=_description, epilog=epilog)
     add_arg_to_parser(parser, files_args['principal_file'])
     flds = parser.add_mutually_exclusive_group()
     add_arg_to_parser(flds, fields_args['FA_multiple_fields'])

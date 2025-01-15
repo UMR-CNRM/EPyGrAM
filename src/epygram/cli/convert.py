@@ -3,6 +3,7 @@
 # Copyright (c) Météo France (2014-)
 # This software is governed by the CeCILL-C license under French law.
 # http://www.cecill.info
+"""An EPyGrAM tool for converting file formats. Spectral fields are converted into gridpoints."""
 
 import argparse
 
@@ -10,24 +11,30 @@ import footprints
 from bronx.syntax.parsing import str2dict
 
 import epygram
+from epygram import epylog as logger
 from epygram.extra import griberies
 from epygram.formats.conversion.functions import batch_convert
 from epygram.formats.conversion import converters
+from . import epilog
 from .args_catalog import (add_arg_to_parser,
-                                      files_args, fields_args,
-                                      misc_args, runtime_args,
-                                      operational_args, output_args)
+                           files_args,
+                           fields_args,
+                           misc_args,
+                           runtime_args,
+                           operational_args,
+                           output_args)
+from . import epilog
 
-epylog = footprints.loggers.getLogger(__name__)
+_description = __doc__
 
 
 def main():
     epygram.init_env()
     args = get_args()
     if args.verbose:
-        epylog.setLevel('INFO')
+        logger.setLevel('INFO')
     else:
-        epylog.setLevel('WARNING')
+        logger.setLevel('WARNING')
     batch_convert(args.filenames,
                   args.output_format,
                   # technical
@@ -59,9 +66,7 @@ def get_args():
 
     # 1. Parse arguments
     ####################
-    parser = argparse.ArgumentParser(description='An EPyGrAM tool for converting file formats. \
-                                                  Spectral fields are converted into gridpoints.',
-                                     epilog='End of help for: %(prog)s (EPyGrAM-' + epygram.__version__ + ')')
+    parser = argparse.ArgumentParser(description=_description, epilog=epilog)
 
     add_arg_to_parser(parser, files_args['several_files'])
     flds = parser.add_mutually_exclusive_group()

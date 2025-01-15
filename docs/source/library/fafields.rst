@@ -10,13 +10,6 @@
 
 -----------------------------------------------------------
 
-.. autoclass:: FaGribDef
-   :show-inheritance:
-   :members:
-   :member-order: alphabetical
-
------------------------------------------------------------
-
 .. autoclass:: SfxFldDesc_Mod
    :show-inheritance:
    :members:

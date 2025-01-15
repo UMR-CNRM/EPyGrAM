@@ -61,19 +61,19 @@ FA: Some specific features
     >>> epygram.init_env()
     >>> fcst5 = epygram.open(filename='../ICMSHAROM+0005', openmode='r', fmt='FA')
     >>> new_fcst5 = epygram.open(filename='../ICMSHAROM+0005_bis', openmode='w',
-                                             fmt='FA',
-                                             headername=fcst5.headername, validity=fcst5.validity)
+                                 fmt='FA',
+                                 headername=fcst5.headername, validity=fcst5.validity)
 
 - If you want it to be even more similar, also add arguments:
 
   .. code-block:: python
 
     >>> new_fcst5 = epygram.open(filename='../ICMSHAROM+0005_bis', openmode='w',
-                                             fmt='FA',
-                                             headername=fcst5.headername, validity=fcst5.validity,
-                                             cdiden=fcst5.cdiden,
-                                             default_compression=fcst5.default_compression,
-                                             processtype=fcst5.processtype)
+                                 fmt='FA',
+                                 headername=fcst5.headername, validity=fcst5.validity,
+                                 cdiden=fcst5.cdiden,
+                                 default_compression=fcst5.default_compression,
+                                 processtype=fcst5.processtype)
 
 --------------------------------------------------------------------------------
 
