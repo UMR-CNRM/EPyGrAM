@@ -158,7 +158,7 @@ def init_env(omp_num_threads=1,
         if ensure_consistent_GRIB_paths: #CLEANME:DEPRECATED:
             from epygram.extra import griberies
             eccodes_libpath = falfilfa4py.get_dynamic_eccodes_lib_path_from_FA()
-            griberies.complete_grib_paths(eccodes_libpath, reset=ignore_gribenv_paths)
+            griberies.paths.complete_grib_paths(eccodes_libpath, reset=ignore_gribenv_paths)
     # 2. SpectralGeometry inner transformation lib may need some special
     # environment setting, delayed to actual invocation:
     # we simply pass kwargs, initialization is done at first call to the library

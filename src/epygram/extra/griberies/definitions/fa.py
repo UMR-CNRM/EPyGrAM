@@ -11,7 +11,8 @@ import os
 import re
 
 from .util import GribDef
-from .. import get_definition_paths, parse_GRIBstr_todict
+from .. import parse_GRIBstr_todict
+from ..paths import get_definition_paths
 from ...util import init_before
 from epygram import config
 

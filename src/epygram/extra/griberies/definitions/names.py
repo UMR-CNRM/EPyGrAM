@@ -9,7 +9,7 @@ Handle *name* and *shortName* GRIB definitions.
 
 import os
 from .util import GribDef
-from .. import get_definition_paths
+from ..paths import get_definition_paths
 
 
 class NamesGribDef(GribDef):

@@ -81,18 +81,18 @@ class LowLevelGRIB(object):
         if 'ECCODES_DIR' in os.environ:
             install_dir = os.environ['ECCODES_DIR']
         else:
-            install_dir = griberies.get_eccodes_from_ldconfig()
+            install_dir = griberies.paths.get_eccodes_from_ldconfig()
         return install_dir
 
     def init_env(self, reset=False):
         """Ensure grib_api/eccodes variables are consistent with inner library."""
         # from python package eccodes 2.38.0, samples and packages are provided as eccodes_memfs
         if self.api.codes_get_api_version() < '2.38.0':
-            griberies.complete_grib_samples_paths(self.install_dir,
-                                                  reset=reset)
-            if len(griberies.get_definition_paths()) > 0:
-                griberies.complete_grib_definition_paths(self.install_dir,
-                                                         reset=reset)
+            griberies.paths.complete_grib_samples_paths(self.install_dir,
+                                                        reset=reset)
+            if len(griberies.paths.get_definition_paths()) > 0:
+                griberies.paths.complete_grib_definition_paths(self.install_dir,
+                                                               reset=reset)
 
     #  BELOW: gribapi str/unicode incompatibility
     def set(self, gid, key, value):
@@ -548,7 +548,7 @@ class GRIBmessage(RecursiveObject, dict):
                     self._gid = self._clone_from_file(fsample)  # clone it from file
                 else:
                     # or try manually exploring other paths from SAMPLES_PATH
-                    for d in griberies.get_samples_paths():
+                    for d in griberies.paths.get_samples_paths():
                         fsample = os.path.join(d, sample) + '.tmpl'
                         try:
                             self._gid = self._clone_from_file(fsample)
@@ -1083,7 +1083,7 @@ class GRIBmessage(RecursiveObject, dict):
             self._gid = self._clone_from_file(sample.replace('file:', ''))
         else:
             if all([sample + '.tmpl' not in os.listdir(pth)
-                    for pth in [p for p in griberies.get_samples_paths()
+                    for pth in [p for p in griberies.paths.get_samples_paths()
                                 if (os.path.exists(p) and os.path.isdir(p))]]):  # this sample is not found in samples path
                 if sample + '.tmpl' in os.listdir(config.GRIB_epygram_samples_path):  # but it is in epygram samples
                     fsample = os.path.join(config.GRIB_epygram_samples_path, sample) + '.tmpl'
