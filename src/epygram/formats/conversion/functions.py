@@ -7,6 +7,7 @@
 Conversion functions (API).
 """
 import time
+import copy
 
 import footprints
 from bronx.fancies.display import printstatus
