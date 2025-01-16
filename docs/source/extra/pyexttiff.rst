@@ -2,7 +2,6 @@
 =========================================
 
 .. automodule:: epygram.extra.pyexttiff
-   :synopsis: Classes to read Tiff
 
 Classes
 -------

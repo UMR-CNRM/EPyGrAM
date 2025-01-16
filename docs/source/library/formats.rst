@@ -2,10 +2,11 @@
 ==================================
 
 .. automodule:: epygram.formats
-   :synopsis: juggling with formats
+
+-----------------------------------------------------------
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
    
    FA
    LFA
@@ -19,15 +20,21 @@
 -----------------------------------------------------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    fafields
+   conversion
 
 -----------------------------------------------------------
-   
+
+.. autodata:: runtime_available_formats
+
+-----------------------------------------------------------
+
+Functions:
+----------
+
 .. autofunction:: guess
-
------------------------------------------------------------
-
 .. autofunction:: resource
+.. autofunction:: available_format
 

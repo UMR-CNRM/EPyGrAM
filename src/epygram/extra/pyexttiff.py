@@ -7,7 +7,8 @@
 This module aims at reading tiff with private IFDs.
 It uses PIL for image reading.
 
-This module uses code from pylibtiff (https://pypi.python.org/pypi/libtiff, https://code.google.com/p/pylibtiff or https://github.com/hmeine/pylibtiff)
+This module uses code from pylibtiff
+(https://pypi.python.org/pypi/libtiff, https://code.google.com/p/pylibtiff or https://github.com/hmeine/pylibtiff)
 """
 
 import os

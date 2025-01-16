@@ -2579,7 +2579,7 @@ class GRIB(FileResource):
           is computed within the 4 horizontally nearest points; e.g.
           {'target_value':4810, 'external_field':an_H2DField_with_same_geometry}.
           If so, the nearest point is selected with
-          distance = |target_value - external_field.data|
+          distance = abs(target_value - external_field.data)
         """
         if isinstance(handgrip, str):
             handgrip = griberies.parse_GRIBstr_todict(handgrip)

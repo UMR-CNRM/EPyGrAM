@@ -2,11 +2,11 @@
 ==============================================================
 
 .. automodule:: epygram.formats.fafields
-   :synopsis: Utilities around FA fields
 
 -----------------------------------------------------------
 
 .. autofunction:: find_wind_pair
+.. autofunction:: get_generic_fid
 
 -----------------------------------------------------------
 
@@ -14,3 +14,8 @@
    :show-inheritance:
    :members:
    :member-order: alphabetical
+
+-----------------------------------------------------------
+
+.. autodata:: sfxflddesc
+

@@ -9,6 +9,5 @@ but that may be used from outside.
    :maxdepth: 1
 
    pyexttiff
-   usevortex
    griberies/index
-   util
+   usevortex

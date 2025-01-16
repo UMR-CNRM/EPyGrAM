@@ -2,7 +2,6 @@
 ==================================================================
 
 .. automodule:: epygram.formats.GRIB
-   :synopsis: Interface-Class to the GRIB format
 
 -----------------------------------------------------------
 

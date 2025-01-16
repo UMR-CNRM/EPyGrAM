@@ -9,9 +9,9 @@ Module contains:
 - all formats classes.
 - utilities to play with resource formats:\n
   - guess the format of an existing resource in a given container;
-  - create a Resource instance with a generic function,
-    eventually (if already existing) without knowing its format *a priori*;
-  - FA field names recognition
+  - open a Resource instance with a generic function (potentially guessing its format if in read mode);
+  - FA fields utilities
+  - conversion utilities
 """
 
 import importlib

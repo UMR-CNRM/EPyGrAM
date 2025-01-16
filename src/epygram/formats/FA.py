@@ -33,28 +33,12 @@ from epygram.geometries import (Geometry, SpectralGeometry, ProjectedGeometry, G
 from epygram.geometries.VGeometry import (hybridP2pressure, hybridP2altitude,
                                           pressure2altitude)
 from epygram.fields import MiscField, H2DField
-from epygram.formats.fafields import SfxFldDesc_Mod
-from epygram.extra.griberies.definitions.fa import FaGribDef
+from epygram.formats.fafields import SfxFldDesc_Mod, get_generic_fid
+from epygram.extra.griberies.definitions.fa import fagribdef
 
 __all__ = []
 
 epylog = footprints.loggers.getLogger(__name__)
-
-
-def get_generic_fid(fieldname):
-    """Return a generic fid from **fieldname** (via FaGribDef)."""
-    try:
-        fid = FA.gribdef.FA2GRIB(fieldname,
-                                 include_comments=False,
-                                 fatal=True)
-    except ValueError:  # not found
-        if FA.sfxflddesc.is_metadata(fieldname):
-            raise
-        else:
-            fid = FA.gribdef.FA2GRIB(fieldname,
-                                     include_comments=False,
-                                     fatal=False)
-    return fid
 
 
 def _gen_headername():
@@ -295,7 +279,7 @@ class FA(FileResource):
     # reference pressure coefficient for converting hybrid A coefficients in FA
     reference_pressure = config.FA_default_reference_pressure
     # FA fields dicts
-    gribdef = FaGribDef(actual_init=False)
+    gribdef = fagribdef
     sfxflddesc = SfxFldDesc_Mod(actual_init=False)
 
     @classmethod
@@ -1074,8 +1058,7 @@ class FA(FileResource):
     def modify_validity(self, **kwargs):
         """
         Modify the validity of the resource in place.
-
-        All **kwargs to be passed to self.validity.set(**kwargs)
+        All **kwargs** to be passed to self.validity.set(**kwargs)
         """
         self.validity.set(**kwargs)
         self._set_validity()

@@ -38,5 +38,9 @@ Technical documentation:
    :maxdepth: 3
 
    library/index
+
+.. toctree::
+   :maxdepth: 2
+
    extra/index
 

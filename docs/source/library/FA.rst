@@ -6,18 +6,8 @@
 
 -----------------------------------------------------------
 
-.. autofunction:: get_generic_fid
-
------------------------------------------------------------
-
-.. autoclass:: FaGribDef
-   :show-inheritance:
-   :members:
-   :member-order: alphabetical
-
------------------------------------------------------------
-
 .. autoclass:: FA
    :show-inheritance:
    :members:
    :member-order: alphabetical
+

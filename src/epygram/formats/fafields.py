@@ -13,6 +13,48 @@ import io
 
 from epygram.extra.util import init_before
 from epygram import config, epygramError
+from epygram.extra.griberies.definitions.fa import fagribdef
+
+
+def find_wind_pair(fieldname):
+    """For a wind **fieldname**, find and return the pair."""
+    pairs = {'U':'V', 'V':'U',
+             'ZONAL':'MERIDIEN', 'MERIDIEN':'ZONAL', 'MERID':'ZONAL'}
+    patterns = [r'S\d+WIND\.(?P<d>[U,V])\.PHYS',
+                r'[P,H,V]\d+VENT_(?P<d>(ZONAL)|(MERID)|(MERIDIEN))',
+                r'CLSVENTNEUTRE.(?P<d>[U,V])',
+                r'CLSVENT.(?P<d>(ZONAL)|(MERIDIEN))',
+                r'CLS(?P<d>[U,V]).RAF.MOD.XFU']
+    axes = {'U':'x', 'ZONAL':'x',
+            'V':'y', 'MERIDIEN':'y', 'MERID':'y'}
+    pair = None
+    for pattern in patterns:
+        re_ok = re.match(pattern, fieldname)
+        if re_ok:
+            pair = (axes[pairs[re_ok.group(1)]],
+                    fieldname.replace(re_ok.group('d'),
+                                      pairs[re_ok.group('d')]))
+            break
+    if pair is None:
+        raise epygramError('not a wind field')
+    else:
+        return pair
+
+
+def get_generic_fid(fieldname):
+    """Return a generic fid from **fieldname** (via FaGribDef)."""
+    try:
+        fid = fagribdef.FA2GRIB(fieldname,
+                                include_comments=False,
+                                fatal=True)
+    except ValueError:  # not found
+        if sfxflddesc.is_metadata(fieldname):
+            raise
+        else:
+            fid = fagribdef.FA2GRIB(fieldname,
+                                    include_comments=False,
+                                    fatal=False)
+    return fid
 
 
 class SfxFldDesc_Mod(object):
@@ -118,26 +160,5 @@ class SfxFldDesc_Mod(object):
         return fieldname in self.table
 
 
-def find_wind_pair(fieldname):
-    """For a wind **fieldname**, find and return the pair."""
-    pairs = {'U':'V', 'V':'U',
-             'ZONAL':'MERIDIEN', 'MERIDIEN':'ZONAL', 'MERID':'ZONAL'}
-    patterns = [r'S\d+WIND\.(?P<d>[U,V])\.PHYS',
-                r'[P,H,V]\d+VENT_(?P<d>(ZONAL)|(MERID)|(MERIDIEN))',
-                r'CLSVENTNEUTRE.(?P<d>[U,V])',
-                r'CLSVENT.(?P<d>(ZONAL)|(MERIDIEN))',
-                r'CLS(?P<d>[U,V]).RAF.MOD.XFU']
-    axes = {'U':'x', 'ZONAL':'x',
-            'V':'y', 'MERIDIEN':'y', 'MERID':'y'}
-    pair = None
-    for pattern in patterns:
-        re_ok = re.match(pattern, fieldname)
-        if re_ok:
-            pair = (axes[pairs[re_ok.group(1)]],
-                    fieldname.replace(re_ok.group('d'),
-                                      pairs[re_ok.group('d')]))
-            break
-    if pair is None:
-        raise epygramError('not a wind field')
-    else:
-        return pair
+sfxflddesc = SfxFldDesc_Mod(actual_init=False)
+

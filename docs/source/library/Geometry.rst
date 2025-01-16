@@ -1,5 +1,5 @@
 :mod:`epygram.geometries.AbstractGeometry` --- Geometry class
-===========================================================
+=============================================================
 
 .. automodule:: epygram.geometries.AbstractGeometry
    :synopsis: Abstract Geometry classes

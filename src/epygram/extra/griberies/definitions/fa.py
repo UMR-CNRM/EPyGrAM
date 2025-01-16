@@ -21,7 +21,7 @@ class FaGribDef(GribDef):
     """
     Handle FA-related GRIB definition files.
     To add user files:
-    a) use env vars GRIBAPI|ECCODES_DEFINITION_PATH or
+    a) use env var ECCODES_DEFINITION_PATH or
     b) move it under {config.userlocaldir}/{FaGribDef.dirname}
     """
 
@@ -204,4 +204,6 @@ class FaGribDef(GribDef):
         else:  # fid is a GRIB fid
             ok = len(self.lookup_GRIB(fid)) > 0
         return ok
+
+fagribdef = FaGribDef(actual_init=False)
 

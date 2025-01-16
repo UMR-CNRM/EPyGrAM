@@ -1,5 +1,5 @@
 :mod:`epygram.geometries.GaussGeometry` --- Gauss Geometry class
-===========================================================
+================================================================
 
 .. automodule:: epygram.geometries.GaussGeometry
    :synopsis: Gauss Geometry class

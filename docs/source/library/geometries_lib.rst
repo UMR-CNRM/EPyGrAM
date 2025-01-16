@@ -7,7 +7,6 @@
    :maxdepth: 3
 
    Geometry
-   RectangularGridGeometry
    ProjectedGeometry
    UnstructuredGeometry
    AcademicGeometry

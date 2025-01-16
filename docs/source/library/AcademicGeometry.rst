@@ -1,5 +1,5 @@
 :mod:`epygram.geometries.AcademicGeometry` --- Academic Geometry class
-===========================================================
+======================================================================
 
 .. automodule:: epygram.geometries.AcademicGeometry
    :synopsis: Academic Geometry class
