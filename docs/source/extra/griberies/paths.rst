@@ -4,6 +4,7 @@
 .. automodule:: epygram.extra.griberies.paths
 
 -----------------------------------------------------------
+
 functions
 ---------
 
@@ -13,5 +14,4 @@ functions
 .. autofunction:: get_samples_paths
 .. autofunction:: get_definition_paths
 
------------------------------------------------------------
 

@@ -6,13 +6,6 @@
 
 -----------------------------------------------------------
 
-.. autoclass:: NamesGribDef
-   :show-inheritance:
-   :members:
-   :member-order: alphabetical
-
------------------------------------------------------------
-
 .. autoclass:: GRIB
    :show-inheritance:
    :members:
