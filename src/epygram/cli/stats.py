@@ -338,7 +338,7 @@ def get_args():
     if args.zone in ('C', 'CI'):
         args.subzone = args.zone
     else:
-        subzone = None
+        args.subzone = None
     if args.verbose:
         args.progressmode = 'verbose'
     elif args.percentage:
@@ -362,6 +362,8 @@ def get_args():
         listfile = epygram.containers.File(filename=args.listoffields)
         with open(listfile.abspath, 'r') as l:
             args.fieldseed = [line.replace('\n', '').strip() for line in l.readlines()]
+    else:
+        args.fieldseed = None
 
     return args
 
