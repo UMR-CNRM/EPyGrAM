@@ -9,6 +9,7 @@ import argparse
 
 import epygram
 from epygram.extra import epyweb
+from epygram import epylog as logger
 from . import epilog
 from .args_catalog import add_arg_to_parser, runtime_args
 
@@ -19,9 +20,9 @@ def main():
     epygram.init_env()
     args = get_args()
     if args.verbose:
-        epylog.setLevel('INFO')
+        logger.setLevel('INFO')
     else:
-        epylog.setLevel('WARNING')
+        logger.setLevel('WARNING')
     epyweb.main(open_browser=args.open_browser,
                 port=args.port,
                 verbose=args.verbose)
