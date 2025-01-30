@@ -36,13 +36,26 @@ def make_vector_field(*components):
                            " geometry.")
     if any([components[0].structure != c.structure for c in components[1:]]):
         raise epygramError("'fX', 'fY' must share their structure.")
-
-    f = fpx.field(fid={'op':'make_vector()'},
-                  structure=components[0].structure,
-                  validity=components[0].validity.copy(),
-                  processtype=components[0].processtype,
-                  vector=True,
-                  components=components)
+    
+    attrDict={
+        "fid":{'op':'make_vector()'},
+        "structure":components[0].structure,
+        "validity":components[0].validity.copy(),
+        "processtype":components[0].processtype,
+        "vector":True,
+        "components":components
+    }
+    if components[0].structure=='H2D':
+        from . import H2DVectorField
+        theClass=H2DVectorField
+    elif components[0].structure=='V2D':
+        from . import V2DVectorField
+        theClass=V2DVectorField
+    elif components[0].structure=='3D':
+        theClass=D3VectorField
+    else: 
+        raise epygramError("unknown vector structure")
+    f=theClass(**attrDict)
     return f
 
 

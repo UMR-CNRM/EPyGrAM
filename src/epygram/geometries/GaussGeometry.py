@@ -339,7 +339,7 @@ class GaussGeometry(Geometry):
         assert isinstance(data, numpy.ma.masked_array)
         assert len(data.shape) == 4
         data_filled = numpy.ma.masked_array(data.filled(fill_value))
-        mask = numpy.zeros(data_filled.data.shape, dtype=numpy.bool_)
+        mask = numpy.zeros(data_filled.data.shape, dtype=bool)
         for j in range(self.dimensions['lat_number']):
             i0 = self.dimensions['lon_number_by_lat'][j]
             mask[:, :, j, i0:] = True
@@ -485,7 +485,7 @@ class GaussGeometry(Geometry):
         :param position: position of the grid with respect to the model cell.
           Defaults to self.position_on_horizontal_grid.
         """
-        return numpy.ones_like(lon, dtype=numpy.bool)
+        return numpy.ones_like(lon, dtype=bool)
 
     def point_is_inside_domain_ij(self, i, j, margin=-0.1):
         """
