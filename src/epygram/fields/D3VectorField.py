@@ -48,29 +48,11 @@ def make_vector_field(*components):
     if components[0].structure=='H2D':
         from . import H2DVectorField
         theClass=H2DVectorField
-        f = H2DVectorField(fid={'op':'make_vector()'},
-                  structure=components[0].structure,
-                  validity=components[0].validity.copy(),
-                  processtype=components[0].processtype,
-                  vector=True,
-                  components=components)
     elif components[0].structure=='V2D':
         from . import V2DVectorField
         theClass=V2DVectorField
-        f = V2DVectorField(fid={'op':'make_vector()'},
-                  structure=components[0].structure,
-                  validity=components[0].validity.copy(),
-                  processtype=components[0].processtype,
-                  vector=True,
-                  components=components)
     elif components[0].structure=='3D':
         theClass=D3VectorField
-        f = D3VectorField(fid={'op':'make_vector()'},
-                  structure=components[0].structure,
-                  validity=components[0].validity.copy(),
-                  processtype=components[0].processtype,
-                  vector=True,
-                  components=components)
     else: 
         raise epygramError("unknown vector structure")
     f=theClass(**attrDict)
