@@ -1630,8 +1630,8 @@ class GRIBmessage(RecursiveObject, dict):
             else:
                 lat_0 = -90.
             # In GRIB1, LaD is not present but resolution is supposed to
-            # be given at 60deg
-            lat_ts = self.get('LaDInDegrees', numpy.copysign(60, lat_0))
+            # be given at +/-60deg
+            lat_ts = numpy.copysign(self.get('LaDInDegrees', 60.), lat_0)
             # !!! dirty bypass of erroneous GRIBs from OSI-SAF !..
             if self['centreDescription'] == 'Oslo':
                 epylog.warning(' '.join(['for centre:',
