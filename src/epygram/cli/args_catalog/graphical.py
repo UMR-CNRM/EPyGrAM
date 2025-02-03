@@ -133,7 +133,7 @@ d = {
                    (Cf. http://matplotlib.org/examples/color/colormaps_reference.html \
                    for standard matplotlib colormaps, or epygram.config.epygram_colormaps.keys() \
                    in a python interpreter for epygram's own colormaps).\
-                   Custom colormaps can be defined (http://colormap.org or\
+                   Custom colormaps can be defined (lookup matplotlib online or\
                    manually) and added in userconfig,\
                    in usercolormaps = {'my_cmap':'path_to_my_cmap'}.",
              default='jet')],
