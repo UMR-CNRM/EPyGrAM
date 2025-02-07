@@ -750,8 +750,9 @@ class ProjectedGeometry(RectangularGridGeometry):
             k = 0.
         elif self.name == 'polar_stereographic':
             k = self.projection['reference_lat'].get('cos_sin')[1]
-        theta = k * (lons - self.projection['reference_lon'].get('degrees')) - \
-                self.projection.get('rotation', 0.).get('degrees')
+        deviation = lons - self.projection['reference_lon'].get('degrees')
+        deviation = ((deviation + 180) % 360) - 180  # Between -180 and 180
+        theta = k * deviation - self.projection.get('rotation', 0.).get('degrees')
         return theta
 
     def reproject_wind_on_lonlat(self, u, v,
