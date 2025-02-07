@@ -30,17 +30,16 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = [
     "bronx",
-    "cartopy==0.23.0",  # versions older than 0.21.0 not compatible with python 3.10; more recent versions to be tested
     "eccodes==2.38.0",  # ! consistency with falfilfa4py !
     "ectrans4py",
     "falfilfa4py==1.0.3",  # ! consistency with eccodes !
     "footprints",
-    "matplotlib",
     "netCDF4",
     "numpy",
     "pyproj",
     "pytest",
     "pyyaml" ,  # to be removed when bronx dependency is fixed
+    "taylorism",
                 ]
 
 [project.scripts]
@@ -77,21 +76,19 @@ docs = [
     "sphinx",
     "jupyter",  # for the gallery
     "nbsphinx",  # for the gallery
-    "pyresample",  # used in the gallery
-    "scipy",  # used in the gallery
-    "vgrid",  # used in the gallery
-    "bokeh",  # used in the gallery
         ]
 graphics = [
-    "vtk",
+    "cartopy==0.23.0",  # versions older than 0.21.0 not compatible with python 3.10; more recent versions to be tested
     "contourpy",
+    "matplotlib",
+    "vtk",
             ]
 features = [
-    "taylorism",
     "pyresample",
     "scipy",
+    "taylorism",
     "vgrid",
-    "web.py"
+    "web.py",
             ]
 extra_formats = [
     "h5py",
@@ -101,22 +98,16 @@ vortex = [
     "vortex"
           ]
 all = [
-    "bronx",
-    "bokeh",
-    "cartopy",
+    "cartopy==0.23.0",  # versions older than 0.21.0 not compatible with python 3.10; more recent versions to be tested
     "contourpy",
-    "eccodes",
-    "falfilfa4py",
-    "footprints",
     "h5py",
+    "jupyter",
     "matplotlib",
-    "netCDF4",
-    "numpy",
+    "nbsphinx",
     "pillow >= 5.4.1", 
-    "pyproj",     
     "pyresample",
     "scipy",
-    "taylorism",
+    "sphinx",
     "vgrid",
     "vortex",
     "vtk",

@@ -26,6 +26,18 @@ or
 To use specific functionalities which dependencies are not covered by default,
 you may need to manually pip install the according package(s).
 
+You can also install all optional dependencies using:
+
+`pip install epygram[all]`
+
+or
+
+more specifically one of the extra group of dependencies:
+
+`pip install epygram[<opt>]`
+
+with `<opt>` among (`graphics`, `docs`, `features`, `extra_formats`), cf. `pyproject.toml`.
+
 Tests
 -----
 
