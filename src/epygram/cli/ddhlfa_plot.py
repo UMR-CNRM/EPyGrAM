@@ -138,7 +138,7 @@ def get_args():
 
     # 2.2 list of fields to be processed
     if args.field is not None:
-        fieldseed = args.field
+        args.fieldseed = args.field
     elif args.listoffields is not None:
         listfile = epygram.containers.File(filename=args.listoffields)
         with open(listfile.abspath, 'r') as l:
