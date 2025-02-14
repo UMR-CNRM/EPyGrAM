@@ -26,37 +26,8 @@ from .args_catalog import (add_arg_to_parser,
                            runtime_args,
                            graphical_args)
 import matplotlib.pyplot as plt
-from epygram.geometries import GaussGeometry, SpectralGeometry
 
 _description = __doc__
-
-
-def get_spectral_geometry(field, resource, verbose=False):
-    """
-    Returns the SpectralGeometry object of the field or resource.
-
-    If the field has no spectral geometry, return the spectral geometry of the resource.
-    If the resource has no spectral geometry and the grid is a Gaussian grid, 
-    return a spectralGeometry object assuming linear and triangular truncation.
-    """
-    spectral_geometry = None
-    if field.spectral_geometry is not None:
-        spectral_geometry = field.spectral_geometry
-    elif hasattr(resource, "spectral_geometry"):
-        spectral_geometry = resource.spectral_geometry
-    elif isinstance(field.geometry, GaussGeometry):
-        if verbose:
-            print(
-                "Build spectral geometry assuming linear and triangular truncation"
-            )
-        truncation = dict(
-            max=field.geometry.dimensions["lat_number"] - 1,
-            shape="triangular",
-        )
-        spectral_geometry = SpectralGeometry("legendre", truncation)
-    if verbose:
-        print("Spectral geometry is", spectral_geometry)
-    return spectral_geometry
 
 
 def main():
@@ -149,7 +120,7 @@ def spectrum(
             field = resource.readfield(f)
             if not field.geometry.grid.get('LAMzone', False):
                 subzone = None
-            spectral_geometry = get_spectral_geometry(field, resource, verbose=verbose)
+            spectral_geometry = esp.get_spectral_geometry(field, resource, verbose=verbose)
             spectra.append(field.spectrum(f,
                                           spectral_geometry=spectral_geometry,
                                           subzone=subzone,
@@ -214,7 +185,7 @@ def spectrum(
                         name += _u[i]
                     else:
                         name += '*'
-            spectral_geometry = get_spectral_geometry(field, resource, verbose=verbose)
+            spectral_geometry = esp.get_spectral_geometry(field, resource, verbose=verbose)
             spectra.append(field.spectrum(name,
                                           spectral_geometry=spectral_geometry,
                                           subzone=subzone,
@@ -263,7 +234,7 @@ def spectrum(
                 if not field.geometry.grid.get('LAMzone', False):
                     subzone = None
                 if not diffonly:
-                    spectral_geometry = get_spectral_geometry(field, resource, verbose=verbose)
+                    spectral_geometry = esp.get_spectral_geometry(field, resource, verbose=verbose)
                     spectra.append(field.spectrum(f,
                                                   spectral_geometry=spectral_geometry,
                                                   subzone=subzone,
@@ -274,7 +245,7 @@ def spectrum(
                 if not field.geometry.grid.get('LAMzone', False):
                     subzone = None
                 if not diffonly:
-                    spectral_geometry = get_spectral_geometry(reffield, reference, verbose=verbose)
+                    spectral_geometry = esp.get_spectral_geometry(reffield, reference, verbose=verbose)
                     refspectra.append(reffield.spectrum(f,
                                                         spectral_geometry=spectral_geometry,
                                                         subzone=subzone,
@@ -282,7 +253,7 @@ def spectrum(
             if f in intersectionfidlist:
                 logger.info("- on difference")
                 diff = field - reffield
-                spectral_geometry = get_spectral_geometry(diff, resource, verbose=verbose)
+                spectral_geometry = esp.get_spectral_geometry(diff, resource, verbose=verbose)
                 diffspectra.append(diff.spectrum(f,
                                                  spectral_geometry=spectral_geometry,
                                                  subzone=subzone,

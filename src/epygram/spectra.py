@@ -9,8 +9,9 @@ This module contains:
 - a class to handle variance spectrum;
 - a function to compute DCT spectrum from a 2D field;
 - a function to sort spectra with regards to their name;
-- a function to plot a series of spectra.
-- a function to read a dumped spectrum.
+- a function to plot a series of spectra;
+- a function to read a dumped spectrum;
+- a function to create a spectral geometry, e.g., for GRIBs.
 """
 
 from bronx.graphics.axes import set_figax
@@ -19,12 +20,43 @@ import numpy
 import copy
 
 from epygram import epygramError, config
-from epygram.geometries import GaussGeometry
+from epygram.geometries import GaussGeometry, SpectralGeometry
 from epygram.util import RecursiveObject, write_formatted_table
 
 
 _file_id = 'epygram.spectra.Spectrum'
 _file_columns = ['#', 'lambda', 'variance']
+
+
+def get_spectral_geometry(field, resource, verbose=False):
+    """
+    Returns the SpectralGeometry object of the field or resource.
+
+    If the field has no spectral geometry, return the spectral geometry of the resource.
+    If the resource has no spectral geometry and the grid is a Gaussian grid, 
+    return a spectralGeometry object assuming linear and triangular truncation.
+    """
+    spectral_geometry = None
+    if field.spectral_geometry is not None:
+        spectral_geometry = field.spectral_geometry
+    elif hasattr(resource, "spectral_geometry"):
+        spectral_geometry = resource.spectral_geometry
+    elif isinstance(field.geometry, GaussGeometry):
+        if verbose:
+            print(
+                "Build spectral geometry assuming linear and triangular truncation"
+            )
+        truncation = dict(
+            max=field.geometry.dimensions["lat_number"] - 1,
+            shape="triangular",
+        )
+        spectral_geometry = SpectralGeometry("legendre", truncation)
+    else:
+        raise NotImplementedError("No meaningful spectral transform implemented for "
+                                  + field.geometry.name)
+    if verbose:
+        print("Spectral geometry is", spectral_geometry)
+    return spectral_geometry
 
 
 def read_Spectrum(filename):
