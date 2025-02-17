@@ -17,8 +17,6 @@ import os
 from urllib.request import urlopen
 
 from footprints import FootprintBase
-from bronx.graphics.colormapping import (add_cmap,
-                                         get_norm4colorscale)
 from bronx.syntax.decorators import nicedeco
 from bronx.fancies import loggers
 
@@ -699,6 +697,7 @@ def load_cmap(cmap):
     Works with both old-way (.cmap) and new way (.json).
     """
     import matplotlib.pyplot as plt
+    from bronx.graphics.colormapping import add_cmap
     if cmap not in plt.colormaps() and cmap in config.colormaps:
         filename = config.colormaps[cmap]
         if filename.endswith('.json'):
