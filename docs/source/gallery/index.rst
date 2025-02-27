@@ -48,13 +48,14 @@ C - Data
 --------
 
 #. `Decumulate rain fields <C-data/01.decumulate_rain.ipynb>`_
-#. `Spectral filtering & spectra plots <C-data/02.spectral_filtering.ipynb>`_
-#. `Modify field data <C-data/03.modify_field_data.ipynb>`_
-#. `Apply a mask using another field <C-data/04.apply_mask.ipynb>`_
-#. `Recompute u/v from psi/khi (Arpege) <C-data/05.wind_transformations_psikhi.ipynb>`_
-#. `Compute vor/div from u/v <C-data/06.wind_transformations_vordiv.ipynb>`_
-#. `Shaving: cut values over a threshold down to this threshold <C-data/07.shave.ipynb>`_
-#. `Morphing: apply local deformation <C-data/08.morphing_apply_local_deformation.ipynb>`_
+#. `Spectral filtering & spectra plots for rectangular domains <C-data/02.spectral_filtering_lam.ipynb>`_
+#. `Spectral filtering & spectra plots for global domains <C-data/03.spectral_filtering_global.ipynb>`_
+#. `Modify field data <C-data/04.modify_field_data.ipynb>`_
+#. `Apply a mask using another field <C-data/05.apply_mask.ipynb>`_
+#. `Recompute u/v from psi/khi (Arpege) <C-data/06.wind_transformations_psikhi.ipynb>`_
+#. `Compute vor/div from u/v <C-data/07.wind_transformations_vordiv.ipynb>`_
+#. `Shaving: cut values over a threshold down to this threshold <C-data/08.shave.ipynb>`_
+#. `Morphing: apply local deformation <C-data/09.morphing_apply_local_deformation.ipynb>`_
 
 D.1 - Horizontal Geometry
 -------------------------

@@ -26,6 +26,7 @@ get grid.arome-forecast.guyane0025+0024:00.grib
 get ic.full-surfex.corsica-02km50.fa
 get ICMSHAROM+0022
 get pgd.albachir-07km50.SAND.fa
+get bgstderr.arpege-unbal-ens.tl224+0003:00.grib
 quit
 EOF
 cd ..
