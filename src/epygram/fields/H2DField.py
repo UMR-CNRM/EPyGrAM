@@ -8,7 +8,7 @@ Contains the class that handle a Horizontal 2D field.
 """
 
 import numpy
-from numpy import unravel_index
+from numpy import pi, unravel_index
 
 import footprints
 
@@ -168,8 +168,8 @@ class H2DField(D3Field):
                 assert spectral_geometry, "Need spectral geometry to convert field in gp space!"
                 self.gp2sp(spectral_geometry)
             variances = esp.global_spectrum(self)
-            nlat = self.geometry.dimensions["lat_number"]
-            resolution = self.geometry.zonal_resolution_j(nlat // 2) / 1000
+            earth_circumference = 2 * pi * self.geometry.geoid["a"] / 1000
+            resolution = earth_circumference / (variances.size * 2)
             spectrum =  esp.Spectrum(variances[1:],
                                      name=str(fname),
                                      resolution=resolution,
