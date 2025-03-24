@@ -450,7 +450,7 @@ class netCDFMNH(FileResource):
                 if isinstance(var.getncattr(a), numpy.float32):  # pb with json and float32
                     comment.update({a:numpy.float64(var.getncattr(a))})
                 elif isinstance(var.getncattr(a), numpy.int32):  # pb with json and int32
-                    comment.update({a:numpy.int64(var.getncattr(a))})
+                    comment.update({a:int(var.getncattr(a))})
                 elif isinstance(var.getncattr(a), numpy.ndarray):  # pb with json and numpy arrays
                     comment.update({a:numpy.float64(var.getncattr(a)).tolist()})
                 else:
