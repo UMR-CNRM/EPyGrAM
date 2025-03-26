@@ -59,8 +59,10 @@ internet_cache_dir = None
 #: same family (e.g. FA before LFI, DDHLFA before LFA...)
 #: Removing one of these (in userconfig file) may allow an incomplete install
 #: of epygram, disabling one format.
-#: In loading order to deal with sub-libraries compatibilities (e.g. h5py after netCDF4, cf. https://github.com/Unidata/netcdf4-python/issues/1343)
-implemented_formats = ['netCDFMNH', 'netCDF', 'GRIB', 'GeoPoints', 'TIFFMF', 'HDF5SAF', 'FA', 'LFI', 'DDHLFA', 'LFA']
+#: In loading order to deal with sub-libraries compatibilities (e.g. h5py after
+#: netCDF4, cf. https://github.com/Unidata/netcdf4-python/issues/1343)
+implemented_formats = ['netCDFSAF', 'netCDFMNH', 'netCDF', 'GRIB', 'GeoPoints',
+                       'TIFFMF', 'HDF5SAF', 'FA', 'LFI', 'DDHLFA', 'LFA']
 
 #: FA default compression parameters
 FA_default_compression = {'KNGRIB': 2, 'KDMOPL': 0, 'KPUILA': 0, 'KSTRON': 0,

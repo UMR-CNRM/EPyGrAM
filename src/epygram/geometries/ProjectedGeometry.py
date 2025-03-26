@@ -489,6 +489,9 @@ class ProjectedGeometry(RectangularGridGeometry):
         lons, lats = as_numpy_array(lons), as_numpy_array(lats)
         mask = numpy.logical_or(lons == config.pyproj_invalid_values,
                                 lats == config.pyproj_invalid_values)
+        mask = numpy.logical_or(mask,
+                                numpy.logical_or(lons == numpy.inf,
+                                                 lats == numpy.inf))
         lons = numpy.ma.masked_where(mask, lons)
         lats = numpy.ma.masked_where(mask, lats)
         if lons_is_scalar:

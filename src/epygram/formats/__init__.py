@@ -45,7 +45,7 @@ def available_format(fmt):
             else:
                 available = False
                 reason = 'Unknown config.GRIB_lowlevel_api={}'.format(config.GRIB_lowlevel_api)
-        elif fmt in ('netCDF', 'netCDFMNH'):
+        elif fmt in ('netCDF', 'netCDFMNH', 'netCDFSAF'):
             import netCDF4
         elif fmt == 'TIFFMF':
             from epygram.extra import pyexttiff
