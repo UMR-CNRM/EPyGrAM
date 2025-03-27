@@ -323,7 +323,7 @@ class netCDFSAF(FileResource):
         geo = attrs['proj'] == 'geos'
 
         # Date
-        date = datetime.datetime.fromisoformat(self.nc.nominal_product_time)
+        date = datetime.datetime.fromisoformat(self.nc.nominal_product_time.replace('Z', '+00:00'))
         self.validity = FieldValidity(basis=date, term=datetime.timedelta(hours=0))
 
         # Grid
