@@ -14,7 +14,7 @@ import numpy
 import footprints
 from footprints import FPDict
 
-import h5py
+import netCDF4
 from epygram import epygramError, util
 from epygram.util import Angle
 from epygram.base import FieldSet, FieldValidity, Field
@@ -22,21 +22,21 @@ from epygram.geometries import VGeometry, ProjectedGeometry
 from epygram.resources import FileResource
 from epygram.fields import H2DField
 
-__all__ = ['HDF5SAF']
+__all__ = ['netCDFSAF']
 
 epylog = footprints.loggers.getLogger(__name__)
 
 
-class HDF5SAF(FileResource):
+class netCDFSAF(FileResource):
     """
-    Class implementing all specificities for HDF5SAF resource format.
+    Class implementing all specificities for netCDFSAF resource format.
     """
 
     _footprint = dict(
         attr=dict(
             format=dict(
-                values=set(['HDF5SAF']),
-                default='HDF5SAF'),
+                values=set(['netCDFSAF']),
+                default='netCDFSAF'),
         )
     )
 
@@ -45,40 +45,38 @@ class HDF5SAF(FileResource):
         self.geometry = None
         self.validity = None
 
-        super(HDF5SAF, self).__init__(*args, **kwargs)
+        super(netCDFSAF, self).__init__(*args, **kwargs)
 
         if not self.fmtdelayedopen:
             self.open()
 
     def open(self):
-        """Opens a HDF5SAF, and initializes some attributes."""
+        """Opens a netCDFSAF, and initializes some attributes."""
         # Opening
         if self.openmode in ('r'):
-            self.hdf5 = h5py.File(self.container.abspath, 'r')
-            if not all([k in self.hdf5.attrs for k in ['FORECAST_STEP', 'IMAGE_ACQUISITION_TIME',
-                                                       'CFAC', 'COFF', 'LFAC', 'LOFF', 'NC', 'NL',
-                                                       'ORBIT_TYPE', 'PROJECTION_NAME', 'SATELLITE',
-                                                       'REGION_NAME', 'SUB_SATELLITE_POINT_END_LAT',
-                                                       'SUB_SATELLITE_POINT_END_LON',
-                                                       'SUB_SATELLITE_POINT_START_LAT',
-                                                       'SUB_SATELLITE_POINT_START_LON']]):
-                self.hdf5.close()
-                raise IOError('HDF5 file is not a HDF5SAF file')
+            self.nc = netCDF4.Dataset(self.container.abspath, 'r')
+            if not all(hasattr(self.nc, k) for k in ['nominal_product_time',
+                                                     'cgms_projection',
+                                                     'region_name',
+                                                     'sub-satellite_longitude',
+                                                     'satellite_identifier']):
+                self.nc.close()
+                raise IOError('netCDF file is not a netCDFSAF file')
             self.isopen = True
         else:
-            raise NotImplementedError("HDF5SAF is only implemented for reading")
+            raise NotImplementedError("netCDFSAF is only implemented for reading")
 
         # Reading of metadata
         if self.geometry is None:
             self._read_dategeom()
 
     def close(self):
-        """Closes a HDF5SAF file."""
+        """Closes a netCDFSAF file."""
         if self.isopen:
             self.isopen = False
             # Cleanings
-            self.hdf5.close()
-            del self.hdf5
+            self.nc.close()
+            del self.nc
 
 ################
 # ABOUT FIELDS #
@@ -122,9 +120,9 @@ class HDF5SAF(FileResource):
 
     def listfields(self, **kwargs):
         """
-        Returns a list containing the HDF5SAF identifiers of all the fields of the resource.
+        Returns a list containing the netCDFSAF identifiers of all the fields of the resource.
         """
-        return super(HDF5SAF, self).listfields(**kwargs)
+        return super(netCDFSAF, self).listfields(**kwargs)
 
     @FileResource._openbeforedelayed
     def _listfields(self, complete=False):
@@ -132,23 +130,15 @@ class HDF5SAF(FileResource):
         Actual listfields() method for HDF5SAF.
 
         Args: \n
-        - *complete*: if True method returns a list of {'HDF5SAF':HDF5SAF_fid, 'generic':generic_fid}
-                      if False method return a list of HDF5SAF_fid
+        - *complete*: if True method returns a list of {'netCDFSAF':netCDFSAF_fid,
+                                                        'generic':generic_fid}
+                      if False method return a list of netCDFSAF_fid
         """
-        def recursive(parent, path):
-            path += '' if len(path) == 0 else '/' 
-            result = []
-            for k, v in parent.items():
-                if isinstance(v, h5py.Group):
-                    result.extend(recursive(v, path + k))
-                else:
-                    result.append(path + k)
-            return result
-            
-        fieldslist = recursive(self.hdf5, '')
+        fieldslist = [v for v in self.nc.variables
+                      if all(d in self.nc[v].dimensions for d in ('time', 'nx', 'ny'))]
 
         if complete:
-            return [{'HDF5SAF': f, 'generic': {}} for f in fieldslist]
+            return [{'netCDFSAF': f, 'generic': {}} for f in fieldslist]
         else:
             return fieldslist
 
@@ -193,10 +183,7 @@ class HDF5SAF(FileResource):
                          processtype='observation',
                          comment="")
         if getdata:
-            data = self.hdf5
-            for fid in fieldidentifier.split('/'):
-                data = data[fid]
-            field.setdata(data[...][::-1, :])
+            field.setdata(self.nc[fieldidentifier][0, ::-1, :])
 
         return field
 
@@ -217,7 +204,7 @@ class HDF5SAF(FileResource):
         if requestedfields == []:
             raise epygramError("unable to find requested fields in resource.")
 
-        return super(HDF5SAF, self).readfields(requestedfields, getdata)
+        return super(netCDFSAF, self).readfields(requestedfields, getdata)
 
     def writefield(self, field):
         """
@@ -230,7 +217,7 @@ class HDF5SAF(FileResource):
         if not isinstance(field, Field):
             raise epygramError("*field* must be a Field instance.")
 
-        raise NotImplementedError("Writing of HDF5SAF file is not implemented.")
+        raise NotImplementedError("Writing of netCDFAF file is not implemented.")
 
     def writefields(self, fieldset):
         """
@@ -243,9 +230,9 @@ class HDF5SAF(FileResource):
         if not isinstance(fieldset, FieldSet):
             raise epygramError("'fieldset' argument must be of kind FieldSet.")
         if self.openmode == 'r':
-            raise IOError("cannot write field in a HDF5SAF with openmode 'r'.")
+            raise IOError("cannot write field in a netCDFAF with openmode 'r'.")
 
-        raise NotImplementedError("Writing of HDF5SAF file is not implemented.")
+        raise NotImplementedError("Writing of netCDFAF file is not implemented.")
 
 ###########
 # pre-app #
@@ -327,60 +314,48 @@ class HDF5SAF(FileResource):
     @FileResource._openbeforedelayed
     def _read_dategeom(self):
         """
-        Reads HDF5 tags.
+        Reads netCDFSAF tags.
         """
 
         # Projection
-        geo = self.hdf5.attrs['ORBIT_TYPE'] == b'GEO' and \
-              self.hdf5.attrs['PROJECTION_NAME'].startswith(b'GEOS(') and \
-              self.hdf5.attrs['SUB_SATELLITE_POINT_END_LAT'] == \
-              self.hdf5.attrs['SUB_SATELLITE_POINT_START_LAT'] and \
-              self.hdf5.attrs['SUB_SATELLITE_POINT_END_LON'] == \
-              self.hdf5.attrs['SUB_SATELLITE_POINT_START_LON']
-        
+        attrs = {item.split('=')[0]: item.split('=')[1]
+                 for item in self.nc.cgms_projection.replace('+', '').split()}
+        geo = attrs['proj'] == 'geos'
+
         # Date
-        if self.hdf5.attrs['FORECAST_STEP'] != 0:
-            raise NotImplementedError("Does not know the forecast_step unit")
-        date = self.hdf5.attrs['IMAGE_ACQUISITION_TIME'].decode('UTF8')
-        if len(date) == 12:
-            date = datetime.datetime.strptime(date, '%Y%m%d%H%M')
-        else:
-            date = datetime.datetime.strptime(date, '%Y%m%d%H%M%S')
+        date = datetime.datetime.fromisoformat(self.nc.nominal_product_time.replace('Z', '+00:00'))
         self.validity = FieldValidity(basis=date, term=datetime.timedelta(hours=0))
 
         # Grid
-        cfac, coff, lfac, loff, nc, nl, satellite = [self.hdf5.attrs[k] for k in
-                                                     ['CFAC', 'COFF', 'LFAC', 'LOFF', 'NC', 'NL', 'SATELLITE']]
-
         kwargs_vcoord = {'typeoffirstfixedsurface': 255,
                          'position_on_grid': '__unknown__',
                          'levels': [255]}
         vcoordinate = VGeometry(**kwargs_vcoord)
         if geo:
             # Space view
-            Lap = Angle(self.hdf5.attrs['SUB_SATELLITE_POINT_START_LAT'], 'degrees')
-            Lop = Angle(self.hdf5.attrs['SUB_SATELLITE_POINT_START_LON'], 'degrees')
+            if self.nc.satellite_identifier in ('MTGI1', 'MTI1'):
+                Lap = Angle(0., 'degrees')  # Certainly in degrees as others lon/lat in file
+            else:
+                raise NotImplementedError("Please check latitude to use for this satellite:",
+                                          self.nc.satellite_identifier)
+            Lop = Angle(getattr(self.nc, 'sub-satellite_longitude'), 'degrees')  # Certainly in degrees as others lon/lat in file
 
-            # The following values seem to be absent from the metadata in the HDF5
-            # They are taken from the values obtained with a TIFFMF file (h) and ASPIC software (rmajor, rminor)
-            # It could be necessary to adjust them for other satellite
-            if satellite[0] not in (b'MSG4', b'MSG3'):
-                raise NotImplementedError("Please check altitude and geoid to use for this satellite:", satellite[0])
-            rmajor, rminor = 6378160, 6356775
-            h = 35785833.88328
+            rmajor, rminor = float(attrs['r_eq']) * 1000., float(attrs['r_pol']) * 1000.
+            h = float(attrs['h']) * 1000. - rmajor
 
             # use of cfac/lfac deduced from http://www.umr-cnrm.fr/remote-sensing/IMG/pdf/lsasaf_mf_pum_al_msg_1.10.pdf
             # Here we use the sin function whereas it seems that sin(x) was approximated by x in TIFFMF ????
             # relative (absolute) difference between both formulation is about 1E9 (1E-6 meters) for resolx/resoly
-            resolx = h * numpy.sin(numpy.radians(1. / (cfac * 2**-16)))
-            resoly = h * numpy.sin(numpy.radians(1. / (lfac * 2**-16)))
+            resolx = h * numpy.sin(numpy.radians(1. / (float(attrs['cfac']) * 2**-16)))
+            resoly = h * numpy.sin(numpy.radians(1. / (float(attrs['lfac']) * 2**-16)))
 
             # In TIFFMF it was needed to shift by .5 pixel depending on the size parity
             # Here, the following input_position is found to well reproduce the lon/lat given
-            # by the SAFLAND in external files, and to position correctly the field on a map
-            if self.hdf5.attrs['REGION_NAME'] not in (b'Full-Disk', b'MSG-Disk'):
-                raise NotImplementedError("Not checked on region: " + self.hdf5.attrs['REGION_NAME'].decode('UTF8'))
-            input_position = (coff - 1, nl - loff)
+            # in external files, and to position correctly the field on a map
+            if self.nc.region_name != 'FULL FRAME':
+                raise NotImplementedError(f"Not checked on region: {self.nc.region_name}")
+            nx, ny = self.nc.dimensions['nx'].size, self.nc.dimensions['ny'].size
+            input_position = (float(attrs['coff']) - 1, ny - float(attrs['loff']))
 
             grid = {'LAMzone': None,
                     'X_resolution': resolx,
@@ -391,7 +366,7 @@ class HDF5SAF(FileResource):
             projection = {'satellite_lat': Lap, 'satellite_lon': Lop, 'satellite_height': h,
                           'reference_lon': Lop,
                           'rotation': Angle(0., 'degrees')}
-            dimensions = {'X': nc, 'Y': nl}
+            dimensions = {'X': nx, 'Y': ny}
             geometryname = 'space_view'
             kwargs_geom = dict(name=geometryname,
                                grid=FPDict(grid),
