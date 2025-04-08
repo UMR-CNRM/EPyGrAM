@@ -540,7 +540,7 @@ def find_re_in_list(regexp, a_list):
             raise epygramError("pattern and element must be strings in \
                                 check_string_pattern function.")
         # protect '.'
-        mypattern = re.subn('\.', r'\.', pattern)[0]
+        mypattern = re.subn(r'\.', r'\.', pattern)[0]
         # change unix '?' to python '.' (any char)
         mypattern = mypattern.replace('?', '.')
         # change unix '*' to python '.*' (several any char)

@@ -65,8 +65,10 @@ implemented_formats = ['netCDFSAF', 'netCDFMNH', 'netCDF', 'GRIB', 'GeoPoints',
                        'TIFFMF', 'HDF5SAF', 'FA', 'LFI', 'DDHLFA', 'LFA']
 
 #: FA default compression parameters
-FA_default_compression = {'KNGRIB': 2, 'KDMOPL': 0, 'KPUILA': 0, 'KSTRON': 0,
+FA_default_compression = {'KNGRIB': 123, 'KDMOPL': 0, 'KPUILA': 0, 'KSTRON': 0,
                           'KNBPDG': 16, 'KNBCSP': 16}
+#: FA default KNGRIB for spectral fields
+FA_default_KNGRIB_spectral = 103
 #: Default reference pressure coefficient for converting hybrid A coefficients
 #: in FA
 FA_default_reference_pressure = 101325.

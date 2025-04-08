@@ -961,6 +961,11 @@ class FA(FileResource):
                 self.validity.set(cumulativeduration=field.validity.cumulativeduration())
                 self._set_validity()
             if compression is not None:
+                if 'KNGRIB' not in compression:
+                    if field.spectral:
+                        compression['KNGRIB'] = config.FA_default_KNGRIB_spectral
+                    else:
+                        compression['KNGRIB'] = config.FA_default_compression['KNGRIB']
                 modified_compression = True
             elif field.fid[self.format] in self.fieldscompression:
                 compression = self.fieldscompression[field.fid[self.format]]
