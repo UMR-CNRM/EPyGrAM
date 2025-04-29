@@ -32,7 +32,7 @@ dependencies = [
     "bronx",
     "eccodes==2.38.0",  # ! consistency with falfilfa4py !
     "ectrans4py",
-    "falfilfa4py==1.0.4",  # ! consistency with eccodes !
+    "falfilfa4py==1.0.5",  # ! consistency with eccodes !
     "footprints",
     "netCDF4",
     "numpy",
