@@ -103,10 +103,12 @@ def profile(
                         The graphical output, if requested, will be completed
                         by the requested output format.
     :param zoom: a dict(ymin, ymax) to restrain the plot.
-    :param Yconvert: among ('pressure', 'height', 'altitude'),
+    :param Yconvert: among ('pressure', 'height', 'altitude'), or [fid, kind],
                   to convert the vertical coordinate.
                   For height/altitude, implies the read of T and q
                   profiles and optionally pressure departure, hydrometeors.
+                  If [fid, kind] is profided, the vertical coordinate is read using the fid
+                  and is considered to be of the kind specified (eg. 100 for pressure).
     :param cheap_height: if True, do not take hydrometeors nor pressure departure
                       into account for computing height from pressure.
     :param noplot: if True, disable the plot of profiles.
@@ -146,13 +148,23 @@ def profile(
         map_vcoord = {'pressure':100,
                       'altitude':102,
                       'height':103}
-        vertical_coordinate = map_vcoord.get(vertical_coordinate, vertical_coordinate)
+        if not isinstance(vertical_coordinate, list):
+            vertical_coordinate = map_vcoord.get(vertical_coordinate, vertical_coordinate)
         profile = r.extractprofile(fieldseed,
                                    *coordinates,
-                                   vertical_coordinate=vertical_coordinate,
+                                   vertical_coordinate=vertical_coordinate if isinstance(vertical_coordinate, int) else None,
                                    interpolation=interpolation,
                                    cheap_height=cheap_height,
                                    external_distance=external_distance)
+        if vertical_coordinate is not None and not isinstance(vertical_coordinate, int):
+            # vertical_coordinate is a list containing the fid of the field to use as a vertical coordinate
+            # and the GRIB code corresponding to the kind of this vertical level coordinate
+            profileVCoord = r.extractprofile(vertical_coordinate[0],
+                                             *coordinates,
+                                             vertical_coordinate=None,
+                                             interpolation=interpolation)
+            profile.use_field_as_vcoord(profileVCoord, force_kind=int(vertical_coordinate[1]))
+
         if operation is not None:
             profile.operation(**operation)
 
@@ -320,6 +332,7 @@ def get_args():
     add_arg_to_parser(Y, extraction_args['verticalcoord2pressure'])
     add_arg_to_parser(Y, extraction_args['verticalcoord2height'])
     add_arg_to_parser(Y, extraction_args['verticalcoord2altitude'])
+    add_arg_to_parser(Y, fields_args['external_vertical_coord'])
     add_arg_to_parser(parser, extraction_args['no_cheap_height_conversion'])
     add_arg_to_parser(parser, graphical_args['legend'])
     add_arg_to_parser(parser, graphical_args['emagram_like_profiles'])

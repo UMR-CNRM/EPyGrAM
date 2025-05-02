@@ -93,6 +93,14 @@ d = {
                    'fa_what' tool.",
              required=True,
              default=None)],
+    'external_vertical_coord':[
+        '-Z', '--externaleVCoord',
+        dict(help="fid kind: fid is the field identifier to be used\
+                   as vertical coordinate and kind is the vertical coordinate\
+                   code (eg. 100 for pressure)",
+             nargs=2,
+             dest='Yconvert',
+             default=None)],
     'DDHLFA_multiple_fields':[
         '-f', '-F', '--field',
         dict(help="name of the field to be processed.\

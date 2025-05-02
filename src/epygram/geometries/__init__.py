@@ -42,6 +42,7 @@ Height = 103
 PV = 109
 HybridH = 118
 HybridP = 119
+GeneralVerticalHeightCoordinate = 150
 
 #: Mapping of vertical coordinates
 vertical_coordinates = {'Pressure':Pressure,
