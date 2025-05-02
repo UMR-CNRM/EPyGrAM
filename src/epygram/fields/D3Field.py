@@ -616,7 +616,7 @@ class _D3CommonField(Field):
             kwargs_vcoord['grid'] = copy.copy(self.geometry.vcoordinate.grid)
             kwargs_vcoord['levels'] = copy.copy(self.geometry.vcoordinate.levels)
             k_index = list(range(len(kwargs_vcoord['levels'])))
-        elif self.geometry.vcoordinate.typeoffirstfixedsurface in [100, 102, 103, 109, 1, 106, 255, 160, 200]:
+        elif self.geometry.vcoordinate.typeoffirstfixedsurface in [100, 102, 103, 109, 1, 106, 255, 160, 200, 150]:
             kwargs_vcoord['levels'] = list(copy.deepcopy(self.geometry.vcoordinate.levels))
             k_index = range(len(kwargs_vcoord['levels']))
         else:

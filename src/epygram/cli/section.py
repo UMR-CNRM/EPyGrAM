@@ -110,10 +110,12 @@ def section(
     :param diffonly: if True, only plots the difference field.
     :param points_number: specific number of points on the transect.
     :param resolution: resolution of the transect.
-    :param Yconvert: among ('pressure', 'height', 'altitude'),
+    :param Yconvert: among ('pressure', 'height', 'altitude'), or [fid, kind],
                   to convert the vertical coordinate.
                   For height/altitude, implies the read of T and q
                   profiles and optionally pressure departure, hydrometeors.
+                  If [fid, kind] is profided, the vertical coordinate is read using the fid
+                  and is considered to be of the kind specified (eg. 100 for pressure).
     :param interpolation: kind of interpolation from grid to coordinates, among
                        ('nearest', 'linear', 'cubic').
     :param cheap_height: if True, do not take hydrometeors nor pressure departure
@@ -149,10 +151,11 @@ def section(
     if outputfilename and not output:
         raise epygramError('*output* format must be defined if outputfilename is supplied.')
 
-    map_vcoord = {'pressure':100,
-                  'altitude':102,
-                  'height':103}
-    Yconvert = map_vcoord.get(Yconvert, Yconvert)
+    map_vcoord = {'pressure': 100,
+                  'altitude': 102,
+                  'height': 103}
+    if not isinstance(Yconvert, list):
+        Yconvert = map_vcoord.get(Yconvert, Yconvert)
 
     resource = epygram.formats.resource(filename, openmode='r')
     if resource.format not in ('GRIB', 'FA', 'LFI'):
@@ -165,10 +168,21 @@ def section(
                                       starting_point, ending_point,
                                       points_number=points_number,
                                       resolution=resolution,
-                                      vertical_coordinate=Yconvert,
+                                      vertical_coordinate=Yconvert if isinstance(Yconvert, int) else None,
                                       interpolation=interpolation,
                                       cheap_height=cheap_height,
                                       global_shift_center=global_shift_center)
+    if Yconvert is not None and not isinstance(Yconvert, int):
+        # args.Yconvert is a list containing the fid of the field to use as a vertical coordinate
+        # and the GRIB code corresponding to the kind of this vertical level coordinate
+        sectionVCoord = resource.extractsection(Yconvert[0],
+                                                starting_point, ending_point,
+                                                points_number=points_number,
+                                                resolution=resolution,
+                                                vertical_coordinate=None,
+                                                interpolation=interpolation,
+                                                global_shift_center=global_shift_center)
+        section.use_field_as_vcoord(sectionVCoord, force_kind=int(Yconvert[1]))
     if operation is not None:
         section.operation(**operation)
     if diffmode:
@@ -176,10 +190,22 @@ def section(
                                               starting_point, ending_point,
                                               points_number=points_number,
                                               resolution=resolution,
-                                              vertical_coordinate=Yconvert,
+                                              vertical_coordinate=Yconvert if isinstance(Yconvert, int) else None,
                                               interpolation=interpolation,
                                               cheap_height=cheap_height,
                                               global_shift_center=global_shift_center)
+        if Yconvert is not None and not isinstance(Yconvert, int):
+            # args.Yconvert is a list containing the fid of the field to use as a vertical coordinate
+            # and the GRIB code corresponding to the kind of this vertical level coordinate
+            sectionVCoord = reference.extractsection(Yconvert[0],
+                                                     starting_point, ending_point,
+                                                     points_number=points_number,
+                                                     resolution=resolution,
+                                                     vertical_coordinate=None,
+                                                     interpolation=interpolation,
+                                                     global_shift_center=global_shift_center)
+            refsection.use_field_as_vcoord(sectionVCoord, force_kind=int(Yconvert[1]))
+
         if operation is not None:
             refsection.operation(**operation)
         diff = section - refsection
@@ -297,6 +323,7 @@ def get_args():
     add_arg_to_parser(Y, extraction_args['verticalcoord2pressure'])
     add_arg_to_parser(Y, extraction_args['verticalcoord2height'])
     add_arg_to_parser(Y, extraction_args['verticalcoord2altitude'])
+    add_arg_to_parser(Y, fields_args['external_vertical_coord'])
     add_arg_to_parser(parser, extraction_args['no_cheap_height_conversion'])
     add_arg_to_parser(parser, graphical_args['legend'])
     add_arg_to_parser(parser, graphical_args['graphicmode'])
