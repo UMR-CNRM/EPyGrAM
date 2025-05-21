@@ -44,7 +44,7 @@ def nlonlat_to_nsmax(nlon, nlat, stretching, trunctype):
         return int(numpy.floor(min(nlon - 1, 2 * nlat - 3) / ratio))
 
 
-def get_spectral_geometry(field, resource, trunctype="linear", verbose=False):
+def get_spectral_geometry(field, resource, trunctype=None, verbose=False):
     """
     Returns the SpectralGeometry object of the field or resource.
 
@@ -52,14 +52,18 @@ def get_spectral_geometry(field, resource, trunctype="linear", verbose=False):
     If the resource has no spectral geometry and the grid is a Gaussian grid,
     return a spectralGeometry object assuming triangular linear truncation by default.
     """
-    if trunctype not in ("linear", "quadratic", "cubic"):
-        raise ValueError("trunctype should be either 'linear', 'quadratic' or 'cubic'")
+    if trunctype not in (None, "linear", "quadratic", "cubic"):
+        raise ValueError("trunctype should be either None, 'linear', 'quadratic' or 'cubic'")
+    trunctype_is_unused = True
     spectral_geometry = None
     if field.spectral_geometry is not None:
         spectral_geometry = field.spectral_geometry
     elif hasattr(resource, "spectral_geometry"):
         spectral_geometry = resource.spectral_geometry
     elif isinstance(field.geometry, GaussGeometry):
+        if trunctype is None:
+            trunctype = "linear"
+        trunctype_is_unused = False
         if verbose:
             print(
                 f"Build spectral geometry assuming {trunctype} and triangular truncation"
@@ -77,6 +81,11 @@ def get_spectral_geometry(field, resource, trunctype="linear", verbose=False):
         raise NotImplementedError(
             "No meaningful spectral transform implemented for " + field.geometry.name
         )
+
+    if trunctype is not None and trunctype_is_unused:
+        raise ValueError("The non-default parameter trunctype=" + trunctype
+                         + " has not been used.")
+
     if verbose:
         print("Spectral geometry is", spectral_geometry)
     return spectral_geometry
