@@ -27,33 +27,65 @@ from epygram.util import RecursiveObject, write_formatted_table
 _file_id = 'epygram.spectra.Spectrum'
 _file_columns = ['#', 'lambda', 'variance']
 
+def nlonlat_to_nsmax(nlon, nlat, stretching, trunctype):
+    """
+    Relationship between grid-point space and spectral space.
+    nlat is the number of latitudes, nlon is the maximum number of longitudes.
+    trunc_type should be one of "linear", "quadratic" or "cubic"
+    Returns the maximum total dimensionless wavenumber.
+    """
+    trunctype2ratio = {"linear": 2, "quadratic": 3, "cubic": 4}
+    if trunctype not in trunctype2ratio.keys():
+        raise ValueError("trunc_type should be one of 'linear', 'quadratic' or 'cubic'")
+    ratio = trunctype2ratio[trunctype]
+    if stretching == 1.0:
+        return int(numpy.floor((nlon - 1) / ratio))
+    else:
+        return int(numpy.floor(min(nlon - 1, 2 * nlat - 3) / ratio))
 
-def get_spectral_geometry(field, resource, verbose=False):
+
+def get_spectral_geometry(field, resource, trunctype=None, verbose=False):
     """
     Returns the SpectralGeometry object of the field or resource.
 
     If the field has no spectral geometry, return the spectral geometry of the resource.
-    If the resource has no spectral geometry and the grid is a Gaussian grid, 
-    return a spectralGeometry object assuming linear and triangular truncation.
+    If the resource has no spectral geometry and the grid is a Gaussian grid,
+    return a spectralGeometry object assuming triangular linear truncation by default.
     """
+    if trunctype not in (None, "linear", "quadratic", "cubic"):
+        raise ValueError("trunctype should be either None, 'linear', 'quadratic' or 'cubic'")
+    trunctype_is_unused = True
     spectral_geometry = None
     if field.spectral_geometry is not None:
         spectral_geometry = field.spectral_geometry
     elif hasattr(resource, "spectral_geometry"):
         spectral_geometry = resource.spectral_geometry
     elif isinstance(field.geometry, GaussGeometry):
+        if trunctype is None:
+            trunctype = "linear"
+        trunctype_is_unused = False
         if verbose:
             print(
-                "Build spectral geometry assuming linear and triangular truncation"
+                f"Build spectral geometry assuming {trunctype} and triangular truncation"
             )
+
+        stretching = field.geometry.grid["dilatation_coef"]
+        nlat = field.geometry.dimensions["lat_number"]
+        nlon = field.geometry.dimensions["max_lon_number"]
         truncation = dict(
-            max=field.geometry.dimensions["lat_number"] - 1,
+            max=nlonlat_to_nsmax(nlon, nlat, stretching, trunctype),
             shape="triangular",
         )
         spectral_geometry = SpectralGeometry("legendre", truncation)
     else:
-        raise NotImplementedError("No meaningful spectral transform implemented for "
-                                  + field.geometry.name)
+        raise NotImplementedError(
+            "No meaningful spectral transform implemented for " + field.geometry.name
+        )
+
+    if trunctype is not None and trunctype_is_unused:
+        raise ValueError("The non-default parameter trunctype=" + trunctype
+                         + " has not been used.")
+
     if verbose:
         print("Spectral geometry is", spectral_geometry)
     return spectral_geometry
