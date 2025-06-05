@@ -135,7 +135,7 @@ class netCDFSAF(FileResource):
                       if False method return a list of netCDFSAF_fid
         """
         fieldslist = [v for v in self.nc.variables
-                      if all(d in self.nc[v].dimensions for d in ('time', 'nx', 'ny'))]
+                      if all(d in self.nc[v].dimensions for d in ('nx', 'ny'))]
 
         if complete:
             return [{'netCDFSAF': f, 'generic': {}} for f in fieldslist]
@@ -183,7 +183,11 @@ class netCDFSAF(FileResource):
                          processtype='observation',
                          comment="")
         if getdata:
-            field.setdata(self.nc[fieldidentifier][0, ::-1, :])
+            if len(self.nc[fieldidentifier].shape) == 3:
+                # First dimension is time
+                field.setdata(self.nc[fieldidentifier][0, ::-1, :])
+            else:
+                field.setdata(self.nc[fieldidentifier][::-1, :])
 
         return field
 
@@ -333,7 +337,7 @@ class netCDFSAF(FileResource):
         vcoordinate = VGeometry(**kwargs_vcoord)
         if geo:
             # Space view
-            if self.nc.satellite_identifier in ('MTGI1', 'MTI1'):
+            if self.nc.satellite_identifier in ('MTGI1', 'MTI1', 'MSG3'):
                 Lap = Angle(0., 'degrees')  # Certainly in degrees as others lon/lat in file
             else:
                 raise NotImplementedError("Please check latitude to use for this satellite:",
