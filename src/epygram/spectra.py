@@ -44,41 +44,52 @@ def nlonlat_to_nsmax(nlon, nlat, stretching, trunctype):
         return int(numpy.floor(min(nlon - 1, 2 * nlat - 3) / ratio))
 
 
-def get_spectral_geometry(field, resource, trunctype="linear", verbose=False):
+def make_spectral_geometry(field, trunctype="linear", verbose=False):
     """
-    Returns the SpectralGeometry object of the field or resource.
-
-    If the field has no spectral geometry, return the spectral geometry of the resource.
-    If the resource has no spectral geometry and the grid is a Gaussian grid,
-    return a spectralGeometry object assuming triangular linear truncation by default.
+    Returns a SpectralGeometry object consistent with the grid-point geometry
+    of the field and with the required truncation type.
+    This is only implemented for Gaussiand grids, with a triangular truncation.
     """
     if trunctype not in ("linear", "quadratic", "cubic"):
         raise ValueError("trunctype should be either 'linear', 'quadratic' or 'cubic'")
+    if not isinstance(field.geometry, GaussGeometry):
+        raise NotImplementedError(
+            "No meaningful spectral transform implemented for " + field.geometry.name
+        )
+    if verbose:
+        print(
+            f"Build spectral geometry assuming {trunctype} and triangular truncation."
+        )
+
+    stretching = field.geometry.grid["dilatation_coef"]
+    nlat = field.geometry.dimensions["lat_number"]
+    nlon = field.geometry.dimensions["max_lon_number"]
+    truncation = dict(
+        max=nlonlat_to_nsmax(nlon, nlat, stretching, trunctype),
+        shape="triangular",
+    )
+    spectral_geometry = SpectralGeometry("legendre", truncation)
+
+    if verbose:
+        print("Built spectral geometry:", spectral_geometry)
+
+    return spectral_geometry
+
+
+def get_spectral_geometry(field, resource, verbose=False):
+    """
+    Returns the SpectralGeometry object of the field or resource.
+    If the field has no spectral geometry, return the spectral geometry of the resource.
+    If the resource has no spectral geometry, returns None.
+    """
     spectral_geometry = None
     if field.spectral_geometry is not None:
         spectral_geometry = field.spectral_geometry
     elif hasattr(resource, "spectral_geometry"):
         spectral_geometry = resource.spectral_geometry
-    elif isinstance(field.geometry, GaussGeometry):
-        if verbose:
-            print(
-                f"Build spectral geometry assuming {trunctype} and triangular truncation"
-            )
-
-        stretching = field.geometry.grid["dilatation_coef"]
-        nlat = field.geometry.dimensions["lat_number"]
-        nlon = field.geometry.dimensions["max_lon_number"]
-        truncation = dict(
-            max=nlonlat_to_nsmax(nlon, nlat, stretching, trunctype),
-            shape="triangular",
-        )
-        spectral_geometry = SpectralGeometry("legendre", truncation)
-    else:
-        raise NotImplementedError(
-            "No meaningful spectral transform implemented for " + field.geometry.name
-        )
     if verbose:
         print("Spectral geometry is", spectral_geometry)
+
     return spectral_geometry
 
 
