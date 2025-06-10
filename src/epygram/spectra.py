@@ -44,26 +44,26 @@ def nlonlat_to_nsmax(nlon, nlat, stretching, trunctype):
         return int(numpy.floor(min(nlon - 1, 2 * nlat - 3) / ratio))
 
 
-def make_spectral_geometry(field, trunctype="linear", verbose=False):
+def make_spectral_geometry(geometry, trunctype="linear", verbose=False):
     """
-    Returns a SpectralGeometry object consistent with the grid-point geometry
-    of the field and with the required truncation type.
+    Returns a SpectralGeometry object consistent with the input grid-point
+    geometry and with the required truncation type.
     This is only implemented for Gaussiand grids, with a triangular truncation.
     """
     if trunctype not in ("linear", "quadratic", "cubic"):
         raise ValueError("trunctype should be either 'linear', 'quadratic' or 'cubic'")
-    if not isinstance(field.geometry, GaussGeometry):
+    if not isinstance(geometry, GaussGeometry):
         raise NotImplementedError(
-            "No meaningful spectral transform implemented for " + field.geometry.name
+            "No meaningful spectral transform implemented for " + geometry.name
         )
     if verbose:
         print(
             f"Build spectral geometry assuming {trunctype} and triangular truncation."
         )
 
-    stretching = field.geometry.grid["dilatation_coef"]
-    nlat = field.geometry.dimensions["lat_number"]
-    nlon = field.geometry.dimensions["max_lon_number"]
+    stretching = geometry.grid["dilatation_coef"]
+    nlat = geometry.dimensions["lat_number"]
+    nlon = geometry.dimensions["max_lon_number"]
     truncation = dict(
         max=nlonlat_to_nsmax(nlon, nlat, stretching, trunctype),
         shape="triangular",
