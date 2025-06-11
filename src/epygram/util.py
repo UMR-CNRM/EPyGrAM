@@ -245,14 +245,20 @@ class Comparator(object):
 
     @classmethod
     def _array_are_equal(cls, array1, array2, tolerance):
+        if array1.ndim == array2.ndim == 0:
+            return nearlyEqual(array1, array2, tolerance)
         if tolerance == 0.:
             return numpy.all(array1 == array2)
         else:
+            # tolerance for floats
             if (array1.dtype == array2.dtype and
-                    array1.dtype in [numpy.dtype(d)
-                                     for d in ['float16', 'float32', 'float64']]):
-                # tolerance for floats
-                return numpy.all(nearlyEqualArray(array1, array2, tolerance))
+                array1.dtype in [numpy.dtype(d)
+                                 for d in ['float16', 'float32', 'float64']]):
+                if isinstance(array1, numpy.ma.MaskedArray) and isinstance(array1, numpy.ma.MaskedArray):
+                    return (numpy.all(array1.mask == array2.mask) and
+                            numpy.all(nearlyEqualArray(array1.data, array2.data, tolerance)))
+                else:
+                    return numpy.all(nearlyEqualArray(array1, array2, tolerance))
             else:
                 return numpy.all(array1 == array2)
 
