@@ -27,35 +27,69 @@ from epygram.util import RecursiveObject, write_formatted_table
 _file_id = 'epygram.spectra.Spectrum'
 _file_columns = ['#', 'lambda', 'variance']
 
+def nlonlat_to_nsmax(nlon, nlat, stretching, trunctype):
+    """
+    Relationship between grid-point space and spectral space.
+    nlat is the number of latitudes, nlon is the maximum number of longitudes.
+    trunc_type should be one of "linear", "quadratic" or "cubic"
+    Returns the maximum total dimensionless wavenumber.
+    """
+    trunctype2ratio = {"linear": 2, "quadratic": 3, "cubic": 4}
+    if trunctype not in trunctype2ratio.keys():
+        raise ValueError("trunc_type should be one of 'linear', 'quadratic' or 'cubic'")
+    ratio = trunctype2ratio[trunctype]
+    if stretching == 1.0:
+        return int(numpy.floor((nlon - 1) / ratio))
+    else:
+        return int(numpy.floor(min(nlon - 1, 2 * nlat - 3) / ratio))
+
+
+def make_spectral_geometry(geometry, trunctype="linear", verbose=False):
+    """
+    Returns a SpectralGeometry object consistent with the input grid-point
+    geometry and with the required truncation type.
+    This is only implemented for Gaussiand grids, with a triangular truncation.
+    """
+    if trunctype not in ("linear", "quadratic", "cubic"):
+        raise ValueError("trunctype should be either 'linear', 'quadratic' or 'cubic'")
+    if not isinstance(geometry, GaussGeometry):
+        raise NotImplementedError(
+            "No meaningful spectral transform implemented for " + geometry.name
+        )
+    if verbose:
+        print(
+            f"Build spectral geometry assuming {trunctype} and triangular truncation."
+        )
+
+    stretching = geometry.grid["dilatation_coef"]
+    nlat = geometry.dimensions["lat_number"]
+    nlon = geometry.dimensions["max_lon_number"]
+    truncation = dict(
+        max=nlonlat_to_nsmax(nlon, nlat, stretching, trunctype),
+        shape="triangular",
+    )
+    spectral_geometry = SpectralGeometry("legendre", truncation)
+
+    if verbose:
+        print("Built spectral geometry:", spectral_geometry)
+
+    return spectral_geometry
+
 
 def get_spectral_geometry(field, resource, verbose=False):
     """
     Returns the SpectralGeometry object of the field or resource.
-
     If the field has no spectral geometry, return the spectral geometry of the resource.
-    If the resource has no spectral geometry and the grid is a Gaussian grid, 
-    return a spectralGeometry object assuming linear and triangular truncation.
+    If the resource has no spectral geometry, returns None.
     """
     spectral_geometry = None
     if field.spectral_geometry is not None:
         spectral_geometry = field.spectral_geometry
     elif hasattr(resource, "spectral_geometry"):
         spectral_geometry = resource.spectral_geometry
-    elif isinstance(field.geometry, GaussGeometry):
-        if verbose:
-            print(
-                "Build spectral geometry assuming linear and triangular truncation"
-            )
-        truncation = dict(
-            max=field.geometry.dimensions["lat_number"] - 1,
-            shape="triangular",
-        )
-        spectral_geometry = SpectralGeometry("legendre", truncation)
-    else:
-        raise NotImplementedError("No meaningful spectral transform implemented for "
-                                  + field.geometry.name)
     if verbose:
         print("Spectral geometry is", spectral_geometry)
+
     return spectral_geometry
 
 
