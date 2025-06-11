@@ -289,7 +289,7 @@ class FA(FileResource):
                                        FA4py.get_facst()))
 
     @classmethod
-    def field_type(cls, fieldname):
+    def field_type_from_sfxflddesc(cls, fieldname):
         """
         Get field type, either 'H2D' or the meta-data types registered in
         cls.sfxflddesc
@@ -611,23 +611,11 @@ class FA(FileResource):
         If **update_fieldscompression**, store compression info in attribute
         fieldscompression.
         """
-        try:
-            (LDCOSP,
-             KNGRIB,
-             KNBITS,
-             KSTRON,
-             KPUILA) = FA4py.wfanion(self._unit,
-                                     fieldname[0:4],
-                                     0,
-                                     fieldname[4:])[1:6]
-        except RuntimeError as e:
-            if 'falfilfa4py: Error code -93 was raised' in str(e) or \
-               'falfilfa4py: Error code -91 was raised' in str(e):
-                raise epygramError(fieldname + ': seems like you try to read a MiscField as a H2DField...')
-            else:
-                raise e
-        encoding = {'spectral':LDCOSP, 'KNGRIB':KNGRIB, 'KNBITS':KNBITS,
-                    'KSTRON':KSTRON, 'KPUILA':KPUILA}
+        encoding = self._fanion(fieldname)
+        if not encoding.pop('exists'):
+            raise epygramError(f'Field is unknown in file: {fieldname}')
+        if encoding.pop('ftype') != 'H2D':
+            raise epygramError(f'Field is not H2D: {fieldname}')
         if update_fieldscompression:
             # Save compression in FA
             compression = {'KNGRIB':encoding['KNGRIB'],
@@ -636,7 +624,6 @@ class FA(FileResource):
                            'KSTRON':encoding['KSTRON'],
                            'KPUILA':encoding['KPUILA']}
             self.fieldscompression[fieldname] = compression
-
         return encoding
 
     @FileResource._openbeforedelayed
@@ -1544,19 +1531,34 @@ class FA(FileResource):
             out.write('KDATEF\n')
             out.write(str(KDATEF) + '\n')
 
-    def _field_type_from_file(self, fieldname):
-        """Return type of the field, based on FANION or FA field dict."""
+    def _fanion(self, fieldname):
+        """Smart interface to FANION, returning info on the field."""
         try:
-            exist = FA4py.wfanion(self._unit,
-                                  fieldname[0:4],
-                                  0,
-                                  fieldname[4:])[0]
-        except RuntimeError:
-            exist = False
-        ftype = self.field_type(fieldname)
-        if exist and ftype == '?':
-            ftype = 'H2D'  # because fanion fails or answers False for meta-fields
-        return ftype
+            (exists,
+             spectral,
+             KNGRIB,
+             KNBITS,
+             KSTRON,
+             KPUILA) = FA4py.wfanion(self._unit,
+                                     fieldname[0:4],
+                                     0,
+                                     fieldname[4:])[0:6]
+        except RuntimeError as e:
+            if 'Error code -93 was raised' in str(e) or \
+               'Error code -91 was raised' in str(e):
+                # fanion raises an error but it is actually an existing meta-data field
+                return {'exists':True, 'ftype':'Misc'}
+            else:
+                raise e
+
+        else:
+            return {'exists':exists, 'spectral':spectral, 'ftype':'H2D' if exists else '?',
+                    'KNGRIB':KNGRIB, 'KNBITS':KNBITS, 'KSTRON':KSTRON, 'KPUILA':KPUILA}
+            return field_info
+
+    def _field_type_from_file(self, fieldname):
+        """Return type of the field, based on FANION"""
+        return self._fanion(fieldname)['ftype']
 
     def _raw_header_get(self):
         vars_from_facies = ('KTYPTR', 'PSLAPO', 'PCLOPO', 'PSLOPO',
