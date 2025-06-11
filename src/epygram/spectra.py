@@ -172,7 +172,8 @@ class Spectrum(RecursiveObject):
                      zoom=None,
                      unit='SI',
                      title=None,
-                     figsize=None):
+                     figsize=None,
+                     takeover=False):
         """
         Plot the spectrum.
 
@@ -359,7 +360,8 @@ def plotspectra(spectra,
                 zoom=None,
                 unit='SI',
                 title=None,
-                figsize=None):
+                figsize=None,
+                takeover=False):
     """
     To plot a series of spectra.
 
@@ -382,6 +384,8 @@ def plotspectra(spectra,
     :param title: title for the plot
     :param figsize: figure sizes in inches, e.g. (5, 8.5).
                     Default figsize is config.plotsizes.
+    :param takeover: give the user more access to the objects used in the
+                     plot, by returning a dict containing them instead of only fig/ax
     """
     import matplotlib.pyplot as plt
     plt.rc('font', family='serif')
@@ -389,6 +393,7 @@ def plotspectra(spectra,
         figsize = config.plotsizes
 
     fig, ax = set_figax(*over, figsize=figsize)
+    result = {'fig':fig, 'ax':ax}
 
     if isinstance(spectra, Spectrum):
         spectra = [spectra]
@@ -426,6 +431,7 @@ def plotspectra(spectra,
     x_intercept = spectra[0].wavelengths[1]
     y_intercept = spectra[0].variances[1]
     i = 0
+    result['slopes'] = []
     for slope in slopes:
         # a slope is defined by y = A * k**-s and we plot it with
         # two points y1, y2
@@ -439,21 +445,25 @@ def plotspectra(spectra,
         A = y_intercept * x_intercept ** (-s) * slope['offset']
         y1 = A * x1 ** s
         y2 = A * x2 ** s
-        ax.plot([x1, x2], [y1, y2], color='0.7',
-                linestyle=linestyles[i % len(linestyles)],
-                label=r'$k^{' + label + '}$')
+        line = ax.plot([x1, x2], [y1, y2], color='0.7',
+                       linestyle=linestyles[i % len(linestyles)],
+                       label=r'$k^{' + label + '}$')
+        result['slopes'].append(line)
         i += 1
 
     # plot spectra
     i = 0
+    result['spectra'] = []
     for s in spectra:
-        ax.plot(s.wavelengths, s.variances, color=colors[i % len(colors)],
-                linestyle=linestyles[i // len(colors)], label=s.name)
+        line = ax.plot(s.wavelengths, s.variances, color=colors[i % len(colors)],
+                       linestyle=linestyles[i // len(colors)], label=s.name)
+        result['spectra'].append(line)
         i += 1
 
     # legend
     legend = ax.legend(loc='lower left', shadow=True)
+    result['legend'] = legend
     for label in legend.get_texts():
         label.set_fontsize('medium')
 
-    return (fig, ax)
+    return result if takeover else (fig, ax)
