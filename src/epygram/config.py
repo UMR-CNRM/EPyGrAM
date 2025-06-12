@@ -93,6 +93,13 @@ FA_allow_MOCAGE_multivalidities = False
 FA_max_encoding = 30
 #: Mute messages from FAIPAR in FA4py
 FA_mute_FA4py = False
+#: FA limits
+FA_limits = {'JPXTRO':4000,  # Maximum truncation
+             'JPXLAT':4000,  # Maximum number of latitudes
+             'JPXNIV':200,  # Maximum number of levels
+             'JPNXFA':20,  # Maximum number of open files
+             'JPNXCA':20, # Maximum number of headers
+             }
 
 #: LFA maximum number of fields
 LFA_max_num_fields = 1000

@@ -130,7 +130,9 @@ def init_env(omp_num_threads=1,
              mute_FA4py=None,
              unlimited_stack=True,
              ensure_consistent_GRIB_paths=False,
-             ignore_gribenv_paths=False):
+             ignore_gribenv_paths=False,
+             fa_limits=config.FA_limits,
+             ):
     """
     A function to modify execution environment (to be called early in
     execution).
@@ -145,6 +147,7 @@ def init_env(omp_num_threads=1,
     :param ignore_gribenv_paths: ignore predefined values of the variables
         GRIB_SAMPLES_PATH and GRIB_DEFINITION_PATH
         (or equivalent ECCODES variables)
+    :param fa_limits: FA limits
     """
     # 1. falfilfa4py library
     # FA & LFI need some special environment setting
@@ -154,7 +157,8 @@ def init_env(omp_num_threads=1,
             mute_FA4py = config.FA_mute_FA4py
         falfilfa4py.init_env(omp_num_threads=omp_num_threads, no_mpi=no_mpi,
                              lfi_C=lfi_C, mute_FA4py=mute_FA4py,
-                             unlimited_stack=unlimited_stack)
+                             unlimited_stack=unlimited_stack,
+                             fa_limits=fa_limits)
         if ensure_consistent_GRIB_paths: #CLEANME:DEPRECATED:
             from epygram.extra import griberies
             eccodes_libpath = falfilfa4py.get_dynamic_eccodes_lib_path_from_FA()
