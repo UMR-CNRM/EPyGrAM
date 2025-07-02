@@ -94,11 +94,13 @@ FA_max_encoding = 30
 #: Mute messages from FAIPAR in FA4py
 FA_mute_FA4py = False
 #: FA limits
-FA_limits = {'JPXTRO':4000,  # Maximum truncation
-             'JPXLAT':4000,  # Maximum number of latitudes
-             'JPXNIV':200,  # Maximum number of levels
-             'JPNXFA':20,  # Maximum number of open files
-             'JPNXCA':20, # Maximum number of headers
+FA_limits = {
+             #'JPXTRO':,  # Maximum truncation
+             #'JPXLAT':,  # Maximum number of latitudes
+             #'JPXNIV':,  # Maximum number of levels
+             #'JPNXFA':,  # Maximum number of open files
+             #'JPNXCA':,  # Maximum number of headers
+             #'JPXRATIO':,  # Maximum X/Y ratio
              }
 
 #: LFA maximum number of fields
