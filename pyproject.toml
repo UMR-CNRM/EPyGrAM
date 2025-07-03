@@ -30,9 +30,9 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = [
     "bronx",
-    "eccodes==2.38.0",  # ! consistency with falfilfa4py !
-    "ectrans4py",
-    "falfilfa4py==1.0.6",  # ! consistency with eccodes !
+    "eccodes==2.38.1",  # ! consistency with falfilfa4py !
+    "ectrans4py==1.6.0",
+    "falfilfa4py==1.0.7",  # ! consistency with eccodes !
     "footprints",
     "netCDF4",
     "numpy",
