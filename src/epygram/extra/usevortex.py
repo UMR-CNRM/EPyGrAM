@@ -14,6 +14,7 @@ import os
 import datetime
 import copy
 from contextlib import contextmanager
+import logging
 
 import footprints
 from bronx.system.mf import prestage
@@ -24,6 +25,13 @@ import vortex
 from vortex import toolbox
 import common  # @UnusedImport : for footprints to load classes
 import olive  # @UnusedImport : for footprints to load classes
+
+assert vortex.__version__ < '2.0.0', "Module 'usevortex' is not compatible with vortex-2"
+logging.warning(
+    " ".join(["Module 'usevortex' is deprecated and will be removed in epygram-2.2.0.",
+              "For more information, see http://confluence.meteo.fr/display/GMAP/Epygram"]
+             )
+    )
 
 
 def list_vortex_geometries():
