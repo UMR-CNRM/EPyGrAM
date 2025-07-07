@@ -22,16 +22,23 @@ from bronx.stdtypes.date import daterange
 import taylorism
 
 import vortex
-from vortex import toolbox
-import common  # @UnusedImport : for footprints to load classes
-import olive  # @UnusedImport : for footprints to load classes
 
-assert vortex.__version__ < '2.0.0', "Module 'usevortex' is not compatible with vortex-2"
+incompat_msg = (
+    "Module 'usevortex' is not compatible with vortex>=2. "
+    "For information on performing operations previously provided "
+    "by the 'usevortex' module, see "
+    "http://confluence.meteo.fr/display/GMAP/Vortex+2+HOWTO."
+)
+assert vortex.__version__ < '2.0.0', incompat_msg
 logging.warning(
     " ".join(["Module 'usevortex' is deprecated and will be removed in epygram-2.2.0.",
               "For more information, see http://confluence.meteo.fr/display/GMAP/Epygram"]
              )
     )
+
+from vortex import toolbox
+import common  # @UnusedImport : for footprints to load classes
+import olive  # @UnusedImport : for footprints to load classes
 
 
 def list_vortex_geometries():
