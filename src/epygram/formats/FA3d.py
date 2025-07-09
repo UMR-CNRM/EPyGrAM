@@ -43,8 +43,6 @@ class FA3d(FileResource):
     )
 
     def __init__(self, *args, **kwargs):
-        self.isopen = False
-
         super(FA3d, self).__init__(*args, **kwargs)
 
         self.resource = FA(*args, **kwargs)
@@ -71,15 +69,19 @@ class FA3d(FileResource):
 
         if self.openmode not in ('r', 'a'):
             raise epygramError("FA files with true3d option cannot be opened in 'w' mode")
-        self.resource.open()
-        self.isopen = True
+        if self.fmtdelayedopen:
+            self.resource.open()
         self.geometry = self.resource.geometry
         self.validity = self.resource.validity
 
+    @property
+    def isopen(self):
+        """Returns the status of the underlying FA file."""
+        return self.resource.isopen
+
     def close(self):
         """Closes the underlying FA file."""
-        if self.isopen:
-            self.resource.close()
+        self.resource.close()
 
 ################
 # ABOUT FIELDS #
