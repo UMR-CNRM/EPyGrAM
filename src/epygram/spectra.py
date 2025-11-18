@@ -20,6 +20,7 @@ import numpy
 import copy
 
 from epygram import epygramError, config
+from epygram.formats import FA
 from epygram.geometries import GaussGeometry, SpectralGeometry
 from epygram.util import RecursiveObject, write_formatted_table
 
@@ -27,16 +28,17 @@ from epygram.util import RecursiveObject, write_formatted_table
 _file_id = 'epygram.spectra.Spectrum'
 _file_columns = ['#', 'lambda', 'variance']
 
+
 def nlonlat_to_nsmax(nlon, nlat, stretching, trunctype):
     """
     Relationship between grid-point space and spectral space.
     nlat is the number of latitudes, nlon is the maximum number of longitudes.
-    trunc_type should be one of "linear", "quadratic" or "cubic"
+    trunctype should be one of "linear", "quadratic" or "cubic"
     Returns the maximum total dimensionless wavenumber.
     """
     trunctype2ratio = {"linear": 2, "quadratic": 3, "cubic": 4}
     if trunctype not in trunctype2ratio.keys():
-        raise ValueError("trunc_type should be one of 'linear', 'quadratic' or 'cubic'")
+        raise ValueError("trunctype should be one of 'linear', 'quadratic' or 'cubic'")
     ratio = trunctype2ratio[trunctype]
     if stretching == 1.0:
         return int(numpy.floor((nlon - 1) / ratio))
@@ -366,19 +368,19 @@ def global_spectrum(field):
     assert field.spectral
     data = field.getdata()
     nsmax = field.spectral_geometry.truncation["max"]
-    assert data.size == (nsmax+1) * (nsmax+2)
+    assert data.size == (nsmax + 1) * (nsmax + 2)
     variances = numpy.zeros(nsmax + 1)
     jdata = 0
     # Loop on zonal wavenumber m
     for m in range(nsmax + 1):
         # Loop on total wavenumber n
         for n in range(m, nsmax + 1):
-            squaredmodule = data[jdata] ** 2 + data[jdata+1] ** 2
+            squaredmodule = data[jdata] ** 2 + data[jdata + 1] ** 2
             if m == 0:
                 variances[n] += squaredmodule
                 # Check that coefficient (m, n) == (0, n) is its own complex conjugate,
                 # i.e. it has zero imaginary part
-                assert data[jdata+1] == 0
+                assert data[jdata + 1] == 0
             else:
                 # Coefficient (-m, n) is the complex conjugate of (m, n).
                 # It is not stored so (m, n) should be counted twice.
@@ -501,3 +503,146 @@ def plotspectra(spectra,
         label.set_fontsize('medium')
 
     return result if takeover else (fig, ax)
+
+
+def global_spectral_laplacian(nsmax):
+    earth_radius = config.FA_default_geoid["a"]
+    laplacian = numpy.array([n * (n + 1) / earth_radius**2 for n in range(nsmax + 1)])
+    return laplacian
+
+
+def global_spectral_inverse_laplacian(nsmax):
+    earth_radius = config.FA_default_geoid["a"]
+    lapinverse = numpy.array(
+        [numpy.nan] + [earth_radius**2 / (n * (n + 1)) for n in range(1, nsmax + 1)]
+    )
+    return lapinverse
+
+
+def apply_global_spectral_filter(data, filter):
+    """
+    Multiply spectral data by filter that only depends on total wavenumber n.
+    In physical space, this is equivalent to spatial convolution with an
+    isotropic kernel.
+
+    Reference:
+    Boer, G. J., 1983: Homogeneous and Isotropic Turbulence on the Sphere.
+    Journal of the Atmospheric Sciences, 40, 154–163
+    https://doi.org/10.1175/1520-0469(1983)040<0154:HAITOT>2.0.CO;2.
+
+    :param data: spectral data of H2D field (in spectral space)
+    :param filter: 1D filter, as a numpy array, from wavenumber 0 to NSMAX
+
+
+    """
+    assert len(filter.shape) == 1
+    nsmax = filter.size - 1
+    nsefre = (nsmax + 1) * (nsmax + 2)
+    if data.size != nsefre:
+        raise epygramError("Spectral data size inconsistent with filter length")
+
+    jdata = 0
+    # Loop on zonal wavenumber m
+    for m in range(nsmax + 1):
+        # Loop on total wavenumber n
+        for n in range(m, nsmax + 1):
+            if m == 0:
+                # Check that coefficient (m, n) == (0, n) is its own complex conjugate,
+                # i.e. it has zero imaginary part
+                assert data[jdata + 1] == 0
+            data[jdata] *= filter[n]
+            data[jdata + 1] *= filter[n]
+            jdata += 2
+
+
+def get_global_energy_spectra(
+    res, level, trunctype="linear", diff_res=None, verbose=False
+):
+    """
+    Computes spectrum of kinetic energy per unit mass for global FA file,
+    along with its decomposition into rotational and divergent components.
+
+    Scientific reference:
+        Koshyk, J. N., and K. Hamilton, 2001:
+        The Horizontal Kinetic Energy Spectrum and Spectral Budget Simulated by a High-
+        Resolution Troposphere–Stratosphere–Mesosphere GCM. J. Atmos. Sci., 58, 329–348
+        https://doi.org/10.1175/1520-0469(2001)058<0329:THKESA>2.0.CO;2.
+
+    :param res: EPyGrAM resource, only FA format supported for now
+    :param level: vertical level index
+    :param trunctype: truncation type among "linear" (default), "quadratic" or "cubic".
+    :param diff_res: an optional resource. If provided, the spectra of the wind dif-
+                     ference with respect to this resource is returned.
+    :param verbose: verbose mode
+    """
+    if not isinstance(res, FA.FA):
+        raise NotImplementedError("Only implemented for FA file format")
+    if not isinstance(res.geometry, GaussGeometry):
+        raise NotImplementedError("Only implemented for Gauss Geometry")
+    if res.geometry.grid["dilatation_coef"] != 1.0:
+        raise epygramError("Energy spectra only make sense for unstretched grids")
+
+    psi = res.readfield(f"S{level:03d}FONC.COURANT")
+    chi = res.readfield(f"S{level:03d}POT.VITESSE")
+
+    spectralGeom = get_spectral_geometry(psi, res, verbose=verbose)
+    if spectralGeom is None:
+        spectralGeom = make_spectral_geometry(
+            psi.geometry, trunctype=trunctype, verbose=verbose
+        )
+    truncation = spectralGeom.truncation["max"]
+    laplacian = global_spectral_laplacian(truncation)
+    if not psi.spectral:
+        psi.gp2sp(spectralGeom)
+    if not chi.spectral:
+        chi.gp2sp(spectralGeom)
+    vor = psi.deepcopy()
+    div = chi.deepcopy()
+    apply_global_spectral_filter(vor.getdata(), laplacian)
+    apply_global_spectral_filter(div.getdata(), laplacian)
+
+    if diff_res is not None:
+        if not isinstance(diff_res, FA.FA):
+            raise NotImplementedError("Only implemented for FA file format")
+        if not isinstance(diff_res.geometry, GaussGeometry):
+            raise NotImplementedError("Only implemented for Gauss Geometry")
+        if diff_res.geometry.grid["dilatation_coef"] != 1.0:
+            raise Exception("Energy spectra only make sense for unstretched grids")
+
+        psi = diff_res.readfield(f"S{level:03d}FONC.COURANT")
+        chi = diff_res.readfield(f"S{level:03d}POT.VITESSE")
+        assert psi.spectral_geometry in (None, spectralGeom)
+        if not psi.spectral:
+            psi.gp2sp(spectralGeom)
+        if not chi.spectral:
+            chi.gp2sp(spectralGeom)
+        vor_ref = psi.deepcopy()
+        div_ref = chi.deepcopy()
+        apply_global_spectral_filter(vor_ref.getdata(), laplacian)
+        apply_global_spectral_filter(div_ref.getdata(), laplacian)
+        vor -= vor_ref
+        div -= div_ref
+
+    spectrum_vor = vor.spectrum(
+        "vorticity spectrum", spectral_geometry=spectralGeom, verbose=verbose
+    )
+    spectrum_div = div.spectrum(
+        "divergence spectrum", spectral_geometry=spectralGeom, verbose=verbose
+    )
+
+    # Multiply by inverse laplacian to get kinetic energy components
+    lapinv = global_spectral_inverse_laplacian(truncation)
+    spectrum_vor.variances *= lapinv[1:] * 0.5
+    spectrum_div.variances *= lapinv[1:] * 0.5
+
+    # Mean u-v components cannot be retrieved from vorticity and divergence
+    spectrum_vor.mean2 = numpy.nan
+    spectrum_div.mean2 = numpy.nan
+
+    spectrum_vor.name = f"rotational kinetic energy @lev={level}"
+    spectrum_div.name = f"divergent kinetic energy @lev={level}"
+
+    spectrum = spectrum_vor + spectrum_div
+    spectrum.name = f"kinetic energy @lev={level}"
+
+    return spectrum, spectrum_div, spectrum_vor
