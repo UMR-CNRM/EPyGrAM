@@ -20,7 +20,6 @@ import numpy
 import copy
 
 from epygram import epygramError, config
-from epygram.formats import FA
 from epygram.geometries import GaussGeometry, SpectralGeometry
 from epygram.util import RecursiveObject, write_formatted_table
 
@@ -170,8 +169,8 @@ class Spectrum(RecursiveObject):
     def wavelengths(self):
         """Gets the wavelengths of the spectrum."""
         K = len(self.variances) + 1
-        return numpy.array([2. * self.resolution * K / k
-                            for k in self.wavenumbers])
+        resol = numpy.nan if self.resolution is None else self.resolution
+        return numpy.array([2.0 * resol * K / k for k in self.wavenumbers])
 
     def write(self, out):
         """
@@ -575,6 +574,8 @@ def get_global_energy_spectra(
                      ference with respect to this resource is returned.
     :param verbose: verbose mode
     """
+    from epygram.formats import FA
+
     if not isinstance(res, FA.FA):
         raise NotImplementedError("Only implemented for FA file format")
     if not isinstance(res.geometry, GaussGeometry):
