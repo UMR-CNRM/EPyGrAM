@@ -1546,8 +1546,11 @@ class FA(FileResource):
                                      0,
                                      fieldname[4:])[0:6]
         except RuntimeError as e:
-            if 'Error code -93 was raised' in str(e) or \
-               'Error code -91 was raised' in str(e):
+            accepted_errors = ['Error code -91 was raised',
+                               'Error code -93 was raised',
+                               'Error code -94 was raised']
+
+            if any([ae in str(e) for ae in accepted_errors]):
                 # fanion raises an error but it is actually an existing meta-data field
                 return {'exists':True, 'ftype':'Misc'}
             else:
