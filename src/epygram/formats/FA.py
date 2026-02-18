@@ -844,7 +844,7 @@ class FA(FileResource):
         read in the resource.
 
         :param requestedfields: might be:\n
-          - a regular expression (e.g. 'S\*WIND.[U,V].PHYS')
+          - a regular expression (e.g. 'S*WIND.[U,V].PHYS')
           - a list of FA fields identifiers with regular expressions (e.g.
             ['SURFTEMPERATURE', 'S0[10-20]WIND.?.PHYS'])
           - if not specified, interpretated as all fields that will be found in
@@ -1068,9 +1068,9 @@ class FA(FileResource):
         Extracts a vertical profile from the FA resource, given its pseudoname
         and the geographic location (*lon*/*lat*) of the profile.
 
-        :param pseudoname: must have syntax: 'K\*PARAMETER',
+        :param pseudoname: must have syntax: 'K*PARAMETER',
           K being the kind of surface (S,P,H,V),
-          \* being a true star character,
+          * being a true star character,
           and PARAMETER being the name of the parameter requested,
           as named in FA.
         :param lon: the longitude of the desired point.
@@ -1150,9 +1150,9 @@ class FA(FileResource):
         and the geographic (lon/lat) coordinates of its ends.
         The section is returned as a V2DField.
 
-        :param pseudoname: must have syntax: 'K\*PARAMETER',
+        :param pseudoname: must have syntax: 'K*PARAMETER',
           K being the kind of surface (S,P,H,V),
-          \* being a true star character,
+          * being a true star character,
           and PARAMETER being the name of the parameter requested, as named in
           FA.
         :param end1: must be a tuple (lon, lat).
@@ -1220,9 +1220,9 @@ class FA(FileResource):
         Extracts a subdomain from the FA resource, given its fid
         and the geometry to use.
 
-        :param pseudoname: must have syntax: 'K\*PARAMETER',
+        :param pseudoname: must have syntax: 'K*PARAMETER',
           K being the kind of surface (S,P,H,V),
-          \* being a true star character,
+          * being a true star character,
           and PARAMETER being the name of the parameter requested, as named in
           FA.
         :param geometry: is the geometry on which extract data.

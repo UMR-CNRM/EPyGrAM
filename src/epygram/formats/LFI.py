@@ -78,7 +78,7 @@ def inquire_field_dict(fieldname):
         for fd in LFI._field_dict:
             if fd['name'] not in cache_inquire_re:
                 dictitem = fd['name']
-                pattern = re.subn('\.', r'\.', dictitem)[0]  # protect '.'
+                pattern = re.subn(r'\.', r'\.', dictitem)[0]  # protect '.'
                 pattern = pattern.replace('?', '.')  # change unix '?' to python '.' (any char)
                 pattern = pattern.replace('*', '.*')  # change unix '*' to python '.*' (several any char)
                 pattern += '(?!.)'
@@ -929,8 +929,8 @@ class LFI(FileResource):
         Extracts a vertical profile from the LFI resource, given its fid
         and the geographic location (*lon*/*lat*) of the profile.
 
-        :param fid: must have syntax: ('PARAMETER', '\*') if not true3d, else 'PARAMETER',
-          \* being a true star character,
+        :param fid: must have syntax: ('PARAMETER', '*') if not true3d, else 'PARAMETER',
+          * being a true star character,
           and PARAMETER being the name of the parameter requested, as named in LFI.
         :param lon: the longitude of the desired point.
         :param lat: the latitude of the desired point.
@@ -984,8 +984,8 @@ class LFI(FileResource):
         and the geographic (lon/lat) coordinates of its ends.
         The section is returned as a V2DField.
 
-        :param fid: must have syntax: ('PARAMETER', '\*') if not true3d else 'PARAMETER',
-          \* being a true star character,
+        :param fid: must have syntax: ('PARAMETER', '*') if not true3d else 'PARAMETER',
+          * being a true star character,
           and PARAMETER being the name of the parameter requested, as named in LFI.
         :param end1: must be a tuple (lon, lat).
         :param end2: must be a tuple (lon, lat).
@@ -1044,8 +1044,8 @@ class LFI(FileResource):
         Extracts a subdomain from the LFI resource, given its fid
         and the geometry to use.
 
-        :param fid: must have syntax: ('PARAMETER', '\*') if not true3d else 'PARAMETER',
-          \* being a true star character,
+        :param fid: must have syntax: ('PARAMETER', '*') if not true3d else 'PARAMETER',
+          * being a true star character,
           and PARAMETER being the name of the parameter requested, as named in LFI.
         :param geometry: the geometry on which extract data.
                          None to keep the geometry untouched.

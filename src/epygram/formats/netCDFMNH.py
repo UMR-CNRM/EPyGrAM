@@ -51,7 +51,7 @@ def inquire_field_dict(fieldname):
     matching_field = None
     for fd in netCDFMNH._field_dict:
         dictitem = fd['name']
-        pattern = re.subn('\.', r'\.', dictitem)[0]  # protect '.'
+        pattern = re.subn(r'\.', r'\.', dictitem)[0]  # protect '.'
         pattern = pattern.replace('?', '.')  # change unix '?' to python '.' (any char)
         pattern = pattern.replace('*', '.*')  # change unix '*' to python '.*' (several any char)
         pattern += '(?!.)'
