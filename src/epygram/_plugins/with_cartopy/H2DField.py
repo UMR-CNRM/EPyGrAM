@@ -560,6 +560,7 @@ def cartoplot(self,
               contourlabel=False,
               clabel_kw=None,
               # cartography
+              no_background=False,
               meridians='auto',
               parallels='auto',
               gridlines_kw=None,
@@ -721,16 +722,17 @@ def cartoplot(self,
                                                   set_global=(extent == 'global'))
     result = dict(fig=fig, ax=ax)
     # 2/ background
-    self.cartoplot_background(ax,
-                              projection,
-                              cartopy_features,
-                              natural_earth_features,
-                              meridians,
-                              parallels,
-                              gridlines_kw,
-                              epygram_departments,
-                              subzone=subzone,
-                              extent=extent)
+    if not no_background:
+        self.cartoplot_background(ax,
+                                  projection,
+                                  cartopy_features,
+                                  natural_earth_features,
+                                  meridians,
+                                  parallels,
+                                  gridlines_kw,
+                                  epygram_departments,
+                                  subzone=subzone,
+                                  extent=extent)
     # 3/ get data to plot
     if self.spectral:
         self.sp2gp()
