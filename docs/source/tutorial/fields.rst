@@ -283,6 +283,7 @@ or :meth:`Field.plot3DStream` to plot (stream lines or tubes).
 
 >>> import vtk #We need to import vtk before epygram even if do not use it directly in the script
 >>> import epygram
+>>> import epygram.formats.FA3d
 >>> epygram.init_env() #initialisation of environment, for FA/LFI and spectrals transforms sub-libraries
 >>> r = epygram.open(filename, 'r', true3d=True)
 >>> 
