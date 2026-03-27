@@ -1696,30 +1696,35 @@ class GRIBmessage(RecursiveObject, dict):
             geometryclass = GaussGeometry
             projection = None
             latitudes = gauss_latitudes(self['Nj'])
-            grid = {'latitudes':FPList([Angle(l, 'degrees') for l in latitudes])}
-            if self['gridType'] == 'reduced_gg':
+            grid = {
+                'dilatation_coef': 1.,
+                'latitudes':FPList([Angle(l, 'degrees') for l in latitudes]),
+            }
+
+            if 'reduced' in self['gridType']:
                 geometryname = 'reduced_gauss'
-                grid['dilatation_coef'] = 1.
-            elif self['gridType'] == 'regular_gg':
+                self._readattribute('pl', array=True)  # pre-load with array=True to bypass gribapi error
+                lon_number_by_lat = self['pl']
+            elif 'regular' in self['gridType']:
                 geometryname = 'regular_gauss'
-                grid['dilatation_coef'] = 1.
+                lon_number_by_lat = [self['Ni'] for _ in range(self['Nj'])]
             else:
-                if 'stretched' in self['gridType']:
-                    grid['dilatation_coef'] = self['stretchingFactor']
-                else:
-                    grid['dilatation_coef'] = 1.
-                if 'rotated' in self['gridType']:
-                    grid['pole_lon'] = Angle(self['longitudeOfStretchingPoleInDegrees'], 'degrees')
-                    grid['pole_lat'] = Angle(self['latitudeOfStretchingPoleInDegrees'], 'degrees')
-                    geometryname = 'rotated_reduced_gauss'
+                raise NotImplementedError('gauss grid of that type' + self['gridType'])
+
+            if 'stretched' in self['gridType']:
+                grid['dilatation_coef'] = self['stretchingFactor']
+
+            if 'rotated' in self['gridType']:
+                grid['pole_lon'] = Angle(self['longitudeOfStretchingPoleInDegrees'], 'degrees')
+                grid['pole_lat'] = Angle(self['latitudeOfStretchingPoleInDegrees'], 'degrees')
+                geometryname = 'rotated_reduced_gauss'
 
             if 'reduced' in self['gridType']:
                 self._readattribute('pl', array=True)  # pre-load with array=True to bypass gribapi error
                 lon_number_by_lat = self['pl']
             elif 'regular' in self['gridType']:
                 lon_number_by_lat = [self['Ni'] for _ in range(self['Nj'])]
-            else:
-                raise NotImplementedError('gauss grid of that type' + self['gridType'])
+
             dimensions = {'max_lon_number':int(max(lon_number_by_lat)),
                           'lat_number':len(latitudes),
                           'lon_number_by_lat':FPList([int(n) for n in
