@@ -560,7 +560,7 @@ def cartoplot(self,
               contourlabel=False,
               clabel_kw=None,
               # cartography
-              no_background=False,
+              background=True,
               meridians='auto',
               parallels='auto',
               gridlines_kw=None,
@@ -643,6 +643,8 @@ def cartoplot(self,
 
     Cartography settings:
 
+    :param background: whether to plots cartography features, such as borders,
+        coastlines, meridians and parallels... Defaults to True.
     :param meridians: enable to fine-tune the choice of lines to
         plot, with either:
           - 'auto': automatic scaling to the map extents
@@ -722,7 +724,7 @@ def cartoplot(self,
                                                   set_global=(extent == 'global'))
     result = dict(fig=fig, ax=ax)
     # 2/ background
-    if not no_background:
+    if background:
         self.cartoplot_background(ax,
                                   projection,
                                   cartopy_features,
