@@ -56,6 +56,7 @@ C - Data
 #. `Compute vor/div from u/v <C-data/07.wind_transformations_vordiv.ipynb>`_
 #. `Shaving: cut values over a threshold down to this threshold <C-data/08.shave.ipynb>`_
 #. `Morphing: apply local deformation <C-data/09.morphing_apply_local_deformation.ipynb>`_
+#. `Compute global kinetic energy spectra <C-data/10.global_kinetic_energy_spectra.ipynb>`_
 
 D.1 - Horizontal Geometry
 -------------------------
