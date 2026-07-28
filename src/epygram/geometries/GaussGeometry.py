@@ -299,25 +299,34 @@ class GaussGeometry(Geometry):
                "vertical dimension of data must be 1 or self.vcoordinate.levels=" + \
                str(self.vcoordinate.levels)
         shp4D = self.get_datashape(dimT=nb_validities, force_dimZ=nb_levels, d4=True)
-        data4D = numpy.ma.masked_all(shp4D)
+        # Use plain numpy arrays + mask separately to avoid expensive
+        # numpy.ma.__setitem__ overhead (1800 lat iterations × ~12μs vs ~0.1μs).
+        data_in = numpy.ma.getdata(data)
+        is_masked_in = isinstance(data, numpy.ma.MaskedArray)
+        arr4D = numpy.empty(shp4D, dtype=data_in.dtype)
+        mask4D = numpy.ones(shp4D, dtype=bool)
         ind_end = 0
         for j in range(self.dimensions['lat_number']):
             ind_begin = ind_end
             ind_end = ind_begin + self.dimensions['lon_number_by_lat'][j]
+            nlon_j = self.dimensions['lon_number_by_lat'][j]
+            s = slice(0, nlon_j)
             if len(shp_in) == 1:
-                buff = data[slice(ind_begin, ind_end)]
-                data4D[0, 0, j, slice(0, self.dimensions['lon_number_by_lat'][j])] = buff
+                arr4D[0, 0, j, s] = data_in[ind_begin:ind_end]
+                mask4D[0, 0, j, s] = data.mask[ind_begin:ind_end] if is_masked_in else False
             elif len(shp_in) == 2:
-                buff = data[:, slice(ind_begin, ind_end)]
                 if nb_levels > 1:
-                    data4D[0, :, j, slice(0, self.dimensions['lon_number_by_lat'][j])] = buff
+                    arr4D[0, :, j, s] = data_in[:, ind_begin:ind_end]
+                    mask4D[0, :, j, s] = data.mask[:, ind_begin:ind_end] if is_masked_in else False
                 else:
-                    data4D[:, 0, j, slice(0, self.dimensions['lon_number_by_lat'][j])] = buff
+                    arr4D[:, 0, j, s] = data_in[:, ind_begin:ind_end]
+                    mask4D[:, 0, j, s] = data.mask[:, ind_begin:ind_end] if is_masked_in else False
             elif len(shp_in) == 3:
-                buff = data[:, :, slice(ind_begin, ind_end)]
-                data4D[:, :, j, slice(0, self.dimensions['lon_number_by_lat'][j])] = buff
+                arr4D[:, :, j, s] = data_in[:, :, ind_begin:ind_end]
+                mask4D[:, :, j, s] = data.mask[:, :, ind_begin:ind_end] if is_masked_in else False
         if ind_end != data.shape[-1]:
             raise epygramError("data have a wrong length")
+        data4D = numpy.ma.MaskedArray(arr4D, mask=mask4D)
         if d4 or len(shp_in) == 3:
             data_out = data4D
         else:

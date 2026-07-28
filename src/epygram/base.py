@@ -110,12 +110,35 @@ class Field(RecursiveObject, FootprintBase):
         Optional arguments can be passed, depending on the inheriting class,
         passed to getdata().
         """
-        return {'min':self.min(**kwargs),
-                'max':self.max(**kwargs),
-                'mean':self.mean(**kwargs),
-                'std':self.std(**kwargs),
-                'quadmean':self.quadmean(**kwargs),
-                'nonzero':self.nonzero(**kwargs)}
+        raw = self.getdata(**kwargs)
+        raw_arr = numpy.ma.getdata(raw) if isinstance(raw, numpy.ma.MaskedArray) else numpy.asarray(raw)
+        if not numpy.issubdtype(raw_arr.dtype, numpy.number):
+            raise epygramError("stats() requires numeric data")
+        if isinstance(raw, numpy.ma.MaskedArray) and numpy.ma.getmaskarray(raw).any():
+            flat_data = numpy.asarray(raw_arr.ravel(), dtype=float)
+            flat_valid = ~numpy.ma.getmaskarray(raw).ravel()
+            valid = flat_data[flat_valid]
+            outside = numpy.abs(valid) > config.mask_outside
+            if outside.any():
+                valid = valid[~outside]
+        else:
+            arr = numpy.asarray(raw, dtype=float)
+            outside = numpy.abs(arr) > config.mask_outside
+            if outside.any():
+                arr = arr.copy()
+                arr.ravel()[outside.ravel()] = numpy.nan
+                flat = arr.ravel()
+                valid = flat[~numpy.isnan(flat)]
+            else:
+                valid = arr.ravel()
+        m = float(valid.mean())
+        s = float(valid.std())
+        return {'min': float(valid.min()),
+                'max': float(valid.max()),
+                'mean': m,
+                'std': s,
+                'quadmean': float(numpy.sqrt(s * s + m * m)),
+                'nonzero': int(numpy.count_nonzero(numpy.abs(valid) > config.epsilon))}
 
     def min(self, **kwargs):
         """Returns the minimum value of data."""

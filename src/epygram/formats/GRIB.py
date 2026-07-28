@@ -2114,6 +2114,11 @@ class GRIB(FileResource):
             _file.close()
             if isgrib != 'GRIB':
                 raise IOError("this resource is not a GRIB one.")
+        # Per-resource offset index: list of (fid_dict, byte_offset) pairs.
+        # Built as a side-effect of the first unfiltered _listfields scan.
+        # Enables O(1) seek-based random access in readfields without rebuilding
+        # the eccodes index on every call.
+        self._grib_offset_index = None
         if not self.fmtdelayedopen:
             self.open()
 
@@ -2160,6 +2165,7 @@ class GRIB(FileResource):
                not self._sequential_file.closed:
                 self._sequential_file.close()
         self.isopen = False
+        self._grib_offset_index = None
 
     @property
     @FileResource._openbeforedelayed
@@ -2218,6 +2224,10 @@ class GRIB(FileResource):
                 fid[k] = lowlevelgrib.get(gid, k)
 
         fidlist = []
+        # Build offset index in the same scan when no message filtering is active.
+        # The index maps each message to its byte offset for fast seek-based reads.
+        build_offset_index = not select_keys
+        offset_index = [] if build_offset_index else None
         _file = open(self._open_through, 'rb')
         while True:
             filter_out = False
@@ -2225,6 +2235,10 @@ class GRIB(FileResource):
             gid = lowlevelgrib.any_new_from_file(_file, headers_only=True)
             if gid is None:
                 break
+            # Capture offset before any other gets (offset is a positional attribute)
+            if build_offset_index:
+                # eccodes returns 'offset' as float; cast to int for seek()
+                msg_offset = int(lowlevelgrib.get(gid, 'offset'))
             n = lowlevelgrib.get(gid, 'editionNumber')
             particularities = {}
             if n == 2:
@@ -2251,7 +2265,11 @@ class GRIB(FileResource):
             lowlevelgrib.release(gid)
             if not filter_out:
                 fidlist.append(fid)
+                if build_offset_index:
+                    offset_index.append((fid, msg_offset))
         _file.close()
+        if build_offset_index:
+            self._grib_offset_index = offset_index
         return fidlist
 
     def split_UV(self, fieldseed):
@@ -2393,6 +2411,25 @@ class GRIB(FileResource):
 
         return fieldslist
 
+    def _matching_offsets(self, handgrip):
+        """Return list of byte offsets for messages whose fid matches *handgrip*.
+
+        Returns None if the offset index cannot service this handgrip (e.g. a
+        handgrip key is not stored in the index fids — this triggers a fallback
+        to the eccodes index path).  Returns an empty list when the index is
+        queried successfully but no message matches.
+        """
+        offsets = []
+        for fid, offset in self._grib_offset_index:
+            try:
+                if all(fid[k] == v for k, v in handgrip.items()):
+                    offsets.append(offset)
+            except KeyError:
+                # A handgrip key is absent from the stored fid; the index
+                # cannot service this query — caller will fall back.
+                return None
+        return offsets
+
     def readfield(self, handgrip,
                   getdata=True,
                   footprints_proxy_as_builder=config.footprints_proxy_as_builder,
@@ -2471,6 +2508,34 @@ class GRIB(FileResource):
         if isinstance(handgrip, str):
             handgrip = griberies.parse_GRIBstr_todict(handgrip)
         matchingfields = FieldSet()
+
+        # Fast path: offset-based seek when the in-memory index is available
+        # and the handgrip uses only standard keys stored in it.
+        # Deprecated arguments force the eccodes-index fallback path.
+        use_offset_path = (self._grib_offset_index is not None
+                           and not get_info_as_json
+                           and not footprints_proxy_as_builder)
+        if use_offset_path:
+            offsets = self._matching_offsets(handgrip)
+            if offsets is not None:
+                # All handgrip keys found in index; read messages by seek.
+                with open(self._open_through, 'rb') as rf:
+                    for offset in offsets:
+                        rf.seek(offset)
+                        gid = lowlevelgrib.any_new_from_file(rf)
+                        if gid is None:
+                            continue
+                        msg = GRIBmessage(('gribid', gid))
+                        matchingfields.append(msg.as_field(getdata=getdata,
+                                                           read_misc_metadata=read_misc_metadata))
+                        del msg
+                if len(matchingfields) == 0:
+                    raise epygramError("no field matching *handgrip* was found ({}).".
+                                       format(handgrip))
+                return matchingfields
+            # else: a handgrip key was missing from index fids — fall through
+
+        # Fallback: eccodes index path (original implementation).
         filtering_keys = [str(k) for k in handgrip.keys()]  # gribapi str/unicode incompatibility
         for i, k in enumerate(filtering_keys):
             if isinstance(handgrip[k], int):

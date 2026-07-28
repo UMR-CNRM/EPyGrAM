@@ -312,6 +312,10 @@ class FA(FileResource):
             self._FAsoft_init()
         self.fieldscompression = {}
         self._cache_find_re_in_list = {}
+        # Per-resource caches (valid while file is open; cleared on close)
+        self._fanion_cache = {}    # fieldname -> _fanion() result dict
+        self._fa2grib_cache = {}   # fieldname -> gribdef.FA2GRIB() result dict
+        self._datasize_cache = {}  # 'spectral'/'gridpoint' -> int datasize
         if not self.fmtdelayedopen:
             self.open()
 
@@ -417,6 +421,10 @@ class FA(FileResource):
             except Exception:
                 raise IOError("closing " + self.container.abspath)
             self.isopen = False
+            # Clear per-resource caches now that the file is closed
+            self._fanion_cache.clear()
+            self._fa2grib_cache.clear()
+            self._datasize_cache.clear()
 
 ################
 # ABOUT FIELDS #
@@ -627,14 +635,19 @@ class FA(FileResource):
 
     @FileResource._openbeforedelayed
     def field_type(self, fieldname):
-        """Return type of the field, based on FANION and/or sfxflddesc_mod"""
+        """Return type of the field, based on FANION and/or sfxflddesc_mod.
+
+        Result is memoized per fieldname: both _fanion and sfxflddesc are
+        constant for an open file, so the outcome cannot change.
+        """
+        cached = self._fanion_cache.get('_ftype_' + fieldname)
+        if cached is not None:
+            return cached
         from_fanion = self._field_type_from_file(fieldname)
         from_sfxflddesc = self.field_type_from_sfxflddesc(fieldname)
-        if from_sfxflddesc == "?":
-            # unknown to sfxflddesc, we believe fanion
-            return from_fanion
-        else:
-            return from_sfxflddesc
+        result = from_fanion if from_sfxflddesc == "?" else from_sfxflddesc
+        self._fanion_cache['_ftype_' + fieldname] = result
+        return result
 
     @FileResource._openbeforedelayed
     def readfield(self, fieldname,
@@ -660,6 +673,19 @@ class FA(FileResource):
             field = self._readMiscField(fieldname, getdata=getdata)
         return field
 
+    def _cached_fa2grib(self, fieldname):
+        """Return gribdef.FA2GRIB(fieldname), memoized per fieldname.
+
+        FA2GRIB involves regex compilation and dict lookups; its output is
+        fully determined by the fieldname (pure function), so we cache it for
+        the resource lifetime.
+        """
+        cached = self._fa2grib_cache.get(fieldname)
+        if cached is None:
+            cached = self.gribdef.FA2GRIB(fieldname)
+            self._fa2grib_cache[fieldname] = cached
+        return cached
+
     @FileResource._openbeforedelayed
     def _readH2DField(self, fieldname,
                       getdata=True):
@@ -679,7 +705,8 @@ class FA(FileResource):
                          'position_on_grid': self.geometry.vcoordinate.position_on_grid,
                          'grid': self.geometry.vcoordinate.grid,
                          'levels': self.geometry.vcoordinate.levels}
-        field_info = self.gribdef.FA2GRIB(fieldname)
+        # FA2GRIB result is cached per fieldname (immutable for an open file)
+        field_info = self._cached_fa2grib(fieldname)
         # change from default (FA header) to actual levels
         kwargs_vcoord['typeoffirstfixedsurface'] = field_info.get('typeOfFirstFixedSurface', 0)
         if 'level' in field_info:
@@ -693,29 +720,33 @@ class FA(FileResource):
             kwargs_vcoord.pop('grid', None)
         vcoordinate = VGeometry(**kwargs_vcoord)
         # Prepare field dimensions
+        # datasize depends only on the file geometry/spectral_geometry (constant
+        # for an open resource), so we compute it once and reuse.
         spectral = encoding['spectral']
         if spectral and self.spectral_geometry is not None:
-            if 'fourier' in self.spectral_geometry.space:
-                # LAM
-                gpdims = copy.deepcopy(self.geometry.dimensions)
-                gpdims.update({k:v for k, v in self.geometry.grid.items() if 'resolution' in k})
-                SPdatasize = self.spectral_geometry.etrans_inq(gpdims)[1]
-            elif self.spectral_geometry.space == 'legendre':
-                # Global
-                # SPdatasize may be stored to avoid calling trans_inq ?
-                SPdatasize = self.spectral_geometry.legendre_known_spectraldata_size()
-                if SPdatasize is None:
-                    # if not, call trans_inq
-                    SPdatasize = self.spectral_geometry.trans_inq(self.geometry.dimensions)[1]
-                SPdatasize *= 2  # complex coefficients
-            datasize = SPdatasize
+            if 'spectral' not in self._datasize_cache:
+                if 'fourier' in self.spectral_geometry.space:
+                    # LAM
+                    gpdims = copy.deepcopy(self.geometry.dimensions)
+                    gpdims.update({k:v for k, v in self.geometry.grid.items() if 'resolution' in k})
+                    SPdatasize = self.spectral_geometry.etrans_inq(gpdims)[1]
+                elif self.spectral_geometry.space == 'legendre':
+                    # Global
+                    SPdatasize = self.spectral_geometry.legendre_known_spectraldata_size()
+                    if SPdatasize is None:
+                        SPdatasize = self.spectral_geometry.trans_inq(self.geometry.dimensions)[1]
+                    SPdatasize *= 2  # complex coefficients
+                self._datasize_cache['spectral'] = SPdatasize
+            datasize = self._datasize_cache['spectral']
             spectral_geometry = self.spectral_geometry
         else:
-            if self.geometry.rectangular_grid:
-                GPdatasize = self.geometry.dimensions['X'] * self.geometry.dimensions['Y']
-            else:
-                GPdatasize = sum(self.geometry.dimensions['lon_number_by_lat'])
-            datasize = GPdatasize
+            if 'gridpoint' not in self._datasize_cache:
+                if self.geometry.rectangular_grid:
+                    GPdatasize = self.geometry.dimensions['X'] * self.geometry.dimensions['Y']
+                else:
+                    GPdatasize = sum(self.geometry.dimensions['lon_number_by_lat'])
+                self._datasize_cache['gridpoint'] = GPdatasize
+            datasize = self._datasize_cache['gridpoint']
             spectral_geometry = None
         # Make geometry object
         kwargs_geom = dict(name=self.geometry.name,
@@ -737,7 +768,7 @@ class FA(FileResource):
                                      term=self.validity.term())
         else:
             validity = self.validity.deepcopy()
-            validity.set(statistical_process_on_duration=self.gribdef.FA2GRIB(fieldname).get('typeOfStatisticalProcessing', None))
+            validity.set(statistical_process_on_duration=field_info.get('typeOfStatisticalProcessing', None))
         # MOCAGE surface fields: different terms can be stored in one file !
         if all([config.FA_allow_MOCAGE_multivalidities,
                 fieldname[0:2] in ('SF', 'EM', 'DV'),
@@ -1534,7 +1565,16 @@ class FA(FileResource):
             out.write(str(KDATEF) + '\n')
 
     def _fanion(self, fieldname):
-        """Smart interface to FANION, returning info on the field."""
+        """Smart interface to FANION, returning info on the field.
+
+        Results are memoized per fieldname for the lifetime of the open
+        resource: the FA record encoding is immutable once the file is open.
+        """
+        cached = self._fanion_cache.get(fieldname)
+        if cached is not None:
+            # Return a shallow copy: callers (fieldencoding) mutate the dict
+            # with .pop(), so we must not expose the cached dict directly.
+            return cached.copy()
         try:
             (exists,
              spectral,
@@ -1552,14 +1592,17 @@ class FA(FileResource):
 
             if any([ae in str(e) for ae in accepted_errors]):
                 # fanion raises an error but it is actually an existing meta-data field
-                return {'exists':True, 'ftype':'Misc'}
+                result = {'exists':True, 'ftype':'Misc'}
+                self._fanion_cache[fieldname] = result
+                return result
             else:
                 raise e
 
         else:
-            return {'exists':exists, 'spectral':spectral, 'ftype':'H2D' if exists else '?',
-                    'KNGRIB':KNGRIB, 'KNBITS':KNBITS, 'KSTRON':KSTRON, 'KPUILA':KPUILA}
-            return field_info
+            result = {'exists':exists, 'spectral':spectral, 'ftype':'H2D' if exists else '?',
+                      'KNGRIB':KNGRIB, 'KNBITS':KNBITS, 'KSTRON':KSTRON, 'KPUILA':KPUILA}
+            self._fanion_cache[fieldname] = result
+            return result
 
     def _field_type_from_file(self, fieldname):
         """Return type of the field, based on FANION"""
