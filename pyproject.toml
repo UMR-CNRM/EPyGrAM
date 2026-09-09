@@ -30,9 +30,9 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = [
     "bronx",
-    "eccodes==2.44.0",  # ! consistency with falfilfa4py !
+    "eccodes==2.48.0",  # ! consistency with falfilfa4py !
     "ectrans4py==1.6.0",
-    "falfilfa4py==1.2.1",  # ! consistency with eccodes !
+    "falfilfa4py==1.3.0",  # ! consistency with eccodes !
     "footprints",
     "netCDF4==1.7.2",  #FIXME: issue with newer versions not being properly installed on some (old) platforms
     "numpy",
