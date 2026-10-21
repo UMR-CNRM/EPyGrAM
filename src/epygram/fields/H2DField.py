@@ -115,7 +115,7 @@ class H2DField(D3Field):
         except ModuleNotFoundError:
             raise ModuleNotFoundError('To use *extract_contour* method, you must have `contourpy` installed: ' +
                                       'pip3 install --user contourpy')
-        cont_gen=contour_generator(z=self.getdata()) 
+        cont_gen=contour_generator(z=self.getdata())
         contour=cont_gen.lines(level)
         lines=[]
         for ijlist in contour:
@@ -163,7 +163,7 @@ class H2DField(D3Field):
         """
         if isinstance(self.geometry, GaussGeometry):
             if self.geometry.grid["dilatation_coef"] != 1.0:
-                raise NotImplementedError("cannot compute spectra on stretched Gaussian grids")
+                epylog.warning("Computing spectrum on stretched grid, interpret with caution!")
             if not self.spectral:
                 assert spectral_geometry, "Need spectral geometry to convert field in gp space!"
                 self.gp2sp(spectral_geometry)

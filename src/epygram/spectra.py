@@ -14,6 +14,7 @@ This module contains:
 - a function to create a spectral geometry, e.g., for GRIBs.
 """
 
+import footprints
 from bronx.graphics.axes import set_figax
 
 import numpy
@@ -23,6 +24,7 @@ from epygram import epygramError, config
 from epygram.geometries import GaussGeometry, SpectralGeometry
 from epygram.util import RecursiveObject, write_formatted_table
 
+epylog = footprints.loggers.getLogger(__name__)
 
 _file_id = 'epygram.spectra.Spectrum'
 _file_columns = ['#', 'lambda', 'variance']
@@ -581,7 +583,7 @@ def get_global_energy_spectra(
     if not isinstance(res.geometry, GaussGeometry):
         raise NotImplementedError("Only implemented for Gauss Geometry")
     if res.geometry.grid["dilatation_coef"] != 1.0:
-        raise epygramError("Energy spectra only make sense for unstretched grids")
+        epylog.warning("Energy spectra only make sense for unstretched grids")
 
     psi = res.readfield(f"S{level:03d}FONC.COURANT")
     chi = res.readfield(f"S{level:03d}POT.VITESSE")
