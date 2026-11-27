@@ -93,9 +93,15 @@ class FaGribDef(GribDef):
                 fid = self._get_def(rematch.group('ltype'), 'faLevelName',
                                     grib_edition, include_comments,
                                     fatal=False)
-                fid.update(self._get_def(rematch.group('param'), 'faFieldName',
-                                         grib_edition, include_comments,
-                                         fatal=False))
+                if rematch.group('param') in self.tables[grib_edition]['faFieldName']:
+                    fid.update(self._get_def(rematch.group('param'), 'faFieldName',
+                                             grib_edition, include_comments,
+                                             fatal=False))
+                else:
+                    fid.update(self._get_def(rematch.group('param').replace(' ', '_'),
+                                             'faFieldName',
+                                             grib_edition, include_comments,
+                                             fatal=False))
                 level = int(rematch.group('level'))
                 if level == 0:  # formatting issue
                     level = 100000
